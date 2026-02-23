@@ -82,6 +82,31 @@
 	background-color: rgba(var(--medium-rgb), 0.08);
 }
 
+/* Overflow menu (3-dot) */
+.btn-overflow-toggle {
+	background: transparent;
+	border: none;
+	color: var(--dark1);
+	font-size: 16px;
+	padding: 4px 10px;
+	cursor: pointer;
+	border-radius: 4px;
+}
+.btn-overflow-toggle:hover,
+.btn-overflow-toggle:focus {
+	background-color: rgba(0,0,0,0.08);
+	outline: none;
+	box-shadow: none;
+}
+.btn-overflow-menu .dropdown-item {
+	font-size: 13px;
+	padding: 6px 20px;
+}
+.btn-overflow-menu .dropdown-item i {
+	width: 18px;
+	text-align: center;
+}
+
 
 .dropdown-menu>a:focus, .dropdown-menu>a.dropdown-navitem:hover {
 	background-color: var(--medium) !important;
@@ -625,6 +650,95 @@ body {
 	padding: 12px 24px;
 }
 
+/* ---- Import Success Modal ---- */
+.import-success-body {
+	padding: 40px 32px 24px;
+	background: var(--method-background);
+	text-align: center;
+}
+
+.import-success-checkmark {
+	margin-bottom: 16px;
+}
+
+.import-success-checkmark i {
+	font-size: 80px;
+	color: #28a745;
+	filter: drop-shadow(0 2px 8px rgba(40, 167, 69, 0.3));
+}
+
+.import-success-title {
+	font-weight: 600;
+	color: var(--dark1);
+	margin-bottom: 20px;
+	font-size: 1.3rem;
+}
+
+.import-success-details {
+	margin-bottom: 16px;
+}
+
+.import-success-libname {
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: var(--medium2);
+	margin-bottom: 4px;
+}
+
+.import-success-filecount {
+	font-size: 0.9rem;
+}
+
+.import-success-paths {
+	text-align: left;
+	background: var(--body-background);
+	border-radius: 8px;
+	padding: 12px 16px;
+	margin-bottom: 12px;
+	font-family: 'Consolas', 'Courier New', monospace;
+	font-size: 0.8rem;
+	color: #555;
+	word-break: break-all;
+}
+
+.import-success-paths .path-label {
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	font-weight: 600;
+	color: var(--dark1);
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 2px;
+}
+
+.import-success-paths .path-value {
+	margin-bottom: 8px;
+}
+
+.import-success-paths .path-value:last-child {
+	margin-bottom: 0;
+}
+
+.import-success-com-status {
+	margin-top: 4px;
+	font-size: 0.85rem;
+	padding: 8px 14px;
+	border-radius: 6px;
+}
+
+.import-success-com-status.com-warning {
+	background: #fff3cd;
+	color: #856404;
+	border: 1px solid #ffc107;
+}
+
+.import-success-com-status.com-ok {
+	background: #d4edda;
+	color: #155724;
+	border: 1px solid #28a745;
+}
+/* ---- End Import Success Modal ---- */
+
 .link-card .link-info-trigger {
 	cursor: pointer;
 	color: var(--gray_blue);
@@ -806,3 +920,112 @@ body {
 	padding-left: 30px;
 	padding-right: 30px;
 }
+
+/* ---- COM warning card background ---- */
+.imp-lib-card-warning {
+	background-color: #fff9e6 !important;
+	border-left: 4px solid #f0ad4e !important;
+}
+
+.imp-lib-card-warning:hover {
+	box-shadow: 0 2px 12px rgba(240, 173, 78, 0.25);
+}
+
+/* ---- Integrity error card background (red) ---- */
+.imp-lib-card-integrity-error {
+	background-color: #fce8e8 !important;
+	border-left: 4px solid #d9534f !important;
+}
+
+.imp-lib-card-integrity-error:hover {
+	box-shadow: 0 2px 12px rgba(217, 83, 79, 0.3);
+}
+
+/* ---- Deleted library card (faded) ---- */
+.imp-lib-card-deleted {
+	opacity: 0.55;
+	border-left: 4px solid #adb5bd !important;
+}
+
+.imp-lib-card-deleted:hover {
+	opacity: 0.8;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ---- Integrity info icon (bottom-right of card) ---- */
+.imp-integrity-icon {
+	font-size: 0.9rem;
+	cursor: default;
+	position: relative;
+}
+
+.imp-integrity-icon.imp-integrity-error {
+	color: #d9534f;
+}
+
+.imp-integrity-icon.imp-integrity-warning {
+	color: #f0ad4e;
+}
+
+.imp-integrity-icon[title] {
+	white-space: pre-line;
+}
+
+/* ---- COM register checkbox in exporter ---- */
+.pkg-com-checkbox-label {
+	display: inline-flex;
+	align-items: center;
+	cursor: pointer;
+	white-space: nowrap;
+	padding: 1px 6px;
+	border-radius: 3px;
+	background: rgba(23, 162, 184, 0.08);
+	border: 1px solid rgba(23, 162, 184, 0.2);
+	font-size: 0.75rem;
+}
+
+.pkg-com-checkbox-label:hover {
+	background: rgba(23, 162, 184, 0.15);
+}
+
+.pkg-com-checkbox {
+	margin-right: 3px;
+	cursor: pointer;
+}
+
+/* ---- Export Archive Modal ---- */
+.exp-arch-lib-list {
+	max-height: 400px;
+	overflow-y: auto;
+	border: 1px solid #e9ecef;
+	border-radius: 6px;
+}
+
+.exp-arch-lib-item {
+	border-bottom: 1px solid #f0f0f0;
+	cursor: pointer;
+	transition: background-color 0.1s;
+}
+
+.exp-arch-lib-item:last-child {
+	border-bottom: none;
+}
+
+.exp-arch-lib-item:hover {
+	background-color: #f8f9fa;
+}
+
+.exp-arch-lib-item .custom-control-input:checked ~ .custom-control-label::before {
+	background-color: var(--medium);
+	border-color: var(--medium);
+}
+
+.exp-arch-lib-icon img {
+	border-radius: 4px;
+}
+
+#exp-arch-export {
+	padding-left: 20px;
+	padding-right: 20px;
+}
+

@@ -24,6 +24,7 @@
 		const fs = require('fs');
 		const sizeOf = require('image-size')
 		const os = require("os");
+		const crypto = require('crypto');
     
         // Diskdb init
 		var db = require('diskdb');
@@ -177,6 +178,25 @@ var DetachDatabase = edge.func({
 				}
 			}, 150, "");
         });
+
+        //Click Hamilton logo to go home
+		$(document).on("click", ".brand-logo", function () {
+			// Close settings page if open
+			if(!$(".settings-page").hasClass("d-none")){
+				$(".methods-page").removeClass("d-none");
+				$(".settings-page").addClass("d-none");
+			}
+			// Activate the All (home) nav item
+			$(".navbar-custom .nav-item, .navbar-custom .dropdown-navitem").removeClass("active");
+			$('.navbar-custom .nav-item[data-group-id="gAll"]').addClass("active");
+			$('.group-container').addClass('d-none');
+			$(".links-container").addClass("d-none");
+			$(".exporter-container").addClass("d-none");
+			$(".importer-container").removeClass("d-none");
+			$("#imp-header").removeClass("d-none").addClass("d-flex");
+			impBuildLibraryCards();
+			fitImporterHeight();
+		});
 
         //Method groups -  navigation bar events
 		$(document).on("click", ".navbar-custom .nav-item:not('.dropdown'), .navbar-custom .dropdown-navitem", function () { 
@@ -334,18 +354,25 @@ var DetachDatabase = edge.func({
 		});
 
 
-		//Click "settings" button from main screen top nav.
-		$(document).on("click", ".btn-settings", function () {
+		//Click "help" from overflow menu.
+		$(document).on("click", ".overflow-help", function () {
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
+			nw.Shell.openItem("C:\\Users\\admin\\Documents\\GitHub\\Library Manager\\Library Manager.chm");
+		});
+
+		//Click "settings" from overflow menu.
+		$(document).on("click", ".overflow-settings", function () {
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
 			$(".methods-page").toggleClass("d-none");
 			$(".settings-page").toggleClass("d-none");
 			if(!$(".settings-page").hasClass("d-none")){
 				//opening settings screen
 				bool_treeChanged = false;
-				$(this).text('Home');
 				fitSettingsDivHeight();
 			}else{
-				//coming back to home screen 
-				$(this).text('Settings');
+				//coming back to home screen
 				if (bool_treeChanged){
 					createGroups();
 				}else{
@@ -397,6 +424,55 @@ var DetachDatabase = edge.func({
 			return false;
 		});
 
+		//Click "Close" button on settings page
+		$(document).on("click", ".btn-close-settings", function () {
+			$(".overflow-settings").trigger("click");
+			return false;
+		});
+
+		//Click "Export" from overflow menu
+		$(document).on("click", ".overflow-export", function (e) {
+			e.preventDefault();
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
+			// If settings page is open, close it first
+			if(!$(".settings-page").hasClass("d-none")){
+				$(".methods-page").removeClass("d-none");
+				$(".settings-page").addClass("d-none");
+			}
+			// Activate the Export nav item
+			$(".navbar-custom .nav-item, .navbar-custom .dropdown-navitem").removeClass("active");
+			$('.navbar-custom .nav-item[data-group-id="gEditors"]').addClass("active");
+			$('.group-container').addClass('d-none');
+			$(".links-container").addClass("d-none");
+			$(".exporter-container").removeClass("d-none");
+			$(".importer-container").addClass("d-none");
+			fitExporterHeight();
+			return false;
+		});
+
+		//Click "History" from overflow menu
+		$(document).on("click", ".overflow-history", function (e) {
+			e.preventDefault();
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
+			// If settings page is open, close it first
+			if(!$(".settings-page").hasClass("d-none")){
+				$(".methods-page").removeClass("d-none");
+				$(".settings-page").addClass("d-none");
+			}
+			// Activate the History nav item
+			$(".navbar-custom .nav-item, .navbar-custom .dropdown-navitem").removeClass("active");
+			$('.navbar-custom .nav-item[data-group-id="gHistory"]').addClass("active");
+			$('.group-container').addClass('d-none');
+			$(".links-container").removeClass("d-none");
+			$(".exporter-container").addClass("d-none");
+			$(".importer-container").addClass("d-none");
+			$('.group-container[data-group-id="gHistory"]').removeClass('d-none');
+			fitMainDivHeight();
+			return false;
+		});
+
 		//Settings screen menu navigation
 		$(document).on("click", ".h-menu>li>a", function () {
 			$(".h-menu>li>a").removeClass("active");
@@ -415,46 +491,12 @@ var DetachDatabase = edge.func({
 
 		});
 
-		//Settings>settings > simulation checkbox
-		$(document).on("click", "#chk_settingSimulation", function(){
-			saveSetting($(this).attr("id"),$(this).prop("checked"));
-			$("#simulation-switch").prop("disabled",!$(this).prop("checked"))
+		//Settings > Installation checkboxes
+		$(document).on("click", "#chk_confirmBeforeInstall, #chk_overwriteWithoutAsking, #chk_autoAddToGroup", function(){
+			saveSetting($(this).attr("id"), $(this).prop("checked"));
 		});
 
-		//Settings>settings > Run control
-		$(document).on("click", "#chk_run-autoplay", function(){
-			saveSetting($(this).attr("id"),$(this).prop("checked"));
-			if($(this).prop("checked")){
-				$("#chk_run-autoclose").prop("checked",false);
-				saveSetting("chk_run-autoclose",false);
-			}
-		});
-		$(document).on("click", "#chk_run-autoclose", function(){
-			saveSetting($(this).attr("id"),$(this).prop("checked"));
-			if($(this).prop("checked")){
-				$("#chk_run-autoplay").prop("checked",false);
-				saveSetting("chk_run-autoplay",false);
-			}
-		});
-		
-
-		//Settings>settings > show on start up
-		$(document).on("click", "#settings-startupLast", function (){
-			saveSetting("startup-lastOpened",true);
-			var group_id = $(".navbar-custom").find(".active").attr("data-group-id")
-			saveSetting("startup-tab",group_id);
-			;
-		});
-
-		$(document).on("click", "#settings-startupTab", function (){
-			saveSetting("startup-lastOpened",false);
-			//find the element in the dropdown div with matching text and get the group-id
-			var group_name = $("#dd-navgroups").text();
-			var group_id = $('.dd-navgroups a:contains("' + group_name + '")').attr("data-group-id") ;
-			saveSetting("startup-tab",group_id);
-		});
-
-		//Settings-Settings-recent dropdown change text
+		//Settings - Recent dropdown change text
 		$(document).on("click", ".dd-maxRecent a", function () {
 			var txt = $(this).text();
 			$("#dd-maxRecent").text(txt);
@@ -467,92 +509,6 @@ var DetachDatabase = edge.func({
 			setTimeout(function(){ 
 				$(".txt-recentCleared").text("");
 			 }, 3000);
-		});
-
-		//Settings-Settings-history cleanup checkbox
-		$(document).on("change, click", "#chk_settingHistoryCleanup",function(){
-			var val=!$(this).prop("checked");
-			//remove 'disabled' from the radio buttons and the clean up now button if the checkbox is ticked
-			$("#radio_settingHistory-delete,#radio_settingHistory-archive,.btn-history-cleanup, .btn-historyMax").prop("disabled",val);
-			saveSetting($(this).attr("id"), $(this).prop("checked"));
-		});
-		$(document).on("click", ".btn-history-cleanup" ,function(){
-			historyCleanup();
-		});
-
-		//Settings-Settings-history cleanup radio buttons
-		$(document).on("click", "#radio_settingHistory-delete" ,function(){
-			saveSetting("cleanup-action","delete");
-		});
-		$(document).on("click", "#radio_settingHistory-archive" ,function(){
-			saveSetting("cleanup-action","archive");
-		});
-
-		//Settings-Settings-history dropdown change text
-		$(document).on("click", ".dd-historyCleanup a", function () {
-			var txt = $(this).text();
-			$("#dd-historyCleanup").text(txt);
-			saveSetting("history-days",$(this).attr("data-days"));
-		});
-
-		//Settings-Settings-startup dropdown change text
-		$(document).on("click", ".dd-navgroups a", function () {
-			var txt = $(this).text();
-			$("#dd-navgroups").text(txt);
-			if($("#settings-startupTab").prop("checked")){
-				saveSetting("startup-tab",$(this).attr("data-group-id"));	
-			}
-			
-		});
-
-		//Settings - settings - shortcuts --- top nav bar Folder, Run History and Editors 
-		$(document).on("click", ".parent-checkbox", function(){
-				//check/uncheck all children checkboxes in the settings
-				$(this).parent().parent().find(".ml-4 .custom-control-input").prop('checked', $(this).prop('checked'));
-				$(this).parent().parent().find(".ml-4 .custom-control-input").trigger("change");	
-		});
-
-		//Settings - settings - shortcuts --- top nav bar Folder, Run History and Editors 
-		$(document).on("change", ".parent-checkbox", function (){
-			
-			saveSetting($(this).attr("id"),$(this).prop("checked"));
-
-			var navitem=$(".nav-item[data-group-id='"+ $(this).attr("data-group-id") +"']");
-			
-			//show/hide item in the navbar of the home screen
-			$(this).prop('checked') ? navitem.removeClass("d-none") : navitem.addClass("d-none");
-			
-			// if unchecked, hide the group-container div in the home screen
-			if (!$(this).prop('checked')) {
-				$(".group-container[data-group-id='"+ $(this).attr("data-group-id") +"']").addClass("d-none");
-			}else{
-				if(navitem.hasClass("active")){$(".group-container[data-group-id='"+ $(this).attr("data-group-id") +"']").removeClass("d-none")}
-			}
-
-		});
-
-		//Settings - settings - shortcuts --- top nav bar Folder, Run History and Editors  - children boxes
-		$(document).on("change", ".child-checkboxes input", function(){
-
-			saveSetting($(this).attr("id"),$(this).prop("checked"));
-
-			var parentCheckbox = $(this).parent().parent().parent().find(".parent-checkbox");
-			var navitem = $(".methods-page").find("div[data-id='" + $(this).attr("data-id") + "']");
-			
-			//show/hide item in the group-container in home screen
-			$(this).prop('checked') ? navitem.addClass("d-flex").removeClass("d-none") : navitem.addClass("d-none").removeClass("d-flex");
-		
-			//if this checked and parent is unchecked, check parent and show navbar 
-			if ($(this).prop("checked") && !parentCheckbox.prop("checked")){
-				parentCheckbox.prop("checked", true);
-				parentCheckbox.trigger("change");
-			}
-
-			//if this is unchecked and all siblings are unchecked and parent is checked, uncheck the parent and hide the navbar.
-			if (!$(this).prop("checked") && $(this).parent().parent().find("input:checked").length==0 && parentCheckbox.prop("checked")){
-				parentCheckbox.prop("checked", false);
-				parentCheckbox.trigger("change");
-			}
 		});
 
 		// Settings > Links > favorite icon click
@@ -1034,20 +990,25 @@ var DetachDatabase = edge.func({
 					var group_navbar = navgroup["navbar"];
 					var group_favorite = navgroup["favorite"];
 
+					// Skip Export and History - they are in the overflow menu now
+					var skipNavItem = (group_id === "gEditors" || group_id === "gHistory");
+
 					var classCustomGroup = "";
 					if(!group_default){
 						classCustomGroup = " custom-group ";
 					}
 
-					//add nav groups to nav bar
-					var str = '<li class="nav-item' ;
-					if(!group_favorite){str+=' d-none';}
-					
-					str +=  classCustomGroup + '" data-group-id="' + group_id + '">' +
-									'<div class="navitem-content"><div><i class="far fa-1x ' + group_icon + '"></i></div>' +
-									'<div><span class="nav-item-text">' + group_name + '</span></div></div></li>';
+					//add nav groups to nav bar (skip overflow menu items)
+					if(!skipNavItem){
+						var str = '<li class="nav-item' ;
+						if(!group_favorite){str+=' d-none';}
+						
+						str +=  classCustomGroup + '" data-group-id="' + group_id + '">' +
+										'<div class="navitem-content"><div><i class="far fa-1x ' + group_icon + '"></i></div>' +
+										'<div><span class="nav-item-text">' + group_name + '</span></div></div></li>';
 
-					(group_navbar==="left") ?  $(".navbarLeft").append(str) : $(".navbarRight").append(str);
+						(group_navbar==="left") ?  $(".navbarLeft").append(str) : $(".navbarRight").append(str);
+					}
 
 					//add nav groups to main div. This groups will be filled with the method cards
 					var str = '<div class="row no-gutters d-none group-container w-100 '+ classCustomGroup + '" data-group-id="' + group_id + '"></div>';
@@ -1779,66 +1740,19 @@ var DetachDatabase = edge.func({
 		function loadSettings(){
 			var settings = db_settings.settings.find()[0]; //get all settings data from settings.json
 
-			//setting - Show on startup
-			if(settings["startup-lastOpened"]){
-				$("#settings-startupLast").prop("checked", true);
-				$("#settings-startupTab").prop("checked", false);
-				
-			}else{
-				$("#settings-startupLast").prop("checked", false);
-				$("#settings-startupTab").prop("checked", true);
-			}
-
 			//Always start on the "All" screen
 			var group_id = "gAll";
-			var group_name = "All";
 			$(".nav-item[data-group-id='" + group_id + "'").trigger("click");
-			$(".btn-startupTab").text(group_name);
-			
 
 			//setting - Recent
 			int_maxRecent = settings["recent-max"];
 			console.log("int_maxRecent=" + int_maxRecent);
 			$("#dd-maxRecent").text(int_maxRecent);
 
- 
-			//Setting - history
-			var history_max = $(".dd-historyCleanup a[data-days='"+ settings["history-days"] +"'").text();
-			$(".btn-historyMax").text(history_max);
-			if(settings["cleanup-action"]=="delete"){
-				$("#radio_settingHistory-archive").prop("checked", false);
-				$("#radio_settingHistory-delete").prop("checked", true);
-			}else{
-				$("#radio_settingHistory-archive").prop("checked", true);
-				$("#radio_settingHistory-delete").prop("checked", false);
-			}
-			if(!settings["chk_settingHistoryCleanup"]){
-				$("#radio_settingHistory-delete,#radio_settingHistory-archive,.btn-history-cleanup, .btn-historyMax").prop("disabled",true);
-			}
-
-			//set all the checkboxes for default shortcuts
-			for (var key in settings) {
-				if(key.startsWith("chk")){
-					//checkboxes for shortcuts are checked by default, only trigger click to uncheck if false.
-					if(!settings[key]){ 
-						var chkbox = $("#" + key);
-						chkbox.prop('checked', false);
-						if(chkbox.hasClass("parent-checkbox")){
-							//hide item in the navbar of the home screen
-							$(".nav-item[data-group-id='"+ chkbox.attr("data-group-id") +"']").addClass("d-none");
-						}
-						if(chkbox.hasClass("child-checkbox")){
-							//hide item in the group-container in home screen
-							$(".methods-page").find("div[data-id='" + chkbox.attr("data-id") + "']").addClass("d-none").removeClass("d-flex");
-						}
-						if(key.toLowerCase().includes("simulation")){
-							//checkbox simulation switch
-							$("#simulation-switch").prop("disabled", true);
-						}
-					}
-					
-				}
-			}
+			//setting - Installation checkboxes
+			$("#chk_confirmBeforeInstall").prop("checked", settings["chk_confirmBeforeInstall"] !== false);
+			$("#chk_overwriteWithoutAsking").prop("checked", !!settings["chk_overwriteWithoutAsking"]);
+			$("#chk_autoAddToGroup").prop("checked", settings["chk_autoAddToGroup"] !== false);
 
 			//reset nav bar and hide overflowing nav bar items
 			fitNavBarItems();
@@ -2040,7 +1954,7 @@ var DetachDatabase = edge.func({
 							GetUseInternalLogOn( "null", HandleUseInternalLogon);
 						}else{
 							//user login disabled. Free ride!
-							$(".btn-settings").removeClass("d-none");
+							$(".btn-overflow-menu").removeClass("d-none");
 						}
 					}  
 			}
@@ -2093,9 +2007,9 @@ var DetachDatabase = edge.func({
 					$(".username-role").text("(" + role + ")");
 					if(accessRights>1){ //Only programmer and admin can tweak settings
 						isUserAdmin = false;
-						$(".btn-settings").addClass("d-none");
+						$(".btn-overflow-menu").addClass("d-none");
 					}else{
-						$(".btn-settings").removeClass("d-none");
+						$(".btn-overflow-menu").removeClass("d-none");
 					}
 					if(internalLogon==0){
 						//OS Authentication, hide logoff button
@@ -2107,7 +2021,7 @@ var DetachDatabase = edge.func({
 					}
 				}
 				else{
-					$(".btn-settings").removeClass("d-none");
+					$(".btn-overflow-menu").removeClass("d-none");
 					$(".username-container").addClass("d-none");
 				}
 				
@@ -2278,9 +2192,11 @@ var DetachDatabase = edge.func({
 		//**************************************************************************************
 
 		var AdmZip = require('adm-zip');
+		var execSync = require('child_process').execSync;
 		var pkg_libraryFiles = [];
 		var pkg_demoMethodFiles = [];
 		var pkg_iconFilePath = null;   // custom icon/image path chosen by user
+		var pkg_comRegisterDlls = [];  // DLL filenames selected for COM registration via RegAsm
 
 		// Fit exporter container height to window
 		function fitExporterHeight() {
@@ -2452,6 +2368,73 @@ var DetachDatabase = edge.func({
 			}
 		});
 
+		// ---- Detect library name from library files (.hsl > .hs_ > .smt hierarchy) ----
+		var pkg_autoDetectedName = ""; // tracks the auto-detected name
+		var pkg_nameOverridden = false; // tracks if user has overridden the name
+
+		function pkgDetectLibraryName() {
+			var libName = "";
+			var extPriority = [".hsl", ".hs_", ".smt"];
+			for (var p = 0; p < extPriority.length; p++) {
+				for (var i = 0; i < pkg_libraryFiles.length; i++) {
+					if (pkg_libraryFiles[i].toLowerCase().endsWith(extPriority[p])) {
+						libName = path.basename(pkg_libraryFiles[i], path.extname(pkg_libraryFiles[i]));
+						break;
+					}
+				}
+				if (libName) break;
+			}
+			pkg_autoDetectedName = libName;
+			if(!pkg_nameOverridden){
+				$("#pkg-library-name").val(libName);
+				pkgUpdatePathPlaceholders(libName);
+			}
+		}
+
+		function pkgUpdatePathPlaceholders(name) {
+			if(name){
+				$(".pkg-path-libname").text(name);
+			} else {
+				$(".pkg-path-libname").html("&lt;libraryname&gt;");
+			}
+		}
+
+		// ---- Toggle name override editing ----
+		$(document).on("click", "#pkg-toggle-name-edit", function() {
+			var $input = $("#pkg-library-name");
+			if($input.prop("readonly")){
+				// Enable editing
+				$input.prop("readonly", false).css({"background-color": "", "cursor": ""}).focus();
+				$(this).html('<i class="fas fa-undo"></i>').attr("title", "Revert to auto-detected name");
+				pkg_nameOverridden = true;
+				if(pkg_autoDetectedName && $input.val() !== pkg_autoDetectedName){
+					$("#pkg-name-warning").removeClass("d-none");
+					$("#pkg-name-hint").addClass("d-none");
+				}
+			} else {
+				// Revert to auto-detected
+				$input.val(pkg_autoDetectedName).prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
+				$(this).html('<i class="fas fa-pencil-alt"></i>').attr("title", "Override auto-detected name");
+				pkg_nameOverridden = false;
+				$("#pkg-name-warning").addClass("d-none");
+				$("#pkg-name-hint").removeClass("d-none");
+				pkgUpdatePathPlaceholders(pkg_autoDetectedName);
+			}
+		});
+
+		// ---- Update placeholders and warning on manual name change ----
+		$(document).on("input", "#pkg-library-name", function() {
+			var val = $(this).val().trim();
+			pkgUpdatePathPlaceholders(val);
+			if(pkg_autoDetectedName && val !== pkg_autoDetectedName){
+				$("#pkg-name-warning").removeClass("d-none");
+				$("#pkg-name-hint").addClass("d-none");
+			} else {
+				$("#pkg-name-warning").addClass("d-none");
+				$("#pkg-name-hint").removeClass("d-none");
+			}
+		});
+
 		// ---- Update file list displays ----
 		function pkgUpdateLibFileList() {
 			var $list = $("#pkg-lib-list");
@@ -2461,17 +2444,47 @@ var DetachDatabase = edge.func({
 			} else {
 				pkg_libraryFiles.forEach(function(f) {
 					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+					var baseName = path.basename(f);
+					var isDll = baseName.toLowerCase().endsWith('.dll');
+					var isChecked = pkg_comRegisterDlls.indexOf(baseName) !== -1;
+					var comCheckbox = '';
+					if (isDll) {
+						comCheckbox = '<label class="pkg-com-checkbox-label mb-0 ml-auto mr-2" title="Register this DLL as a COM object using RegAsm.exe /codebase during import. Requires administrator rights.">' +
+							'<input type="checkbox" class="pkg-com-checkbox mr-1" data-dll="' + baseName.replace(/"/g, '&quot;') + '"' + (isChecked ? ' checked' : '') + '>' +
+							'<span class="text-xs text-muted">COM Register</span>' +
+						'</label>';
+					}
 					$list.append(
 						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
 						'<i class="far fa-file pkg-file-icon"></i>' +
-						'<span class="pkg-file-name">' + path.basename(f) + '</span>' +
+						'<span class="pkg-file-name">' + baseName + '</span>' +
+						 comCheckbox +
 						'<span class="pkg-file-dir">' + path.dirname(f) + '</span>' +
 						'</div>'
 					);
 				});
 			}
 			$("#pkg-lib-count").text(pkg_libraryFiles.length + " file" + (pkg_libraryFiles.length !== 1 ? "s" : ""));
+			pkgDetectLibraryName();
 		}
+
+		// ---- COM register checkbox handler ----
+		$(document).on("change", ".pkg-com-checkbox", function(e) {
+			e.stopPropagation();
+			var dllName = $(this).attr("data-dll");
+			if ($(this).is(":checked")) {
+				if (pkg_comRegisterDlls.indexOf(dllName) === -1) {
+					pkg_comRegisterDlls.push(dllName);
+				}
+			} else {
+				pkg_comRegisterDlls = pkg_comRegisterDlls.filter(function(d) { return d !== dllName; });
+			}
+		});
+
+		// Prevent checkbox click from toggling file selection
+		$(document).on("click", ".pkg-com-checkbox-label", function(e) {
+			e.stopPropagation();
+		});
 
 		function pkgUpdateDemoFileList() {
 			var $list = $("#pkg-demo-list");
@@ -2501,9 +2514,16 @@ var DetachDatabase = edge.func({
 			$("#pkg-venus-compat").val('');
 			$("#pkg-description").val('');
 			$("#pkg-tags").val('');
+			$("#pkg-library-name").val('').prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
+			$("#pkg-toggle-name-edit").html('<i class="fas fa-pencil-alt"></i>').attr("title", "Override auto-detected name");
+			$("#pkg-name-warning").addClass("d-none");
+			$("#pkg-name-hint").removeClass("d-none");
+			pkg_autoDetectedName = "";
+			pkg_nameOverridden = false;
 			pkg_libraryFiles = [];
 			pkg_demoMethodFiles = [];
 			pkg_iconFilePath = null;
+			pkg_comRegisterDlls = [];
 			pkgUpdateLibFileList();
 			pkgUpdateDemoFileList();
 			$("#pkg-icon-preview").html('<i class="fas fa-image fa-2x" style="color:#ccc;"></i>').removeClass('has-image');
@@ -2546,14 +2566,8 @@ var DetachDatabase = edge.func({
 				}
 			}
 
-			// Detect library name from first .hsl file
-			var libName = "Unknown";
-			for (var i = 0; i < pkg_libraryFiles.length; i++) {
-				if (pkg_libraryFiles[i].toLowerCase().endsWith(".hsl")) {
-					libName = path.basename(pkg_libraryFiles[i], path.extname(pkg_libraryFiles[i]));
-					break;
-				}
-			}
+			// Use library name from the detected field
+			var libName = $("#pkg-library-name").val().trim() || "Unknown";
 
 			// Set default filename and trigger save dialog
 			$("#pkg-save-dialog").attr("nwsaveas", libName + ".hxlibpkg");
@@ -2592,14 +2606,8 @@ var DetachDatabase = edge.func({
 					});
 				}
 
-				// Detect library name from the first .hsl file
-				var libName = "Unknown";
-				for (var i = 0; i < pkg_libraryFiles.length; i++) {
-					if (pkg_libraryFiles[i].toLowerCase().endsWith(".hsl")) {
-						libName = path.basename(pkg_libraryFiles[i], path.extname(pkg_libraryFiles[i]));
-						break;
-					}
-				}
+				// Use library name from the detected field
+				var libName = $("#pkg-library-name").val().trim() || "Unknown";
 
 				// Find matching BMP image (same name as .hsl file) — auto-detect fallback
 				var libImageFilename = null;
@@ -2651,7 +2659,8 @@ var DetachDatabase = edge.func({
 					library_image_base64: libImageBase64,
 					library_image_mime: libImageMime,
 					library_files: pkg_libraryFiles.map(function(f) { return path.basename(f); }),
-					demo_method_files: pkg_demoMethodFiles.map(function(f) { return path.basename(f); })
+					demo_method_files: pkg_demoMethodFiles.map(function(f) { return path.basename(f); }),
+					com_register_dlls: pkg_comRegisterDlls.slice()
 				};
 
 				// Create ZIP package using adm-zip
@@ -2690,12 +2699,210 @@ var DetachDatabase = edge.func({
 		}
 
 		//**************************************************************************************
+		//******  COM REGISTRATION HELPERS *****************************************************
+		//**************************************************************************************
+
+		/**
+		 * Finds RegAsm.exe from the .NET Framework directory.
+		 * Returns the full path to RegAsm.exe or null if not found.
+		 */
+		function findRegAsmPath() {
+			var frameworkDir = "C:\\Windows\\Microsoft.NET\\Framework64\\";
+			if (!fs.existsSync(frameworkDir)) {
+				frameworkDir = "C:\\Windows\\Microsoft.NET\\Framework\\";
+			}
+			if (!fs.existsSync(frameworkDir)) return null;
+
+			// Find the latest version directory containing RegAsm.exe
+			var dirs = fs.readdirSync(frameworkDir).filter(function(d) {
+				return d.match(/^v\d/);
+			}).sort().reverse();
+
+			for (var i = 0; i < dirs.length; i++) {
+				var regasm = path.join(frameworkDir, dirs[i], "RegAsm.exe");
+				if (fs.existsSync(regasm)) return regasm;
+			}
+			return null;
+		}
+
+		/**
+		 * Registers or unregisters a DLL using RegAsm.exe /codebase with UAC elevation.
+		 * @param {string} dllPath - Full path to the DLL file
+		 * @param {boolean} register - true to register, false to unregister
+		 * @returns {Promise<{success: boolean, error: string}>}
+		 */
+		function comRegisterDll(dllPath, register) {
+			return new Promise(function(resolve) {
+				var regasm = findRegAsmPath();
+				if (!regasm) {
+					resolve({success: false, error: "RegAsm.exe not found in .NET Framework directory."});
+					return;
+				}
+
+				if (!fs.existsSync(dllPath)) {
+					resolve({success: false, error: "DLL file not found: " + dllPath});
+					return;
+				}
+
+				var args = register
+					? '"' + dllPath + '" /codebase'
+					: '/u "' + dllPath + '" /codebase';
+
+				// Use PowerShell Start-Process with -Verb RunAs to trigger UAC elevation
+				var psCommand = 'Start-Process -FilePath \\"' + regasm.replace(/\\/g, '\\\\') + '\\" -ArgumentList \'' + args.replace(/'/g, "''") + '\' -Verb RunAs -Wait -PassThru -WindowStyle Hidden';
+				
+				var fullCmd = 'powershell.exe -NoProfile -Command "try { $p = ' + psCommand + '; exit $p.ExitCode } catch { exit 1 }"';
+
+				var exec = require('child_process').exec;
+				exec(fullCmd, {timeout: 30000}, function(error, stdout, stderr) {
+					if (error) {
+						var errMsg = "COM " + (register ? "registration" : "deregistration") + " failed for " + path.basename(dllPath) + ".\n";
+						if (error.killed) {
+							errMsg += "Operation timed out.";
+						} else if (error.code === 1) {
+							errMsg += "The operation was cancelled or requires administrator rights.";
+						} else {
+							errMsg += (stderr || stdout || error.message || "Unknown error");
+						}
+						resolve({success: false, error: errMsg});
+					} else {
+						resolve({success: true, error: null});
+					}
+				});
+			});
+		}
+
+		/**
+		 * Registers multiple DLLs sequentially. Returns result summary.
+		 * @param {Array<string>} dllPaths - Full paths to DLL files
+		 * @param {boolean} register - true to register, false to unregister
+		 * @returns {Promise<{allSuccess: boolean, results: Array}>}
+		 */
+		async function comRegisterMultipleDlls(dllPaths, register) {
+			var results = [];
+			var allSuccess = true;
+			for (var i = 0; i < dllPaths.length; i++) {
+				var result = await comRegisterDll(dllPaths[i], register);
+				results.push({dll: dllPaths[i], success: result.success, error: result.error});
+				if (!result.success) allSuccess = false;
+			}
+			return {allSuccess: allSuccess, results: results};
+		}
+
+		//**************************************************************************************
 		//******  LIBRARY IMPORTER *************************************************************
 		//**************************************************************************************
 
 		var imp_manifest = null;
 		var imp_zipData = null;
 		var imp_filePath = null;
+
+		// ---- Library integrity hashing ----
+		/**
+		 * Computes SHA-256 hash of a file.
+		 * For .hsl, .hs_, .sub files: hashes ALL BUT THE LAST LINE.
+		 * For .dll files: hashes the entire file.
+		 * @param {string} filePath - Full path to the file
+		 * @returns {string|null} hex hash string or null if file not found
+		 */
+		function computeFileHash(filePath) {
+			try {
+				if (!fs.existsSync(filePath)) return null;
+				var ext = path.extname(filePath).toLowerCase();
+				var hash = crypto.createHash('sha256');
+
+				if (ext === '.hsl' || ext === '.hs_' || ext === '.sub') {
+					// Hash all but the last line
+					var content = fs.readFileSync(filePath, 'utf8');
+					var lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+					// Remove last line (may contain timestamp or checksum that changes)
+					if (lines.length > 1) {
+						lines.pop();
+					}
+					hash.update(lines.join('\n'), 'utf8');
+				} else {
+					// Hash entire file (for .dll and others)
+					var buf = fs.readFileSync(filePath);
+					hash.update(buf);
+				}
+				return hash.digest('hex');
+			} catch(e) {
+				console.error('Hash error for ' + filePath + ': ' + e.message);
+				return null;
+			}
+		}
+
+		/**
+		 * Computes hashes for all library files (.hsl, .hs_, .sub) and registered .dll files.
+		 * @param {Array<string>} libraryFiles - filenames array
+		 * @param {string} libBasePath - base directory for library files
+		 * @param {Array<string>} comDlls - COM registered DLL filenames
+		 * @returns {Object} map of filename -> sha256 hex hash
+		 */
+		function computeLibraryHashes(libraryFiles, libBasePath, comDlls) {
+			var hashes = {};
+			var hashableExts = ['.hsl', '.hs_', '.sub'];
+			(libraryFiles || []).forEach(function(f) {
+				var ext = path.extname(f).toLowerCase();
+				var isDll = (comDlls || []).indexOf(f) !== -1;
+				if (hashableExts.indexOf(ext) !== -1 || isDll) {
+					var fullPath = path.join(libBasePath, f);
+					var h = computeFileHash(fullPath);
+					if (h) hashes[f] = h;
+				}
+			});
+			return hashes;
+		}
+
+		/**
+		 * Verifies the integrity of installed library files against stored hashes.
+		 * @param {Object} lib - installed library DB record
+		 * @returns {Object} { valid: boolean, errors: Array<string>, warnings: Array<string> }
+		 */
+		function verifyLibraryIntegrity(lib) {
+			var result = { valid: true, errors: [], warnings: [] };
+			var storedHashes = lib.file_hashes || {};
+			var libBasePath = lib.lib_install_path || "";
+			var libraryFiles = lib.library_files || [];
+			var comDlls = lib.com_register_dlls || [];
+			var hashableExts = ['.hsl', '.hs_', '.sub'];
+
+			// If no hashes stored, mark as warning (legacy library)
+			if (Object.keys(storedHashes).length === 0) {
+				result.warnings.push('No integrity hashes stored (imported before hashing was enabled)');
+				return result;
+			}
+
+			libraryFiles.forEach(function(f) {
+				var ext = path.extname(f).toLowerCase();
+				var isDll = comDlls.indexOf(f) !== -1;
+				if (hashableExts.indexOf(ext) === -1 && !isDll) return;
+
+				var fullPath = path.join(libBasePath, f);
+
+				// Check file exists
+				if (!fs.existsSync(fullPath)) {
+					result.valid = false;
+					result.errors.push('File missing: ' + f);
+					return;
+				}
+
+				// Check hash
+				var storedHash = storedHashes[f];
+				if (!storedHash) {
+					result.warnings.push('No stored hash for: ' + f);
+					return;
+				}
+
+				var currentHash = computeFileHash(fullPath);
+				if (currentHash && currentHash !== storedHash) {
+					result.valid = false;
+					result.errors.push('File modified: ' + f);
+				}
+			});
+
+			return result;
+		}
 
 		// Fit importer container height to window
 		function fitImporterHeight() {
@@ -2712,7 +2919,7 @@ var DetachDatabase = edge.func({
 
 			var libs;
 			if (recentMode) {
-				// Recent mode: show all libraries sorted by installed_date (newest first), limited to max recent setting
+				// Recent mode: show all libraries (including deleted) sorted by installed_date (newest first), limited to max recent setting
 				libs = db_installed_libs.installed_libs.find();
 				libs.sort(function(a, b) {
 					var dateA = a.installed_date ? new Date(a.installed_date).getTime() : 0;
@@ -2721,16 +2928,18 @@ var DetachDatabase = edge.func({
 				});
 				libs = libs.slice(0, int_maxRecent);
 			} else if (groupId) {
-				// Show only libraries assigned to this group
+				// Show only libraries assigned to this group (exclude deleted)
 				var treeEntry = db_tree.tree.findOne({"group-id": groupId});
 				var libIds = treeEntry ? treeEntry["method-ids"] : [];
 				libs = [];
 				libIds.forEach(function(id) {
 					var lib = db_installed_libs.installed_libs.findOne({"_id": id});
-					if (lib) libs.push(lib);
+					if (lib && !lib.deleted) libs.push(lib);
 				});
 			} else {
 				libs = db_installed_libs.installed_libs.find();
+				// Filter out deleted libraries from "All" view
+				libs = libs.filter(function(l) { return !l.deleted; });
 			}
 			if (!libs || libs.length === 0) {
 				var emptyMsg;
@@ -2739,7 +2948,7 @@ var DetachDatabase = edge.func({
 				} else if (groupId) {
 					emptyMsg = 'No libraries assigned to this group.<br>Drag libraries into this group from <b>Settings &gt; Library Groups</b>.';
 				} else {
-					emptyMsg = 'No libraries installed yet.<br>Click <b>Import Package</b> to install a .hxlibpkg file.';
+					emptyMsg = 'No libraries installed yet.<br>Click <b>Import</b> to install a .hxlibpkg or .hxlibarch file.';
 				}
 				$container.html(
 					'<div class="w-100 text-center py-5 imp-empty-state">' +
@@ -2757,6 +2966,14 @@ var DetachDatabase = edge.func({
 				var description = lib.description || "";
 				var tags = lib.tags || [];
 				var hasImage = !!lib.library_image_base64;
+				var hasComWarning = lib.com_warning === true;
+				var comDlls = lib.com_register_dlls || [];
+				var isDeleted = lib.deleted === true;
+
+				// Verify library integrity
+				var integrity = verifyLibraryIntegrity(lib);
+				var hasIntegrityError = !integrity.valid;
+				var hasIntegrityWarning = integrity.warnings.length > 0;
 
 				// Determine MIME type from stored mime or filename extension
 				var imgMime = lib.library_image_mime || 'image/bmp';
@@ -2785,13 +3002,46 @@ var DetachDatabase = edge.func({
 					});
 				}
 
+				// COM warning badge
+				var comWarningBadge = "";
+				if (hasComWarning && comDlls.length > 0) {
+					comWarningBadge = '<span class="badge badge-warning ml-2" title="COM registration failed for: ' + comDlls.join(', ') + '. This library may not function correctly."><i class="fas fa-exclamation-triangle mr-1"></i>COM</span>';
+				} else if (comDlls.length > 0) {
+					comWarningBadge = '<span class="badge badge-info ml-2" title="COM registered DLLs: ' + comDlls.join(', ') + '"><i class="fas fa-cog mr-1"></i>COM</span>';
+				}
+
+				// Deleted badge
+				var deletedBadge = "";
+				if (isDeleted) {
+					deletedBadge = '<span class="badge badge-secondary ml-2" title="This library has been deleted"><i class="fas fa-trash-alt mr-1"></i>Deleted</span>';
+				}
+
+				// Card styling - red for integrity error, yellow for COM warning, faded for deleted
+				var cardExtraClass = '';
+				if (hasIntegrityError) {
+					cardExtraClass = ' imp-lib-card-integrity-error';
+				} else if (hasComWarning) {
+					cardExtraClass = ' imp-lib-card-warning';
+				}
+				if (isDeleted) cardExtraClass += ' imp-lib-card-deleted';
+
+				// Build integrity info icon (bottom-right of card)
+				var integrityInfoHtml = '';
+				if (hasIntegrityError) {
+					var errTooltip = integrity.errors.concat(integrity.warnings).join('\n');
+					integrityInfoHtml = '<span class="imp-integrity-icon imp-integrity-error" title="' + errTooltip.replace(/"/g, '&quot;') + '"><i class="fas fa-exclamation-circle"></i></span>';
+				} else if (hasIntegrityWarning) {
+					var warnTooltip = integrity.warnings.join('\n');
+					integrityInfoHtml = '<span class="imp-integrity-icon imp-integrity-warning" title="' + warnTooltip.replace(/"/g, '&quot;') + '"><i class="fas fa-info-circle"></i></span>';
+				}
+
 				var str =
 					'<div class="col-md-4 col-xl-3 d-flex align-items-stretch imp-lib-card-container" data-lib-id="' + lib._id + '">' +
-						'<div class="m-2 pl-3 pr-3 pt-3 pb-2 link-card imp-lib-card w-100">' +
+						'<div class="m-2 pl-3 pr-3 pt-3 pb-2 link-card imp-lib-card w-100' + cardExtraClass + '">' +
 							'<div class="d-flex align-items-start">' +
 								'<div class="mr-3 mt-1 imp-lib-card-icon">' + iconHtml + '</div>' +
 								'<div class="flex-grow-1" style="min-width:0;">' +
-									'<h6 class="mb-0 imp-lib-card-name cursor-pointer" style="color:var(--medium2);">' + libName + '</h6>' +
+									'<h6 class="mb-0 imp-lib-card-name cursor-pointer" style="color:var(--medium2);">' + libName + comWarningBadge + deletedBadge + '</h6>' +
 									(version ? '<span class="text-muted text-sm">v' + version + '</span>' : '') +
 									(author ? '<div class="text-muted text-sm">' + author + '</div>' : '') +
 								'</div>' +
@@ -2800,6 +3050,7 @@ var DetachDatabase = edge.func({
 							(tagsHtml ? '<div class="mt-1 mb-2">' + tagsHtml + '</div>' : '') +
 							'<div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #eee;">' +
 								'<a href="#" class="text-sm imp-lib-card-details cursor-pointer" style="color:var(--medium);">View Details</a>' +
+								integrityInfoHtml +
 							'</div>' +
 						'</div>' +
 					'</div>';
@@ -2903,9 +3154,619 @@ var DetachDatabase = edge.func({
 			$("#libDetailModal .lib-detail-lib-path").text("Library: " + (lib.lib_install_path || "\u2014"));
 			$("#libDetailModal .lib-detail-demo-path").text("Demo Methods: " + (lib.demo_install_path || "\u2014"));
 
+			// COM DLL section
+			var comDlls = lib.com_register_dlls || [];
+			var hasComWarning = lib.com_warning === true;
+			if (comDlls.length > 0) {
+				$("#libDetailModal .lib-detail-com-section").removeClass("d-none");
+				var comHtml = comDlls.map(function(d) {
+					return '<span class="badge badge-light mr-1">' + d + '</span>';
+				}).join('');
+				$("#libDetailModal .lib-detail-com-dlls").html(comHtml);
+				if (hasComWarning) {
+					$("#libDetailModal .lib-detail-com-warning-badge").html(
+						'<span class="badge badge-warning"><i class="fas fa-exclamation-triangle mr-1"></i>COM registration failed — library may not function correctly</span>'
+					);
+				} else {
+					$("#libDetailModal .lib-detail-com-warning-badge").html(
+						'<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Registered successfully</span>'
+					);
+				}
+			} else {
+				$("#libDetailModal .lib-detail-com-section").addClass("d-none");
+			}
+
+			// Integrity verification in detail modal
+			var integrity = verifyLibraryIntegrity(lib);
+			var $intSection = $("#libDetailModal .lib-detail-integrity-section");
+			var $intStatus = $("#libDetailModal .lib-detail-integrity-status");
+			$intStatus.empty();
+
+			if (Object.keys(lib.file_hashes || {}).length > 0 || integrity.errors.length > 0 || integrity.warnings.length > 0) {
+				$intSection.removeClass("d-none");
+
+				if (!integrity.valid) {
+					// Errors
+					integrity.errors.forEach(function(err) {
+						$intStatus.append('<div class="text-sm mb-1" style="color:#d9534f;"><i class="fas fa-times-circle mr-1"></i>' + err + '</div>');
+					});
+				}
+				if (integrity.warnings.length > 0) {
+					integrity.warnings.forEach(function(warn) {
+						$intStatus.append('<div class="text-sm mb-1" style="color:#f0ad4e;"><i class="fas fa-exclamation-triangle mr-1"></i>' + warn + '</div>');
+					});
+				}
+				if (integrity.valid && integrity.warnings.length === 0) {
+					$intStatus.append('<div class="text-sm mb-1" style="color:#5cb85c;"><i class="fas fa-check-circle mr-1"></i>All tracked files pass integrity check</div>');
+				}
+			} else {
+				$intSection.addClass("d-none");
+			}
+
+			// Show/hide delete button based on deleted status
+			if (lib.deleted) {
+				$("#libDetailModal .lib-detail-delete-btn").addClass("d-none");
+				$("#libDetailModal .lib-detail-export-btn").addClass("d-none");
+			} else {
+				$("#libDetailModal .lib-detail-delete-btn").removeClass("d-none");
+				$("#libDetailModal .lib-detail-export-btn").removeClass("d-none");
+			}
+
 			// Store library id on the modal so delete button can use it
 			$("#libDetailModal").attr("data-lib-id", libId);
 			$("#libDetailModal").modal("show");
+		}
+
+		// ---- Export single library from detail modal ----
+		$(document).on("click", ".lib-detail-export-btn", function(e) {
+			e.preventDefault();
+			var libId = $("#libDetailModal").attr("data-lib-id");
+			if (!libId) return;
+			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
+			if (!lib) { alert("Library not found."); return; }
+
+			var libName = lib.library_name || "Unknown";
+			$("#lib-export-save-dialog").attr("nwsaveas", libName + ".hxlibpkg");
+			$("#lib-export-save-dialog").trigger("click");
+		});
+
+		$(document).on("change", "#lib-export-save-dialog", function() {
+			var savePath = $(this).val();
+			if (!savePath) return;
+			$(this).val('');
+			var libId = $("#libDetailModal").attr("data-lib-id");
+			if (!libId) return;
+			exportSingleLibrary(libId, savePath);
+		});
+
+		function exportSingleLibrary(libId, savePath) {
+			try {
+				var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
+				if (!lib) { alert("Library not found."); return; }
+
+				var libName = lib.library_name || "Unknown";
+				var libBasePath = lib.lib_install_path || "";
+				var demoBasePath = lib.demo_install_path || "";
+				var libraryFiles = lib.library_files || [];
+				var demoFiles = lib.demo_method_files || [];
+				var comDlls = lib.com_register_dlls || [];
+
+				// Verify library files exist
+				for (var i = 0; i < libraryFiles.length; i++) {
+					var fp = path.join(libBasePath, libraryFiles[i]);
+					if (!fs.existsSync(fp)) {
+						alert("Library file not found:\n" + fp + "\n\nExport aborted.");
+						return;
+					}
+				}
+
+				// Build library image data
+				var libImageFilename = lib.library_image || null;
+				var libImageBase64 = lib.library_image_base64 || null;
+				var libImageMime = lib.library_image_mime || null;
+
+				// Build manifest
+				var manifest = {
+					format_version: "1.0",
+					library_name: libName,
+					author: lib.author || "",
+					organization: lib.organization || "",
+					version: lib.version || "",
+					venus_compatibility: lib.venus_compatibility || "",
+					description: lib.description || "",
+					tags: lib.tags || [],
+					created_date: new Date().toISOString(),
+					library_image: libImageFilename,
+					library_image_base64: libImageBase64,
+					library_image_mime: libImageMime,
+					library_files: libraryFiles.slice(),
+					demo_method_files: demoFiles.slice(),
+					com_register_dlls: comDlls.slice()
+				};
+
+				// Create ZIP package
+				var zip = new AdmZip();
+
+				// Add manifest
+				zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2), "utf8"));
+
+				// Add library files
+				libraryFiles.forEach(function(f) {
+					var fullPath = path.join(libBasePath, f);
+					if (fs.existsSync(fullPath)) {
+						zip.addLocalFile(fullPath, "library");
+					}
+				});
+
+				// Add demo method files
+				demoFiles.forEach(function(f) {
+					var fullPath = path.join(demoBasePath, f);
+					if (fs.existsSync(fullPath)) {
+						zip.addLocalFile(fullPath, "demo_methods");
+					}
+				});
+
+				// Write ZIP
+				zip.writeZip(savePath);
+
+				alert("Library exported successfully!\n\n" +
+					savePath + "\n\n" +
+					"Library: " + libName + "\n" +
+					"Library files: " + libraryFiles.length + "\n" +
+					"Demo method files: " + demoFiles.length);
+
+			} catch(e) {
+				alert("Error exporting library:\n" + e.message);
+			}
+		}
+
+		//**************************************************************************************
+		//****** EXPORT ARCHIVE (.hxlibarch) - Bundle multiple libraries ***********************
+		//**************************************************************************************
+
+		// Click "Export Archive" from overflow menu
+		$(document).on("click", ".overflow-export-archive", function(e) {
+			e.preventDefault();
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
+			expArchPopulateModal();
+			$("#exportArchiveModal").modal("show");
+		});
+
+		// Populate the export archive modal with installed libraries
+		function expArchPopulateModal() {
+			var $list = $("#exp-arch-lib-list");
+			$list.empty();
+
+			var libs = db_installed_libs.installed_libs.find();
+			// Filter out deleted libraries
+			libs = libs.filter(function(l) { return !l.deleted; });
+
+			if (!libs || libs.length === 0) {
+				$list.html(
+					'<div class="text-muted text-center py-4">' +
+						'<i class="fas fa-inbox fa-2x color-lightgray"></i>' +
+						'<p class="mt-2">No installed libraries found.</p>' +
+					'</div>'
+				);
+				$("#exp-arch-export").prop("disabled", true);
+				expArchUpdateCount();
+				return;
+			}
+
+			libs.forEach(function(lib) {
+				var libName = lib.library_name || "Unknown";
+				var version = lib.version || "";
+				var author = lib.author || "";
+				var libFiles = (lib.library_files || []).length;
+				var demoFiles = (lib.demo_method_files || []).length;
+				var hasImage = !!lib.library_image_base64;
+
+				// Determine MIME type
+				var imgMime = lib.library_image_mime || 'image/bmp';
+				if (!lib.library_image_mime && lib.library_image) {
+					var extLower = (lib.library_image || '').split('.').pop().toLowerCase();
+					var mimeMap = {'png':'image/png', 'jpg':'image/jpeg', 'jpeg':'image/jpeg', 'bmp':'image/bmp', 'gif':'image/gif', 'ico':'image/x-icon', 'svg':'image/svg+xml'};
+					if (mimeMap[extLower]) imgMime = mimeMap[extLower];
+				}
+
+				// Build icon
+				var iconHtml;
+				if (hasImage) {
+					iconHtml = '<img src="data:' + imgMime + ';base64,' + lib.library_image_base64 + '" style="max-width:36px; max-height:36px; border-radius:4px;">';
+				} else {
+					iconHtml = '<i class="fas fa-book fa-2x color-medium"></i>';
+				}
+
+				var str =
+					'<div class="exp-arch-lib-item d-flex align-items-center p-2" data-lib-id="' + lib._id + '">' +
+						'<div class="custom-control custom-checkbox mr-3">' +
+							'<input type="checkbox" class="custom-control-input exp-arch-checkbox" id="exp-arch-chk-' + lib._id + '" data-lib-id="' + lib._id + '">' +
+							'<label class="custom-control-label" for="exp-arch-chk-' + lib._id + '"></label>' +
+						'</div>' +
+						'<div class="mr-3 exp-arch-lib-icon">' + iconHtml + '</div>' +
+						'<div class="flex-grow-1" style="min-width:0;">' +
+							'<div class="font-weight-bold" style="color:var(--medium2);">' + libName + '</div>' +
+							'<div class="text-muted text-sm">' +
+								(version ? 'v' + version : '') +
+								(author ? (version ? ' &middot; ' : '') + author : '') +
+								' &middot; ' + libFiles + ' lib file' + (libFiles !== 1 ? 's' : '') +
+								(demoFiles > 0 ? ', ' + demoFiles + ' demo file' + (demoFiles !== 1 ? 's' : '') : '') +
+							'</div>' +
+						'</div>' +
+					'</div>';
+
+				$list.append(str);
+			});
+
+			expArchUpdateCount();
+		}
+
+		// Update selected count display
+		function expArchUpdateCount() {
+			var count = $(".exp-arch-checkbox:checked").length;
+			$("#exp-arch-selected-count").text(count + " selected");
+			$("#exp-arch-export").prop("disabled", count === 0);
+		}
+
+		// Checkbox change
+		$(document).on("change", ".exp-arch-checkbox", function() {
+			expArchUpdateCount();
+		});
+
+		// Click on row to toggle checkbox
+		$(document).on("click", ".exp-arch-lib-item", function(e) {
+			if ($(e.target).hasClass("custom-control-input") || $(e.target).hasClass("custom-control-label")) return;
+			var $chk = $(this).find(".exp-arch-checkbox");
+			$chk.prop("checked", !$chk.prop("checked"));
+			expArchUpdateCount();
+		});
+
+		// Select All
+		$(document).on("click", "#exp-arch-select-all", function() {
+			$(".exp-arch-checkbox").prop("checked", true);
+			expArchUpdateCount();
+		});
+
+		// Select None
+		$(document).on("click", "#exp-arch-select-none", function() {
+			$(".exp-arch-checkbox").prop("checked", false);
+			expArchUpdateCount();
+		});
+
+		// Export button click
+		$(document).on("click", "#exp-arch-export", function() {
+			var selectedIds = [];
+			$(".exp-arch-checkbox:checked").each(function() {
+				selectedIds.push($(this).attr("data-lib-id"));
+			});
+			if (selectedIds.length === 0) {
+				alert("Please select at least one library to export.");
+				return;
+			}
+			// Suggest a filename
+			var suggestedName = "libraries";
+			if (selectedIds.length === 1) {
+				var singleLib = db_installed_libs.installed_libs.findOne({"_id": selectedIds[0]});
+				if (singleLib) suggestedName = (singleLib.library_name || "library");
+			}
+			$("#exp-arch-save-dialog").attr("nwsaveas", suggestedName + ".hxlibarch");
+			// Store selected ids for use in save handler
+			$("#exp-arch-save-dialog").data("selectedIds", selectedIds);
+			$("#exp-arch-save-dialog").trigger("click");
+		});
+
+		// Save dialog change
+		$(document).on("change", "#exp-arch-save-dialog", function() {
+			var savePath = $(this).val();
+			if (!savePath) return;
+			$(this).val('');
+			var selectedIds = $(this).data("selectedIds") || [];
+			if (selectedIds.length === 0) return;
+			expArchCreateArchive(selectedIds, savePath);
+			$("#exportArchiveModal").modal("hide");
+		});
+
+		// Core archive creation function
+		function expArchCreateArchive(libIds, savePath) {
+			try {
+				var archiveZip = new AdmZip();
+				var exportedLibs = [];
+				var errors = [];
+
+				libIds.forEach(function(libId) {
+					var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
+					if (!lib) {
+						errors.push("Library ID " + libId + " not found in database.");
+						return;
+					}
+
+					var libName = lib.library_name || "Unknown";
+					var libBasePath = lib.lib_install_path || "";
+					var demoBasePath = lib.demo_install_path || "";
+					var libraryFiles = lib.library_files || [];
+					var demoFiles = lib.demo_method_files || [];
+					var comDlls = lib.com_register_dlls || [];
+
+					// Build manifest for this library
+					var manifest = {
+						format_version: "1.0",
+						library_name: libName,
+						author: lib.author || "",
+						organization: lib.organization || "",
+						version: lib.version || "",
+						venus_compatibility: lib.venus_compatibility || "",
+						description: lib.description || "",
+						tags: lib.tags || [],
+						created_date: new Date().toISOString(),
+						library_image: lib.library_image || null,
+						library_image_base64: lib.library_image_base64 || null,
+						library_image_mime: lib.library_image_mime || null,
+						library_files: libraryFiles.slice(),
+						demo_method_files: demoFiles.slice(),
+						com_register_dlls: comDlls.slice()
+					};
+
+					// Create an inner zip for this library (.hxlibpkg)
+					var innerZip = new AdmZip();
+
+					// Add manifest
+					innerZip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2), "utf8"));
+
+					// Add library files
+					var libFilesAdded = 0;
+					libraryFiles.forEach(function(f) {
+						var fullPath = path.join(libBasePath, f);
+						if (fs.existsSync(fullPath)) {
+							innerZip.addLocalFile(fullPath, "library");
+							libFilesAdded++;
+						}
+					});
+
+					// Add demo method files
+					var demoFilesAdded = 0;
+					demoFiles.forEach(function(f) {
+						var fullPath = path.join(demoBasePath, f);
+						if (fs.existsSync(fullPath)) {
+							innerZip.addLocalFile(fullPath, "demo_methods");
+							demoFilesAdded++;
+						}
+					});
+
+					// Convert inner zip to buffer and add to archive
+					var innerBuffer = innerZip.toBuffer();
+					var innerFileName = libName + ".hxlibpkg";
+					archiveZip.addFile(innerFileName, innerBuffer);
+
+					exportedLibs.push({
+						name: libName,
+						libFiles: libFilesAdded,
+						demoFiles: demoFilesAdded
+					});
+				});
+
+				if (exportedLibs.length === 0) {
+					alert("No libraries could be exported.\n\n" + errors.join("\n"));
+					return;
+				}
+
+				// Add archive manifest
+				var archManifest = {
+					format_version: "1.0",
+					archive_type: "hxlibarch",
+					created_date: new Date().toISOString(),
+					library_count: exportedLibs.length,
+					libraries: exportedLibs.map(function(l) { return l.name; })
+				};
+				archiveZip.addFile("archive_manifest.json", Buffer.from(JSON.stringify(archManifest, null, 2), "utf8"));
+
+				// Write the archive
+				archiveZip.writeZip(savePath);
+
+				var summary = "Archive exported successfully!\n\n" +
+					savePath + "\n\n" +
+					"Libraries included (" + exportedLibs.length + "):\n";
+				exportedLibs.forEach(function(l) {
+					summary += "  - " + l.name + " (" + l.libFiles + " lib files, " + l.demoFiles + " demo files)\n";
+				});
+
+				if (errors.length > 0) {
+					summary += "\nWarnings:\n" + errors.join("\n");
+				}
+
+				alert(summary);
+
+			} catch(e) {
+				alert("Error creating archive:\n" + e.message);
+			}
+		}
+
+		//**************************************************************************************
+		//****** IMPORT ARCHIVE (.hxlibarch) - Import multiple libraries at once ****************
+		//**************************************************************************************
+
+		// Import archive: extract each .hxlibpkg and install sequentially
+		function impArchImportArchive(archivePath) {
+			try {
+				if (!fs.existsSync(archivePath)) {
+					alert("Archive file not found:\n" + archivePath);
+					return;
+				}
+
+				var archiveZip = new AdmZip(archivePath);
+				var entries = archiveZip.getEntries();
+
+				// Find all .hxlibpkg entries
+				var pkgEntries = [];
+				entries.forEach(function(entry) {
+					if (!entry.isDirectory && entry.entryName.toLowerCase().endsWith('.hxlibpkg')) {
+						pkgEntries.push(entry);
+					}
+				});
+
+				if (pkgEntries.length === 0) {
+					alert("No .hxlibpkg packages found in this archive.\n\nThe .hxlibarch file appears to be empty or invalid.");
+					return;
+				}
+
+				var confirmMsg = "This archive contains " + pkgEntries.length + " library package" + (pkgEntries.length !== 1 ? "s" : "") + ":\n\n";
+				pkgEntries.forEach(function(entry) {
+					confirmMsg += "  - " + entry.entryName.replace('.hxlibpkg', '') + "\n";
+				});
+				confirmMsg += "\nDo you want to install all " + pkgEntries.length + " libraries?";
+
+				if (!confirm(confirmMsg)) return;
+
+				var results = { success: [], failed: [] };
+
+				// Determine base install paths
+				var libFolder = db_links.links.findOne({"_id":"lib-folder"});
+				var metFolder = db_links.links.findOne({"_id":"met-folder"});
+				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
+
+				// Process each package
+				pkgEntries.forEach(function(pkgEntry) {
+					try {
+						var pkgBuffer = pkgEntry.getData();
+						var innerZip = new AdmZip(pkgBuffer);
+						var manifestEntry = innerZip.getEntry("manifest.json");
+						if (!manifestEntry) {
+							results.failed.push(pkgEntry.entryName + ": manifest.json not found");
+							return;
+						}
+
+						var manifestJson = innerZip.readAsText(manifestEntry);
+						var manifest = JSON.parse(manifestJson);
+						var libName = manifest.library_name || "Unknown";
+						var libFiles = manifest.library_files || [];
+						var demoFiles = manifest.demo_method_files || [];
+						var comDlls = manifest.com_register_dlls || [];
+						var libDestDir = path.join(libBasePath, libName);
+						var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
+						var extractedCount = 0;
+
+						// Create destination directories
+						if (libFiles.length > 0 && !fs.existsSync(libDestDir)) {
+							fs.mkdirSync(libDestDir, { recursive: true });
+						}
+						if (demoFiles.length > 0 && !fs.existsSync(demoDestDir)) {
+							fs.mkdirSync(demoDestDir, { recursive: true });
+						}
+
+						// Extract files
+						var zipEntries = innerZip.getEntries();
+						zipEntries.forEach(function(entry) {
+							if (entry.entryName === "manifest.json") return;
+							if (entry.entryName.indexOf("library/") === 0) {
+								var fname = entry.entryName.substring("library/".length);
+								if (fname) {
+									var outPath = path.join(libDestDir, fname);
+									fs.writeFileSync(outPath, entry.getData());
+									extractedCount++;
+								}
+							} else if (entry.entryName.indexOf("demo_methods/") === 0) {
+								var fname = entry.entryName.substring("demo_methods/".length);
+								if (fname) {
+									var outPath = path.join(demoDestDir, fname);
+									fs.writeFileSync(outPath, entry.getData());
+									extractedCount++;
+								}
+							}
+						});
+
+						// Update or insert DB record
+						var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
+						if (existing) {
+							db_installed_libs.installed_libs.remove({"_id": existing._id});
+						}
+
+						// Compute integrity hashes
+						var fileHashes = {};
+						try { fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls); } catch(e) {}
+
+						var dbRecord = {
+							library_name: manifest.library_name || "",
+							author: manifest.author || "",
+							organization: manifest.organization || "",
+							version: manifest.version || "",
+							venus_compatibility: manifest.venus_compatibility || "",
+							description: manifest.description || "",
+							tags: manifest.tags || [],
+							created_date: manifest.created_date || "",
+							library_image: manifest.library_image || null,
+							library_image_base64: manifest.library_image_base64 || null,
+							library_image_mime: manifest.library_image_mime || null,
+							library_files: manifest.library_files || [],
+							demo_method_files: manifest.demo_method_files || [],
+							com_register_dlls: comDlls,
+							com_warning: false,
+							lib_install_path: libDestDir,
+							demo_install_path: demoDestDir,
+							installed_date: new Date().toISOString(),
+							source_package: pkgEntry.entryName,
+							file_hashes: fileHashes
+						};
+						var saved = db_installed_libs.installed_libs.save(dbRecord);
+
+						// Auto-add to group if setting enabled
+						var settings = db_settings.settings.findOne({"_id":"0"});
+						if (!settings || settings.chk_autoAddToGroup !== false) {
+							var navtree = db_tree.tree.find();
+							var targetGroupId = null;
+							for (var ti = 0; ti < navtree.length; ti++) {
+								var gEntry = db_groups.groups.findOne({"_id": navtree[ti]["group-id"]});
+								if (gEntry && !gEntry["default"]) {
+									targetGroupId = navtree[ti]["group-id"];
+									var existingIds = navtree[ti]["method-ids"] || [];
+									existingIds.push(saved._id);
+									db_tree.tree.update({"group-id": targetGroupId}, {"method-ids": existingIds}, {multi: false, upsert: false});
+									break;
+								}
+							}
+							if (!targetGroupId) {
+								var newGroup = db_groups.groups.save({
+									"name": "Libraries",
+									"icon-class": "fa-book",
+									"default": false,
+									"navbar": "left",
+									"favorite": true
+								});
+								db_tree.tree.save({
+									"group-id": newGroup._id,
+									"method-ids": [saved._id],
+									"locked": false
+								});
+							}
+						}
+
+						results.success.push(libName + " (" + extractedCount + " files)");
+
+					} catch(e) {
+						results.failed.push(pkgEntry.entryName + ": " + e.message);
+					}
+				});
+
+				// Show results
+				var resultMsg = "Archive Import Complete\n\n";
+				if (results.success.length > 0) {
+					resultMsg += "Successfully installed (" + results.success.length + "):\n";
+					results.success.forEach(function(n) { resultMsg += "  \u2705 " + n + "\n"; });
+				}
+				if (results.failed.length > 0) {
+					resultMsg += "\nFailed (" + results.failed.length + "):\n";
+					results.failed.forEach(function(n) { resultMsg += "  \u274C " + n + "\n"; });
+				}
+
+				alert(resultMsg);
+
+				// Refresh the library cards
+				impBuildLibraryCards();
+				fitImporterHeight();
+
+			} catch(e) {
+				alert("Error importing archive:\n" + e.message);
+			}
 		}
 
 		// ---- Card click handlers ----
@@ -2929,7 +3790,7 @@ var DetachDatabase = edge.func({
 		});
 
 		// ---- Delete library from detail modal ----
-		$(document).on("click", ".lib-detail-delete-btn", function(e) {
+		$(document).on("click", ".lib-detail-delete-btn", async function(e) {
 			e.preventDefault();
 			var libId = $("#libDetailModal").attr("data-lib-id");
 			if (!libId) return;
@@ -2937,13 +3798,66 @@ var DetachDatabase = edge.func({
 			if (!lib) return;
 
 			var libName = lib.library_name || "Unknown";
+			var comDlls = lib.com_register_dlls || [];
+			var hasComWarning = lib.com_warning === true;
+
 			var msg = "Are you sure you want to permanently delete \"" + libName + "\"?\n\n";
 			msg += "This will remove ALL installed files from disk and the database record.\n\n";
+			if (comDlls.length > 0) {
+				msg += "COM registered DLLs: " + comDlls.join(", ") + "\n";
+				msg += "Administrator rights will be required to deregister COM objects.\n\n";
+			}
 			msg += "Library path: " + (lib.lib_install_path || "N/A") + "\n";
 			msg += "Demo path: " + (lib.demo_install_path || "N/A") + "\n\n";
 			msg += "This action cannot be undone.";
 
 			if (!confirm(msg)) return;
+
+			// --- COM deregistration FIRST (before deleting files) ---
+			if (comDlls.length > 0) {
+				var libPath = lib.lib_install_path || "";
+				var shouldDeregister = true;
+
+				// If the library has a COM warning (registration never succeeded), ask the user
+				if (hasComWarning) {
+					shouldDeregister = confirm(
+						"This library has a COM registration warning (registration may not have completed successfully).\n\n" +
+						"Would you like to attempt to COM deregister the following DLLs from the system?\n\n" +
+						comDlls.join(", ") + "\n\n" +
+						"Click OK to attempt deregistration, or Cancel to skip."
+					);
+				}
+
+				if (shouldDeregister && libPath) {
+					var comDllPaths = [];
+					for (var ci = 0; ci < comDlls.length; ci++) {
+						var dllFullPath = path.join(libPath, comDlls[ci]);
+						if (fs.existsSync(dllFullPath)) {
+							comDllPaths.push(dllFullPath);
+						}
+					}
+
+					if (comDllPaths.length > 0) {
+						var deregResult = await comRegisterMultipleDlls(comDllPaths, false);
+						if (!deregResult.allSuccess) {
+							var failedDlls = [];
+							var errDetails = "";
+							for (var ri = 0; ri < deregResult.results.length; ri++) {
+								if (!deregResult.results[ri].success) {
+									failedDlls.push(path.basename(deregResult.results[ri].dll));
+									errDetails += "\n- " + path.basename(deregResult.results[ri].dll) + ": " + deregResult.results[ri].error;
+								}
+							}
+
+							var continueMsg = "COM deregistration failed for:" + errDetails + "\n\n" +
+								"Do you still want to proceed with deleting the library?\n" +
+								"(The COM objects may remain registered on the system)";
+
+							if (!confirm(continueMsg)) return;
+						}
+					}
+				}
+			}
 
 			// --- Delete library files from disk ---
 			var libFiles = lib.library_files || [];
@@ -2983,8 +3897,11 @@ var DetachDatabase = edge.func({
 				} catch (ex) { console.warn("Could not remove demo folder: " + demoPath, ex); }
 			}
 
-			// --- Remove from database ---
-			db_installed_libs.installed_libs.remove({"_id": libId});
+			// --- Soft-delete: mark as deleted but keep in history ---
+			db_installed_libs.installed_libs.update({"_id": libId}, {
+				deleted: true,
+				deleted_date: new Date().toISOString()
+			}, {multi: false, upsert: false});
 
 			// --- Remove from tree ---
 			var navtree = db_tree.tree.find();
@@ -3003,18 +3920,28 @@ var DetachDatabase = edge.func({
 			impBuildLibraryCards();
 		});
 
-		// ---- Browse for .hxlibpkg file ----
+		// ---- Browse for .hxlibpkg or .hxlibarch file ----
 		$(document).on("click", "#imp-browse", function() {
 			$("#imp-input-file").trigger("click");
 		});
 
 		$(document).on("change", "#imp-input-file", function() {
 			var fileInput = this;
-			if (!fileInput.files || fileInput.files.length === 0) return;
-			var filePath = fileInput.files[0].path;
+			var filePath = "";
+			if (fileInput.files && fileInput.files.length > 0) {
+				filePath = fileInput.files[0].path;
+			} else {
+				filePath = $(this).val();
+			}
 			$(this).val('');
 			if (!filePath) return;
-			impLoadAndInstall(filePath);
+
+			var ext = path.extname(filePath).toLowerCase();
+			if (ext === ".hxlibarch") {
+				impArchImportArchive(filePath);
+			} else {
+				impLoadAndInstall(filePath);
+			}
 		});
 
 		// ---- Load, preview, confirm and install package ----
@@ -3098,16 +4025,27 @@ var DetachDatabase = edge.func({
 				}
 
 				// Library files list
+				var comDlls = manifest.com_register_dlls || [];
 				var $libFilesList = $modal.find(".imp-preview-lib-files");
 				$libFilesList.empty();
 				if (libFiles.length === 0) {
 					$libFilesList.html('<div class="text-muted text-center py-2 pkg-empty-msg"><i class="fas fa-inbox mr-1"></i>None</div>');
 				} else {
 					libFiles.forEach(function(f) {
+						var isCom = comDlls.indexOf(f) !== -1;
+						var comBadge = isCom ? '<span class="badge badge-info ml-2" title="This DLL will be registered as a COM object using RegAsm.exe /codebase. Administrator rights are required."><i class="fas fa-cog mr-1"></i>COM</span>' : '';
 						$libFilesList.append(
-							'<div class="pkg-file-item"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + f + '</span></div>'
+							'<div class="pkg-file-item"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + f + '</span>' + comBadge + '</div>'
 						);
 					});
+				}
+
+				// COM registration notice
+				if (comDlls.length > 0) {
+					$modal.find(".imp-preview-com-section").removeClass("d-none");
+					$modal.find(".imp-preview-com-list").text(comDlls.join(", "));
+				} else {
+					$modal.find(".imp-preview-com-section").addClass("d-none");
 				}
 
 				// Demo files list
@@ -3151,7 +4089,7 @@ var DetachDatabase = edge.func({
 		}
 
 		// ---- Confirm install from preview modal ----
-		$(document).on("click", "#imp-preview-confirm", function() {
+		$(document).on("click", "#imp-preview-confirm", async function() {
 			var $modal = $("#importPreviewModal");
 			var zip = $modal.data("imp-zip");
 			var manifest = $modal.data("imp-manifest");
@@ -3164,6 +4102,75 @@ var DetachDatabase = edge.func({
 			var libName = manifest.library_name || "Unknown";
 			var libFiles = manifest.library_files || [];
 			var demoFiles = manifest.demo_method_files || [];
+			var comDlls = manifest.com_register_dlls || [];
+			var comWarning = false;  // tracks if COM registration failed but user chose to proceed
+
+			// ---- COM REGISTRATION FIRST (before extracting files) ----
+			if (comDlls.length > 0) {
+				// We need to extract the DLLs to a temp location first for registration,
+				// then move them to the final location.
+				// Actually, we extract to the final location first, register, and if it fails
+				// we can still clean up.
+
+				// Create the library destination so we can extract COM DLLs
+				if (!fs.existsSync(libDestDir)) {
+					fs.mkdirSync(libDestDir, { recursive: true });
+				}
+
+				// Extract only the COM DLLs first
+				var zipEntries = zip.getEntries();
+				var comDllPaths = [];
+				for (var ci = 0; ci < comDlls.length; ci++) {
+					var comDllName = comDlls[ci];
+					for (var ei = 0; ei < zipEntries.length; ei++) {
+						var entry = zipEntries[ei];
+						if (entry.entryName === "library/" + comDllName) {
+							var outPath = path.join(libDestDir, comDllName);
+							fs.writeFileSync(outPath, entry.getData());
+							comDllPaths.push(outPath);
+							break;
+						}
+					}
+				}
+
+				// Attempt COM registration with UAC elevation
+				if (comDllPaths.length > 0) {
+					var regResult = await comRegisterMultipleDlls(comDllPaths, true);
+
+					if (!regResult.allSuccess) {
+						// Build error message
+						var failedDlls = [];
+						var errDetails = "";
+						for (var ri = 0; ri < regResult.results.length; ri++) {
+							if (!regResult.results[ri].success) {
+								failedDlls.push(path.basename(regResult.results[ri].dll));
+								errDetails += "\n- " + path.basename(regResult.results[ri].dll) + ": " + regResult.results[ri].error;
+							}
+						}
+
+						var proceedMsg = "COM registration failed for the following DLL(s):\n" + errDetails + "\n\n" +
+							"This library may not work correctly without COM registration.\n\n" +
+							"Do you still want to proceed with the import?\n" +
+							"(The library card will be marked with a warning)";
+
+						if (!confirm(proceedMsg)) {
+							// User chose not to proceed - clean up extracted COM DLLs
+							for (var di = 0; di < comDllPaths.length; di++) {
+								try { if (fs.existsSync(comDllPaths[di])) fs.unlinkSync(comDllPaths[di]); } catch(ex) {}
+							}
+							// Remove libDestDir if empty
+							try {
+								if (fs.existsSync(libDestDir)) {
+									var rem = fs.readdirSync(libDestDir);
+									if (rem.length === 0) fs.rmdirSync(libDestDir);
+								}
+							} catch(ex) {}
+							return;
+						}
+						comWarning = true;
+					}
+				}
+			}
 
 			try {
 				var extractedCount = 0;
@@ -3180,7 +4187,7 @@ var DetachDatabase = edge.func({
 					}
 				}
 
-				// Extract files
+				// Extract files (skip COM DLLs already extracted above)
 				var zipEntries = zip.getEntries();
 				zipEntries.forEach(function(entry) {
 					if (entry.entryName === "manifest.json") return;
@@ -3188,6 +4195,11 @@ var DetachDatabase = edge.func({
 					if (entry.entryName.indexOf("library/") === 0) {
 						var fname = entry.entryName.substring("library/".length);
 						if (fname) {
+							// Skip COM DLLs already extracted
+							if (comDlls.indexOf(fname) !== -1) {
+								extractedCount++;
+								return;
+							}
 							var outPath = path.join(libDestDir, fname);
 							fs.writeFileSync(outPath, entry.getData());
 							extractedCount++;
@@ -3209,6 +4221,13 @@ var DetachDatabase = edge.func({
 				}
 
 				// Save to DB
+				// Compute integrity hashes for installed files
+				var fileHashes = computeLibraryHashes(
+					manifest.library_files || [],
+					libDestDir,
+					comDlls
+				);
+
 				var dbRecord = {
 					library_name: manifest.library_name || "",
 					author: manifest.author || "",
@@ -3223,10 +4242,13 @@ var DetachDatabase = edge.func({
 					library_image_mime: manifest.library_image_mime || null,
 					library_files: manifest.library_files || [],
 					demo_method_files: manifest.demo_method_files || [],
+					com_register_dlls: comDlls,
+					com_warning: comWarning,
 					lib_install_path: libDestDir,
 					demo_install_path: demoDestDir,
 					installed_date: new Date().toISOString(),
-					source_package: path.basename(filePath)
+					source_package: path.basename(filePath),
+					file_hashes: fileHashes
 				};
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
 
@@ -3263,11 +4285,34 @@ var DetachDatabase = edge.func({
 				$modal.modal("hide");
 				impBuildLibraryCards();
 
-				alert("Library installed successfully!\n\n" +
-					"Library: " + libName + "\n" +
-					"Files installed: " + extractedCount + "\n\n" +
-					(libFiles.length > 0 ? "Library \u2192 " + libDestDir + "\n" : "") +
-					(demoFiles.length > 0 ? "Demo Methods \u2192 " + demoDestDir : ""));
+				// Show styled success modal
+				var $sm = $("#importSuccessModal");
+				$sm.find(".import-success-libname").text(libName);
+				$sm.find(".import-success-filecount").text(extractedCount + " file" + (extractedCount !== 1 ? "s" : "") + " installed");
+
+				var pathsHtml = "";
+				if (libFiles.length > 0) {
+					pathsHtml += '<div class="path-label">Library Files</div>';
+					pathsHtml += '<div class="path-value">' + libDestDir.replace(/</g, '&lt;') + '</div>';
+				}
+				if (demoFiles.length > 0) {
+					pathsHtml += '<div class="path-label">Demo Methods</div>';
+					pathsHtml += '<div class="path-value">' + demoDestDir.replace(/</g, '&lt;') + '</div>';
+				}
+				$sm.find(".import-success-paths").html(pathsHtml);
+				if (!pathsHtml) $sm.find(".import-success-paths").addClass("d-none"); else $sm.find(".import-success-paths").removeClass("d-none");
+
+				var $comStatus = $sm.find(".import-success-com-status");
+				$comStatus.removeClass("com-warning com-ok").addClass("d-none");
+				if (comWarning) {
+					$comStatus.removeClass("d-none").addClass("com-warning")
+						.html('<i class="fas fa-exclamation-triangle mr-1"></i>COM registration failed. The library card has been marked with a warning.');
+				} else if (comDlls.length > 0) {
+					$comStatus.removeClass("d-none").addClass("com-ok")
+						.html('<i class="fas fa-check mr-1"></i>COM DLLs registered: ' + comDlls.join(", "));
+				}
+
+				$sm.modal("show");
 
 			} catch(e) {
 				alert("Error installing package:\n" + e.message);

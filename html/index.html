@@ -17,7 +17,7 @@
 		<div class="row header1 no-gutters">
 			<div class="col-md-12">
 				<nav class="navbar navbar-expand navbar-light bg-light">
-					<img src="img\Hamilton_logo.png" height="20" alt="" class="brand-logo d-inline-block">
+					<img src="img\Hamilton_logo.png" height="20" alt="" class="brand-logo d-inline-block" style="cursor:pointer;">
 
 					<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 						
@@ -38,9 +38,19 @@
 								</div>
 							</div>
 
-							<button class="btn btn-sm my-2 ml-4 solid-button btn-settings d-none">
-								Settings
-							</button>
+							<div class="dropdown btn-overflow-menu d-none">
+								<button class="btn btn-sm my-2 ml-4 btn-overflow-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<i class="fas fa-ellipsis-v"></i>
+								</button>
+								<div class="dropdown-menu dropdown-menu-right">
+									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
+									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive mr-2"></i>Export Archive</a>
+									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list mr-2"></i>History</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog mr-2"></i>Settings</a>
+									<a class="dropdown-item overflow-help" href="#"><i class="fas fa-question-circle mr-2"></i>Help</a>
+								</div>
+							</div>
 						</form>
 					</div>
 				</nav>
@@ -95,6 +105,19 @@
 							<div class="card mb-3 exporter-card">
 								<div class="card-header"><i class="fas fa-info-circle mr-2 color-medium"></i>Package Metadata</div>
 								<div class="card-body">
+									<div class="form-group row mb-2">
+										<label class="col-sm-4 col-form-label col-form-label-sm">Library Name</label>
+										<div class="col-sm-8">
+											<div class="input-group input-group-sm">
+												<input type="text" class="form-control form-control-sm" id="pkg-library-name" readonly style="background-color:#e9ecef; cursor:default;" title="Based on library file name" placeholder="Detected from library files (.hsl, .hs_, .smt)">
+												<div class="input-group-append">
+													<button class="btn btn-outlined btn-sm" type="button" id="pkg-toggle-name-edit" title="Override auto-detected name"><i class="fas fa-pencil-alt"></i></button>
+												</div>
+											</div>
+											<small class="form-text text-muted" id="pkg-name-hint">Updated when a .hsl, .hs_, or .smt file is added to Library Files</small>
+											<small class="form-text text-warning d-none" id="pkg-name-warning"><i class="fas fa-exclamation-triangle mr-1"></i>Manual override - using a name that doesn't match the library files may cause incorrect behavior during import.</small>
+										</div>
+									</div>
 									<div class="form-group row mb-2">
 										<label class="col-sm-4 col-form-label col-form-label-sm">Author Name <span class="text-danger">*</span></label>
 										<div class="col-sm-8">
@@ -157,7 +180,7 @@
 							<div class="card mb-3 exporter-card">
 								<div class="card-header">
 									<i class="fas fa-book mr-2 color-medium"></i>Library Files
-									<span class="text-muted ml-2 text-sm font-weight-normal">Installed to: ...\Hamilton\Library\&lt;libraryname&gt;</span>
+									<span class="text-muted ml-2 text-sm font-weight-normal">Installed to: ...\Hamilton\Library\<span class="pkg-path-libname">&lt;libraryname&gt;</span></span>
 								</div>
 								<div class="card-body">
 									<div class="mb-2">
@@ -165,9 +188,10 @@
 										<button class="btn btn-sm btn-outlined" id="pkg-addLibFolder">Add Folder...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-removeLibFiles">Remove Selected</button>
 										<span class="text-muted text-sm ml-2" id="pkg-lib-count">0 files</span>
-										<input type="file" class="d-none" id="pkg-input-libfiles" multiple accept=".bmp,.chm,.hsl,.hsi,.hs_,.smt,.stp,.sub,.mth,.res,.fdb,.sii,.dec,.lay,.rck,.ctr,.dck">
+										<input type="file" class="d-none" id="pkg-input-libfiles" multiple accept=".bmp,.chm,.hsl,.hsi,.hs_,.smt,.stp,.sub,.mth,.res,.fdb,.sii,.dec,.lay,.rck,.ctr,.dck,.dll">
 										<input type="file" class="d-none" id="pkg-input-libfolder" nwdirectory>
 									</div>
+									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
 									<div class="pkg-file-list" id="pkg-lib-list">
 										<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>
 									</div>
@@ -178,7 +202,7 @@
 							<div class="card mb-3 exporter-card">
 								<div class="card-header">
 									<i class="fas fa-flask mr-2 color-medium"></i>Demo Method Files
-									<span class="text-muted ml-2 text-sm font-weight-normal">Installed to: ...\Hamilton\Methods\Library Demo Methods\&lt;libraryname&gt;</span>
+									<span class="text-muted ml-2 text-sm font-weight-normal">Installed to: ...\Hamilton\Methods\Library Demo Methods\<span class="pkg-path-libname">&lt;libraryname&gt;</span></span>
 								</div>
 								<div class="card-body">
 									<div class="mb-2">
@@ -216,18 +240,18 @@
 					<div class="d-flex align-items-center mb-4" id="imp-header">
 						<div>
 							<h4 class="mb-0"><i class="fas fa-book mr-2 color-medium"></i>Installed Libraries</h4>
-							<p class="text-muted mb-0 text-sm">Libraries installed from <b>.hxlibpkg</b> packages</p>
+							<p class="text-muted mb-0 text-sm">Libraries installed from <b>.hxlibpkg</b> and <b>.hxlibarch</b> packages</p>
 						</div>
 						<div class="ml-auto">
-							<button class="btn solid-button" id="imp-browse"><i class="fas fa-file-import mr-2"></i>Import Package</button>
-							<input type="file" class="d-none" id="imp-input-file" accept=".hxlibpkg">
+							<button class="btn solid-button" id="imp-browse"><i class="fas fa-file-import mr-2"></i>Import</button>
+							<input type="file" class="d-none" id="imp-input-file" accept=".hxlibpkg,.hxlibarch">
 						</div>
 					</div>
 					<!-- Installed library cards grid -->
 					<div class="row no-gutters" id="imp-cards-container">
 						<div class="w-100 text-center py-5 imp-empty-state">
 							<i class="fas fa-inbox fa-3x color-lightgray"></i>
-							<p class="text-muted mt-3">No libraries installed yet.<br>Click <b>Import Package</b> to install a .hxlibpkg file.</p>
+							<p class="text-muted mt-3">No libraries installed yet.<br>Click <b>Import</b> to install a .hxlibpkg or .hxlibarch file.</p>
 						</div>
 					</div>
 				</div>
@@ -263,147 +287,18 @@
 					<div class="settings-settings row no-gutters col-md-12 d-none">
 
 						<div class="settings-section col-md-12 p-3 no-gutters">
-							<h6>Run Control</h6>
+							<h6>Installation</h6>
 							<div class="custom-control custom-checkbox">
-								<input type="checkbox" class="custom-control-input" id="chk_run-autoplay" checked> 
-								<label class="custom-control-label" for="chk_run-autoplay">Run method immediately</label>
+								<input type="checkbox" class="custom-control-input" id="chk_confirmBeforeInstall" checked>
+								<label class="custom-control-label" for="chk_confirmBeforeInstall">Show preview and confirmation before installing a library</label>
 							</div>
-							<div class="custom-control custom-checkbox">
-								<input type="checkbox" class="custom-control-input" id="chk_run-autoclose" checked> 
-								<label class="custom-control-label" for="chk_run-autoclose">Run method immediately and terminate when method is complete</label>
+							<div class="custom-control custom-checkbox mt-2">
+								<input type="checkbox" class="custom-control-input" id="chk_overwriteWithoutAsking">
+								<label class="custom-control-label" for="chk_overwriteWithoutAsking">Overwrite existing library files without asking</label>
 							</div>
-						</div>
-						<div class="settings-section col-md-12 p-3 no-gutters">
-							<h6>Start up</h6>
-							<div class="form-group settings-startup">
-								<div class="custom-control custom-radio">
-									<input type="radio" id="settings-startupLast" name="startradio"
-										class="custom-control-input" checked>
-									<label class="custom-control-label" for="settings-startupLast">Show last tab opened</label>
-								</div>
-								<div class="custom-control custom-radio">
-									<input type="radio" id="settings-startupTab" name="startradio"
-										class="custom-control-input">
-									<label class="custom-control-label" for="settings-startupTab">Show this one </label>
-									<div class="dropdown d-inline">
-										<button class="btn btn-sm btn-outlined dropdown-toggle btn-startupTab" type="button"
-											id="dd-navgroups" data-toggle="dropdown" aria-haspopup="true"
-											aria-expanded="false">
-											All
-										</button>
-										<div class="dropdown-menu dd-navgroups" aria-labelledby="dd-navgroups">
-											<!-- <a class="dropdown-item dropdown-navitem" href="#">Action</a>
-									  <a class="dropdown-item dropdown-navitem" href="#">Another action</a>
-									  <a class="dropdown-item dropdown-navitem" href="#">Something else here</a> -->
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="settings-section col-md-12 p-3 no-gutters row">
-							<div class="col-md-12">
-								<h6>Default shortcuts</h6>
-							</div>
-							<div class="col-md-4">
-								<div class="custom-control custom-checkbox">
-									<input type="checkbox" class="custom-control-input parent-checkbox"
-										id="chk_settingEditors" checked data-group-id="gEditors">
-									<label class="custom-control-label" for="chk_settingEditors">Export</label>
-								</div>
-								<div class="ml-4 child-checkboxes">
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingMethEditor"
-											data-id="method-editor" checked>
-										<label class="custom-control-label" for="chk_settingMethEditor">Method
-											Editor</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox"
-											id="chk_settingLiqClassEditor" data-id="lc-editor" checked>
-										<label class="custom-control-label" for="chk_settingLiqClassEditor">Liquid Class
-											Editor</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox"
-											id="chk_settingLabwareEditor" data-id="lbw-editor" checked>
-										<label class="custom-control-label" for="chk_settingLabwareEditor">Labware
-											Editor</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingHSLEditor"
-											data-id="hsl-editor" checked>
-										<label class="custom-control-label" for="chk_settingHSLEditor">HSL
-											Editor</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingSysCfgEditor"
-											data-id="sysCfg-editor" checked>
-										<label class="custom-control-label" for="chk_settingSysCfgEditor">System
-											Configuration Editor</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingRunControl"
-											data-id="run-control" checked>
-										<label class="custom-control-label" for="chk_settingRunControl">Run
-											Control</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingVersion"
-											data-id="ham-version" checked>
-										<label class="custom-control-label" for="chk_settingVersion">Version Info</label>
-									</div>
-								</div>
-							</div>
-							<div class="col-md-4">
-								<div class="custom-control custom-checkbox">
-									<input type="checkbox" class="custom-control-input parent-checkbox"
-										id="chk_settingFolders" checked data-group-id="gFolders">
-									<label class="custom-control-label" for="chk_settingFolders">Import</label>
-								</div>
-								<div class="ml-4 child-checkboxes">
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingBinFolder" data-id="bin-folder"
-											checked>
-										<label class="custom-control-label" for="chk_settingBinFolder">Bin</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingConfigFolder" data-id="cfg-folder"
-											checked>
-										<label class="custom-control-label" for="chk_settingConfigFolder">Config</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox"
-											id="chk_settingLabwareFolder" data-id="lbw-folder" checked>
-										<label class="custom-control-label"
-											for="chk_settingLabwareFolder">Labware</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox"
-											id="chk_settingLibraryFolder" data-id="lib-folder" checked>
-										<label class="custom-control-label"
-											for="chk_settingLibraryFolder">Library</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox"
-											id="chk_settingLogfilesFolder" data-id="log-folder" checked>
-										<label class="custom-control-label"
-											for="chk_settingLogfilesFolder">LogFiles</label>
-									</div>
-									<div class="custom-control custom-checkbox">
-										<input type="checkbox" class="custom-control-input child-checkbox"
-											id="chk_settingMethodsFolder" data-id="met-folder" checked>
-										<label class="custom-control-label"
-											for="chk_settingMethodsFolder">Methods</label>
-									</div>
-
-								</div>
-							</div>
-							<div class="col-md-4">
-								<div class="custom-control custom-checkbox d-none">
-									<input type="checkbox" class="custom-control-input parent-checkbox"
-										id="chk_settingRunHistory" checked data-group-id="gHistory">
-									<label class="custom-control-label" for="chk_settingRunHistory">Run History</label>
-								</div>
+							<div class="custom-control custom-checkbox mt-2">
+								<input type="checkbox" class="custom-control-input" id="chk_autoAddToGroup" checked>
+								<label class="custom-control-label" for="chk_autoAddToGroup">Automatically add newly imported libraries to a group</label>
 							</div>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
@@ -427,64 +322,6 @@
 								</div>
 								<div class="d-inline ml-4 txt-recentCleared text-muted"></div>
 							</div>
-							
-						</div>
-						<div class="settings-section col-md-12 p-3 no-gutters">
-							<h6>Run History Management</h6>
-							<div class="custom-control custom-checkbox">
-								<input type="checkbox" class="custom-control-input" id="chk_settingHistoryCleanup" checked>
-								<label class="custom-control-label" for="chk_settingHistoryCleanup">
-									Auto-cleanup run logs older than</label>
-								<div class="dropdown d-inline">
-									<button class="btn btn-sm btn-outlined dropdown-toggle btn-historyMax" type="button"
-										id="dd-historyCleanup" data-toggle="dropdown" aria-haspopup="true"
-										aria-expanded="false">
-										1 month
-									</button>
-									<button class="btn btn-sm btn-outlined ml-4 btn-history-cleanup">
-										Cleanup now
-									</button>
-									<div class="dropdown-menu dd-historyCleanup" aria-labelledby="dd-historyCleanup">
-										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="7">7 days</a>
-										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="15">15 days</a>
-										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="30">1 month</a>
-										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="60">2 months</a>
-										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="90">3 months</a>
-										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="180">6 months</a>
-										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="360">12 months</a>
-									</div>
-								</div>
-							</div>
-							<div class="ml-4 div-cleanup-options">
-								<div class="custom-control custom-radio m-2">
-									<input type="radio" id="radio_settingHistory-delete" name="history-radio"
-										class="custom-control-input" checked>
-									<label class="custom-control-label" for="radio_settingHistory-delete" checked> Delete permanently</label>
-								</div>
-								<div class="custom-control custom-radio m-2">
-									<input type="radio" id="radio_settingHistory-archive" name="history-radio"
-										class="custom-control-input" checked>
-									<label class="custom-control-label" for="radio_settingHistory-archive">Move to this folder</label>
-								</div>
-								
-								<div class="controls-history-archive ml-5 mr-5">
-									<div class="form-group ml-2 mr-4">
-										<input class="d-none" type="file" id="input-history-archiveDir" data-text-input="txt-history-archiveDir" nwdirectory>
-										<div class="w-100">
-											<div class="float-right pt-1"><button type="button"
-													class="btn btn-outlined btn-filebrowse float-right"
-													data-type="input-history-archiveDir">Browse</button></div>
-											<div class="relative00">
-												<div class="clear-field d-none"><i class="fas fa-times-circle fa-md"></i>
-												</div>
-											</div>
-											<div class="overflow-hidden w-auto pr-3"><input
-													class="form-control w-100 txt-history-archiveDir text-sm" type="text" value=""
-													readonly></div>
-										</div>
-									</div>
-								</div>
-							</div>
 						</div>
 					</div>
 					<!----Settings > Settings end--->
@@ -498,6 +335,9 @@
 					
 				</div>
 
+				<div class="w-100 text-right mt-3 pr-3">
+					<button class="btn btn-sm btn-outlined btn-close-settings">Close</button>
+				</div>
 			</div>
 		</div>
 		<!----Settings  end--->
@@ -1137,20 +977,75 @@
 						<h6 class="detail-section-label">Demo Method Files</h6>
 						<div class="pkg-file-list lib-detail-demo-files"></div>
 					</div>
+					<div class="detail-section lib-detail-com-section d-none">
+						<h6 class="detail-section-label">COM Registered DLLs</h6>
+						<div class="lib-detail-com-dlls text-muted text-sm"></div>
+						<div class="lib-detail-com-warning-badge mt-1"></div>
+					</div>
 					<div class="detail-section">
 						<h6 class="detail-section-label">Install Paths</h6>
 						<p class="lib-detail-lib-path text-muted text-sm" style="font-family:Consolas,monospace; background:var(--body-background); padding:6px 10px; border-radius:6px;"></p>
 						<p class="lib-detail-demo-path text-muted text-sm" style="font-family:Consolas,monospace; background:var(--body-background); padding:6px 10px; border-radius:6px;"></p>
 					</div>
+					<div class="detail-section lib-detail-integrity-section d-none">
+						<h6 class="detail-section-label">File Integrity</h6>
+						<div class="lib-detail-integrity-status"></div>
+					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<button type="button" class="btn btn-danger btn-sm lib-detail-delete-btn"><i class="fas fa-trash-alt mr-1"></i>Delete Library</button>
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>
+					<div>
+						<button type="button" class="btn btn-sm btn-outline-secondary lib-detail-export-btn mr-2"><i class="fas fa-box-open mr-1"></i>Export Library</button>
+						<input type="file" class="d-none" id="lib-export-save-dialog" nwsaveas="library.hxlibpkg" accept=".hxlibpkg">
+						<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>
+					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 	<!--Modal Library Detail end --->
+
+	<!---- Modal Export Archive start --->
+	<div class="modal" tabindex="-1" role="dialog" id="exportArchiveModal">
+		<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<div class="d-flex align-items-center">
+						<div class="mr-3">
+							<i class="fas fa-file-archive fa-3x" style="color:var(--medium)"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Export Library Archive</h5>
+							<span class="text-muted text-sm">Select libraries to bundle into a <b>.hxlibarch</b> archive</span>
+						</div>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body detail-modal-body">
+					<div class="d-flex justify-content-between align-items-center mb-3">
+						<div>
+							<button class="btn btn-sm btn-outlined" id="exp-arch-select-all">Select All</button>
+							<button class="btn btn-sm btn-outlined ml-1" id="exp-arch-select-none">Select None</button>
+						</div>
+						<span class="text-muted text-sm" id="exp-arch-selected-count">0 selected</span>
+					</div>
+					<div class="exp-arch-lib-list" id="exp-arch-lib-list">
+						<div class="text-muted text-center py-4"><i class="fas fa-inbox fa-2x color-lightgray"></i><p class="mt-2">No installed libraries found.</p></div>
+					</div>
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
+					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<div>
+						<button type="button" class="btn solid-button" id="exp-arch-export" disabled><i class="fas fa-file-archive mr-2"></i>Export Archive (.hxlibarch)</button>
+						<input type="file" class="d-none" id="exp-arch-save-dialog" nwsaveas="libraries.hxlibarch" accept=".hxlibarch">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Export Archive end --->
 
 	<!---- Modal Import Preview start --->
 	<div class="modal" tabindex="-1" role="dialog" id="importPreviewModal">
@@ -1241,6 +1136,18 @@
 							<span class="imp-preview-overwrite-text">A library with this name is already installed and will be updated.</span>
 						</div>
 					</div>
+					<!-- COM registration notice -->
+					<div class="detail-section imp-preview-com-section d-none mt-2">
+						<div class="alert alert-info mb-0 py-2 px-3" style="font-size:0.85rem;">
+							<i class="fas fa-cog mr-1"></i>
+							<strong>COM Registration Required</strong><br>
+							<span>The following DLLs will be registered using <code>RegAsm.exe /codebase</code>:</span><br>
+							<span class="imp-preview-com-list font-weight-bold"></span><br>
+							<span class="text-danger" style="font-size:0.8rem;" title="Administrator (elevated) rights are needed to register COM objects on the system. A UAC prompt will appear when you click Install.">
+								<i class="fas fa-shield-alt mr-1"></i>Administrator rights are required to register COM objects.
+							</span>
+						</div>
+					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
@@ -1250,6 +1157,31 @@
 		</div>
 	</div>
 	<!---- Modal Import Preview end --->
+
+
+	<!---- Modal Import Success start --->
+	<div class="modal" tabindex="-1" role="dialog" id="importSuccessModal">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:480px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-body import-success-body">
+					<div class="import-success-checkmark">
+						<i class="fas fa-check-circle"></i>
+					</div>
+					<h4 class="import-success-title">Library Installed Successfully!</h4>
+					<div class="import-success-details">
+						<div class="import-success-libname"></div>
+						<div class="import-success-filecount text-muted"></div>
+					</div>
+					<div class="import-success-paths"></div>
+					<div class="import-success-com-status d-none"></div>
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
+					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Done</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Import Success end --->
 
 
 	<!-- JQuery -->
