@@ -1,0 +1,20 @@
+:root {             
+    --medium-rgb: 252, 203, 67;  /* used to apply opacity effects like glow using the medium color */
+	--medium: #fccb43; 
+	--medium2: #f5b402;
+	/*navigation bar background color on mouse over, user icon color,  */
+	--navbar-font-over: white;
+	/*navigation bar font color on mouseover*/
+	--navbar-font: #8a9ca6;
+	/*navigation bar font color */
+	--dark1: #002e48;
+	/*navigation bar background color */
+	--body-background: #e7ecef;
+	--method-background: white;
+	/*method cards background color */
+	--solid-button-background: #ffc400;
+	/*solid buttons background*/
+	--solid-button-over: #ffd755;
+	/*solid buttons background on mouse over*/
+	--solid-button-font: white;
+}

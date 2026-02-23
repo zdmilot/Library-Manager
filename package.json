@@ -1,0 +1,24 @@
+{
+  "name": "Method Manager",
+  "main": "html/index.html",
+  "description": "Method Manager",
+  "version": "1.0.0",
+  "keywords": [
+    "VENUS",
+    "Hamilton"
+  ],
+  "window": {
+    "title": "Method Manager",
+    "icon": "/Hamilton_icon.png",
+    "toolbar": true,
+    "frame": true,
+    "width": 1280,
+    "height": 800,
+    "min_width": 800,
+    "min_height": 700
+  },
+  "dependencies": {
+    "diskdb": "^0.1.17",
+    "image-size": "^0.9.5"
+  }
+}

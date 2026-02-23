@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<!-- v1.0 -->
+<html>
+
+<head>
+	<title>Method Manager</title>
+	<!-- Bootstrap Core CSS -->
+	<link href="css/video-js.css" rel="stylesheet" type="text/css">
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/all.min.css" rel="stylesheet">
+	<link href="css/main.css" rel="stylesheet">
+
+</head>
+
+<body>
+	<div class="container-fluid p-0">
+		<div class="row header1 no-gutters">
+			<div class="col-md-12">
+				<nav class="navbar navbar-expand navbar-light bg-light">
+					<img src="img\Hamilton_logo.png" height="20" alt="" class="brand-logo d-inline-block">
+					<span class="txt-xs color-lightgray click-count d-inline-block ml-1"></span>
+					<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+						
+						<ul class="navbar-nav ml-4">
+							<li class="nav-item username-container d-none">
+								<span class="d-inline">
+									<i class="fa fa-user-circle mr-1" aria-hidden="true"></i>
+									<span class="username-name mr-1 color-dark_gray">John Doe</span><span class="username-role text-sm color-gray">(Lab Operator)</span>
+								<a class="d-inline username-logoff color-blue text-sm ml-3" href="#"></i>log off</a>
+							</li>
+							
+						</ul>
+						<form class="form-inline navbar-nav ml-md-auto">
+							<div class="mr-5 cleanup-progress" style="display:none;">
+								<div class="text-sm cleanup-progress-text">Cleaning up run logs</div>
+								<div class="progress">
+									<div class="progress-bar cleanup-progress-bar bg-success" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+								</div>
+							</div>
+							<div class="custom-control custom-switch simulation-status">
+								<input type="checkbox" class="custom-control-input" id="simulation-switch">
+								<label class="custom-control-label cursor-pointer" for="simulation-switch">Simulation <span class="sim-on-off ml-1">Off</span></label>
+							</div>
+							<div class="simulation-text">
+									</label>
+							</div>
+							<button class="btn btn-sm my-2 ml-4 solid-button btn-settings d-none">
+								Settings
+							</button>
+						</form>
+					</div>
+				</nav>
+			</div>
+		</div>
+		<div class="methods-page no-gutters">
+			<div class="row header2 no-gutters">
+				<div class="col-md-12">
+					<nav class="navbar navbar-expand navbar-custom pt-0 pb-0">
+						<div class="collapse navbar-collapse" id="navbarDiv">
+							<ul class="navbar-nav mr-auto navblock-collapsable nav-subgroup navbarLeft">
+							</ul>
+							<!-- here will be added all the user created groups -->
+							<ul class="navbar-nav nav-subgroup" id="nav-more">
+								<li class="nav-item dropdown">
+									<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink"
+										data-toggle="dropdown">+1</a>
+									<div class="dropdown-menu dropdown-menu-right"
+										aria-labelledby="navbarDropdownMenuLink" id="nav-overflow">
+									</div>
+								</li>
+							</ul>
+							<ul class="navbar-nav nav-subgroup navbarRight">
+							</ul>
+							<ul class="hidden-nav-items d-none">
+
+							</ul>
+						</div>
+					</nav>
+				</div>
+			</div>
+			<div class="row links-container no-gutters p-5">
+				<div class="row no-gutters">
+					<div class="w-100">
+						
+						<div class="w-100 text-center">
+							<i class="fa fa-robot fa-10x color-lightgray"></i>
+						</div>
+						<h1 class="text-center color-lightgray mt-3">Loading</h1>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!----Settings  start--->
+		<div class="settings-page d-none row no-gutters">
+			<div class="row p-4 no-gutters col-md-12">
+				<div class="nav-settings no-gutters col-md-12 mb-3">
+					<nav>
+						<ul class="h-menu">
+							<li><a href="#" class="active" data-div="settings-links">Links</a></li>
+							<li><a href="#" data-div="settings-settings">Settings</a></li>
+							<!-- <li><a href="#" data-div="settings-settings">Import/Export</a></li> -->
+							<li class="float-right mt-4 btn-newgroup">
+								<span class="text-xs mr-4 color-gray"><i class="fas fa-arrows-alt-v color-medium mr-2"></i>Drag items to reorder</span>
+								<span class="text-xs mr-4 color-gray"><i class="fas fa-star color-medium mr-2"></i>Show in home screen</span>
+								<button class="btn btn-sm btn-outlined">New group</button>
+							</li>
+						</ul>
+					</nav>
+
+				</div>
+				<div class="setttings-container w-100">
+					<!----Settings > Links start--->
+					<div class="settings-links row no-gutters col-md-12">
+						<div id="accordion" class="w-100" role="tablist">
+
+						</div>
+					</div>
+					<!----Settings > Links end--->
+					<!----Settings > Settings start--->
+					<div class="settings-settings row no-gutters col-md-12 d-none">
+						<div class="settings-section col-md-12 p-3 no-gutters">
+							<h6>Simulation</h6>
+							<div class="custom-control custom-checkbox">
+								<input type="checkbox" class="custom-control-input" id="chk_settingSimulation" checked> 
+								<label class="custom-control-label" for="chk_settingSimulation">Allow switch simulation on/off</label>
+							</div>
+						</div>
+						<div class="settings-section col-md-12 p-3 no-gutters">
+							<h6>Run Control</h6>
+							<div class="custom-control custom-checkbox">
+								<input type="checkbox" class="custom-control-input" id="chk_run-autoplay" checked> 
+								<label class="custom-control-label" for="chk_run-autoplay">Run method immediately</label>
+							</div>
+							<div class="custom-control custom-checkbox">
+								<input type="checkbox" class="custom-control-input" id="chk_run-autoclose" checked> 
+								<label class="custom-control-label" for="chk_run-autoclose">Run method immediately and terminate when method is complete</label>
+							</div>
+						</div>
+						<div class="settings-section col-md-12 p-3 no-gutters">
+							<h6>Start up</h6>
+							<div class="form-group settings-startup">
+								<div class="custom-control custom-radio">
+									<input type="radio" id="settings-startupLast" name="startradio"
+										class="custom-control-input" checked>
+									<label class="custom-control-label" for="settings-startupLast">Show last tab opened</label>
+								</div>
+								<div class="custom-control custom-radio">
+									<input type="radio" id="settings-startupTab" name="startradio"
+										class="custom-control-input">
+									<label class="custom-control-label" for="settings-startupTab">Show this one </label>
+									<div class="dropdown d-inline">
+										<button class="btn btn-sm btn-outlined dropdown-toggle btn-startupTab" type="button"
+											id="dd-navgroups" data-toggle="dropdown" aria-haspopup="true"
+											aria-expanded="false">
+											All
+										</button>
+										<div class="dropdown-menu dd-navgroups" aria-labelledby="dd-navgroups">
+											<!-- <a class="dropdown-item dropdown-navitem" href="#">Action</a>
+									  <a class="dropdown-item dropdown-navitem" href="#">Another action</a>
+									  <a class="dropdown-item dropdown-navitem" href="#">Something else here</a> -->
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="settings-section col-md-12 p-3 no-gutters row">
+							<div class="col-md-12">
+								<h6>Default shortcuts</h6>
+							</div>
+							<div class="col-md-4">
+								<div class="custom-control custom-checkbox">
+									<input type="checkbox" class="custom-control-input parent-checkbox"
+										id="chk_settingEditors" checked data-group-id="gEditors">
+									<label class="custom-control-label" for="chk_settingEditors">Editors</label>
+								</div>
+								<div class="ml-4 child-checkboxes">
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingMethEditor"
+											data-id="method-editor" checked>
+										<label class="custom-control-label" for="chk_settingMethEditor">Method
+											Editor</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox"
+											id="chk_settingLiqClassEditor" data-id="lc-editor" checked>
+										<label class="custom-control-label" for="chk_settingLiqClassEditor">Liquid Class
+											Editor</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox"
+											id="chk_settingLabwareEditor" data-id="lbw-editor" checked>
+										<label class="custom-control-label" for="chk_settingLabwareEditor">Labware
+											Editor</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingHSLEditor"
+											data-id="hsl-editor" checked>
+										<label class="custom-control-label" for="chk_settingHSLEditor">HSL
+											Editor</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingSysCfgEditor"
+											data-id="sysCfg-editor" checked>
+										<label class="custom-control-label" for="chk_settingSysCfgEditor">System
+											Configuration Editor</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingRunControl"
+											data-id="run-control" checked>
+										<label class="custom-control-label" for="chk_settingRunControl">Run
+											Control</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingVersion"
+											data-id="ham-version" checked>
+										<label class="custom-control-label" for="chk_settingVersion">Version Info</label>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="custom-control custom-checkbox">
+									<input type="checkbox" class="custom-control-input parent-checkbox"
+										id="chk_settingFolders" checked data-group-id="gFolders">
+									<label class="custom-control-label" for="chk_settingFolders">Folders</label>
+								</div>
+								<div class="ml-4 child-checkboxes">
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingBinFolder" data-id="bin-folder"
+											checked>
+										<label class="custom-control-label" for="chk_settingBinFolder">Bin</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox" id="chk_settingConfigFolder" data-id="cfg-folder"
+											checked>
+										<label class="custom-control-label" for="chk_settingConfigFolder">Config</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox"
+											id="chk_settingLabwareFolder" data-id="lbw-folder" checked>
+										<label class="custom-control-label"
+											for="chk_settingLabwareFolder">Labware</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox"
+											id="chk_settingLibraryFolder" data-id="lib-folder" checked>
+										<label class="custom-control-label"
+											for="chk_settingLibraryFolder">Library</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox"
+											id="chk_settingLogfilesFolder" data-id="log-folder" checked>
+										<label class="custom-control-label"
+											for="chk_settingLogfilesFolder">LogFiles</label>
+									</div>
+									<div class="custom-control custom-checkbox">
+										<input type="checkbox" class="custom-control-input child-checkbox"
+											id="chk_settingMethodsFolder" data-id="met-folder" checked>
+										<label class="custom-control-label"
+											for="chk_settingMethodsFolder">Methods</label>
+									</div>
+
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="custom-control custom-checkbox d-none">
+									<input type="checkbox" class="custom-control-input parent-checkbox"
+										id="chk_settingRunHistory" checked data-group-id="gHistory">
+									<label class="custom-control-label" for="chk_settingRunHistory">Run History</label>
+								</div>
+							</div>
+						</div>
+						<div class="settings-section col-md-12 p-3 no-gutters">
+							<h6>Recent</h6>
+							<div class="dropdown d-inline">
+								Display last:
+								<button class="btn btn-sm btn-outlined dropdown-toggle .btn-recentMax" type="button"
+									id="dd-maxRecent" data-toggle="dropdown" aria-haspopup="true"
+									aria-expanded="false">
+									10
+								</button>
+								<button class="btn btn-sm my-2 ml-4 btn-outlined btn-clearRecentList">
+									Clear Recent List
+								</button>
+								<div class="dropdown-menu dd-maxRecent" aria-labelledby="dd-maxRecent">
+									<a class="dropdown-item dropdown-navitem-clearbg" href="#">5</a>
+									<a class="dropdown-item dropdown-navitem-clearbg" href="#">10</a>
+									<a class="dropdown-item dropdown-navitem-clearbg" href="#">20</a>
+									<a class="dropdown-item dropdown-navitem-clearbg" href="#">50</a>
+									<a class="dropdown-item dropdown-navitem-clearbg" href="#">100</a>
+								</div>
+								<div class="d-inline ml-4 txt-recentCleared text-muted"></div>
+							</div>
+							
+						</div>
+						<div class="settings-section col-md-12 p-3 no-gutters">
+							<h6>Run History Management</h6>
+							<div class="custom-control custom-checkbox">
+								<input type="checkbox" class="custom-control-input" id="chk_settingHistoryCleanup" checked>
+								<label class="custom-control-label" for="chk_settingHistoryCleanup">
+									Auto-cleanup run logs older than</label>
+								<div class="dropdown d-inline">
+									<button class="btn btn-sm btn-outlined dropdown-toggle btn-historyMax" type="button"
+										id="dd-historyCleanup" data-toggle="dropdown" aria-haspopup="true"
+										aria-expanded="false">
+										1 month
+									</button>
+									<button class="btn btn-sm btn-outlined ml-4 btn-history-cleanup">
+										Cleanup now
+									</button>
+									<div class="dropdown-menu dd-historyCleanup" aria-labelledby="dd-historyCleanup">
+										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="7">7 days</a>
+										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="15">15 days</a>
+										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="30">1 month</a>
+										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="60">2 months</a>
+										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="90">3 months</a>
+										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="180">6 months</a>
+										<a class="dropdown-item dropdown-navitem-clearbg" href="#" data-days="360">12 months</a>
+									</div>
+								</div>
+							</div>
+							<div class="ml-4 div-cleanup-options">
+								<div class="custom-control custom-radio m-2">
+									<input type="radio" id="radio_settingHistory-delete" name="history-radio"
+										class="custom-control-input" checked>
+									<label class="custom-control-label" for="radio_settingHistory-delete" checked> Delete permanently</label>
+								</div>
+								<div class="custom-control custom-radio m-2">
+									<input type="radio" id="radio_settingHistory-archive" name="history-radio"
+										class="custom-control-input" checked>
+									<label class="custom-control-label" for="radio_settingHistory-archive">Move to this folder</label>
+								</div>
+								
+								<div class="controls-history-archive ml-5 mr-5">
+									<div class="form-group ml-2 mr-4">
+										<input class="d-none" type="file" id="input-history-archiveDir" data-text-input="txt-history-archiveDir" nwdirectory>
+										<div class="w-100">
+											<div class="float-right pt-1"><button type="button"
+													class="btn btn-outlined btn-filebrowse float-right"
+													data-type="input-history-archiveDir">Browse</button></div>
+											<div class="relative00">
+												<div class="clear-field d-none"><i class="fas fa-times-circle fa-md"></i>
+												</div>
+											</div>
+											<div class="overflow-hidden w-auto pr-3"><input
+													class="form-control w-100 txt-history-archiveDir text-sm" type="text" value=""
+													readonly></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!----Settings > Settings end--->
+					<!----Settings > Import/Export start--->
+					<!-- <div class="settings-export row no-gutters col-md-12">
+						<div class="w-100" role="tablist">
+
+						</div>
+					</div> -->
+					<!----Settings > Import/Export  end--->
+					
+				</div>
+
+			</div>
+		</div>
+		<!----Settings  end--->
+	</div>
+
+	
+
+	<!----modal delete start--->
+	<div class="modal" tabindex="-1" role="dialog" id="deleteModal">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Delete ?</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<p><span class="text-capitalize linkorgroup"></span></p>
+					<h4 class="name"></h4>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-danger btn-delete solid-button-shape"
+						onclick="">Delete</button>
+					<button type="button" class="btn btn-secondary solid-button-shape"
+						data-dismiss="modal">Cancel</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!--Modal Delete end --->
+
+	<!----modal edit start--->
+	<div class="modal" tabindex="-1" role="dialog" id="editModal">
+		<div class="modal-dialog modal-xl" role="document">
+			<div class="modal-content" data-linkOrGroup="" data-newOrEdit="" data-id="">
+				<div class="modal-header">
+					<h5 class="modal-title text-capitalize">Edit</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body d-flex">
+					<div class="d-inline-block p-2 mr-4 ml-3 align-top text-center">
+						<div class="container-imageicon">
+							<div class="image-container d-none">
+								<!---- group/link image if set, if not show a placeholder icon--->
+								<img src="" width="200" class="editModal-image">
+								<i class="fad fa-image fa-7x color-gray image-placeholder"></i>
+							</div>
+							<!---- group/link icon --->
+							<div class="icon-container"><i class="fad fa-dna fa-5x color-dark editModal-icon" data-colorClass="color-dark" data-iconClass="fa-dna"></i> </div>
+							<div class="mt-2 text-center w-100">
+								<a href="#" class="a-choose">Choose...</a>
+							</div>
+						</div>
+					</div>
+					<div class="d-inline-block p-2 align-top w-100">
+						<form class="div-form">
+							<div class="form-group">
+								<input class="form-control form-control-lg txt-linkName" type="text"
+									placeholder="Name (required)">
+								<div class="relative00 float-right"><span class="clear-text d-none"><i
+											class="fas fa-times-circle"></i></span></div>
+							</div>
+							
+							<div class="link-inputs">
+								<div class="form-group">
+									<textarea class="form-control txt-description" rows="3"
+										placeholder="Description (optional) "></textarea>
+								</div>
+								<div class="form-group form-file-inputs">
+									<input class="d-none" type="file" accept=".hsl,.wfl" id="input-methodfile"
+										data-text-input="txt-filepath">
+									<input class="d-none" type="file" id="input-anyfile" data-text-input="txt-filepath">
+									<input class="d-none" type="file" nwdirectory id="input-folder"
+										data-text-input="txt-filepath">
+									<div class="relative00">
+										<div class="clear-field d-none">
+											<i class="fas fa-times-circle fa-md"></i>
+										</div>
+									</div>
+
+									<input type="text" class="form-control txt-filepath text-sm" value="" readonly
+										placeholder="File path (required)">
+								</div>
+								<div class="form-group inputType-radio mt-2 mb-4 text-right">
+										<span class="filetype-selection d-none" data-fileType=""></span>  <!-- hidden stores the selected link type :  method, folder or file -->
+										<span class="filetype-tmpselection d-none" data-fileType=""></span> <!-- hidden temp storage of the browse button clicked, on input change event it will be stored in the filetype-selection span -->
+
+										<button type="button" class="btn btn-outlined btn-filebrowse d-inline" data-type="input-methodfile" data-fileType="method">
+											Method/WorkFlow...
+										</button>
+										<button type="button" class="btn btn-outlined btn-filebrowse d-inline" data-type="input-folder" data-fileType="folder">
+											Folder
+										</button>
+										<button type="button" class="btn btn-outlined btn-filebrowse d-inline" data-type="input-anyfile" data-fileType="file">
+											Any File
+										</button>
+								</div>
+
+								<div class="form-group">
+									<input class="d-none" type="file" id="input-attach1" data-text-input="txt-attach1">
+									<span>Attachment 1: </span>
+									<div class="w-100">
+										<div class="float-right pt-1"><button type="button"
+												class="btn btn-outlined btn-filebrowse float-right"
+												data-type="input-attach1">Browse</button></div>
+										<div class="relative00">
+											<div class="clear-field d-none"><i class="fas fa-times-circle fa-md"></i>
+											</div>
+										</div>
+										<div class="overflow-hidden w-auto pr-3"><input
+												class="form-control w-100 txt-attach1 text-sm" type="text" value=""
+												readonly></div>
+									</div>
+								</div>
+								<div class="form-group">
+									<input class="d-none" type="file" id="input-attach2" data-text-input="txt-attach2">
+									<span>Attachment 2: </span>
+									<div class="w-100">
+										<div class="float-right pt-1"><button type="button"
+												class="btn btn-outlined btn-filebrowse float-right"
+												data-type="input-attach2">Browse</button></div>
+										<div class="relative00">
+											<div class="clear-field d-none"><i class="fas fa-times-circle fa-md"></i>
+											</div>
+										</div>
+										<div class="overflow-hidden w-auto pr-3"><input
+												class="form-control w-100 txt-attach2 text-sm" type="text" value=""
+												readonly></div>
+									</div>
+								</div>
+								<div class="form-group">
+									<input class="d-none" type="file" id="input-attach3" data-text-input="txt-attach3">
+									<span>Attachment 3: </span>
+									<div class="w-100">
+										<div class="float-right pt-1"><button type="button"
+												class="btn btn-outlined btn-filebrowse float-right"
+												data-type="input-attach3">Browse</button></div>
+										<div class="relative00">
+											<div class="clear-field d-none"><i class="fas fa-times-circle fa-md"></i>
+											</div>
+										</div>
+										<div class="overflow-hidden w-auto pr-3"><input
+												class="form-control w-100 txt-attach3 text-sm" type="text" value=""
+												readonly></div>
+									</div>
+
+								</div>
+							</div>
+						</form>
+
+						<div class="div-iconselect d-none">
+							<div class="card">
+								<div class="card-header">
+									<b class="border-notch callout-notch"></b>
+									<b class="callout-notch"></b>
+									<div class="custom-control custom-radio d-inline mr-3">
+										<input type="radio" id="inputImg-icon" name="radioiconimage"
+											class="custom-control-input" checked>
+										<label class="custom-control-label" for="inputImg-icon">Icon</label>
+									</div>
+									<div class="custom-control custom-radio d-inline mr-3">
+										<input type="radio" id="inputImg-image" name="radioiconimage"
+											class="custom-control-input">
+										<label class="custom-control-label" for="inputImg-image">Local image</label>
+									</div>
+									<div class="float-right"><a href="#" class="close-imagediv">Back to form</a></div>
+								</div>
+								<div class="card-body">
+									<div id="icon-selection">
+										<div class="colors-list">
+										<i class="color-circle color-black fas fa-circle"
+											data-colorClass="color-black"></i>
+										<i class="color-circle color-circle-active color-dark fas fa-circle"
+											data-colorClass="color-dark"></i>
+										<i class="color-circle color-medium fas fa-circle"
+											data-colorClass="color-medium"></i>
+										<i class="color-circle color-gray fas fa-circle"
+											data-colorClass="color-gray"></i>
+										<i class="color-circle color-dark_gray fas fa-circle"
+											data-colorClass="color-dark_gray"></i>
+										<i class="color-circle color-brown fas fa-circle"
+											data-colorClass="color-brown"></i>
+										<i class="color-circle color-deep_orange fas fa-circle"
+											data-colorClass="color-deep_orange"></i>
+										<i class="color-circle color-orange fas fa-circle"
+											data-colorClass="color-orange"></i>
+										<i class="color-circle color-amber fas fa-circle"
+											data-colorClass="color-amber"></i>
+										<i class="color-circle color-yellow fas fa-circle"
+											data-colorClass="color-yellow"></i>
+										<i class="color-circle color-lime fas fa-circle"
+											data-colorClass="color-lime"></i>
+										<i class="color-circle color-light_green fas fa-circle"
+											data-colorClass="color-light_green"></i>
+										<i class="color-circle color-green fas fa-circle"
+											data-colorClass="color-green"></i>
+										<i class="color-circle color-teal fas fa-circle"
+											data-colorClass="color-teal"></i>
+										<i class="color-circle color-cyan fas fa-circle"
+											data-colorClass="color-cyan"></i>
+										<i class="color-circle color-blue_light fas fa-circle"
+											data-colorClass="color-blue_light"></i>
+										<i class="color-circle color-blue fas fa-circle"
+											data-colorClass="color-blue"></i>
+										<i class="color-circle color-dark_blue fas fa-circle"
+											data-colorClass="color-dark_blue"></i>
+										<i class="color-circle color-indigo fas fa-circle"
+											data-colorClass="color-indigo"></i>
+										<i class="color-circle color-deep_purple fas fa-circle"
+											data-colorClass="color-deep_purple"></i>
+										<i class="color-circle color-purple fas fa-circle"
+											data-colorClass="color-purple"></i>
+										<i class="color-circle color-pink fas fa-circle"
+											data-colorClass="color-pink"></i>
+										<i class="color-circle color-red fas fa-circle" data-colorClass="color-red"></i>
+										</div>
+										<div class="clearfix m-3"></div>
+										<div class="icons-list">
+											<h6 class="mt-1">Lab</h6>
+											<div class="select-icon icon-active"><i class="fas fa-1x fa-dna"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-flask"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-vial"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-vials"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-prescription-bottle"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-magnet"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-bug"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-bacteria"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-bacterium"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-disease"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-virus"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-viruses"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-virus-slash"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-fingerprint"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-fire-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-sun"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-wind"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-water"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-snowflake"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-thermometer"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-temperature-high"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-temperature-low"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-bolt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-balance-scale"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-hand-holding-water"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-seedling"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-leaf"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-cookie"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-baby"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-apple-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-robot"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-graduation-cap"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-heart"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-heartbeat"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-barcode"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-stopwatch"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-tint"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-atom"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-award"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-laptop-code"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-microscope"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-battery-full"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-fan"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-power-off"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-running"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-syringe"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-lightbulb"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-hand-holding-medical"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-stethoscope"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-prescription"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-plus-square"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-biohazard"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-brain"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-cannabis"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-capsules"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-pills"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-tablets"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-clinic-medical"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-file-medical"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-file-medical-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-head-side-mask"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-head-side-virus"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-mortar-pestle"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-star-of-life"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-route"></i></div>
+											<div class="clearfix"></div>
+											<h6 class="clearfix mt-3">Emoji</h6>
+											<div class="select-icon"><i class="fas fa-1x fa-smile"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-grin-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-grin-beam-sweat"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-grin-hearts"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-grin-squint-tears"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-grin-tongue-wink"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-kiss-wink-heart"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-smile-wink"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-surprise"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-meh"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-frown"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-sad-tear"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dizzy"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-comment"></i></div>
+											<div class="clearfix"></div>
+											<h6 class="clearfix mt-3">Symbols</h6>
+											<div class="select-icon"><i class="fas fa-1x fa-exclamation"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-exclamation-circle"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-exclamation-triangle"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-question-circle"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-info-circle"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-universal-access"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-bell"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-trash-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-radiation"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-radiation-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-skull-crossbones"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-skull"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-bookmark"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-cloud-download-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-cloud-upload-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-download"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-upload"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-history"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-recycle"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-share"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-search"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-infinity"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-sliders-h"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-ban"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-archive"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-book"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-save"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-trash-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-calendar-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-folder-open"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-folder"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-pen"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-print"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-star"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-quote-right"></i></div>
+											<div class="clearfix"></div>
+											<h6 class="clearfix mt-3">Other</h6>
+											<div class="select-icon"><i class="fas fa-1x fa-archive"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-book"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-save"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-trash-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-calendar-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-folder-open"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-pen"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-print"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dollar-sign"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-hammer"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-screwdriver"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-wrench"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-list-ul"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-hat-cowboy"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-spa"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-bone"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-candy-cane"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-fish"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-cat"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-crow"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dog"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dove"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dragon"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-feather"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-fish"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-frog"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-hippo"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-horse"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-paw"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-spider"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-hamburger"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-lemon"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-pizza-slice"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-coffee"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-mug-hot"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-ice-cream"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dice-one"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dice-two"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dice-three"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dice-four"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dice-five"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-dice-six"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-ghost"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-puzzle-piece"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-hand-peace"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-thumbs-up"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-thumbs-down"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-compress-arrows-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-expand"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-trophy"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-flag-usa"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-birthday-cake"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-industry"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-life-ring"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-guitar"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-tag"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-peace"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-jedi"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-globe"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-meteor"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-user-astronaut"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-space-shuttle"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-car"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-shuttle-van"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-car-battery"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-oil-can"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-gas-pump"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-charging-station"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-tachometer-alt"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-flag-checkered"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-rocket"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-ambulance"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-space-shuttle"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-lightbulb"></i></div>
+											<div class="select-icon"><i class="fas fa-1x fa-gamepad"></i></div>
+											<div class="clearfix"></div>
+											<h6 class="clearfix mt-3 d-none">Bonus</h6>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-toilet-paper"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-poo"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-poop"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-bong"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-joint"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-beer"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-glass-martini-alt"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-hat-wizard"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-fist-raised"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-ring"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-book-dead"></i></div>
+											<div class="select-icon d-none"><i class="fas fa-1x fa-bomb"></i></div>
+
+										</div><!-- end div icons list -->
+									</div><!-- end div icon selection -->
+									<div id="image-selection" class="d-none ml-3">
+										<div class="form-group">
+										<input class="d-none"  type="file" id="input-image" accept=".png,.jpg,.bmp,.gif,.jpeg" data-text-input="txt-image"> 
+										<span>Image: </span>
+											<div class="w-100">
+											<div class="float-right pt-1"><button type="button" class="btn btn-outlined btn-filebrowse float-right" data-type="input-image">Browse</button></div>
+											<div class="relative00">
+												<div class="clear-field d-none"><i class="fas fa-times-circle fa-md"></i> </div>
+											</div>
+											<div class="overflow-hidden w-auto pr-3"><input class="form-control w-100 txt-image text-sm" type="text" value="" readonly></div>
+											</div>
+										</div>
+									</div><!-- end div image-selection-->
+								</div> <!-- end div card-body -->
+							</div> <!-- end div card -->
+						</div> <!-- end div-iconselect -->
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-danger solid-button-shape btn-delete" onclick="">Delete</button>
+					<button type="button" class="btn solid-button btn-save" onclick="">Save</button>
+					<button type="button" class="btn btn-secondary  solid-button-shape"
+						data-dismiss="modal">Cancel</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!--Modal Delete end --->
+
+	<!--Modal video start --->
+	<div class="modal fade" tabindex="-1" role="dialog" id="videoModal">
+		<div class="modal-dialog modal-md">
+		  <div class="modal-content">
+			<div class="modal-header">
+			  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			  <h4 class="modal-title">
+			  </h4>
+			</div>
+			<div class="modal-body text-center"> 
+							  <video id="modal-video" class="video-js vjs-default-skin vjs-big-play-centered vjs-fluid" fluid preload="none"
+									data-setup='{ "html5" : { "nativeTextTracks" : false } }'>
+								  <source src="a.mp4" type="video/mp4">
+  
+								  <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
+								</video>
+				  
+				</div>   
+			</div>
+		   <!--  <div class="modal-footer">
+			  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			  <button type="button" class="btn btn-primary">Save changes</button>
+			</div> -->
+		  </div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	  </div><!-- /.modal -->
+
+	  	<!--Modal pass start --->
+		  <div class="modal" tabindex="-1" role="dialog" id="passModal">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title"></h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body">
+						<div class="form-group">
+							<label for="usr">Password:</label>
+							<input type="text" class="form-control" id="magic-pass">
+						  </div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary solid-button-shape"
+							>Go</button>
+						<button type="button" class="btn btn-secondary solid-button-shape"
+							data-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+	<!-- JQuery -->
+	<script src="js/jquery-2.1.3.min.js" type="text/javascript"></script>
+	<script src="js/jquery-ui.min.js" type="text/javascript"></script>
+
+	<script src="js/video.js"></script>
+	<script src="js/barrel-roll.js"></script>
+	<!-- Bootstrap  -->
+	<script src="js/popper.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+
+	
+	<!-- Method Manager javascripts  -->
+	<script src="js/main.js"></script>
+	
+</body>
+
+</html>
