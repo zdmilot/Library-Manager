@@ -718,6 +718,31 @@ body {
 
 .pkg-empty-msg {
 	color: #bbb;
+}
+
+/* ---- Importer / Library Installer ---- */
+.importer-container {
+	overflow-y: auto;
+	background-color: var(--body-background);
+}
+
+.importer-inner {
+	max-width: 100%;
+}
+
+.importer-card .card-header {
+	background-color: var(--method-background);
+	font-weight: 600;
+	color: var(--dark1);
+	font-size: 0.95rem;
+}
+
+.importer-card .card-body {
+	background-color: var(--method-background);
+}
+
+.imp-meta-row {
+	margin-bottom: 2px;
 	font-size: 0.9rem;
 }
 

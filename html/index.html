@@ -190,6 +190,91 @@
 					</div>
 				</div>
 			</div>
+			<!-- Library Importer tool -->
+			<div class="importer-container d-none">
+				<div class="importer-inner p-4">
+					<div class="row justify-content-center">
+						<div class="col-lg-8 col-md-10">
+							<h4 class="mb-1"><i class="fas fa-file-import mr-2 color-medium"></i>Library Importer</h4>
+							<p class="text-muted mb-4">Install a <b>.hxlibpkg</b> package into your Hamilton VENUS environment.</p>
+
+							<!-- Select Package -->
+							<div class="card mb-3 importer-card">
+								<div class="card-header"><i class="fas fa-folder-open mr-2 color-medium"></i>Select Package</div>
+								<div class="card-body">
+									<div class="d-flex align-items-center">
+										<button class="btn btn-sm btn-outlined mr-3" id="imp-browse"><i class="fas fa-file-archive mr-1"></i>Browse...</button>
+										<span class="text-muted text-sm" id="imp-file-label">No file selected</span>
+										<input type="file" class="d-none" id="imp-input-file" accept=".hxlibpkg">
+									</div>
+								</div>
+							</div>
+
+							<!-- Package Info (hidden until file loaded) -->
+							<div id="imp-details" class="d-none">
+								<!-- Metadata Section -->
+								<div class="card mb-3 importer-card">
+									<div class="card-header"><i class="fas fa-info-circle mr-2 color-medium"></i>Package Metadata</div>
+									<div class="card-body">
+										<div class="row mb-1"><div class="col-sm-4 text-sm font-weight-bold">Library Name</div><div class="col-sm-8 text-sm" id="imp-lib-name">—</div></div>
+										<div class="row mb-1"><div class="col-sm-4 text-sm font-weight-bold">Author</div><div class="col-sm-8 text-sm" id="imp-author">—</div></div>
+										<div class="row mb-1"><div class="col-sm-4 text-sm font-weight-bold">Organization</div><div class="col-sm-8 text-sm" id="imp-organization">—</div></div>
+										<div class="row mb-1"><div class="col-sm-4 text-sm font-weight-bold">Version</div><div class="col-sm-8 text-sm" id="imp-version">—</div></div>
+										<div class="row mb-1"><div class="col-sm-4 text-sm font-weight-bold">VENUS Compatibility</div><div class="col-sm-8 text-sm" id="imp-venus-compat">—</div></div>
+										<div class="row mb-1"><div class="col-sm-4 text-sm font-weight-bold">Created Date</div><div class="col-sm-8 text-sm" id="imp-created-date">—</div></div>
+										<div class="row mb-1"><div class="col-sm-4 text-sm font-weight-bold">Description</div><div class="col-sm-8 text-sm" id="imp-description">—</div></div>
+										<div class="row mb-1"><div class="col-sm-4 text-sm font-weight-bold">Tags</div><div class="col-sm-8 text-sm" id="imp-tags">—</div></div>
+									</div>
+								</div>
+
+								<!-- Library Image -->
+								<div class="card mb-3 importer-card d-none" id="imp-image-card">
+									<div class="card-header"><i class="fas fa-image mr-2 color-medium"></i>Library Image</div>
+									<div class="card-body text-center">
+										<img id="imp-lib-image" src="" style="max-width:200px; max-height:150px;">
+									</div>
+								</div>
+
+								<!-- Library Files -->
+								<div class="card mb-3 importer-card">
+									<div class="card-header">
+										<i class="fas fa-book mr-2 color-medium"></i>Library Files
+										<span class="text-muted ml-2 text-sm font-weight-normal" id="imp-lib-dest"></span>
+									</div>
+									<div class="card-body">
+										<span class="text-muted text-sm" id="imp-lib-count">0 files</span>
+										<div class="pkg-file-list mt-2" id="imp-lib-list">
+											<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- Demo Method Files -->
+								<div class="card mb-3 importer-card">
+									<div class="card-header">
+										<i class="fas fa-flask mr-2 color-medium"></i>Demo Method Files
+										<span class="text-muted ml-2 text-sm font-weight-normal" id="imp-demo-dest"></span>
+									</div>
+									<div class="card-body">
+										<span class="text-muted text-sm" id="imp-demo-count">0 files</span>
+										<div class="pkg-file-list mt-2" id="imp-demo-list">
+											<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No demo method files</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- Install Actions -->
+								<div class="text-center mt-4 mb-5">
+									<button class="btn solid-button btn-lg" id="imp-install"><i class="fas fa-download mr-2"></i>Install Library</button>
+									<div class="mt-2">
+										<button class="btn btn-sm btn-link text-muted" id="imp-reset"><i class="fas fa-undo mr-1"></i>Clear</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 
 		<!----Settings  start--->

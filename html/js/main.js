@@ -163,6 +163,7 @@ var DetachDatabase = edge.func({
 				fitMainDivHeight();
 				fitSettingsDivHeight();
 				fitExporterHeight();
+				fitImporterHeight();
 			}, 150, "");
 		});
 
@@ -280,10 +281,17 @@ var DetachDatabase = edge.func({
 			if(group_id == "gEditors"){
 				$(".links-container").addClass("d-none");
 				$(".exporter-container").removeClass("d-none");
+				$(".importer-container").addClass("d-none");
 				fitExporterHeight();
+			} else if(group_id == "gFolders"){
+				$(".links-container").addClass("d-none");
+				$(".exporter-container").addClass("d-none");
+				$(".importer-container").removeClass("d-none");
+				fitImporterHeight();
 			} else {
 				$(".links-container").removeClass("d-none");
 				$(".exporter-container").addClass("d-none");
+				$(".importer-container").addClass("d-none");
 
 				if(group_id == "gAll"){
 					//If this is ALL , display all custom group containers that are displayed in the navbar.
@@ -411,12 +419,18 @@ var DetachDatabase = edge.func({
 				if (bool_treeChanged){
 					createGroups();
 				}else{
-					// Check if exporter tab is active and show it properly
+					// Check if exporter/importer tab is active and show it properly
 					var activeGroup = $(".navbar-custom").find(".active").attr("data-group-id");
 					if(activeGroup == "gEditors"){
 						$(".links-container").addClass("d-none");
 						$(".exporter-container").removeClass("d-none");
+						$(".importer-container").addClass("d-none");
 						fitExporterHeight();
+					} else if(activeGroup == "gFolders"){
+						$(".links-container").addClass("d-none");
+						$(".exporter-container").addClass("d-none");
+						$(".importer-container").removeClass("d-none");
+						fitImporterHeight();
 					} else {
 						fitNavBarItems();
 						fitMainDivHeight();
@@ -3039,6 +3053,221 @@ var DetachDatabase = edge.func({
 				alert("Error creating package:\n" + e.message);
 			}
 		}
+
+		//**************************************************************************************
+		//******  LIBRARY IMPORTER *************************************************************
+		//**************************************************************************************
+
+		var imp_manifest = null;
+		var imp_zipData = null;
+		var imp_filePath = null;
+
+		// Fit importer container height to window
+		function fitImporterHeight() {
+			if($(".methods-page").hasClass("d-none")){return;}
+			var importerDiv = $(".importer-container");
+			var height = window.innerHeight - $(".header1").outerHeight() - $(".header2").outerHeight();
+			importerDiv.height(height);
+		}
+
+		// ---- Browse for .hxlibpkg file ----
+		$(document).on("click", "#imp-browse", function() {
+			$("#imp-input-file").trigger("click");
+		});
+
+		$(document).on("change", "#imp-input-file", function() {
+			var fileInput = this;
+			if (!fileInput.files || fileInput.files.length === 0) return;
+			var filePath = fileInput.files[0].path;
+			$(this).val('');
+			if (!filePath) return;
+			impLoadPackage(filePath);
+		});
+
+		// ---- Load and parse the .hxlibpkg file ----
+		function impLoadPackage(filePath) {
+			try {
+				var zipBuffer = fs.readFileSync(filePath);
+				var zip = new AdmZip(zipBuffer);
+				var manifestEntry = zip.getEntry("manifest.json");
+				if (!manifestEntry) {
+					alert("Invalid package: manifest.json not found.");
+					return;
+				}
+				var manifestJson = zip.readAsText(manifestEntry);
+				var manifest = JSON.parse(manifestJson);
+
+				imp_manifest = manifest;
+				imp_zipData = zipBuffer;
+				imp_filePath = filePath;
+
+				// Update UI
+				$("#imp-file-label").text(path.basename(filePath)).removeClass("text-muted");
+				$("#imp-lib-name").text(manifest.library_name || "—");
+				$("#imp-author").text(manifest.author || "—");
+				$("#imp-organization").text(manifest.organization || "—");
+				$("#imp-version").text(manifest.version || "—");
+				$("#imp-venus-compat").text(manifest.venus_compatibility || "—");
+				$("#imp-created-date").text(manifest.created_date ? new Date(manifest.created_date).toLocaleString() : "—");
+				$("#imp-description").text(manifest.description || "—");
+				var tags = manifest.tags || [];
+				$("#imp-tags").text(tags.length > 0 ? tags.join(", ") : "—");
+
+				// Library image
+				if (manifest.library_image_base64) {
+					$("#imp-lib-image").attr("src", "data:image/bmp;base64," + manifest.library_image_base64);
+					$("#imp-image-card").removeClass("d-none");
+				} else {
+					$("#imp-image-card").addClass("d-none");
+				}
+
+				// Destination paths
+				var libFolder = db_links.links.findOne({"_id":"lib-folder"});
+				var metFolder = db_links.links.findOne({"_id":"met-folder"});
+				var libDest = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+				var metDest = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
+				var libName = manifest.library_name || "Unknown";
+				$("#imp-lib-dest").text("Install to: ...\\Library\\" + libName);
+				$("#imp-demo-dest").text("Install to: ...\\Methods\\Library Demo Methods\\" + libName);
+
+				// Library files list
+				var libFiles = manifest.library_files || [];
+				var $libList = $("#imp-lib-list");
+				$libList.empty();
+				if (libFiles.length === 0) {
+					$libList.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files</div>');
+				} else {
+					libFiles.forEach(function(f) {
+						$libList.append(
+							'<div class="pkg-file-item">' +
+							'<i class="far fa-file pkg-file-icon"></i>' +
+							'<span class="pkg-file-name">' + f + '</span>' +
+							'</div>'
+						);
+					});
+				}
+				$("#imp-lib-count").text(libFiles.length + " file" + (libFiles.length !== 1 ? "s" : ""));
+
+				// Demo method files list
+				var demoFiles = manifest.demo_method_files || [];
+				var $demoList = $("#imp-demo-list");
+				$demoList.empty();
+				if (demoFiles.length === 0) {
+					$demoList.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No demo method files</div>');
+				} else {
+					demoFiles.forEach(function(f) {
+						$demoList.append(
+							'<div class="pkg-file-item">' +
+							'<i class="far fa-file pkg-file-icon"></i>' +
+							'<span class="pkg-file-name">' + f + '</span>' +
+							'</div>'
+						);
+					});
+				}
+				$("#imp-demo-count").text(demoFiles.length + " file" + (demoFiles.length !== 1 ? "s" : ""));
+
+				// Show details section
+				$("#imp-details").removeClass("d-none");
+
+			} catch(e) {
+				alert("Error reading package:\n" + e.message);
+			}
+		}
+
+		// ---- Install button ----
+		$(document).on("click", "#imp-install", function() {
+			if (!imp_manifest || !imp_zipData) {
+				alert("Please select a .hxlibpkg file first.");
+				return;
+			}
+			impInstallPackage();
+		});
+
+		function impInstallPackage() {
+			try {
+				var manifest = imp_manifest;
+				var libName = manifest.library_name || "Unknown";
+
+				// Determine install paths from the database
+				var libFolder = db_links.links.findOne({"_id":"lib-folder"});
+				var metFolder = db_links.links.findOne({"_id":"met-folder"});
+				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
+
+				var libDestDir = path.join(libBasePath, libName);
+				var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
+
+				var libFiles = manifest.library_files || [];
+				var demoFiles = manifest.demo_method_files || [];
+
+				// Confirm before installing
+				var msg = "Install \"" + libName + "\"?\n\n";
+				if (libFiles.length > 0) {
+					msg += "Library files (" + libFiles.length + ") → " + libDestDir + "\n";
+				}
+				if (demoFiles.length > 0) {
+					msg += "Demo methods (" + demoFiles.length + ") → " + demoDestDir + "\n";
+				}
+				msg += "\nExisting files with the same name will be overwritten.";
+				if (!confirm(msg)) return;
+
+				var zip = new AdmZip(imp_zipData);
+				var extractedCount = 0;
+
+				// Create destination directories
+				if (libFiles.length > 0) {
+					if (!fs.existsSync(libDestDir)) {
+						fs.mkdirSync(libDestDir, { recursive: true });
+					}
+				}
+				if (demoFiles.length > 0) {
+					if (!fs.existsSync(demoDestDir)) {
+						fs.mkdirSync(demoDestDir, { recursive: true });
+					}
+				}
+
+				// Extract library files
+				var zipEntries = zip.getEntries();
+				zipEntries.forEach(function(entry) {
+					if (entry.entryName === "manifest.json") return;
+
+					if (entry.entryName.indexOf("library/") === 0) {
+						var fname = entry.entryName.substring("library/".length);
+						if (fname) {
+							var outPath = path.join(libDestDir, fname);
+							fs.writeFileSync(outPath, entry.getData());
+							extractedCount++;
+						}
+					} else if (entry.entryName.indexOf("demo_methods/") === 0) {
+						var fname = entry.entryName.substring("demo_methods/".length);
+						if (fname) {
+							var outPath = path.join(demoDestDir, fname);
+							fs.writeFileSync(outPath, entry.getData());
+							extractedCount++;
+						}
+					}
+				});
+
+				alert("Library installed successfully!\n\n" +
+					"Library: " + libName + "\n" +
+					"Files installed: " + extractedCount + "\n\n" +
+					(libFiles.length > 0 ? "Library → " + libDestDir + "\n" : "") +
+					(demoFiles.length > 0 ? "Demo Methods → " + demoDestDir : ""));
+
+			} catch(e) {
+				alert("Error installing package:\n" + e.message);
+			}
+		}
+
+		// ---- Reset / Clear importer ----
+		$(document).on("click", "#imp-reset", function() {
+			imp_manifest = null;
+			imp_zipData = null;
+			imp_filePath = null;
+			$("#imp-file-label").text("No file selected").addClass("text-muted");
+			$("#imp-details").addClass("d-none");
+			$("#imp-image-card").addClass("d-none");
+		});
 
         //**************************************************************************************
         //******  FUNCTION DECLARATIONS END ****************************************************
