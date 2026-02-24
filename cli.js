@@ -237,15 +237,28 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
     const demoFiles = manifest.demo_method_files || [];
     const comDlls   = manifest.com_register_dlls || [];
 
+    // Auto-detect .chm help files: separate them from library_files
+    // Also check manifest.help_files for packages that already have them declared
+    const declaredHelp = manifest.help_files || [];
+    const helpFiles = declaredHelp.slice();
+    const filteredLibFiles = [];
+    libFiles.forEach(function (f) {
+        if (path.extname(f).toLowerCase() === '.chm') {
+            if (helpFiles.indexOf(f) === -1) helpFiles.push(f);
+        } else {
+            filteredLibFiles.push(f);
+        }
+    });
+
     // Ensure destination directories exist
-    if (libFiles.length > 0 && !fs.existsSync(libDestDir)) {
+    if ((filteredLibFiles.length > 0 || helpFiles.length > 0) && !fs.existsSync(libDestDir)) {
         fs.mkdirSync(libDestDir, { recursive: true });
     }
     if (demoFiles.length > 0 && !fs.existsSync(demoDestDir)) {
         fs.mkdirSync(demoDestDir, { recursive: true });
     }
 
-    // Extract payload files
+    // Extract payload files — CHM files are extracted to the library directory
     let extractedCount = 0;
     zip.getEntries().forEach(function (entry) {
         if (entry.isDirectory || entry.entryName === 'manifest.json') return;
@@ -262,6 +275,13 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
                 fs.writeFileSync(path.join(demoDestDir, fname), entry.getData());
                 extractedCount++;
             }
+        } else if (entry.entryName.startsWith('help_files/')) {
+            // Legacy/explicit help_files folder — extract to library directory
+            const fname = entry.entryName.substring('help_files/'.length);
+            if (fname) {
+                fs.writeFileSync(path.join(libDestDir, fname), entry.getData());
+                extractedCount++;
+            }
         }
         // icon/ entries are not extracted to disk — they remain embedded in manifest base64
     });
@@ -272,7 +292,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         db.installed_libs.remove({ _id: existing._id });
     }
 
-    const fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls);
+    const fileHashes = computeLibraryHashes(filteredLibFiles, libDestDir, comDlls);
 
     const dbRecord = {
         library_name:        manifest.library_name        || '',
@@ -286,8 +306,9 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         library_image:       manifest.library_image        || null,
         library_image_base64:manifest.library_image_base64 || null,
         library_image_mime:  manifest.library_image_mime   || null,
-        library_files:       libFiles,
+        library_files:       filteredLibFiles,
         demo_method_files:   demoFiles,
+        help_files:          helpFiles,
         com_register_dlls:   comDlls,
         com_warning:         false,
         lib_install_path:    libDestDir,
@@ -506,6 +527,7 @@ function cmdExportLib(args) {
 
     const libraryFiles = lib.library_files     || [];
     const demoFiles    = lib.demo_method_files  || [];
+    const helpFiles    = lib.help_files         || [];
     const libBasePath  = lib.lib_install_path   || '';
     const demoBasePath = lib.demo_install_path  || '';
 
@@ -530,15 +552,17 @@ function cmdExportLib(args) {
         library_image:       lib.library_image        || null,
         library_image_base64:lib.library_image_base64 || null,
         library_image_mime:  lib.library_image_mime   || null,
-        library_files:       libraryFiles.slice(),
+        library_files:       libraryFiles.concat(helpFiles),
         demo_method_files:   demoFiles.slice(),
+        help_files:          helpFiles.slice(),
         com_register_dlls:   (lib.com_register_dlls   || []).slice()
     };
 
     const zip = new AdmZip();
     zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
 
-    libraryFiles.forEach(f => {
+    // Pack all library files + help files into library/ (CHMs live in the library folder)
+    libraryFiles.concat(helpFiles).forEach(f => {
         const fp = path.join(libBasePath, f);
         if (fs.existsSync(fp)) zip.addLocalFile(fp, 'library');
     });
@@ -610,6 +634,7 @@ function cmdExportArchive(args) {
             const demoBasePath = lib.demo_install_path || '';
             const libraryFiles = lib.library_files     || [];
             const demoFiles    = lib.demo_method_files  || [];
+            const helpFiles    = lib.help_files         || [];
             const comDlls      = lib.com_register_dlls  || [];
 
             const manifest = {
@@ -625,8 +650,9 @@ function cmdExportArchive(args) {
                 library_image:       lib.library_image        || null,
                 library_image_base64:lib.library_image_base64 || null,
                 library_image_mime:  lib.library_image_mime   || null,
-                library_files:       libraryFiles.slice(),
+                library_files:       libraryFiles.concat(helpFiles),
                 demo_method_files:   demoFiles.slice(),
+                help_files:          helpFiles.slice(),
                 com_register_dlls:   comDlls.slice()
             };
 
@@ -634,7 +660,7 @@ function cmdExportArchive(args) {
             innerZip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
 
             let libAdded = 0, demoAdded = 0;
-            libraryFiles.forEach(f => {
+            libraryFiles.concat(helpFiles).forEach(f => {
                 const fp = path.join(libBasePath, f);
                 if (fs.existsSync(fp)) { innerZip.addLocalFile(fp, 'library');      libAdded++;  }
             });
@@ -702,11 +728,12 @@ function cmdDeleteLib(args) {
 
     // ---- Delete files from disk (unless --keep-files) ----
     if (!args['keep-files']) {
-        const libFiles = lib.library_files   || [];
-        const libPath  = lib.lib_install_path || '';
+        const libFiles  = lib.library_files   || [];
+        const helpFiles = lib.help_files      || [];
+        const libPath   = lib.lib_install_path || '';
 
-        if (libPath && libFiles.length > 0) {
-            libFiles.forEach(f => {
+        if (libPath && (libFiles.length > 0 || helpFiles.length > 0)) {
+            libFiles.concat(helpFiles).forEach(f => {
                 try {
                     const fp = path.join(libPath, f);
                     if (fs.existsSync(fp)) fs.unlinkSync(fp);

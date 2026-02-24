@@ -30,7 +30,21 @@
 							</li>
 							
 						</ul>
-						<form class="form-inline navbar-nav ml-md-auto">
+
+						<!-- Library Search Bar -->
+						<div class="imp-search-bar ml-auto mr-3">
+							<div class="input-group input-group-sm">
+								<div class="input-group-prepend">
+									<span class="input-group-text imp-search-icon"><i class="fas fa-search"></i></span>
+								</div>
+								<input type="text" class="form-control imp-search-input" id="imp-search-input" placeholder="Search libraries..." autocomplete="off">
+								<div class="input-group-append imp-search-clear-wrap d-none">
+									<button class="btn btn-outline-secondary imp-search-clear" type="button"><i class="fas fa-times"></i></button>
+								</div>
+							</div>
+						</div>
+
+						<form class="form-inline navbar-nav">
 							<div class="mr-5 cleanup-progress" style="display:none;">
 								<div class="text-sm cleanup-progress-text">Cleaning up run logs</div>
 								<div class="progress">
@@ -976,6 +990,10 @@
 					<div class="detail-section">
 						<h6 class="detail-section-label">Demo Method Files</h6>
 						<div class="pkg-file-list lib-detail-demo-files"></div>
+					</div>
+					<div class="detail-section lib-detail-help-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>
+						<div class="pkg-file-list lib-detail-help-files"></div>
 					</div>
 					<div class="detail-section lib-detail-com-section d-none">
 						<h6 class="detail-section-label">COM Registered DLLs</h6>

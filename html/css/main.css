@@ -1047,6 +1047,60 @@ body {
 	cursor: default;
 }
 
+/* System card name: truncate long names with ellipsis */
+.imp-lib-card-name-system {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 100%;
+}
+
+/* System card icon: BMP image with desaturation + lock overlay */
+.imp-sys-icon-wrap {
+	position: relative;
+	display: inline-block;
+	width: 48px;
+	height: 48px;
+	flex-shrink: 0;
+}
+
+.imp-sys-icon-img {
+	max-width: 48px;
+	max-height: 48px;
+	border-radius: 4px;
+	filter: saturate(0.5) opacity(0.72);
+	transition: filter 0.2s;
+}
+
+.imp-lib-card-system:hover .imp-sys-icon-img {
+	filter: saturate(0.7) opacity(0.85);
+}
+
+/* Tiled submethod icon grid for system libraries without a root icon */
+.imp-sys-icon-tiled {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	align-content: flex-start;
+	overflow: hidden;
+	border-radius: 4px;
+	background: #f4f4f5;
+	flex-shrink: 0;
+}
+
+.imp-sys-tile-icon {
+	object-fit: contain;
+	display: block;
+	filter: saturate(0.5) opacity(0.72);
+	transition: filter 0.2s;
+}
+
+.imp-lib-card-system:hover .imp-sys-tile-icon {
+	filter: saturate(0.7) opacity(0.85);
+}
+
+
 .imp-system-badge {
 	display: inline-flex;
 	align-items: center;
@@ -1137,4 +1191,64 @@ body {
 	margin-right: 4px;
 	color: #6c757d;
 	font-size: 0.7rem;
+}
+
+/* ---- Library Search Bar ---- */
+.imp-search-bar {
+	max-width: 260px;
+	min-width: 160px;
+	flex-shrink: 1;
+}
+
+.imp-search-bar .input-group {
+	border-radius: 16px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+	transition: box-shadow 0.2s;
+}
+
+.imp-search-bar .input-group:focus-within {
+	box-shadow: 0 1px 6px rgba(95, 151, 197, 0.25);
+}
+
+.imp-search-icon {
+	background: #f8f9fa;
+	border: 1px solid #dee2e6;
+	border-right: none;
+	color: #adb5bd;
+	font-size: 0.78rem;
+	padding: 2px 8px 2px 12px;
+	border-radius: 16px 0 0 16px !important;
+}
+
+.imp-search-input {
+	border: 1px solid #dee2e6;
+	border-left: none;
+	font-size: 0.82rem !important;
+	padding: 3px 8px !important;
+	height: auto !important;
+}
+
+.imp-search-input:focus {
+	box-shadow: none;
+	border-color: #dee2e6;
+}
+
+.imp-search-clear {
+	background: #f8f9fa;
+	border: 1px solid #dee2e6;
+	border-left: none;
+	color: #adb5bd;
+	font-size: 0.7rem;
+	padding: 2px 10px 2px 4px;
+	border-radius: 0 16px 16px 0 !important;
+}
+
+.imp-search-clear:hover {
+	color: #6c757d;
+	background: #e9ecef;
+}
+
+.imp-search-no-results {
+	user-select: none;
 }
