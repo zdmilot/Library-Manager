@@ -895,6 +895,16 @@ var DetachDatabase = edge.func({
 			saveSetting($(this).attr("id"), $(this).prop("checked"));
 		});
 
+		//Settings > Display checkboxes
+		$(document).on("click", "#chk_hideSystemLibraries", function(){
+			saveSetting($(this).attr("id"), $(this).prop("checked"));
+			// Refresh front page cards if currently on All tab
+			var activeGroup = $(".navbar-custom .nav-item.active, .navbar-custom .dropdown-navitem.active").attr("data-group-id");
+			if (activeGroup === 'gAll') {
+				impBuildLibraryCards();
+			}
+		});
+
 		//Settings - Recent dropdown change text
 		$(document).on("click", ".dd-maxRecent a", function () {
 			var txt = $(this).text();
@@ -2192,6 +2202,9 @@ var DetachDatabase = edge.func({
 			$("#chk_overwriteWithoutAsking").prop("checked", !!settings["chk_overwriteWithoutAsking"]);
 			$("#chk_autoAddToGroup").prop("checked", settings["chk_autoAddToGroup"] !== false);
 
+			//setting - Display: hide system libraries
+			$("#chk_hideSystemLibraries").prop("checked", !!settings["chk_hideSystemLibraries"]);
+
 			//reset nav bar and hide overflowing nav bar items
 			fitNavBarItems();
 			fitMainDivHeight();
@@ -2209,6 +2222,12 @@ var DetachDatabase = edge.func({
 			var updated = db_settings.settings.update(query, dataToSave, options);
 			//  console.log(dataToSave);
 			//  console.log(updated);
+		}
+
+		/** Read a single setting value from the settings DB */
+		function getSettingValue(key) {
+			var settings = db_settings.settings.find()[0];
+			return settings ? settings[key] : undefined;
 		}
 
 		function saveLinkKey(id,key,val){
@@ -3165,6 +3184,8 @@ var DetachDatabase = edge.func({
 
 		/**
 		 * Registers or unregisters a DLL using RegAsm.exe /codebase with UAC elevation.
+		 * Uses a temporary batch script to avoid nested shell-escaping issues and to
+		 * capture RegAsm output for meaningful error messages.
 		 * @param {string} dllPath - Full path to the DLL file
 		 * @param {boolean} register - true to register, false to unregister
 		 * @returns {Promise<{success: boolean, error: string}>}
@@ -3182,25 +3203,45 @@ var DetachDatabase = edge.func({
 					return;
 				}
 
-				var args = register
+				var os = require('os');
+				var tmpDir = os.tmpdir();
+				var stamp = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+				var outFile = path.join(tmpDir, 'lm_regasm_' + stamp + '.log');
+				var scriptFile = path.join(tmpDir, 'lm_regasm_' + stamp + '.cmd');
+
+				// Build a batch script that runs RegAsm and captures all output.
+				// This avoids deeply nested escaping of paths with spaces / parentheses.
+				var regasmArgs = register
 					? '"' + dllPath + '" /codebase'
 					: '/u "' + dllPath + '" /codebase';
 
-				// Use PowerShell Start-Process with -Verb RunAs to trigger UAC elevation
-				var psCommand = 'Start-Process -FilePath \\"' + regasm.replace(/\\/g, '\\\\') + '\\" -ArgumentList \'' + args.replace(/'/g, "''") + '\' -Verb RunAs -Wait -PassThru -WindowStyle Hidden';
-				
-				var fullCmd = 'powershell.exe -NoProfile -Command "try { $p = ' + psCommand + '; exit $p.ExitCode } catch { exit 1 }"';
+				var batContent = '@echo off\r\n"' + regasm + '" ' + regasmArgs + ' > "' + outFile + '" 2>&1\r\nexit /b %errorlevel%\r\n';
+				fs.writeFileSync(scriptFile, batContent, 'utf8');
+
+				// Elevate the batch script via PowerShell Start-Process -Verb RunAs.
+				// The script path is in %TEMP% which should never contain single-quote chars.
+				var psScript = "try { $p = Start-Process -FilePath '" + scriptFile + "' -Verb RunAs -Wait -PassThru -WindowStyle Hidden; exit $p.ExitCode } catch { exit 1 }";
+				var fullCmd = 'powershell.exe -NoProfile -Command "' + psScript + '"';
 
 				var exec = require('child_process').exec;
 				exec(fullCmd, {timeout: 30000}, function(error, stdout, stderr) {
+					// Read captured RegAsm output
+					var regasmOutput = '';
+					try { regasmOutput = fs.readFileSync(outFile, 'utf8').trim(); } catch(e) { /* file may not exist if UAC was cancelled */ }
+					// Clean up temp files
+					try { fs.unlinkSync(outFile); } catch(e) {}
+					try { fs.unlinkSync(scriptFile); } catch(e) {}
+
 					if (error) {
 						var errMsg = "COM " + (register ? "registration" : "deregistration") + " failed for " + path.basename(dllPath) + ".\n";
 						if (error.killed) {
 							errMsg += "Operation timed out.";
-						} else if (error.code === 1) {
+						} else if (error.code === 1 && !regasmOutput) {
 							errMsg += "The operation was cancelled or requires administrator rights.";
+						} else if (regasmOutput) {
+							errMsg += regasmOutput;
 						} else {
-							errMsg += (stderr || stdout || error.message || "Unknown error");
+							errMsg += "Exit code: " + error.code + ". " + (stderr || stdout || "No additional details available.");
 						}
 						resolve({success: false, error: errMsg});
 					} else {
@@ -3675,11 +3716,24 @@ var DetachDatabase = edge.func({
 				libs = libs.filter(function(l) { return !l.deleted; });
 			}
 
-			// In "All" mode (no groupId, no recentMode), prepend system library cards
-			var hasSystemCards = false;
+			// Determine which system libraries to show in "All" mode
+			var visibleSysLibs = [];
 			if (!groupId && !recentMode && systemLibraries.length > 0) {
-				hasSystemCards = true;
+				var hideSystemLibs = getSettingValue('chk_hideSystemLibraries');
+				var sysLibsAll = getAllSystemLibraries();
+				for (var si = 0; si < sysLibsAll.length; si++) {
+					if (hideSystemLibs) {
+						// Still show system libraries that have warnings or errors
+						var sysIntegrity = verifySystemLibraryIntegrity(sysLibsAll[si]);
+						if (!sysIntegrity.valid || sysIntegrity.warnings.length > 0) {
+							visibleSysLibs.push(sysLibsAll[si]);
+						}
+					} else {
+						visibleSysLibs.push(sysLibsAll[si]);
+					}
+				}
 			}
+			var hasSystemCards = visibleSysLibs.length > 0;
 
 			if ((!libs || libs.length === 0) && !hasSystemCards) {
 				var emptyMsg;
@@ -3697,28 +3751,6 @@ var DetachDatabase = edge.func({
 					'</div>'
 				);
 				return;
-			}
-
-			// In "All" mode, render system library cards first
-			if (hasSystemCards) {
-				var sysLibs = getAllSystemLibraries();
-				$container.append(
-					'<div class="col-md-12 mb-2">' +
-						'<span class="text-muted text-sm"><i class="fas fa-lock mr-1"></i>System Libraries</span>' +
-					'</div>'
-				);
-				sysLibs.forEach(function(sLib) {
-					$container.append(buildSystemLibraryCard(sLib));
-				});
-				// Separator between system and user libraries
-				if (libs && libs.length > 0) {
-					$container.append(
-						'<div class="col-md-12 mt-3 mb-2">' +
-							'<hr style="border-color:#dee2e6;">' +
-							'<span class="text-muted text-sm"><i class="fas fa-cube mr-1"></i>User-Installed Libraries</span>' +
-						'</div>'
-					);
-				}
 			}
 
 			libs.forEach(function(lib) {
@@ -3772,6 +3804,9 @@ var DetachDatabase = edge.func({
 					comWarningBadge = '<span class="badge badge-info ml-2" title="COM registered DLLs: ' + comDlls.join(', ') + '"><i class="fas fa-cog mr-1"></i>COM</span>';
 				}
 
+				// Help badge (optional, only if help file exists)
+				var helpBadge = "";
+
 				// Deleted badge
 				var deletedBadge = "";
 				if (isDeleted) {
@@ -3817,6 +3852,28 @@ var DetachDatabase = edge.func({
 
 				$container.append(str);
 			});
+
+			// In "All" mode, render system library cards after user libraries
+			if (hasSystemCards) {
+				// Separator between user and system libraries
+				if (libs && libs.length > 0) {
+					$container.append(
+						'<div class="col-md-12 mt-3 mb-2">' +
+							'<hr style="border-color:#dee2e6;">' +
+							'<span class="text-muted text-sm"><i class="fas fa-lock mr-1"></i>System Libraries</span>' +
+						'</div>'
+					);
+				} else {
+					$container.append(
+						'<div class="col-md-12 mb-2">' +
+							'<span class="text-muted text-sm"><i class="fas fa-lock mr-1"></i>System Libraries</span>' +
+						'</div>'
+					);
+				}
+				visibleSysLibs.forEach(function(sLib) {
+					$container.append(buildSystemLibraryCard(sLib));
+				});
+			}
 
 			// Bottom spacer
 			$container.append('<div class="col-md-12 my-3"></div>');
@@ -4132,7 +4189,7 @@ var DetachDatabase = edge.func({
 				$("#libDetailModal .lib-detail-com-dlls").html(comHtml);
 				if (hasComWarning) {
 					$("#libDetailModal .lib-detail-com-warning-badge").html(
-						'<span class="badge badge-warning"><i class="fas fa-exclamation-triangle mr-1"></i>COM registration failed — library may not function correctly</span>'
+						'<span class="badge badge-warning"><i class="fas fa-exclamation-triangle mr-1"></i>COM registration failed - library may not function correctly</span>'
 					);
 				} else {
 					$("#libDetailModal .lib-detail-com-warning-badge").html(
@@ -5211,17 +5268,9 @@ var DetachDatabase = edge.func({
 			var comDlls = lib.com_register_dlls || [];
 			var hasComWarning = lib.com_warning === true;
 
-			var msg = "Are you sure you want to permanently delete \"" + libName + "\"?\n\n";
-			msg += "This will remove ALL installed files from disk and the database record.\n\n";
-			if (comDlls.length > 0) {
-				msg += "COM registered DLLs: " + comDlls.join(", ") + "\n";
-				msg += "Administrator rights will be required to deregister COM objects.\n\n";
-			}
-			msg += "Library path: " + (lib.lib_install_path || "N/A") + "\n";
-			msg += "Demo path: " + (lib.demo_install_path || "N/A") + "\n\n";
-			msg += "This action cannot be undone.";
-
-			if (!confirm(msg)) return;
+			// Show styled delete confirmation modal (GitHub-style with name typing)
+			var deleteConfirmed = await showDeleteConfirmModal(libName, comDlls);
+			if (!deleteConfirmed) return;
 
 			// --- COM deregistration FIRST (before deleting files) ---
 			if (comDlls.length > 0) {
@@ -5795,6 +5844,266 @@ var DetachDatabase = edge.func({
 				alert("Error installing package:\n" + e.message);
 			}
 		});
+
+		//**************************************************************************************
+		//****** RUN LIBRARY AUDIT *************************************************************
+		//**************************************************************************************
+
+		// Click "Run Library Audit" from overflow menu
+		$(document).on("click", ".overflow-audit", function(e) {
+			e.preventDefault();
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
+
+			// Set default filename with unix timestamp
+			var unixTime = Math.floor(Date.now() / 1000);
+			$("#audit-save-dialog").attr("nwsaveas", "libraryAuditLog_" + unixTime + ".txt");
+			$("#audit-save-dialog").trigger("click");
+		});
+
+		// Audit save dialog result
+		$(document).on("change", "#audit-save-dialog", function() {
+			var savePath = $(this).val();
+			if (!savePath) return;
+			$(this).val('');
+			generateLibraryAuditLog(savePath);
+		});
+
+		/**
+		 * Generates a full library audit log and writes it to the specified path.
+		 * Includes all installed (user) libraries and all system libraries with
+		 * their state, integrity, file hashes, and metadata.
+		 * @param {string} savePath - Full path to write the audit log file
+		 */
+		function generateLibraryAuditLog(savePath) {
+			try {
+				var lines = [];
+				var separator = "=".repeat(90);
+				var subSeparator = "-".repeat(70);
+				var now = new Date();
+
+				// ---- Header ----
+				lines.push(separator);
+				lines.push("  LIBRARY AUDIT LOG");
+				lines.push(separator);
+				lines.push("Generated:        " + now.toISOString());
+				lines.push("Unix Timestamp:   " + Math.floor(now.getTime() / 1000));
+				lines.push("Computer:         " + os.hostname());
+				lines.push("Username:         " + (os.userInfo().username || "Unknown"));
+				lines.push("OS:               " + os.type() + " " + os.release() + " (" + os.arch() + ")");
+
+				// VENUS paths
+				var libFolderRec = db_links.links.findOne({"_id":"lib-folder"});
+				var metFolderRec = db_links.links.findOne({"_id":"met-folder"});
+				var sysLibDir = (libFolderRec && libFolderRec.path) ? libFolderRec.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+				var metDir = (metFolderRec && metFolderRec.path) ? metFolderRec.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
+				lines.push("VENUS Library Dir: " + sysLibDir);
+				lines.push("VENUS Methods Dir: " + metDir);
+				lines.push("");
+
+				// ---- Summary counts ----
+				var installedLibs = db_installed_libs.installed_libs.find() || [];
+				var activeLibs = installedLibs.filter(function(l) { return !l.deleted; });
+				var deletedLibs = installedLibs.filter(function(l) { return l.deleted === true; });
+				var sysLibs = getAllSystemLibraries();
+
+				lines.push("SUMMARY");
+				lines.push(subSeparator);
+				lines.push("Installed libraries (active):   " + activeLibs.length);
+				lines.push("Installed libraries (deleted):  " + deletedLibs.length);
+				lines.push("System libraries:               " + sysLibs.length);
+				lines.push("Total libraries audited:        " + (installedLibs.length + sysLibs.length));
+				lines.push("");
+				lines.push("");
+
+				// ---- Installed (User) Libraries ----
+				lines.push(separator);
+				lines.push("  INSTALLED (USER) LIBRARIES");
+				lines.push(separator);
+				lines.push("");
+
+				if (installedLibs.length === 0) {
+					lines.push("  (No installed libraries found)");
+					lines.push("");
+				} else {
+					for (var i = 0; i < installedLibs.length; i++) {
+						var lib = installedLibs[i];
+						var libName = lib.library_name || "Unknown";
+						var integrity = verifyLibraryIntegrity(lib);
+
+						lines.push(subSeparator);
+						lines.push("Library:          " + libName);
+						lines.push("ID:               " + (lib._id || ""));
+						lines.push("Version:          " + (lib.version || "N/A"));
+						lines.push("Author:           " + (lib.author || "N/A"));
+						lines.push("Organization:     " + (lib.organization || "N/A"));
+						lines.push("Description:      " + (lib.description || ""));
+						lines.push("VENUS Compat.:    " + (lib.venus_compatibility || "N/A"));
+						lines.push("Tags:             " + ((lib.tags && lib.tags.length > 0) ? lib.tags.join(", ") : "None"));
+						lines.push("Status:           " + (lib.deleted ? "DELETED" : "Active"));
+						lines.push("Created Date:     " + (lib.created_date || "N/A"));
+						lines.push("Installed Date:   " + (lib.installed_date || "N/A"));
+						if (lib.deleted && lib.deleted_date) {
+							lines.push("Deleted Date:     " + lib.deleted_date);
+						}
+						lines.push("Source Package:   " + (lib.source_package || "N/A"));
+						lines.push("Install Path:     " + (lib.lib_install_path || "N/A"));
+						lines.push("Demo Path:        " + (lib.demo_install_path || "N/A"));
+
+						// COM DLLs
+						var comDlls = lib.com_register_dlls || [];
+						lines.push("COM DLLs:         " + (comDlls.length > 0 ? comDlls.join(", ") : "None"));
+						lines.push("COM Warning:      " + (lib.com_warning ? "YES" : "No"));
+
+						// Integrity status
+						var intStatus = integrity.valid ? "PASS" : "FAIL";
+						if (integrity.valid && integrity.warnings.length > 0) intStatus = "WARNING";
+						lines.push("Integrity:        " + intStatus);
+						if (integrity.errors.length > 0) {
+							integrity.errors.forEach(function(err) {
+								lines.push("  [ERROR]  " + err);
+							});
+						}
+						if (integrity.warnings.length > 0) {
+							integrity.warnings.forEach(function(w) {
+								lines.push("  [WARN]   " + w);
+							});
+						}
+
+						// Library files
+						var libFiles = lib.library_files || [];
+						lines.push("Library Files (" + libFiles.length + "):");
+						libFiles.forEach(function(f) {
+							var fullPath = path.join(lib.lib_install_path || "", f);
+							var exists = fs.existsSync(fullPath);
+							var storedHash = (lib.file_hashes && lib.file_hashes[f]) ? lib.file_hashes[f] : null;
+							var currentHash = exists ? computeFileHash(fullPath) : null;
+							var hashMatch = (storedHash && currentHash) ? (storedHash === currentHash ? "MATCH" : "MISMATCH") : "N/A";
+							lines.push("  - " + f);
+							lines.push("      Exists: " + (exists ? "Yes" : "NO - MISSING"));
+							if (storedHash)   lines.push("      Stored Hash:  " + storedHash);
+							if (currentHash)  lines.push("      Current Hash: " + currentHash);
+							if (storedHash || currentHash) lines.push("      Hash Status:  " + hashMatch);
+						});
+
+						// Demo files
+						var demoFiles = lib.demo_method_files || [];
+						if (demoFiles.length > 0) {
+							lines.push("Demo Files (" + demoFiles.length + "):");
+							demoFiles.forEach(function(f) {
+								var fullPath = path.join(lib.demo_install_path || "", f);
+								var exists = fs.existsSync(fullPath);
+								lines.push("  - " + f + (exists ? "" : "  [MISSING]"));
+							});
+						}
+
+						// Public functions
+						var pubFns = lib.public_functions || [];
+						if (pubFns.length > 0) {
+							lines.push("Public Functions (" + pubFns.length + "):");
+							pubFns.forEach(function(fn) {
+								lines.push("  - " + (fn.qualifiedName || fn.name || ""));
+							});
+						}
+
+						lines.push("");
+					}
+				}
+
+				// ---- System Libraries ----
+				lines.push("");
+				lines.push(separator);
+				lines.push("  SYSTEM LIBRARIES (Hamilton Base)");
+				lines.push(separator);
+				lines.push("");
+
+				if (sysLibs.length === 0) {
+					lines.push("  (No system libraries found)");
+					lines.push("");
+				} else {
+					for (var s = 0; s < sysLibs.length; s++) {
+						var sLib = sysLibs[s];
+						var sLibName = sLib.canonical_name || sLib.library_name || "Unknown";
+						var sIntegrity = verifySystemLibraryIntegrity(sLib);
+
+						lines.push(subSeparator);
+						lines.push("Library:          " + (sLib.display_name || sLibName));
+						lines.push("Canonical Name:   " + sLibName);
+						lines.push("ID:               " + (sLib._id || ""));
+						lines.push("Author:           " + (sLib.author || "Hamilton"));
+						lines.push("Organization:     " + (sLib.organization || "Hamilton"));
+						lines.push("Type:             System (Read-Only)");
+						lines.push("First Seen:       " + (sLib.first_seen_at || "N/A"));
+						lines.push("Last Seen:        " + (sLib.last_seen_at || "N/A"));
+						lines.push("Source Root:      " + (sLib.source_root || "Library"));
+						lines.push("Has Primary Def:  " + (sLib.has_primary_definition ? "Yes" : "No"));
+
+						// Resource types
+						var resTypes = sLib.resource_types || [];
+						lines.push("Resource Types:   " + (resTypes.length > 0 ? resTypes.join(", ") : "N/A"));
+
+						// Integrity status
+						var sIntStatus = sIntegrity.valid ? "PASS" : "FAIL";
+						if (sIntegrity.valid && sIntegrity.warnings.length > 0) sIntStatus = "WARNING";
+						lines.push("Integrity:        " + sIntStatus);
+						if (sIntegrity.errors.length > 0) {
+							sIntegrity.errors.forEach(function(err) {
+								lines.push("  [ERROR]  " + err);
+							});
+						}
+						if (sIntegrity.warnings.length > 0) {
+							sIntegrity.warnings.forEach(function(w) {
+								lines.push("  [WARN]   " + w);
+							});
+						}
+
+						// Discovered files with hash verification
+						var discoveredFiles = sLib.discovered_files || [];
+						var hashEntry = systemLibraryHashes[sLibName];
+						var storedHashes = (hashEntry && hashEntry.hashes) ? hashEntry.hashes : {};
+						lines.push("Discovered Files (" + discoveredFiles.length + "):");
+						discoveredFiles.forEach(function(f) {
+							var relPath = f.replace(/^Library[\\\/]/i, '');
+							var fullPath = path.join(sysLibDir, relPath);
+							var exists = fs.existsSync(fullPath);
+							var baseFileName = relPath.replace(/\\/g, '/').split('/').pop();
+							var storedHash = storedHashes[baseFileName] || null;
+							var currentHash = exists ? computeSystemFileHash(fullPath) : null;
+							var hashMatch = (storedHash && currentHash) ? (storedHash === currentHash ? "MATCH" : "MISMATCH") : "N/A";
+
+							lines.push("  - " + f);
+							lines.push("      Exists: " + (exists ? "Yes" : "NO - MISSING"));
+							if (storedHash || currentHash) {
+								if (storedHash)  lines.push("      Stored Hash:  " + storedHash);
+								if (currentHash) lines.push("      Current Hash: " + currentHash);
+								lines.push("      Hash Status:  " + hashMatch);
+							}
+						});
+
+						lines.push("");
+					}
+				}
+
+				// ---- Footer ----
+				lines.push("");
+				lines.push(separator);
+				lines.push("  END OF AUDIT LOG");
+				lines.push(separator);
+				lines.push("Total entries: " + (installedLibs.length + sysLibs.length));
+				lines.push("Audit completed at: " + new Date().toISOString());
+				lines.push("");
+
+				// Write file
+				var content = lines.join("\r\n");
+				fs.writeFileSync(savePath, content, 'utf8');
+
+				alert("Library audit log saved successfully.\n\n" + savePath);
+
+			} catch(e) {
+				alert("Error generating audit log:\n" + e.message);
+				console.error("Audit log error:", e);
+			}
+		}
 
         //**************************************************************************************
         //******  FUNCTION DECLARATIONS END ****************************************************

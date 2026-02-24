@@ -60,6 +60,7 @@
 									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
 									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive mr-2"></i>Export Archive</a>
 									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list mr-2"></i>History</a>
+									<a class="dropdown-item overflow-audit" href="#"><i class="fas fa-clipboard-check mr-2"></i>Run Library Audit</a>
 									<div class="dropdown-divider"></div>
 									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog mr-2"></i>Settings</a>
 									<a class="dropdown-item overflow-help" href="#"><i class="fas fa-question-circle mr-2"></i>Help</a>
@@ -313,6 +314,14 @@
 								<input type="checkbox" class="custom-control-input" id="chk_autoAddToGroup" checked>
 								<label class="custom-control-label" for="chk_autoAddToGroup">Automatically add newly imported libraries to a group</label>
 							</div>
+						</div>
+						<div class="settings-section col-md-12 p-3 no-gutters">
+							<h6>Display</h6>
+							<div class="custom-control custom-checkbox">
+								<input type="checkbox" class="custom-control-input" id="chk_hideSystemLibraries">
+								<label class="custom-control-label" for="chk_hideSystemLibraries">Hide system libraries on the front page</label>
+							</div>
+							<small class="text-muted ml-4">System libraries with warnings or errors will still be shown.</small>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
 							<h6>Recent</h6>
@@ -972,6 +981,14 @@
 							</div>
 						</div>
 					</div>
+					<div class="row mb-2">
+						<div class="col-md-6">
+							<div class="detail-section">
+								<h6 class="detail-section-label">Package Date</h6>
+								<p class="lib-detail-created-date text-muted"></p>
+							</div>
+						</div>
+					</div>
 					<div class="detail-section lib-detail-tags-section">
 						<h6 class="detail-section-label">Tags</h6>
 						<p class="lib-detail-tags text-muted"></p>
@@ -1029,6 +1046,53 @@
 		</div>
 	</div>
 	<!--Modal Library Detail end --->
+
+	<!---- Modal Delete Library Confirmation start --->
+	<div class="modal" tabindex="-1" role="dialog" id="deleteLibConfirmModal">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:480px;">
+			<div class="modal-content delete-confirm-content">
+				<div class="modal-header delete-confirm-header">
+					<div class="d-flex align-items-center">
+						<div class="delete-confirm-icon mr-3">
+							<i class="fas fa-exclamation-triangle fa-2x"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Delete Library</h5>
+							<span class="delete-confirm-libname-header"></span>
+						</div>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body delete-confirm-body">
+					<div class="delete-confirm-warning-box">
+						<p class="mb-2"><strong>This action cannot be undone.</strong> This will permanently remove all installed library and demo files from disk.</p>
+						<p class="delete-confirm-consequences mb-0"></p>
+					</div>
+					<div class="delete-confirm-com-section d-none mt-3">
+						<div class="delete-confirm-com-box">
+							<i class="fas fa-cog mr-1"></i>
+							<strong>COM Registered DLLs:</strong>
+							<span class="delete-confirm-com-dlls"></span>
+							<div class="mt-1 text-sm"><i class="fas fa-shield-alt mr-1"></i>Administrator rights will be required to deregister COM objects.</div>
+						</div>
+					</div>
+					<div class="delete-confirm-input-section mt-3">
+						<label class="delete-confirm-label">To confirm, type "<strong class="delete-confirm-expected-text"></strong>" in the box below</label>
+						<input type="text" class="form-control delete-confirm-input" autocomplete="off" spellcheck="false">
+					</div>
+				</div>
+				<div class="modal-footer delete-confirm-footer">
+					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-danger delete-confirm-btn" disabled>
+						<i class="fas fa-trash-alt mr-1"></i>I understand, delete this library
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Delete Library Confirmation end --->
 
 	<!---- Modal Export Archive start --->
 	<div class="modal" tabindex="-1" role="dialog" id="exportArchiveModal">
@@ -1213,6 +1277,8 @@
 	</div>
 	<!---- Modal Import Success end --->
 
+	<!-- Hidden save dialog for Library Audit -->
+	<input type="file" class="d-none" id="audit-save-dialog" nwsaveas="libraryAuditLog.txt" accept=".txt">
 
 	<!-- JQuery -->
 	<script src="js/jquery-2.1.3.min.js" type="text/javascript"></script>
