@@ -64,14 +64,14 @@
 								</button>
 								<div class="dropdown-menu dropdown-menu-right">
 									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
-									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive mr-2"></i>Export Archive</a>
+									<a class="dropdown-item overflow-repair" href="#"><i class="fas fa-tools mr-2"></i>Verify &amp; Repair</a>
+									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group mr-2"></i>Library Groups</a>
 									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list mr-2"></i>History</a>
 									<div class="dropdown-divider"></div>
 									<a class="dropdown-item overflow-audit" href="#"><i class="fas fa-file-signature mr-2"></i>Run Library Audit</a>
 									<a class="dropdown-item overflow-check-audit" href="#"><i class="fas fa-clipboard-check mr-2"></i>Check Audit File</a>
-									<a class="dropdown-item overflow-repair" href="#"><i class="fas fa-tools mr-2"></i>Verify &amp; Repair</a>
 									<div class="dropdown-divider"></div>
-									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group mr-2"></i>Library Groups</a>
+									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive mr-2"></i>Export Archive</a>
 									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog mr-2"></i>Settings</a>
 									<a class="dropdown-item overflow-help" href="#"><i class="fas fa-question-circle mr-2"></i>Help</a>
 								</div>
@@ -864,6 +864,9 @@
 					<div class="detail-section lib-detail-integrity-section d-none">
 						<h6 class="detail-section-label">File Integrity</h6>
 						<div class="lib-detail-integrity-status"></div>
+						<div class="lib-detail-integrity-repair d-none mt-2">
+							<button class="btn btn-sm btn-outline-success lib-detail-repair-btn"><i class="fas fa-wrench mr-1"></i>Repair from Backup</button>
+						</div>
 					</div>
 					<div class="detail-section lib-detail-help-section d-none">
 						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>

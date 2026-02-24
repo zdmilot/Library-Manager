@@ -149,7 +149,27 @@
 </div>
 
 <h2>groups Collection</h2>
-<p>Defines the navigation groups (tabs) shown in the GUI. Each group has a name, FontAwesome icon class, and display metadata.</p>
+<p>Defines the navigation groups (tabs) shown in the GUI. The application uses a <b>two-tier group architecture</b>:</p>
+
+<h3>Default Groups (Hardcoded)</h3>
+<p>Six built-in groups are defined in a <code>DEFAULT_GROUPS</code> map in the application source code. These are <b>never stored</b> in <code>groups.json</code> — they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the JSON file to prevent duplicates.</p>
+
+<table>
+<thead><tr><th>ID</th><th>Name</th><th>Icon</th><th>Side</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>gAll</code></td><td>All</td><td><code>fa-th</code></td><td>left</td><td>Shows all installed libraries</td></tr>
+<tr><td><code>gRecent</code></td><td>Recent</td><td><code>fa-clock</code></td><td>left</td><td>Recently accessed libraries</td></tr>
+<tr><td><code>gHamilton</code></td><td>Hamilton</td><td><code>fa-check-circle</code> (solid)</td><td>left</td><td>Protected Hamilton-authored libraries</td></tr>
+<tr><td><code>gFolders</code></td><td>Import</td><td><code>fa-file-import</code></td><td>right</td><td>Import workflow tab</td></tr>
+<tr><td><code>gEditors</code></td><td>Export</td><td><code>fa-file-export</code></td><td>right</td><td>Export workflow tab</td></tr>
+<tr><td><code>gHistory</code></td><td>History</td><td><code>fa-history</code></td><td>right</td><td>Action history</td></tr>
+</tbody>
+</table>
+
+<p>The <code>gHamilton</code> group has an additional <code>"protected": true</code> property that prevents it from being deleted or renamed. See <a href="LibraryGrouping.html">Library Grouping</a> for full details on Hamilton group protections.</p>
+
+<h3>User-Created Groups (Stored in groups.json)</h3>
+<p>User-created groups have auto-generated <code>_id</code> values and <code>"default": false</code>. Each group has a name, FontAwesome icon class, and display metadata.</p>
 
 <div class="code"><pre>{
   "_id": "gAll",
@@ -161,16 +181,19 @@
 }</pre></div>
 
 <h3>Default Groups</h3>
-<table>
-<thead><tr><th>ID</th><th>Name</th><th>Navbar Side</th><th>Purpose</th></tr></thead>
-<tbody>
-<tr><td><code>gAll</code></td><td>All</td><td>left</td><td>Shows all installed libraries</td></tr>
-<tr><td><code>gRecent</code></td><td>Recent</td><td>left</td><td>Recently accessed libraries</td></tr>
-<tr><td><code>gFolders</code></td><td>Import</td><td>right</td><td>Import workflow tab</td></tr>
-<tr><td><code>gEditors</code></td><td>Export</td><td>right</td><td>Export workflow tab</td></tr>
-<tr><td><code>gHistory</code></td><td>History</td><td>right</td><td>Action history</td></tr>
-</tbody>
-</table>
+<p>The following default groups are <b>hardcoded</b> and not stored in <code>groups.json</code>. See the table above for the complete list. The code sample below shows what a default group entry looks like in the <code>DEFAULT_GROUPS</code> map (but this is not persisted to disk):</p>
+
+<div class="code"><pre>// In-memory only — not stored in groups.json
+{
+  "_id": "gHamilton",
+  "name": "Hamilton",
+  "icon-class": "fa-check-circle",
+  "default": true,
+  "protected": true,
+  "navbar": "left",
+  "favorite": true
+}</pre></div>
+
 <p>User-created groups have auto-generated <code>_id</code> values and <code>"default": false</code>.</p>
 
 <h2>tree Collection</h2>

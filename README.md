@@ -102,6 +102,7 @@ It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` fi
 - Produces an archive with:
   - Multiple embedded `.hxlibpkg` files
   - `archive_manifest.json` (archive metadata, count, included library names)
+  - **Archive icon** — A distinctive purple archive icon (three stacked purple diamonds) is embedded into every `.hxlibarch`. It is stored as base64 in `archive_manifest.json` and as a PNG file in an `icon/` directory within the archive. The icon is loaded from the static asset `assets/archive_icon_128.png` at export time.
 - Displays export summary including included libraries and file counts.
 
 ## 6) Deleting a library
@@ -137,7 +138,12 @@ It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` fi
   - `.hsl` -> `.hs_` -> `.smt`
 - Supports manual override of detected library name with warning UI.
 - Supports optional custom icon/image selection with size/type handling.
-- Auto-detects matching `.bmp` when custom image not supplied.
+- Image picker accepts `.png`, `.jpg`, `.jpeg`, `.bmp`, `.ico`, `.gif`, and `.svg` formats.
+- Auto-detects matching `.bmp` when custom image not supplied (exact-name match only: the packager looks for `<LibraryName>.bmp` in the library files list — partial matches like `<LibraryName>.extra.bmp` are not matched).
+- **Package icon compositing:** When a package is built, the icon stored in the package is a composited image:
+  - If the user supplies a library image, the final icon is that image with a **grayscale Library Manager logo** overlaid in the bottom-right third (similar to a Windows shortcut arrow). This visually brands the package while preserving the library's distinctive image.
+  - If no image is supplied (and no `.bmp` auto-detected), the icon is a **full-size grayscale Library Manager logo**.
+  - The compositing is performed at build time using the HTML5 Canvas API (`pkgCompositeLibraryIcon()`). The grayscale logo is loaded from a pre-rendered static asset (`assets/app_logo_gray_128.png`).
 - Supports per-DLL **COM Register** selection inside package payload.
 - Writes package with standardized structure (`manifest.json`, `library/`, `demo_methods/`, optional `icon/`).
 - Includes package reset workflow to clear all staged metadata/files.
@@ -157,8 +163,7 @@ It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` fi
   - Modified file / tampered checksum / valid flag changed
   - Missing file / metadata footer removed
   - Legacy/no-hash warning
-  - “All tracked files pass” success
-
+  - “All tracked files pass” success- **Package-level signing** (see §16) complements file-level hashing by ensuring packages have not been corrupted or tampered with in transit.
 ## 9) Library grouping and organization
 
 - Supports custom library groups (create, rename, delete).
@@ -167,7 +172,32 @@ It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` fi
 - Provides “Unassigned Libraries” pseudo-group in settings for ungrouped items.
 - Supports favorite/show-hide behavior for custom group visibility in navigation.
 - Persists group + assignment tree structure via local DB JSON.
+### Default groups (hardcoded)
 
+The application defines six built-in groups that are **hardcoded** in both `main.js` and `cli.js` via a `DEFAULT_GROUPS` map. These groups are never stored in `groups.json` — they are resolved in-memory at runtime. A startup migration IIFE automatically strips any stale default-group records from the external JSON file to prevent duplicates.
+
+| ID | Name | Icon | Side | Purpose |
+|----|------|------|------|---------|
+| `gAll` | All | `fa-th` | left | Shows all installed (non-deleted) libraries |
+| `gRecent` | Recent | `fa-clock` | left | Recently imported libraries |
+| `gHamilton` | Hamilton | `fa-check-circle` (solid) | left | Protected Hamilton-authored libraries |
+| `gFolders` | Import | `fa-file-import` | right | Import workflow tab |
+| `gEditors` | Export | `fa-file-export` | right | Export workflow tab |
+| `gHistory` | History | `fa-history` | right | Action history |
+
+User-created groups are stored in `groups.json` with `"default": false` and auto-generated `_id` values.
+
+### Hamilton default group
+
+The **Hamilton** group (`gHamilton`) is a special protected group that ships with the application. It is designed to contain libraries authored by Hamilton and is distinguished from regular custom groups in several ways:
+
+- **Non-deletable / non-renamable** — The Hamilton group has `"protected": true` in the `DEFAULT_GROUPS` map, preventing users from deleting or renaming it.
+- **Always visible** — It appears in the left-side navigation between the System libraries group and user-created groups.
+- **Solid checkmark icon** — Uses `fas fa-check-circle` (Font Awesome 5 Solid) to visually distinguish it from user-created groups.
+- **Password-protected author name** — The author name "Hamilton" is restricted. When a user enters "Hamilton" (case-insensitive) as the author in the Library Packager, a password prompt modal is displayed. The correct password must be entered before the package can be built. This prevents unauthorized attribution of packages to Hamilton.
+  - **GUI:** The `#authorPasswordModal` is triggered when the author field loses focus (`blur` event) and the value matches "Hamilton". The user must enter the password or clear the author field.
+  - **CLI:** The `--author-password` flag must be supplied when `--spec` contains `"author": "Hamilton"`. If the password is missing or incorrect, the CLI exits with an error.
+- **Empty state message** — When no Hamilton packages are installed, the Hamilton tab displays a dedicated placeholder message: *"No Hamilton packages installed yet. Import a Hamilton-authored library package to see it here."*
 ## 10) Recent/history and housekeeping
 
 - Tracks recent imports and exposes Recent view.
@@ -198,11 +228,12 @@ It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` fi
 ## 13) Local persistence and data model
 
 - Uses local JSON-backed storage (`diskdb`) under `db/` for:
-  - Groups
+  - Custom groups (user-created only — default groups are hardcoded)
   - Links
   - Settings
   - Group tree assignments
   - Installed library records
+- Default groups (All, Recent, Hamilton, Import, Export, History) are defined in a `DEFAULT_GROUPS` map in both `main.js` and `cli.js` and are resolved in-memory. They are never persisted to `groups.json`. A startup migration automatically removes any stale default-group records from the JSON file.
 - Persists key library lifecycle metadata:
   - Source package
   - Install and delete timestamps
@@ -217,6 +248,44 @@ It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` fi
 - `.hxlibarch` (multi-library archive)
   - ZIP containing multiple `.hxlibpkg`
   - `archive_manifest.json`
+
+## 15) Visual identity and static assets
+
+Venus Library Manager uses a consistent visual branding system across packages and archives. All visual assets are pre-rendered and stored in the `assets/` directory to avoid runtime conversion overhead.
+
+### Assets folder (`assets/`)
+
+| File | Size | Purpose |
+|------|------|---------|
+| `app_logo_gray_128.png` | 128×128 px | Grayscale version of the application logo, used as a brand overlay during package icon compositing |
+| `archive_icon_64.png` | 64×64 px | Purple archive icon (small) |
+| `archive_icon_128.png` | 128×128 px | Purple archive icon, embedded into `.hxlibarch` exports as the archive-level icon |
+| `archive_icon_256.png` | 256×256 px | Purple archive icon (large) |
+
+### Asset generation
+
+The static assets are generated from source files using two methods:
+
+- **`archive_icon_*.png`** — Rendered from `ArchiveIcon.svg` using Inkscape CLI at 64, 128, and 256px resolutions. The SVG depicts three stacked purple diamonds representing a multi-library bundle.
+- **`app_logo_gray_128.png`** — Generated from the application's colour logo using Pillow (Python), applying a full desaturation (grayscale conversion) and resizing to 128×128px.
+
+These pre-rendered PNGs replace earlier runtime approaches (SVG→Canvas rendering and live grayscale conversion), reducing code complexity and improving reliability.
+
+### Package icon compositing
+
+When a `.hxlibpkg` is built (GUI or CLI), the icon written into the package's `manifest.json` and `icon/` directory is a **composited image**:
+
+1. **With user image:** The user's chosen library image is drawn at full size on an HTML5 Canvas, then the grayscale logo (`app_logo_gray_128.png`) is overlaid in the bottom-right corner at one-third of the canvas size. This produces a branded icon that still prominently shows the library's own artwork — similar to how Windows draws shortcut arrows on shortcuts.
+2. **Without user image:** The grayscale logo is drawn at full canvas size, providing a consistent placeholder icon.
+
+The compositing is performed by `pkgCompositeLibraryIcon()` in `main.js`, which returns a base64-encoded PNG data URL.
+
+### Archive icon
+
+Multi-library archive files (`.hxlibarch`) embed a distinctive **purple archive icon** representing stacked library bundles. The icon is:
+- Stored as a base64-encoded PNG in the `archive_manifest.json` (`archive_icon_base64` and `archive_icon_mime` fields)
+- Also written as a physical PNG file to `icon/archive_icon.png` inside the archive ZIP
+- Loaded at export time from the static asset `assets/archive_icon_128.png` using synchronous file I/O (`getArchiveIconPng()`)
 
 ---
 
@@ -333,7 +402,7 @@ node cli.js import-archive --file bundle.hxlibarch --force
 
 ### `export-lib` — Export a single installed library as `.hxlibpkg`
 
-Rebuilds a `.hxlibpkg` from the currently installed files on disk for the named library. This captures any changes made since the original install ("mutable export").
+Rebuilds a `.hxlibpkg` from the currently installed files on disk for the named library. This captures any changes made since the original install ("mutable export"). The exported package is automatically signed with an HMAC-SHA256 signature.
 
 ```
 node cli.js export-lib (--name <name> | --id <id>) --output <path>
@@ -356,7 +425,7 @@ node cli.js export-lib --id e5c6a701 --output dist\MyLibrary.hxlibpkg
 
 ### `export-archive` — Export libraries as `.hxlibarch`
 
-Bundles one or more installed libraries into a single `.hxlibarch` file. Each library is re-packed from current disk state, so the archive reflects any post-install modifications.
+Bundles one or more installed libraries into a single `.hxlibarch` file. Each library is re-packed from current disk state, so the archive reflects any post-install modifications. Each inner `.hxlibpkg` is individually signed with an HMAC-SHA256 signature.
 
 ```
 node cli.js export-archive (--all | --names <n1,n2,...> | --ids <id1,id2,...>) --output <path>
@@ -417,7 +486,7 @@ node cli.js delete-lib --name "MyLibrary" --yes --keep-files
 
 ### `create-package` — Build a `.hxlibpkg` from raw files
 
-Creates a `.hxlibpkg` from library source files and metadata defined in a JSON spec file. This is the CLI equivalent of the GUI Library Packager.
+Creates a `.hxlibpkg` from library source files and metadata defined in a JSON spec file. This is the CLI equivalent of the GUI Library Packager. The resulting package is automatically signed with an HMAC-SHA256 signature.
 
 ```
 node cli.js create-package --spec <spec.json> --output <output.hxlibpkg>
@@ -489,6 +558,35 @@ All **file paths** inside the spec are resolved **relative to the directory cont
 
 ---
 
+### `verify-package` — Verify a package signature
+
+Checks the HMAC-SHA256 signature embedded in a `.hxlibpkg` file without importing it. Useful for validating packages before distribution, after file transfer, or in CI pipelines.
+
+```
+node cli.js verify-package --file <path> [--json]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--file <path>` | **Required.** Path to the `.hxlibpkg` file to verify |
+| `--json` | Print machine-readable JSON output |
+
+**Possible outcomes:**
+- **VERIFIED** — `signature.json` is present, all file hashes match, and the HMAC is valid. Exit code `0`.
+- **UNSIGNED** — No `signature.json` found. The package is a legacy or third-party package. Exit code `0`.
+- **FAILED** — One or more file hashes do not match, or the HMAC is invalid. Exit code `1`.
+
+**Examples**
+```bat
+:: Verify a package
+node cli.js verify-package --file MyLibrary.hxlibpkg
+
+:: Machine-readable output for CI
+node cli.js verify-package --file MyLibrary.hxlibpkg --json
+```
+
+---
+
 ### Automated testing / CI usage
 
 The CLI is designed for use in automated test pipelines. A typical round-trip test sequence:
@@ -497,32 +595,35 @@ The CLI is designed for use in automated test pipelines. A typical round-trip te
 @REM 1. Create a package from raw sources
 node cli.js create-package --spec tests\MyLib.spec.json --output tests\out\MyLib.hxlibpkg
 
-@REM 2. Import it (against a test DB to avoid touching production data)
+@REM 2. Verify the package signature
+node cli.js verify-package --file tests\out\MyLib.hxlibpkg
+
+@REM 3. Import it (against a test DB to avoid touching production data)
 node cli.js import-lib --file tests\out\MyLib.hxlibpkg ^
     --db-path tests\scratch-db ^
     --lib-dir tests\scratch-lib ^
     --met-dir tests\scratch-met
 
-@REM 3. Verify it appears in the library list
+@REM 4. Verify it appears in the library list
 node cli.js list-libs --db-path tests\scratch-db --json
 
-@REM 4. Re-export the installed library
+@REM 5. Re-export the installed library
 node cli.js export-lib --name "MyLib" ^
     --db-path tests\scratch-db ^
     --output tests\out\MyLib-roundtrip.hxlibpkg
 
-@REM 5. Bundle everything into an archive
+@REM 6. Bundle everything into an archive
 node cli.js export-archive --all ^
     --db-path tests\scratch-db ^
     --output tests\out\archive.hxlibarch
 
-@REM 6. Import the archive into a second scratch environment
+@REM 7. Import the archive into a second scratch environment
 node cli.js import-archive --file tests\out\archive.hxlibarch ^
     --db-path tests\scratch-db2 ^
     --lib-dir tests\scratch-lib2 ^
     --met-dir tests\scratch-met2
 
-@REM 7. Clean up
+@REM 8. Clean up
 node cli.js delete-lib --name "MyLib" --db-path tests\scratch-db --yes
 ```
 
@@ -561,8 +662,12 @@ This software provides complete library lifecycle management for Hamilton VENUS:
 
 - Visual library management and status visualization
 - Single-package import/export
-- Multi-package archive import/export
+- Multi-package archive import/export with branded archive icon
 - Export of mutable installed libraries to archive
 - Safe deletion with COM-aware workflow
-- Package creation from raw files
+- Package creation from raw files with composited brand icon
+- HMAC-SHA256 package signing and automatic verification on import
+- Verify & Repair tool for detecting and fixing library file integrity issues
+- Protected Hamilton default group with password-gated authorship
 - Grouping, metadata, integrity validation, and local persistence
+- Pre-rendered static assets for consistent visual identity

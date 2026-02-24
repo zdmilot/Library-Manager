@@ -30,6 +30,7 @@
   <li>All library files in the <code>library/</code> directory (including <code>.chm</code> help files)</li>
   <li>All demo method files in the <code>demo_methods/</code> directory</li>
   <li>Metadata fields: tags, base64-encoded image, COM DLL list</li>
+  <li><code>signature.json</code> — HMAC-SHA256 integrity signature covering all package entries</li>
 </ul>
 
 <h3>Restrictions</h3>
@@ -54,9 +55,11 @@
 <h3>Archive Contents</h3>
 <p>The resulting <code>.hxlibarch</code> file contains:</p>
 <ul>
-  <li>An <code>archive_manifest.json</code> with archive metadata, library count, and included library names</li>
-  <li>One <code>.hxlibpkg</code> entry per selected library, each with its own <code>manifest.json</code> and payload</li>
+  <li>An <code>archive_manifest.json</code> with archive metadata, library count, included library names, and a base64-encoded purple archive icon</li>
+  <li>One <code>.hxlibpkg</code> entry per selected library, each with its own <code>manifest.json</code>, payload, and <code>signature.json</code> integrity signature</li>
+  <li>An <code>icon/archive_icon.png</code> file — a distinctive purple icon (three stacked purple diamonds) that visually identifies the file as a multi-library archive</li>
 </ul>
+<p>The archive icon is loaded from the static asset <code>assets/archive_icon_128.png</code> at export time. See <a href="VisualIdentity.html">Visual Identity &amp; Assets</a> for details.</p>
 
 <h3>CLI Export</h3>
 <p>See <a href="CLIExportLib.html">CLI: export-lib</a> for single exports and <a href="CLIExportArchive.html">CLI: export-archive</a> for archive exports.</p>

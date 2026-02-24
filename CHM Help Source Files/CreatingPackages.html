@@ -9,7 +9,7 @@
 <div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; Creating Packages</div>
 
 <h2>Overview</h2>
-<p>Venus Library Manager provides two ways to create a <code>.hxlibpkg</code> package from raw library source files: the GUI Library Packager and the CLI <code>create-package</code> command. Both produce identical output — a standards-compliant <code>.hxlibpkg</code> ready for distribution and import.</p>
+<p>Venus Library Manager provides two ways to create a <code>.hxlibpkg</code> package from raw library source files: the GUI Library Packager and the CLI <code>create-package</code> command. Both produce identical output — a standards-compliant <code>.hxlibpkg</code> ready for distribution and import. All packages are automatically signed with an HMAC-SHA256 integrity signature (see <a href="IntegrityVerification.html">Integrity Verification</a>).</p>
 
 <h2>GUI Library Packager</h2>
 <div class="image-placeholder">PLACE IMAGE OF LIBRARY PACKAGER MAIN VIEW HERE</div>
@@ -37,11 +37,22 @@
     </ol>
     You can manually override the detected name, though a warning is shown to confirm the override.
   </li>
-  <li><b>Select Library Image</b> (optional): Choose an icon or image file (<code>.png</code>, <code>.jpg</code>, <code>.bmp</code>, <code>.svg</code>, <code>.gif</code>, <code>.ico</code>). If no image is selected, the packager looks for a <code>.bmp</code> file among your library files whose name matches the library name.</li>
+  <li><b>Select Library Image</b> (optional): Choose an icon or image file (<code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.bmp</code>, <code>.ico</code>, <code>.gif</code>, <code>.svg</code>). If no image is selected, the packager looks for a <code>.bmp</code> file among your library files whose name <b>exactly</b> matches the library name (e.g., <code>MyLibrary.bmp</code> for a library named <code>MyLibrary</code>). Partial matches like <code>MyLibrary.extra.bmp</code> are not considered.</li>
   <li><b>Mark COM DLLs</b> (optional): If your library includes <code>.dll</code> files that need COM registration, select them individually from the payload list to mark them for COM registration.</li>
   <li><b>Build the Package:</b> Choose a save location and build the <code>.hxlibpkg</code> file.</li>
 </ol>
 <div class="image-placeholder">PLACE IMAGE OF PACKAGER WITH FILLED METADATA AND FILE LIST HERE</div>
+
+<h3>Package Icon Compositing</h3>
+<p>When the package is built, the icon stored in the package is a <b>composited image</b>, not just the raw image you selected:</p>
+<ul>
+  <li><b>With a selected image:</b> Your library image is drawn at full size, then a <b>grayscale Library Manager logo</b> is overlaid in the bottom-right corner at one-third of the image size. This creates a branded icon that prominently shows your library artwork while indicating it is a Venus Library Manager package (similar to how Windows draws shortcut arrows on shortcut icons).</li>
+  <li><b>Without an image:</b> If no image was selected or auto-detected, a full-size grayscale Library Manager logo is used as the package icon.</li>
+</ul>
+<p>The compositing is performed using the HTML5 Canvas API at package build time. The grayscale logo is a pre-rendered static asset (<code>assets/app_logo_gray_128.png</code>). See <a href="VisualIdentity.html">Visual Identity &amp; Assets</a> for details on how assets are generated.</p>
+
+<h3>Protected Author Name</h3>
+<p>The author name <b>"Hamilton"</b> is restricted. If you enter "Hamilton" (case-insensitive) as the author, a password prompt is displayed. You must enter the correct password before the package can be built. This prevents unauthorized attribution of packages to Hamilton. See <a href="LibraryGrouping.html">Library Grouping</a> for more details about the Hamilton group and its protections.</p>
 
 <h3>Packager Reset</h3>
 <p>The Library Packager includes a reset workflow to clear all staged metadata and files, returning to a clean state.</p>
@@ -105,7 +116,7 @@
 <p>If any validation fails, the build is aborted with a descriptive error message.</p>
 
 <h2>Output Structure</h2>
-<p>The resulting <code>.hxlibpkg</code> contains the standard package structure described in <a href="PackageFormats.html">Package Formats</a>.</p>
+<p>The resulting <code>.hxlibpkg</code> contains the standard package structure described in <a href="PackageFormats.html">Package Formats</a>, including a <code>signature.json</code> entry with the HMAC-SHA256 integrity signature. This signature allows recipients to verify the package has not been corrupted or tampered with before importing it.</p>
 </div>
 <div class="footer">
 <p>Venus Library Manager Help</p>

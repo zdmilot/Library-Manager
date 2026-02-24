@@ -19,6 +19,7 @@
 <tbody>
 <tr><td><b>All</b></td><td>Displays every installed (non-deleted) library as a card</td></tr>
 <tr><td><b>Recent</b></td><td>Shows recently imported libraries, limited by the configurable maximum (default: 20)</td></tr>
+<tr><td><b>Hamilton</b></td><td>Shows libraries authored by Hamilton. This is a protected default group with a solid checkmark icon. See <a href="LibraryGrouping.html">Library Grouping</a> for details on its protections.</td></tr>
 <tr><td><b>Import</b></td><td>Provides the import workflow for <code>.hxlibpkg</code> and <code>.hxlibarch</code> files</td></tr>
 <tr><td><b>Custom Groups</b></td><td>Filtered views showing only libraries assigned to a specific group</td></tr>
 </tbody>
@@ -84,18 +85,21 @@
 <h3>Single Package Import (<code>.hxlibpkg</code>)</h3>
 <ol>
   <li>Browse and select a <code>.hxlibpkg</code> file</li>
-  <li>Review the pre-install preview modal showing metadata, file lists, install paths, and COM DLL notices</li>
+  <li>The package's HMAC-SHA256 signature is automatically verified</li>
+  <li>Review the pre-install preview modal showing metadata, file lists, install paths, signature verification status, and COM DLL notices</li>
+  <li>If the signature verification fails, a warning dialog prompts you to confirm or cancel the import</li>
   <li>If the library is already installed, an overwrite/update warning is displayed</li>
   <li>Confirm to extract and install</li>
   <li>A post-install success modal summarizes the outcome</li>
 </ol>
-<div class="image-placeholder">PLACE IMAGE OF PRE-INSTALL PREVIEW MODAL HERE</div>
+<div class="image-placeholder">PLACE IMAGE OF PRE-INSTALL PREVIEW MODAL WITH SIGNATURE STATUS HERE</div>
 
 <h3>Archive Import (<code>.hxlibarch</code>)</h3>
 <ol>
   <li>Select a <code>.hxlibarch</code> file</li>
   <li>Review all contained packages in the confirmation dialog</li>
-  <li>Each package is extracted and installed sequentially</li>
+  <li>Each package's signature is verified before installation — packages that fail verification are automatically rejected and skipped</li>
+  <li>Each passing package is extracted and installed sequentially</li>
   <li>An aggregate summary reports success/failure for each library</li>
 </ol>
 
@@ -120,6 +124,32 @@
 
 <h2>Help Menu</h2>
 <p>Access the compiled help file (<code>Venus Library Manager.chm</code>) from the overflow menu. Video tutorial infrastructure is also available for in-app help playback.</p>
+
+<h2>Verify &amp; Repair Tool</h2>
+<p>The overflow menu includes a <b>Verify &amp; Repair</b> tool that provides a comprehensive integrity scan and one-click repair for <b>all</b> libraries — both Hamilton system libraries and user-installed libraries. See <a href="IntegrityVerification.html">Integrity Verification</a> for the full technical documentation.</p>
+
+<h3>How It Works</h3>
+<ol>
+  <li><b>Scan:</b> When opened, the tool scans every library in the system:
+    <ul>
+      <li><b>System libraries</b> are verified using Hamilton's metadata footer fields (<code>$$valid$$</code>, <code>$$checksum$$</code>) compared against a stored baseline.</li>
+      <li><b>User-installed libraries</b> are verified by recomputing SHA-256 hashes for all tracked files and comparing them against the stored baselines.</li>
+    </ul>
+  </li>
+  <li><b>Report:</b> Results are displayed in two sections — <b>System Libraries</b> (with a [System] badge) followed by <b>Installed Libraries</b>. Each library shows one of three statuses: <b>OK</b> (green), <b>WARNING</b> (yellow), or <b>FAILED</b> (red), along with specific error details per file.</li>
+  <li><b>Repair:</b> For any library with issues, if a cached or backup <code>.hxlibpkg</code> exists in the package store, a <b>Repair</b> button re-extracts the original files. The cached package's HMAC-SHA256 signature is verified before repair to prevent restoring from a corrupt source.</li>
+  <li><b>Batch Repair:</b> A <b>Repair Selected</b> button repairs all failed libraries (system and user) in one operation. A confirmation dialog lists the libraries before proceeding, and a summary is shown afterward.</li>
+</ol>
+
+<h3>First-Run System Library Backup</h3>
+<p>On the very first launch, Venus Library Manager automatically creates a signed <code>.hxlibpkg</code> backup for every Hamilton system library and stores it in the package store. This ensures that system libraries can always be repaired even though they were not originally imported through the application. See <a href="IntegrityVerification.html#repair">Integrity Verification — First-Run System Library Backup</a> for details.</p>
+
+<h3>Repair from the Detail Modal</h3>
+<p>You can also repair a single library directly from its detail modal. Open any library card and scroll to the <b>File Integrity</b> section. If errors are detected and a backup/cached package exists, a <b>Repair from Backup</b> button appears below the error list. This works for both system and user-installed libraries.</p>
+
+<div class="note">
+<p><b>Note:</b> Libraries imported with <code>--no-cache</code> have no cached package in the store and cannot be repaired through this tool. Re-import the original package file instead. System libraries without a first-run backup (e.g., if the first run failed) can be re-backed-up by removing the <code>sysLibBackupComplete</code> setting and restarting.</p>
+</div>
 </div>
 <div class="footer">
 <p>Venus Library Manager Help</p>

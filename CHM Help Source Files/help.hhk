@@ -10,8 +10,24 @@
 		<param name="Local" value="PackageFormats.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="audit">
+		<param name="Local" value="LibraryAuditLog.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="audit log">
+		<param name="Local" value="LibraryAuditLog.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="backup">
+		<param name="Local" value="IntegrityVerification.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="baseline">
 		<param name="Local" value="CLIGenerateSyslibHashes.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="batch repair">
+		<param name="Local" value="IntegrityVerification.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="checksum">
@@ -70,6 +86,10 @@
 		<param name="Local" value="HSLFileArchitecture.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="first-run backup">
+		<param name="Local" value="IntegrityVerification.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="generate-syslib-hashes">
 		<param name="Local" value="CLIGenerateSyslibHashes.html">
 		</OBJECT>
@@ -94,6 +114,14 @@
 		<param name="Local" value="Overview.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Hamilton group">
+		<param name="Local" value="LibraryGrouping.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="HMAC">
+		<param name="Local" value="LibraryAuditLog.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="HSL">
 		<param name="Local" value="HSLFileArchitecture.html">
 		</OBJECT>
@@ -114,6 +142,10 @@
 		<param name="Local" value="CLIImportLib.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="HMAC-SHA256">
+		<param name="Local" value="IntegrityVerification.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="importing">
 		<param name="Local" value="ImportingLibraries.html">
 		</OBJECT>
@@ -124,6 +156,10 @@
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="integrity">
 		<param name="Local" value="IntegrityVerification.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="integrity signature">
+		<param name="Local" value="LibraryAuditLog.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="JSON schema">
@@ -170,6 +206,10 @@
 		<param name="Local" value="PackageFormats.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="package signing">
+		<param name="Local" value="IntegrityVerification.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="package store">
 		<param name="Local" value="VersionRollback.html">
 		</OBJECT>
@@ -180,6 +220,14 @@
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="RegAsm">
 		<param name="Local" value="ImportingLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="repair">
+		<param name="Local" value="IntegrityVerification.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="repair from backup">
+		<param name="Local" value="IntegrityVerification.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="rollback">
@@ -202,6 +250,14 @@
 		<param name="Local" value="VENUSIntegration.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="signature">
+		<param name="Local" value="PackageFormats.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="signature.json">
+		<param name="Local" value="CLIVerifyPackage.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="soft delete">
 		<param name="Local" value="DeletingLibraries.html">
 		</OBJECT>
@@ -211,6 +267,18 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="system libraries">
+		<param name="Local" value="IntegrityVerification.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="system library backup">
+		<param name="Local" value="IntegrityVerification.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="system library repair">
+		<param name="Local" value="IntegrityVerification.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="sysLibBackupComplete">
 		<param name="Local" value="IntegrityVerification.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
@@ -234,12 +302,52 @@
 		<param name="Local" value="VENUSIntegration.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="verify & repair">
+		<param name="Local" value="GUIOverview.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="verify-package">
+		<param name="Local" value="CLIVerifyPackage.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="verify-syslib-hashes">
 		<param name="Local" value="CLIVerifySyslibHashes.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="version rollback">
 		<param name="Local" value="VersionRollback.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="visual identity">
+		<param name="Local" value="VisualIdentity.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="assets">
+		<param name="Local" value="VisualIdentity.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="icon compositing">
+		<param name="Local" value="VisualIdentity.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="archive icon">
+		<param name="Local" value="VisualIdentity.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="grayscale logo">
+		<param name="Local" value="VisualIdentity.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="password protection">
+		<param name="Local" value="LibraryGrouping.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="protected group">
+		<param name="Local" value="LibraryGrouping.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="default groups">
+		<param name="Local" value="DataModel.html">
 		</OBJECT>
 </UL>
 </BODY></HTML>

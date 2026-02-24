@@ -49,6 +49,10 @@
 				<param name="Name" value="Integrity Verification">
 				<param name="Local" value="IntegrityVerification.html">
 				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Visual Identity &amp; Assets">
+				<param name="Local" value="VisualIdentity.html">
+				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Workflows">
@@ -81,6 +85,10 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="VENUS Integration">
 				<param name="Local" value="VENUSIntegration.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Library Audit Log">
+				<param name="Local" value="LibraryAuditLog.html">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
@@ -131,6 +139,10 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="verify-syslib-hashes">
 				<param name="Local" value="CLIVerifySyslibHashes.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="verify-package">
+				<param name="Local" value="CLIVerifyPackage.html">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">

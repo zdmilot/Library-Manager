@@ -38,6 +38,9 @@ CLIListVersions.html
 CLIRollbackLib.html
 CLIGenerateSyslibHashes.html
 CLIVerifySyslibHashes.html
+CLIVerifyPackage.html
+LibraryAuditLog.html
+VisualIdentity.html
 Troubleshooting.html
 
 [INFOTYPES]

@@ -414,6 +414,241 @@
 			return entries;
 		}
 
+		// ---- First-Run System Library Backup ----
+		// On first run, package every system library into the package store so
+		// they can be repaired later if files are modified or corrupted.
+		// The flag 'sysLibBackupComplete' in settings tracks whether this has run.
+
+		/**
+		 * Package a single system library into a .hxlibpkg backup in the package store.
+		 * System libraries have no demo methods — only library files and help files.
+		 * @param {Object} sLib - system library record from system_libraries.json
+		 * @returns {{ success: boolean, path: string, error: string }}
+		 */
+		function backupSystemLibrary(sLib) {
+			try {
+				var libName = sLib.canonical_name || sLib.library_name;
+				var discoveredFiles = sLib.discovered_files || [];
+				if (discoveredFiles.length === 0) {
+					return { success: false, path: '', error: 'No discovered files for ' + libName };
+				}
+
+				// Resolve the VENUS Library directory
+				var libFolderRec = db_links.links.findOne({"_id":"lib-folder"});
+				var sysLibDir = (libFolderRec && libFolderRec.path) ? libFolderRec.path : 'C:\\Program Files (x86)\\HAMILTON\\Library';
+
+				// Separate library files and help files (CHMs)
+				var libFiles = [];
+				var helpFiles = [];
+				discoveredFiles.forEach(function(f) {
+					var relPath = f.replace(/^Library[\\\/]/i, '');
+					var ext = path.extname(relPath).toLowerCase();
+					if (ext === '.chm') {
+						helpFiles.push(relPath);
+					} else {
+						libFiles.push(relPath);
+					}
+				});
+
+				// Build a library image if a BMP exists
+				var libImageFilename = null;
+				var libImageBase64 = null;
+				var libImageMime = null;
+				libFiles.forEach(function(f) {
+					if (!libImageFilename && path.extname(f).toLowerCase() === '.bmp') {
+						var bmpPath = path.join(sysLibDir, f);
+						if (fs.existsSync(bmpPath)) {
+							libImageFilename = f;
+							try {
+								libImageBase64 = fs.readFileSync(bmpPath).toString('base64');
+								libImageMime = 'image/bmp';
+							} catch(e) {}
+						}
+					}
+				});
+
+				// Build manifest
+				var manifest = {
+					format_version: "1.0",
+					library_name: libName,
+					author: sLib.author || "Hamilton",
+					organization: sLib.organization || "Hamilton",
+					version: "system",
+					venus_compatibility: "",
+					description: "System library backup created on first run. Contains " + discoveredFiles.length + " file(s).",
+					tags: ["system", "hamilton", "backup"],
+					created_date: new Date().toISOString(),
+					library_image: libImageFilename,
+					library_image_base64: libImageBase64,
+					library_image_mime: libImageMime,
+					library_files: libFiles.slice(),
+					demo_method_files: [],
+					help_files: helpFiles.slice(),
+					com_register_dlls: [],
+					is_system_backup: true
+				};
+
+				// Create ZIP package
+				var zip = new AdmZip();
+				zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2), "utf8"));
+
+				// Add library files
+				libFiles.forEach(function(f) {
+					var fullPath = path.join(sysLibDir, f);
+					if (fs.existsSync(fullPath)) {
+						zip.addLocalFile(fullPath, "library");
+					}
+				});
+
+				// Add help files (CHMs) — packed into help_files/ folder
+				helpFiles.forEach(function(f) {
+					var fullPath = path.join(sysLibDir, f);
+					if (fs.existsSync(fullPath)) {
+						zip.addLocalFile(fullPath, "help_files");
+					}
+				});
+
+				// Sign the package
+				signPackageZip(zip);
+
+				// Cache to package store
+				var pkgBuffer = zip.toBuffer();
+				var storedPath = cachePackageToStore(pkgBuffer, libName, "system");
+				return { success: true, path: storedPath, error: '' };
+
+			} catch(e) {
+				return { success: false, path: '', error: e.message };
+			}
+		}
+
+		/**
+		 * Run system library backup for all system libraries that don't already
+		 * have a cached package. Called once on first run.
+		 * @returns {{ total: number, backed: number, skipped: number, errors: string[] }}
+		 */
+		function backupAllSystemLibraries() {
+			var result = { total: 0, backed: 0, skipped: 0, errors: [] };
+			var allSys = getAllSystemLibraries();
+			result.total = allSys.length;
+
+			allSys.forEach(function(sLib) {
+				var libName = sLib.canonical_name || sLib.library_name;
+				var existing = listCachedVersions(libName);
+				if (existing.length > 0) {
+					result.skipped++;
+					return;
+				}
+				var r = backupSystemLibrary(sLib);
+				if (r.success) {
+					result.backed++;
+					console.log('Backed up system library: ' + libName + ' -> ' + r.path);
+				} else {
+					result.errors.push(libName + ': ' + r.error);
+					console.warn('Failed to backup system library: ' + libName + ' - ' + r.error);
+				}
+			});
+			return result;
+		}
+
+		/**
+		 * Check if the first-run system library backup has been completed.
+		 * If not, run it and set the flag.
+		 */
+		function ensureSystemLibraryBackups() {
+			if (getSettingValue('sysLibBackupComplete')) {
+				return; // Already backed up
+			}
+			console.log('First run detected — backing up system libraries to package store...');
+			var result = backupAllSystemLibraries();
+			console.log('System library backup complete: ' + result.backed + ' backed up, ' +
+				result.skipped + ' already cached, ' + result.errors.length + ' errors.');
+			if (result.errors.length > 0) {
+				console.warn('Backup errors: ' + result.errors.join('; '));
+			}
+			saveSetting('sysLibBackupComplete', true);
+		}
+
+		/**
+		 * Repair a system library by re-extracting files from its cached backup package.
+		 * @param {string} libName - canonical name of the system library
+		 * @param {boolean} [silent] - If true, suppress alerts (for batch repair)
+		 * @returns {{ success: boolean, error: string }}
+		 */
+		function repairSystemLibraryFromCache(libName, silent) {
+			try {
+				var cached = listCachedVersions(libName);
+				if (cached.length === 0) {
+					var msg = 'No backup package found for system library "' + libName + '".';
+					if (!silent) alert(msg);
+					return { success: false, error: msg };
+				}
+
+				// Use the newest cached version
+				var newest = cached[0];
+				var zip;
+				try {
+					zip = new AdmZip(newest.fullPath);
+				} catch(e) {
+					var msg2 = 'Failed to read backup package: ' + e.message;
+					if (!silent) alert(msg2);
+					return { success: false, error: msg2 };
+				}
+
+				// Verify the cached package signature
+				var sigResult = verifyPackageSignature(zip);
+				if (sigResult.signed && !sigResult.valid) {
+					var msg3 = 'Backup package signature verification FAILED.\nThe backup package itself may be corrupted.\n\n' + sigResult.errors.join('\n');
+					if (!silent) alert(msg3);
+					return { success: false, error: 'Backup package signature failed' };
+				}
+
+				var manifestEntry = zip.getEntry('manifest.json');
+				if (!manifestEntry) {
+					var msg4 = 'Backup package is invalid (no manifest.json).';
+					if (!silent) alert(msg4);
+					return { success: false, error: msg4 };
+				}
+
+				// Resolve the VENUS Library directory
+				var libFolderRec = db_links.links.findOne({"_id":"lib-folder"});
+				var sysLibDir = (libFolderRec && libFolderRec.path) ? libFolderRec.path : 'C:\\Program Files (x86)\\HAMILTON\\Library';
+
+				// Re-extract library files
+				var extractedCount = 0;
+				var zipEntries = zip.getEntries();
+				zipEntries.forEach(function(entry) {
+					if (entry.isDirectory || entry.entryName === 'manifest.json' || entry.entryName === 'signature.json') return;
+					if (entry.entryName.indexOf('library/') === 0) {
+						var fname = entry.entryName.substring('library/'.length);
+						if (fname) {
+							fs.writeFileSync(path.join(sysLibDir, fname), entry.getData());
+							extractedCount++;
+						}
+					} else if (entry.entryName.indexOf('help_files/') === 0) {
+						var fname3 = entry.entryName.substring('help_files/'.length);
+						if (fname3) {
+							fs.writeFileSync(path.join(sysLibDir, fname3), entry.getData());
+							extractedCount++;
+						}
+					}
+				});
+
+				if (!silent) {
+					alert('System library "' + libName + '" repaired successfully!\n\n' +
+						extractedCount + ' files re-extracted from backup package.' +
+						(sigResult.signed ? '\nPackage signature: verified' : ''));
+					impBuildLibraryCards();
+				}
+
+				return { success: true, error: '' };
+
+			} catch(e) {
+				var errMsg = 'System library repair failed: ' + e.message;
+				if (!silent) alert(errMsg);
+				return { success: false, error: errMsg };
+			}
+		}
+
 		var bool_treeChanged = false; //tracks if the tree of groups/methods has been edited to re-create groups when coming back to Home screen from Settings screen.
 
 		var int_maxRecent = 10;
@@ -2584,6 +2819,13 @@
 
 			// Set working dir for the method file browse
 			$("#input-methodfile").attr("nwworkingdir", HxFolder_Methods);
+
+			// First-run: backup system libraries to package store for repair
+			try {
+				ensureSystemLibraryBackups();
+			} catch(e) {
+				console.warn('Error during system library backup: ' + e.message);
+			}
 		}
 
 
@@ -4767,7 +5009,9 @@
 			var integrity = verifyLibraryIntegrity(lib);
 			var $intSection = $("#libDetailModal .lib-detail-integrity-section");
 			var $intStatus = $("#libDetailModal .lib-detail-integrity-status");
+			var $intRepair = $("#libDetailModal .lib-detail-integrity-repair");
 			$intStatus.empty();
+			$intRepair.addClass("d-none");
 
 			if (Object.keys(lib.file_hashes || {}).length > 0 || integrity.errors.length > 0 || integrity.warnings.length > 0) {
 				$intSection.removeClass("d-none");
@@ -4777,6 +5021,12 @@
 					integrity.errors.forEach(function(err) {
 						$intStatus.append('<div class="text-sm mb-1" style="color:#d9534f;"><i class="fas fa-times-circle mr-1"></i>' + err + '</div>');
 					});
+					// Show repair button if a cached package exists
+					var cachedUser = listCachedVersions(lib.library_name);
+					if (cachedUser.length > 0) {
+						$intRepair.removeClass("d-none");
+						$intRepair.find(".lib-detail-repair-btn").attr("data-sys-lib-name", "").attr("data-user-lib-name", lib.library_name);
+					}
 				}
 				if (integrity.warnings.length > 0) {
 					integrity.warnings.forEach(function(warn) {
@@ -5196,7 +5446,9 @@
 			var integrity = verifySystemLibraryIntegrity(sLib);
 			var $intSection = $("#libDetailModal .lib-detail-integrity-section");
 			var $intStatus = $("#libDetailModal .lib-detail-integrity-status");
+			var $intRepair = $("#libDetailModal .lib-detail-integrity-repair");
 			$intStatus.empty();
+			$intRepair.addClass("d-none");
 
 			var libName = sLib.canonical_name || sLib.library_name;
 			var baselineEntry = systemLibraryBaseline[libName];
@@ -5207,6 +5459,12 @@
 					integrity.errors.forEach(function(err) {
 						$intStatus.append('<div class="text-sm mb-1" style="color:#d9534f;"><i class="fas fa-times-circle mr-1"></i>' + err + '</div>');
 					});
+					// Show repair button if a backup package exists
+					var cachedSys = listCachedVersions(libName);
+					if (cachedSys.length > 0) {
+						$intRepair.removeClass("d-none");
+						$intRepair.find(".lib-detail-repair-btn").attr("data-sys-lib-name", libName);
+					}
 				}
 				if (integrity.warnings.length > 0) {
 					integrity.warnings.forEach(function(warn) {
@@ -5229,6 +5487,37 @@
 			$("#libDetailModal").attr("data-system", "true");
 			$("#libDetailModal").modal("show");
 		}
+
+		// ---- Repair from detail modal (works for both system and user libraries) ----
+		$(document).on("click", ".lib-detail-repair-btn", function(e) {
+			e.preventDefault();
+			var sysLibName = $(this).attr("data-sys-lib-name");
+			var userLibName = $(this).attr("data-user-lib-name");
+
+			if (sysLibName) {
+				// System library repair
+				if (!confirm('Repair system library "' + sysLibName + '" from backup package?\n\nThis will restore all library files to their original state.')) return;
+				var result = repairSystemLibraryFromCache(sysLibName);
+				if (result.success) {
+					// Refresh the detail modal
+					var libId = $("#libDetailModal").attr("data-lib-id");
+					if (libId) {
+						$("#libDetailModal").modal("hide");
+						setTimeout(function() { showDetailModal(libId); }, 300);
+					}
+				}
+			} else if (userLibName) {
+				// User library repair
+				if (!confirm('Repair library "' + userLibName + '" from cached package?\n\nThis will restore all library files from the newest cached version.')) return;
+				repairLibraryFromCache(userLibName);
+				// Refresh the detail modal
+				var libId = $("#libDetailModal").attr("data-lib-id");
+				if (libId) {
+					$("#libDetailModal").modal("hide");
+					setTimeout(function() { showDetailModal(libId); }, 300);
+				}
+			}
+		});
 
 		// ---- Export single library from detail modal ----
 		$(document).on("click", ".lib-detail-export-btn", function(e) {
@@ -7025,17 +7314,21 @@
 		});
 
 		/**
-		 * Populate the repair modal with all installed (non-system) libraries
-		 * and their integrity + cached package status.
+		 * Populate the repair modal with all installed libraries
+		 * (both user and system) and their integrity + cached package status.
 		 */
 		function repairPopulateModal() {
 			var $list = $(".repair-lib-list");
 			$list.empty();
 
+			// ---- User-installed libraries ----
 			var libs = db_installed_libs.installed_libs.find() || [];
 			libs = libs.filter(function(l) { return !l.deleted && !isSystemLibrary(l._id); });
 
-			if (libs.length === 0) {
+			// ---- System libraries ----
+			var sysLibs = getAllSystemLibraries();
+
+			if (libs.length === 0 && sysLibs.length === 0) {
 				$list.html(
 					'<div class="text-muted text-center py-4">' +
 						'<i class="fas fa-inbox fa-2x color-lightgray"></i>' +
@@ -7049,8 +7342,77 @@
 
 			var failCount = 0;
 			var warnCount = 0;
+			var totalCount = 0;
+
+			// ---- Render system libraries first ----
+			if (sysLibs.length > 0) {
+				$list.append('<div class="py-1 px-1 mt-1 mb-1" style="font-size:0.75rem; font-weight:600; color:var(--medium); text-transform:uppercase; letter-spacing:0.5px;"><i class="fas fa-lock mr-1"></i>System Libraries</div>');
+			}
+
+			sysLibs.forEach(function(sLib) {
+				totalCount++;
+				var libName = sLib.canonical_name || sLib.library_name;
+				var integrity = verifySystemLibraryIntegrity(sLib);
+				var cached = listCachedVersions(libName);
+				var hasCached = cached.length > 0;
+
+				var statusClass, statusIcon, statusText;
+				if (!integrity.valid) {
+					statusClass = 'text-danger';
+					statusIcon = 'fa-times-circle';
+					statusText = 'FAILED';
+					failCount++;
+				} else if (integrity.warnings.length > 0) {
+					statusClass = 'text-warning';
+					statusIcon = 'fa-exclamation-triangle';
+					statusText = 'WARNING';
+					warnCount++;
+				} else {
+					statusClass = 'text-success';
+					statusIcon = 'fa-check-circle';
+					statusText = 'OK';
+				}
+
+				var detailLines = [];
+				integrity.errors.forEach(function(e) { detailLines.push('<span class="text-danger text-sm">&bull; ' + e + '</span>'); });
+				integrity.warnings.forEach(function(w) { detailLines.push('<span class="text-warning text-sm">&bull; ' + w + '</span>'); });
+
+				var repairBtnHtml = '';
+				if (!integrity.valid && hasCached) {
+					repairBtnHtml = '<button class="btn btn-sm btn-outline-success repair-single-btn ml-2" data-lib-name="' + libName.replace(/"/g, '&quot;') + '" data-is-system="true" title="Restore from backup package"><i class="fas fa-wrench mr-1"></i>Repair</button>';
+				} else if (!integrity.valid && !hasCached) {
+					repairBtnHtml = '<span class="text-muted text-sm ml-2" title="No backup package available. Run first-run backup to create one."><i class="fas fa-ban mr-1"></i>No backup</span>';
+				}
+
+				var cachedInfo = hasCached
+					? '<span class="text-muted text-sm ml-2" title="' + cached.length + ' backup version(s) available"><i class="fas fa-archive mr-1"></i>' + cached.length + ' backup</span>'
+					: '';
+
+				var html =
+					'<div class="repair-lib-item d-flex align-items-start py-2 px-1" style="border-bottom:1px solid var(--bg-divider);" data-lib-name="' + libName.replace(/"/g, '&quot;') + '" data-is-system="true">' +
+						'<div class="mr-3 mt-1"><i class="fas ' + statusIcon + ' ' + statusClass + '"></i></div>' +
+						'<div class="flex-grow-1" style="min-width:0;">' +
+							'<div class="d-flex align-items-center flex-wrap">' +
+								'<span class="font-weight-bold" style="color:var(--medium2);">' + libName + '</span>' +
+								'<span class="badge badge-secondary ml-2" style="font-size:0.6rem;">System</span>' +
+								'<span class="ml-2 ' + statusClass + ' text-sm font-weight-bold">' + statusText + '</span>' +
+								cachedInfo +
+							'</div>' +
+							(detailLines.length > 0 ? '<div class="mt-1">' + detailLines.join('<br>') + '</div>' : '') +
+						'</div>' +
+						'<div class="ml-2 d-flex align-items-center" style="white-space:nowrap;">' + repairBtnHtml + '</div>' +
+					'</div>';
+
+				$list.append(html);
+			});
+
+			// ---- Render user-installed libraries ----
+			if (libs.length > 0) {
+				$list.append('<div class="py-1 px-1 mt-2 mb-1" style="font-size:0.75rem; font-weight:600; color:var(--medium); text-transform:uppercase; letter-spacing:0.5px;"><i class="fas fa-cube mr-1"></i>Installed Libraries</div>');
+			}
 
 			libs.forEach(function(lib) {
+				totalCount++;
 				var libName = lib.library_name || "Unknown";
 				var integrity = verifyLibraryIntegrity(lib);
 				var cached = listCachedVersions(libName);
@@ -7079,7 +7441,7 @@
 
 				var repairBtnHtml = '';
 				if (!integrity.valid && hasCached) {
-					repairBtnHtml = '<button class="btn btn-sm btn-outline-success repair-single-btn ml-2" data-lib-name="' + libName.replace(/"/g, '&quot;') + '" title="Re-install from cached package"><i class="fas fa-wrench mr-1"></i>Repair</button>';
+					repairBtnHtml = '<button class="btn btn-sm btn-outline-success repair-single-btn ml-2" data-lib-name="' + libName.replace(/"/g, '&quot;') + '" data-is-system="false" title="Re-install from cached package"><i class="fas fa-wrench mr-1"></i>Repair</button>';
 				} else if (!integrity.valid && !hasCached) {
 					repairBtnHtml = '<span class="text-muted text-sm ml-2" title="No cached package available for repair"><i class="fas fa-ban mr-1"></i>No cached pkg</span>';
 				}
@@ -7089,7 +7451,7 @@
 					: '';
 
 				var html =
-					'<div class="repair-lib-item d-flex align-items-start py-2 px-1" style="border-bottom:1px solid var(--bg-divider);" data-lib-name="' + libName.replace(/"/g, '&quot;') + '">' +
+					'<div class="repair-lib-item d-flex align-items-start py-2 px-1" style="border-bottom:1px solid var(--bg-divider);" data-lib-name="' + libName.replace(/"/g, '&quot;') + '" data-is-system="false">' +
 						'<div class="mr-3 mt-1"><i class="fas ' + statusIcon + ' ' + statusClass + '"></i></div>' +
 						'<div class="flex-grow-1" style="min-width:0;">' +
 							'<div class="d-flex align-items-center flex-wrap">' +
@@ -7107,7 +7469,7 @@
 			});
 
 			var statusParts = [];
-			statusParts.push(libs.length + ' librar' + (libs.length === 1 ? 'y' : 'ies'));
+			statusParts.push(totalCount + ' librar' + (totalCount === 1 ? 'y' : 'ies'));
 			if (failCount > 0) statusParts.push(failCount + ' failed');
 			if (warnCount > 0) statusParts.push(warnCount + ' warning' + (warnCount !== 1 ? 's' : ''));
 			if (failCount === 0 && warnCount === 0) statusParts.push('all OK');
@@ -7120,7 +7482,13 @@
 			e.stopPropagation();
 			var libName = $(this).attr("data-lib-name");
 			if (!libName) return;
-			repairLibraryFromCache(libName);
+			var isSys = $(this).attr("data-is-system") === "true";
+			if (isSys) {
+				repairSystemLibraryFromCache(libName);
+				repairPopulateModal();
+			} else {
+				repairLibraryFromCache(libName);
+			}
 		});
 
 		// Repair all failed libraries
@@ -7131,16 +7499,23 @@
 			var names = [];
 			failedItems.each(function() {
 				var name = $(this).attr("data-lib-name");
-				if (name) names.push(name);
+				var isSys = $(this).attr("data-is-system") === "true";
+				if (name) names.push({ name: name, isSystem: isSys });
 			});
 			if (names.length === 0) return;
-			if (!confirm("Repair " + names.length + " librar" + (names.length === 1 ? "y" : "ies") + " from cached packages?\n\n" + names.join("\n"))) return;
+			var nameList = names.map(function(n) { return (n.isSystem ? '[System] ' : '') + n.name; }).join("\n");
+			if (!confirm("Repair " + names.length + " librar" + (names.length === 1 ? "y" : "ies") + " from cached/backup packages?\n\n" + nameList)) return;
 			var repaired = 0;
 			var errors = [];
-			names.forEach(function(name) {
-				var result = repairLibraryFromCache(name, true);
+			names.forEach(function(item) {
+				var result;
+				if (item.isSystem) {
+					result = repairSystemLibraryFromCache(item.name, true);
+				} else {
+					result = repairLibraryFromCache(item.name, true);
+				}
 				if (result.success) repaired++;
-				else errors.push(name + ": " + result.error);
+				else errors.push(item.name + ": " + result.error);
 			});
 			var msg = repaired + " of " + names.length + " librar" + (names.length === 1 ? "y" : "ies") + " repaired.";
 			if (errors.length > 0) msg += "\n\nErrors:\n" + errors.join("\n");

@@ -36,6 +36,7 @@ node cli.js &lt;command&gt; [options]</pre></div>
 <tr><td><a href="CLIRollbackLib.html"><code>rollback-lib</code></a></td><td>Reinstall a previously cached version of a library</td></tr>
 <tr><td><a href="CLIGenerateSyslibHashes.html"><code>generate-syslib-hashes</code></a></td><td>Generate integrity baseline for system libraries</td></tr>
 <tr><td><a href="CLIVerifySyslibHashes.html"><code>verify-syslib-hashes</code></a></td><td>Verify system libraries against baseline</td></tr>
+<tr><td><a href="CLIVerifyPackage.html"><code>verify-package</code></a></td><td>Verify a package's HMAC-SHA256 signature</td></tr>
 <tr><td><code>help</code></td><td>Display help text</td></tr>
 </tbody>
 </table>
@@ -79,26 +80,29 @@ node cli.js &lt;command&gt; [options]</pre></div>
 <div class="code"><pre>@REM 1. Create a package from raw sources
 node cli.js create-package --spec tests\MyLib.spec.json --output tests\out\MyLib.hxlibpkg
 
-@REM 2. Import it against a test database
+@REM 2. Verify the package signature
+node cli.js verify-package --file tests\out\MyLib.hxlibpkg
+
+@REM 3. Import it against a test database
 node cli.js import-lib --file tests\out\MyLib.hxlibpkg ^
     --db-path tests\scratch-db ^
     --lib-dir tests\scratch-lib ^
     --met-dir tests\scratch-met
 
-@REM 3. Verify it appears
+@REM 4. Verify it appears
 node cli.js list-libs --db-path tests\scratch-db --json
 
-@REM 4. Re-export the installed library
+@REM 5. Re-export the installed library
 node cli.js export-lib --name "MyLib" ^
     --db-path tests\scratch-db ^
     --output tests\out\MyLib-roundtrip.hxlibpkg
 
-@REM 5. Archive all libraries
+@REM 6. Archive all libraries
 node cli.js export-archive --all ^
     --db-path tests\scratch-db ^
     --output tests\out\archive.hxlibarch
 
-@REM 6. Clean up
+@REM 7. Clean up
 node cli.js delete-lib --name "MyLib" --db-path tests\scratch-db --yes</pre></div>
 <p>By using <code>--db-path</code>, <code>--lib-dir</code>, and <code>--met-dir</code> overrides, tests can run against isolated scratch directories without affecting production library installations.</p>
 </div>

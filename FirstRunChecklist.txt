@@ -1,0 +1,66 @@
+First Run Checklist — Venus Library Manager
+=============================================
+
+The following actions are performed automatically on the very first launch
+of the Library Manager (or whenever the 'sysLibBackupComplete' setting is
+not yet set in db/settings.json):
+
+1. initVENUSData()
+   - Hardcoded VENUS paths are written to the links database.
+   - Method editor / run-control paths are resolved.
+
+2. ensureSystemLibraryBackups()   [NEW — System Library Repair Backup]
+   - Reads the 'sysLibBackupComplete' flag from settings.
+   - If false / missing, iterates through ALL system libraries defined in
+     db/system_libraries.json.
+   - For each system library that does NOT already have an entry in the
+     package store (C:\Program Files (x86)\HAMILTON\Library\LibraryPackages\<LibName>\),
+     a signed .hxlibpkg backup package is created containing:
+       • All discovered library files (hsl, hs_, bmp, ico, stp, sub, etc.)
+       • All help files (chm) — stored in a help_files/ folder in the ZIP
+       • A manifest.json with version "system", author "Hamilton", and
+         the tag "backup"
+       • A signature.json (HMAC-SHA256 signed) for integrity verification
+       • NO demo method files (system libraries do not ship demo methods)
+   - The backup package is stored in the same LibraryPackages directory
+     used by all imported user packages, organized by library name.
+   - After all libraries are processed, the setting 'sysLibBackupComplete'
+     is set to true so the backup does not run again on subsequent launches.
+   - Console log output summarises how many libraries were backed up,
+     how many were skipped (already cached), and any errors.
+
+3. createGroups()
+   - Navigation groups are built from the tree database.
+
+4. historyCleanup()
+   - Old run logs are cleaned up asynchronously.
+
+5. navigateHome()
+   - The UI navigates to the "All" (home) tab.
+
+-----------------------------------------------------------------------
+
+System Library Repair — How It Works
+-------------------------------------
+Once the first-run backup has been created, users can repair any system
+library whose files have been modified or corrupted:
+
+• From the library detail modal:
+  - Open any system library card.
+  - If the File Integrity section shows errors, a "Repair from Backup"
+    button appears beneath the error list.
+  - Clicking it restores all library files from the backup .hxlibpkg.
+
+• From the Verify & Repair tool (overflow menu → Verify & Repair):
+  - Both system and user-installed libraries are listed.
+  - System libraries appear in a "System Libraries" section at the top.
+  - Failed system libraries with a backup show a Repair button.
+  - The "Repair Selected" button repairs all failed libraries (system
+    and user) in batch.
+
+The repair process:
+  1. Reads the newest cached .hxlibpkg for the library.
+  2. Verifies the package signature (HMAC-SHA256).
+  3. Extracts library/ and help_files/ entries back into the VENUS
+     Library directory, overwriting the modified files.
+  4. Refreshes the UI.

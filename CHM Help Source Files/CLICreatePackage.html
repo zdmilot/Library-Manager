@@ -9,7 +9,7 @@
 <div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; create-package</div>
 
 <h2>Description</h2>
-<p>Creates a <code>.hxlibpkg</code> from library source files and metadata defined in a JSON specification file. This is the CLI equivalent of the GUI Library Packager, ideal for automated builds and CI/CD pipelines.</p>
+<p>Creates a <code>.hxlibpkg</code> from library source files and metadata defined in a JSON specification file. This is the CLI equivalent of the GUI Library Packager, ideal for automated builds and CI/CD pipelines. The resulting package is automatically signed with an HMAC-SHA256 integrity signature (see <a href="IntegrityVerification.html">Integrity Verification</a>).</p>
 
 <h2>Usage</h2>
 <div class="code"><pre>node cli.js create-package --spec &lt;spec.json&gt; --output &lt;output.hxlibpkg&gt;</pre></div>

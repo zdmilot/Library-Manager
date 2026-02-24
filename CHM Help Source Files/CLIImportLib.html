@@ -9,7 +9,7 @@
 <div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; import-lib</div>
 
 <h2>Description</h2>
-<p>Reads a <code>.hxlibpkg</code> file, validates its <code>manifest.json</code>, extracts payload files to the configured VENUS library and demo-methods directories, computes integrity hashes, parses public HSL functions, registers the library record in the database, and caches the package in the package store for future rollback.</p>
+<p>Reads a <code>.hxlibpkg</code> file, verifies its package signature, validates its <code>manifest.json</code>, extracts payload files to the configured VENUS library and demo-methods directories, computes integrity hashes, parses public HSL functions, registers the library record in the database, and caches the package in the package store for future rollback.</p>
 
 <h2>Usage</h2>
 <div class="code"><pre>node cli.js import-lib --file &lt;path&gt; [options]</pre></div>
@@ -21,7 +21,7 @@
 <tr><td><code>--file &lt;path&gt;</code></td><td><span class="badge badge-required">Required</span></td><td>Path to the <code>.hxlibpkg</code> file to import</td></tr>
 <tr><td><code>--lib-dir &lt;path&gt;</code></td><td>No</td><td>Override library install root directory. Default: from DB settings, fallback <code>C:\Program Files (x86)\HAMILTON\Library</code></td></tr>
 <tr><td><code>--met-dir &lt;path&gt;</code></td><td>No</td><td>Override methods (demo) install root directory. Default: from DB settings, fallback <code>...\Methods</code></td></tr>
-<tr><td><code>--force</code></td><td>No</td><td>Overwrite an already-installed library without returning an error</td></tr>
+<tr><td><code>--force</code></td><td>No</td><td>Overwrite an already-installed library without returning an error. Also overrides package signature verification failure.</td></tr>
 <tr><td><code>--no-group</code></td><td>No</td><td>Skip auto-assigning the new library to a group</td></tr>
 <tr><td><code>--no-cache</code></td><td>No</td><td>Skip caching the package in the package store</td></tr>
 <tr><td><code>--db-path &lt;dir&gt;</code></td><td>No</td><td>Override the user data directory path</td></tr>
@@ -32,6 +32,7 @@
 <h2>Import Process</h2>
 <ol>
   <li>The <code>.hxlibpkg</code> file is opened as a ZIP archive</li>
+  <li><b>Signature verification:</b> If a <code>signature.json</code> is present, the package's HMAC-SHA256 signature is verified. If verification fails, the command exits with an error unless <code>--force</code> is set. Unsigned (legacy) packages are accepted with a notice.</li>
   <li><code>manifest.json</code> is read and validated (missing manifest = error)</li>
   <li>If a library with the same name exists and is not deleted, the command fails unless <code>--force</code> is set</li>
   <li>Files in <code>library/</code> are extracted to <code>&lt;lib-dir&gt;\&lt;LibraryName&gt;</code></li>
@@ -75,6 +76,7 @@ node cli.js import-lib --file MyLibrary.hxlibpkg --no-cache</pre></div>
 <ul>
   <li><a href="ImportingLibraries.html">Importing Libraries</a></li>
   <li><a href="CLIImportArchive.html">CLI: import-archive</a></li>
+  <li><a href="CLIVerifyPackage.html">CLI: verify-package</a> — Verify a package's signature without importing</li>
   <li><a href="VersionRollback.html">Version Rollback</a></li>
 </ul>
 </div>

@@ -1,0 +1,124 @@
+<html>
+<head>
+    <title>Library Audit Log</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">Library Audit Log</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; Library Audit Log</div>
+
+<h2>Overview</h2>
+<p>The Library Audit Log generates a comprehensive, tamper-evident report of every library installed in the VENUS environment. The report covers both user-installed libraries and Hamilton system libraries, recording their metadata, file integrity status, and cryptographic hashes at the moment the audit is run.</p>
+
+<p>Each audit log is automatically signed with an embedded HMAC-SHA256 integrity signature so that any subsequent modification to the file can be detected.</p>
+
+<h2>Running an Audit</h2>
+<p>To generate an audit log:</p>
+<ol>
+  <li>Click the <b>overflow menu</b> (<i class="fas fa-ellipsis-v"></i>) in the toolbar</li>
+  <li>Select <b>Run Library Audit</b></li>
+  <li>The audit runs immediately and saves the log file automatically</li>
+  <li>A success confirmation dialog is displayed with the saved file path</li>
+</ol>
+
+<h3>Save Location</h3>
+<p>Audit logs are saved to a fixed directory to ensure consistency and prevent user modification of the file name or path:</p>
+<pre>C:\Program Files (x86)\Hamilton\Logfiles\Library Audit Logs\</pre>
+<p>The file name follows the pattern <code>libraryAuditLog_&lt;unix_timestamp&gt;.txt</code>, where the timestamp is the number of seconds since January 1, 1970 (UTC). For example:</p>
+<pre>libraryAuditLog_1740422400.txt</pre>
+<p>The directory is created automatically on the first audit if it does not already exist.</p>
+
+<h2>Audit Log Contents</h2>
+<p>The audit log is a plain-text file divided into several sections:</p>
+
+<h3>Header</h3>
+<p>Contains the generation timestamp, computer name, username, operating system, and the configured VENUS Library and Methods directory paths.</p>
+
+<h3>Summary</h3>
+<p>A count of active installed libraries, deleted (soft-deleted) libraries, system libraries, and the total number of libraries audited.</p>
+
+<h3>Installed (User) Libraries</h3>
+<p>For each user-installed library, the following is recorded:</p>
+<ul>
+  <li>Library name, ID, version, author, organization, and description</li>
+  <li>VENUS compatibility, tags, status (Active or Deleted)</li>
+  <li>Created date, installed date, and deleted date (if applicable)</li>
+  <li>Source package path, install path, and demo path</li>
+  <li>COM DLLs and COM warning status</li>
+  <li><b>Integrity status</b> &mdash; PASS, FAIL, or WARNING &mdash; with detailed error and warning messages</li>
+  <li><b>Library files</b> with existence check, stored SHA-256 hash, current SHA-256 hash, and hash comparison (MATCH / MISMATCH)</li>
+  <li>Demo files with existence check</li>
+  <li>Public functions list</li>
+</ul>
+
+<h3>System Libraries (Hamilton Base)</h3>
+<p>For each Hamilton system library, the following is recorded:</p>
+<ul>
+  <li>Display name, canonical name, ID, author, organization</li>
+  <li>First seen / last seen timestamps, source root, primary definition status</li>
+  <li>Resource types</li>
+  <li><b>Integrity status</b> &mdash; verified using the Hamilton metadata footer (<code>$$valid$$</code> / <code>$$checksum$$</code>) compared against the stored baseline</li>
+  <li><b>Discovered files</b> with existence check, stored and current footer values, and match status</li>
+</ul>
+
+<h3>Footer</h3>
+<p>Total entry count and the audit completion timestamp.</p>
+
+<h2>Integrity Signature</h2>
+<p>The final line of every audit log contains an embedded HMAC-SHA256 integrity signature:</p>
+<pre>$$INTEGRITY_SIGNATURE$$ e3b0c44298fc1c149afbf4c8996fb924...</pre>
+<p>This signature is computed over the entire body of the audit log (everything above the signature line) using a keyed HMAC with SHA-256. The key is embedded within the application.</p>
+
+<h3>How Signing Works</h3>
+<ol>
+  <li>The full audit log body is assembled in memory (header through footer)</li>
+  <li>An HMAC-SHA256 digest is computed over the body text</li>
+  <li>The resulting 64-character hex signature is appended as the last line, prefixed with <code>$$INTEGRITY_SIGNATURE$$</code></li>
+  <li>The complete file (body + signature line) is written to disk</li>
+</ol>
+
+<p>Because the signature is derived from the file contents, any change to the log &mdash; even a single character &mdash; will cause the signature to no longer match, making tampering detectable.</p>
+
+<h2>Checking an Audit File</h2>
+<p>To verify that a previously saved audit log has not been modified:</p>
+<ol>
+  <li>Click the <b>overflow menu</b> (<i class="fas fa-ellipsis-v"></i>) in the toolbar</li>
+  <li>Select <b>Check Audit File</b></li>
+  <li>Browse to and select the <code>.txt</code> audit log file</li>
+  <li>A result dialog is displayed indicating whether the file passed or failed the integrity check</li>
+</ol>
+
+<h3>Verification Results</h3>
+<table>
+<thead><tr><th>Result</th><th>Icon</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>Integrity Check Passed</b></td><td style="color:green;">&#10004;</td><td>The HMAC signature matches — the file has not been modified since it was generated</td></tr>
+<tr><td><b>Integrity Check Failed</b></td><td style="color:red;">&#10008;</td><td>The HMAC signature does not match — the file contents have been altered</td></tr>
+<tr><td><b>No Signature Found</b></td><td style="color:red;">&#10008;</td><td>The file does not contain an <code>$$INTEGRITY_SIGNATURE$$</code> line — it may not be a signed audit log, or the signature was removed</td></tr>
+</tbody>
+</table>
+
+<p>When a signature mismatch is detected, both the stored signature and the computed signature are displayed so the discrepancy can be documented.</p>
+
+<h2>Practical Recommendations</h2>
+<ul>
+  <li>Run a library audit after each library import, deletion, or rollback to maintain a traceable audit trail</li>
+  <li>Run an audit as part of instrument qualification (IQ/OQ/PQ) to document the exact library state at the time of qualification</li>
+  <li>Use <b>Check Audit File</b> whenever you retrieve a historical audit log to confirm it has not been altered</li>
+  <li>Do not open or edit audit log files in a text editor before verification — even invisible changes (encoding, line endings) will invalidate the signature</li>
+  <li>Audit logs are stored alongside VENUS run logs in <code>C:\Program Files (x86)\Hamilton\Logfiles\Library Audit Logs\</code> for centralized log management</li>
+</ul>
+
+<h2>Related Topics</h2>
+<ul>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a> &mdash; How file integrity is tracked for installed and system libraries</li>
+  <li><a href="CLIGenerateSyslibHashes.html">CLI: generate-syslib-hashes</a> &mdash; Generate the system library baseline used in audits</li>
+  <li><a href="CLIVerifySyslibHashes.html">CLI: verify-syslib-hashes</a> &mdash; Verify system libraries against baseline from the command line</li>
+</ul>
+</div>
+<div class="footer">
+<p>Venus Library Manager Help</p>
+</div>
+</body>
+</html>
