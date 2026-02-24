@@ -110,8 +110,28 @@ function parseArgs(argv) {
 // Database helpers
 // ---------------------------------------------------------------------------
 
+/** Default user data directory (outside the app) */
+const DEFAULT_USER_DATA_PATH = path.join(DEFAULT_LIB_PATH, '.LibraryManager');
+
 /**
- * Connect diskdb to the given directory.
+ * Connect diskdb to the settings DB (always in app's db/ folder).
+ */
+function connectSettingsDB() {
+    const diskdb = require('diskdb');
+    return diskdb.connect(path.join(__dirname, 'db'), ['settings']);
+}
+
+/**
+ * Connect diskdb to the user data directory.
+ * Returns a db object with collections: installed_libs, links, groups, tree.
+ */
+function connectUserDB(userDataDir) {
+    const diskdb = require('diskdb');
+    return diskdb.connect(userDataDir, ['installed_libs', 'links', 'groups', 'tree']);
+}
+
+/**
+ * Legacy: Connect diskdb to the given directory with all collections.
  * Returns a db object with collections: installed_libs, links, groups, settings, tree.
  */
 function connectDB(dbDir) {
@@ -120,12 +140,48 @@ function connectDB(dbDir) {
 }
 
 /**
- * Resolve the db directory from CLI args.
- * Falls back to <appRoot>/db where appRoot = location of this script.
+ * Resolve the user data directory from CLI args or settings.
+ * Priority: --db-path flag > userDataPath in settings.json > default
+ * Also ensures the directory exists with seed files.
  */
 function resolveDBPath(args) {
-    if (args['db-path']) return path.resolve(args['db-path']);
-    return path.join(__dirname, 'db');
+    let dbPath;
+    if (args['db-path']) {
+        dbPath = path.resolve(args['db-path']);
+    } else {
+        // Check settings.json for configured userDataPath
+        try {
+            const settingsDb = connectSettingsDB();
+            const settings = settingsDb.settings.find();
+            if (settings && settings.length > 0 && settings[0].userDataPath) {
+                dbPath = settings[0].userDataPath;
+            }
+        } catch(_) {}
+        if (!dbPath) dbPath = DEFAULT_USER_DATA_PATH;
+    }
+    ensureUserDataDir(dbPath);
+    return dbPath;
+}
+
+/**
+ * Ensure user data directory exists and has seed files.
+ */
+function ensureUserDataDir(dirPath) {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
+    const seeds = {
+        'installed_libs.json': '[]',
+        'groups.json': '[]',
+        'tree.json': '[]',
+        'links.json': '[]'
+    };
+    for (const [fname, content] of Object.entries(seeds)) {
+        const fpath = path.join(dirPath, fname);
+        if (!fs.existsSync(fpath)) {
+            fs.writeFileSync(fpath, content, 'utf8');
+        }
+    }
 }
 
 /**
@@ -1731,7 +1787,8 @@ COMMANDS
   help               Show this help text
 
 GLOBAL OPTIONS
-  --db-path <dir>    Path to the db/ directory  (default: <app-root>/db)
+  --db-path <dir>    Path to user data directory (default: from settings.json
+                     or <Hamilton Library>\\.LibraryManager)
   --store-dir <dir>  Override package store location
                      (default: C:\\Program Files (x86)\\HAMILTON\\Library\\LibraryPackages)
 

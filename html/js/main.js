@@ -28,11 +28,103 @@
     
         // Diskdb init
 		var db = require('diskdb');
-		var db_links = db.connect('db', ['links']);
-		var db_groups = db.connect('db', ['groups']);
+
+		// ---- Settings DB (always in app's db/ folder — portable) ----
 		var db_settings = db.connect('db', ['settings']);
-		var db_tree = db.connect('db', ['tree']); // contains the tree of group ids and method ids
-		var db_installed_libs = db.connect('db', ['installed_libs']); // tracks installed .hxlibpkg libraries
+
+		// ---- User Data Path ----
+		// User data (installed libs, groups, tree, links) is stored OUTSIDE the app
+		// in a configurable folder so the app stays portable and lightweight.
+		var DEFAULT_USER_DATA_PATH = path.join("C:\\Program Files (x86)\\HAMILTON\\Library", ".LibraryManager");
+
+		function resolveUserDataPath() {
+			var settings = db_settings.settings.find();
+			if (settings && settings.length > 0 && settings[0]["userDataPath"]) {
+				return settings[0]["userDataPath"];
+			}
+			return DEFAULT_USER_DATA_PATH;
+		}
+
+		function ensureUserDataDir(dirPath) {
+			if (!fs.existsSync(dirPath)) {
+				fs.mkdirSync(dirPath, { recursive: true });
+			}
+			// Seed empty collections if they don't exist
+			var seedFiles = {
+				'installed_libs.json': '[]',
+				'groups.json': '[{"_id":"gAll","name":"All","icon-class":"fa-th","default":true,"navbar":"left","favorite":true},{"_id":"gRecent","name":"Recent","icon-class":"fa-history","default":true,"navbar":"left","favorite":true},{"_id":"gFolders","name":"Import","icon-class":"fa-download","default":true,"navbar":"right","favorite":false},{"_id":"gEditors","name":"Export","icon-class":"fa-upload","default":true,"navbar":"right","favorite":true},{"_id":"gHistory","name":"History","icon-class":"fa-list","default":true,"navbar":"right","favorite":true}]',
+				'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false}]',
+				'links.json': '[{"_id":"method-editor","name":"Method Editor","description":"","icon-customImage":"HxMet.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxMetEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lc-editor","name":"Liquid Class Editor","description":"","icon-customImage":"HxLiq.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxCoreLiquidEditor.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lbw-editor","name":"Labware Editor","description":"","icon-customImage":"HxLbw.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxLabwrEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"hsl-editor","name":"HSL Editor","description":"","icon-customImage":"HxHSL.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxHSLMetEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"sysCfg-editor","name":"System Configuration Editor","description":"","icon-customImage":"HxCfg.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\Hamilton.HxConfigEditor.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"run-control","group-id":"gEditors","name":"Run Control","description":"","icon-customImage":"HxRun.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxRun.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"ham-version","group-id":"gEditors","name":"Hamilton Version","description":"","icon-customImage":"HxVer.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxVersion.exe","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"bin-folder","name":"Bin","description":"VENUS software executables and dlls","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"cfg-folder","name":"Config","description":"VENUS software configuration files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Config","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lbw-folder","name":"Labware","description":"VENUS software labware definitions for carriers, racks, tubes and consumables","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Labware","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lib-folder","name":"Library","description":"VENUS software library files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Library","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"log-folder","name":"LogFiles","description":"Run traces and STAR communication logs","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Logfiles","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"met-folder","name":"Methods","description":"Method files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Methods","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0}]'
+			};
+			for (var fname in seedFiles) {
+				var fpath = path.join(dirPath, fname);
+				if (!fs.existsSync(fpath)) {
+					fs.writeFileSync(fpath, seedFiles[fname], 'utf8');
+				}
+			}
+		}
+
+		/**
+		 * Migrate old db/ user data files to the new user data directory.
+		 * Only migrates if old files exist and new files are empty/default.
+		 */
+		function migrateOldDbData(userDataDir) {
+			var filesToMigrate = ['installed_libs.json', 'groups.json', 'tree.json', 'links.json'];
+			filesToMigrate.forEach(function(fname) {
+				var oldPath = path.join('db', fname);
+				var newPath = path.join(userDataDir, fname);
+				try {
+					if (!fs.existsSync(oldPath)) return;
+					var oldData = fs.readFileSync(oldPath, 'utf8').trim();
+					if (!oldData || oldData === '[]') return; // nothing to migrate
+					var oldArr = JSON.parse(oldData);
+					if (!Array.isArray(oldArr) || oldArr.length === 0) return;
+
+					// Only migrate if the new file is empty/default (not yet customized)
+					var newData = fs.readFileSync(newPath, 'utf8').trim();
+					var newArr = JSON.parse(newData);
+
+					// For installed_libs, only migrate if new is empty
+					if (fname === 'installed_libs.json') {
+						if (newArr.length === 0) {
+							fs.writeFileSync(newPath, oldData, 'utf8');
+							console.log('Migrated ' + fname + ' to user data directory (' + oldArr.length + ' records)');
+						}
+					}
+					// For groups, migrate if new has only default groups
+					else if (fname === 'groups.json') {
+						var hasCustom = newArr.some(function(g) { return !g["default"]; });
+						if (!hasCustom && oldArr.some(function(g) { return !g["default"]; })) {
+							fs.writeFileSync(newPath, oldData, 'utf8');
+							console.log('Migrated ' + fname + ' to user data directory');
+						}
+					}
+					// For tree and links, migrate if old has more data
+					else {
+						if (oldArr.length > newArr.length) {
+							fs.writeFileSync(newPath, oldData, 'utf8');
+							console.log('Migrated ' + fname + ' to user data directory');
+						}
+					}
+				} catch(e) {
+					console.warn('Migration warning for ' + fname + ': ' + e.message);
+				}
+			});
+		}
+
+		// Resolve user data path, ensure directory exists, migrate old data
+		var USER_DATA_DIR = resolveUserDataPath();
+		ensureUserDataDir(USER_DATA_DIR);
+		migrateOldDbData(USER_DATA_DIR);
+
+		// Connect user data databases to the external directory
+		var db_links = db.connect(USER_DATA_DIR, ['links']);
+		var db_groups = db.connect(USER_DATA_DIR, ['groups']);
+		var db_tree = db.connect(USER_DATA_DIR, ['tree']); // contains the tree of group ids and method ids
+		var db_installed_libs = db.connect(USER_DATA_DIR, ['installed_libs']); // tracks installed .hxlibpkg libraries
+
+		console.log('App settings: db/');
+		console.log('User data:    ' + USER_DATA_DIR);
 
 		// ---- System Libraries (hardcoded Hamilton base libraries) ----
 		var systemLibraries = [];
@@ -910,6 +1002,60 @@ var DetachDatabase = edge.func({
 			var txt = $(this).text();
 			$("#dd-maxRecent").text(txt);
 			saveSetting("recent-max",txt);
+		});
+
+		// Settings > Data Location — browse and apply
+		$(document).on("click", ".btn-browseDataPath", function() {
+			// Use a hidden nwdirectory input to pick a folder
+			var $picker = $("#input-dataPathBrowse");
+			if ($picker.length === 0) {
+				$picker = $('<input type="file" id="input-dataPathBrowse" nwdirectory style="display:none">');
+				$("body").append($picker);
+			}
+			$picker.val('');
+			$picker.off('change').on('change', function() {
+				var chosen = $(this).val();
+				if (chosen) {
+					$(".txt-userDataPath").val(chosen);
+				}
+			});
+			$picker.trigger('click');
+		});
+
+		$(document).on("click", ".btn-applyDataPath", function() {
+			var newPath = $(".txt-userDataPath").val().trim();
+			if (!newPath) return;
+			if (newPath === USER_DATA_DIR) return; // no change
+
+			// Save the new path to settings
+			saveSetting("userDataPath", newPath);
+
+			// Ensure the new directory exists and has seed files
+			try {
+				ensureUserDataDir(newPath);
+				// Offer to copy existing data to the new location
+				var shouldCopy = confirm("Data location changed to:\\n" + newPath +
+					"\\n\\nDo you want to copy your existing data to the new location?\\n" +
+					"(Installed libraries, groups, and links will be copied.)");
+				if (shouldCopy) {
+					var filesToCopy = ['installed_libs.json', 'groups.json', 'tree.json', 'links.json'];
+					filesToCopy.forEach(function(fname) {
+						var src = path.join(USER_DATA_DIR, fname);
+						var dst = path.join(newPath, fname);
+						try {
+							if (fs.existsSync(src)) {
+								fs.copyFileSync(src, dst);
+								console.log('Copied ' + fname + ' to new data location');
+							}
+						} catch(e) {
+							console.warn('Could not copy ' + fname + ': ' + e.message);
+						}
+					});
+				}
+				alert("Data location updated. Please restart the application for changes to take full effect.");
+			} catch(e) {
+				alert("Error setting up new data location: " + e.message);
+			}
 		});
 
 		$(document).on("click", ".btn-clearRecentList", function () {
@@ -2205,6 +2351,9 @@ var DetachDatabase = edge.func({
 			//setting - Display: hide system libraries
 			$("#chk_hideSystemLibraries").prop("checked", !!settings["chk_hideSystemLibraries"]);
 
+			//setting - Data Location
+			$(".txt-userDataPath").val(USER_DATA_DIR);
+
 			//reset nav bar and hide overflowing nav bar items
 			fitNavBarItems();
 			fitMainDivHeight();
@@ -2576,6 +2725,22 @@ var DetachDatabase = edge.func({
 						saveLinkKey("lib-folder","path",jsondata["lib-folder"]);
 						saveLinkKey("log-folder","path",jsondata["log-folder"]);
 						saveLinkKey("met-folder","path",jsondata["met-folder"]);
+
+						// Auto-set userDataPath on first run if not yet configured
+						var currentSettings = db_settings.settings.find()[0];
+						if (!currentSettings || !currentSettings["userDataPath"]) {
+							var autoDataPath = path.join(jsondata["lib-folder"], ".LibraryManager");
+							saveSetting("userDataPath", autoDataPath);
+							console.log("Auto-configured userDataPath from registry: " + autoDataPath);
+							// If this differs from the current USER_DATA_DIR, notify user
+							if (autoDataPath !== USER_DATA_DIR) {
+								ensureUserDataDir(autoDataPath);
+								console.log("Note: userDataPath updated. Restart for full effect.");
+							}
+						}
+
+						// Update PACKAGE_STORE_DIR to match actual lib-folder
+						PACKAGE_STORE_DIR = path.join(jsondata["lib-folder"], "LibraryPackages");
 					
 						HxFolder_LogFiles = jsondata["log-folder"];
 						HxFolder_Methods = jsondata["met-folder"];
@@ -2623,24 +2788,7 @@ var DetachDatabase = edge.func({
 		}
 	
 
-		function goVideo(src, str){
-		
-			// $("#videoModal .modal-title").text(str);
-			var myPlayer = videojs("#modal-video");
-			myPlayer.src("js/custom/" + src);
-			myPlayer.play();
-			myPlayer.currentTime(0);
-			myPlayer.fluid(true);
-			myPlayer.controls(true);
-			myPlayer.loop(true);
-			$('#videoModal').modal();
-		}
 
-		$('#videoModal').on("hidden.bs.modal", function(){
-			if(win.isFullscreen){
-				win.leaveFullscreen();
-			}
-		});
 
 
 		
@@ -3164,10 +3312,8 @@ var DetachDatabase = edge.func({
 		 * Returns the full path to RegAsm.exe or null if not found.
 		 */
 		function findRegAsmPath() {
-			var frameworkDir = "C:\\Windows\\Microsoft.NET\\Framework64\\";
-			if (!fs.existsSync(frameworkDir)) {
-				frameworkDir = "C:\\Windows\\Microsoft.NET\\Framework\\";
-			}
+			// Always use the 32-bit (x86) .NET Framework – Hamilton VENUS is a 32-bit application
+			var frameworkDir = "C:\\Windows\\Microsoft.NET\\Framework\\";
 			if (!fs.existsSync(frameworkDir)) return null;
 
 			// Find the latest version directory containing RegAsm.exe

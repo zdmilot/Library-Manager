@@ -1,8 +1,0 @@
-C:\Users\admin\Documents\GitHub\Library Manager\ExampleLibrary\ComDll\bin\Release\net48\ExampleComHelper.dll
-C:\Users\admin\Documents\GitHub\Library Manager\ExampleLibrary\ComDll\bin\Release\net48\ExampleComHelper.pdb
-C:\Users\admin\Documents\GitHub\Library Manager\ExampleLibrary\ComDll\obj\Release\net48\ExampleComHelper.csproj.AssemblyReference.cache
-C:\Users\admin\Documents\GitHub\Library Manager\ExampleLibrary\ComDll\obj\Release\net48\ExampleComHelper.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\admin\Documents\GitHub\Library Manager\ExampleLibrary\ComDll\obj\Release\net48\ExampleComHelper.csproj.CoreCompileInputs.cache
-C:\Users\admin\Documents\GitHub\Library Manager\ExampleLibrary\ComDll\obj\Release\net48\ExampleComHelper.sourcelink.json
-C:\Users\admin\Documents\GitHub\Library Manager\ExampleLibrary\ComDll\obj\Release\net48\ExampleComHelper.dll
-C:\Users\admin\Documents\GitHub\Library Manager\ExampleLibrary\ComDll\obj\Release\net48\ExampleComHelper.pdb
