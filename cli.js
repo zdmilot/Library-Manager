@@ -44,6 +44,24 @@ const HASH_EXTENSIONS = ['.hsl', '.hs_', '.sub'];
 const DEFAULT_LIB_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Library';
 const DEFAULT_MET_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Methods';
 
+// System libraries (Hamilton built-in, read-only)
+let _systemLibIds = null;
+function loadSystemLibIds() {
+    if (_systemLibIds) return _systemLibIds;
+    try {
+        const sysPath = path.join(__dirname, 'db', 'system_libraries.json');
+        const data = JSON.parse(fs.readFileSync(sysPath, 'utf8'));
+        _systemLibIds = new Set(data.map(function(e) { return e._id; }));
+    } catch (_) {
+        _systemLibIds = new Set();
+    }
+    return _systemLibIds;
+}
+
+function isSystemLibrary(libId) {
+    return loadSystemLibIds().has(libId);
+}
+
 // ---------------------------------------------------------------------------
 // Minimal argument parser
 // Supports:  --flag           (boolean true)
@@ -483,6 +501,7 @@ function cmdExportLib(args) {
     const db  = connectDB(resolveDBPath(args));
     const lib = findLibrary(db, args);
     if (!lib) die(`Library "${args.name || args.id}" not found.`);
+    if (isSystemLibrary(lib._id)) die(`SYSTEM_LIBRARY_READ_ONLY: "${lib.library_name || args.name || args.id}" is a Hamilton system library and cannot be exported.`);
     if (lib.deleted) die(`Library "${lib.library_name}" is deleted and cannot be exported.`);
 
     const libraryFiles = lib.library_files     || [];
@@ -550,12 +569,14 @@ function cmdExportArchive(args) {
     let targetLibs = [];
 
     if (args['all']) {
-        targetLibs = (db.installed_libs.find() || []).filter(l => !l.deleted);
+        targetLibs = (db.installed_libs.find() || []).filter(l => !l.deleted && !isSystemLibrary(l._id));
     } else if (args['names']) {
         args['names'].split(',').map(n => n.trim()).forEach(n => {
             const found = db.installed_libs.findOne({ library_name: n });
-            if (found && !found.deleted) {
+            if (found && !found.deleted && !isSystemLibrary(found._id)) {
                 targetLibs.push(found);
+            } else if (found && isSystemLibrary(found._id)) {
+                process.stderr.write(`Warning: "${n}" is a system library and cannot be exported — skipping\n`);
             } else {
                 process.stderr.write(`Warning: library "${n}" not found or is deleted — skipping\n`);
             }
@@ -563,8 +584,10 @@ function cmdExportArchive(args) {
     } else if (args['ids']) {
         args['ids'].split(',').map(i => i.trim()).forEach(id => {
             const found = db.installed_libs.findOne({ _id: id });
-            if (found && !found.deleted) {
+            if (found && !found.deleted && !isSystemLibrary(found._id)) {
                 targetLibs.push(found);
+            } else if (found && isSystemLibrary(found._id)) {
+                process.stderr.write(`Warning: library ID "${id}" is a system library and cannot be exported — skipping\n`);
             } else {
                 process.stderr.write(`Warning: library ID "${id}" not found or is deleted — skipping\n`);
             }
@@ -672,6 +695,7 @@ function cmdDeleteLib(args) {
     const db  = connectDB(resolveDBPath(args));
     const lib = findLibrary(db, args);
     if (!lib) die(`Library "${args.name || args.id}" not found.`);
+    if (isSystemLibrary(lib._id)) die(`SYSTEM_LIBRARY_READ_ONLY: "${lib.library_name || args.name || args.id}" is a Hamilton system library and cannot be deleted.`);
 
     const displayName = lib.library_name || args.name || args.id;
     console.log(`Deleting: ${displayName}`);

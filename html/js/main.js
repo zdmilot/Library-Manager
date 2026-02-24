@@ -34,6 +34,38 @@
 		var db_tree = db.connect('db', ['tree']); // contains the tree of group ids and method ids
 		var db_installed_libs = db.connect('db', ['installed_libs']); // tracks installed .hxlibpkg libraries
 
+		// ---- System Libraries (hardcoded Hamilton base libraries) ----
+		var systemLibraries = [];
+		try {
+			var _sysLibRaw = fs.readFileSync(path.join('db', 'system_libraries.json'), 'utf8');
+			systemLibraries = JSON.parse(_sysLibRaw);
+		} catch(e) {
+			console.warn('Could not load system_libraries.json: ' + e.message);
+		}
+
+		/** Check if a library ID belongs to a system library */
+		function isSystemLibrary(libId) {
+			if (!libId) return false;
+			if (typeof libId === 'string' && libId.indexOf('sys_') === 0) return true;
+			for (var i = 0; i < systemLibraries.length; i++) {
+				if (systemLibraries[i]._id === libId) return true;
+			}
+			return false;
+		}
+
+		/** Get a system library by ID */
+		function getSystemLibrary(libId) {
+			for (var i = 0; i < systemLibraries.length; i++) {
+				if (systemLibraries[i]._id === libId) return systemLibraries[i];
+			}
+			return null;
+		}
+
+		/** Get all system libraries */
+		function getAllSystemLibraries() {
+			return systemLibraries.slice();
+		}
+
 		var isUserAdmin = true;
 
 		var bool_treeChanged = false; //tracks if the tree of groups/methods has been edited to re-create groups when coming back to Home screen from Settings screen.
@@ -224,7 +256,7 @@ var DetachDatabase = edge.func({
 				impBuildLibraryCards();
 				fitImporterHeight();
 			} else if(group_id == "gRecent"){
-				// Recent tab - show recently imported libraries
+				// Recent tab - show recently imported libraries (exclude system)
 				$(".links-container").addClass("d-none");
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
@@ -238,6 +270,14 @@ var DetachDatabase = edge.func({
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-flex").addClass("d-none");
 				impBuildLibraryCards();
+				fitImporterHeight();
+			} else if(group_id == "gSystem"){
+				// System Libraries tab - show only system (Hamilton base) libraries
+				$(".links-container").addClass("d-none");
+				$(".exporter-container").addClass("d-none");
+				$(".importer-container").removeClass("d-none");
+				$("#imp-header").removeClass("d-flex").addClass("d-none");
+				impBuildLibraryCards(null, false, true);
 				fitImporterHeight();
 			} else {
 				// Custom group or other tab - show filtered library cards
@@ -1083,6 +1123,43 @@ var DetachDatabase = edge.func({
 				} //end if navgroup
 			} //end for groups
 
+			// ---- Inject the static "System" group nav item ----
+			if (systemLibraries.length > 0) {
+				var sysNavStr = '<li class="nav-item system-group-nav" data-group-id="gSystem">' +
+					'<div class="navitem-content"><div><i class="far fa-1x fa-lock"></i></div>' +
+					'<div><span class="nav-item-text">System</span></div></div></li>';
+				$(".navbarLeft").append(sysNavStr);
+
+				// Add System group to Settings accordion (read-only, no edit/delete)
+				var sysAccStr = '<div class="card mb-2 settings-links-group system-group-settings" data-group-id="gSystem">' +
+					'<div class="card-header collapsed" role="tab" id="heading_gSystem" data-toggle="collapse" href="#collapse_gSystem" aria-expanded="false" aria-controls="collapse_gSystem">' +
+						'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
+						'<span class="color-medium2"><i class="fas fa-lock fa-md ml-2 mr-2"></i><span class="group-name">System </span></span>' +
+						'<span class="badge badge-secondary ml-2" style="font-size:0.7rem;">Read-Only</span>' +
+					'</div>' +
+					'<div id="collapse_gSystem" class="collapse" role="tabpanel" aria-labelledby="heading_gSystem">' +
+						'<div class="card-body ml-5 mr-5 pl-4 pr-4 pt-2 pb-2">' +
+						'</div>' +
+					'</div>' +
+				'</div>';
+				$(".settings-links #accordion").append(sysAccStr);
+
+				// Add system library items into the System accordion
+				for (var si = 0; si < systemLibraries.length; si++) {
+					var sLib = systemLibraries[si];
+					var sLibName = sLib.display_name || sLib.canonical_name;
+					var sLibIcon = '<i class="fas fa-lock fa-lg ml-2 mr-2 mb-2 align-top pt-2" style="color:#adb5bd"></i>';
+					var sItemStr = '<div class="settings-links-method w-100 pt-2 system-lib-item" data-id="' + sLib._id + '">' +
+						sLibIcon +
+						'<div class="d-inline-block pb-2 link-namepath">' +
+							'<div class="name" style="color:#6c757d;">' + sLibName + ' <span class="badge badge-light" style="font-size:0.65rem;">System</span></div>' +
+							'<div class="path" style="color:#adb5bd;">Hamilton</div>' +
+						'</div>' +
+					'</div>';
+					$("#collapse_gSystem .card-body").append(sItemStr);
+				}
+			}
+
 			// Add "Unassigned Libraries" section - shows libraries not in any custom group
 			var allAssignedIds = [];
 			for (var t = 0; t < navtree.length; t++) {
@@ -1163,14 +1240,15 @@ var DetachDatabase = edge.func({
 		function updateSortableDivs(){
 			//Sortable lists of groups and methods
 			$( "#accordion" ).sortable({
-				items: '> .settings-links-group:not([data-group-id="unassigned"])',
+				items: '> .settings-links-group:not([data-group-id="unassigned"]):not([data-group-id="gSystem"])',
 				update: function(evet, ui){
 					//recreate the tree.json
 					saveTree();
 				}
 			});
-			$( ".settings-links-group .card-body" ).sortable({
-				connectWith: ".settings-links-group .card-body",
+			$( ".settings-links-group:not([data-group-id='gSystem']) .card-body" ).sortable({
+				connectWith: ".settings-links-group:not([data-group-id='gSystem']) .card-body",
+				items: '> .settings-links-method:not(.system-lib-item)',
 				update: function(event, ui ) {
 					if (this === ui.item.parent()[0]) { // this avoids the update to be triggerd twice when moving between groups
 						//recreate the tree.json
@@ -1190,6 +1268,7 @@ var DetachDatabase = edge.func({
 			for (i = 0; i < groups.length; ++i) {
 				var group_id = $(groups[i]).attr('data-group-id');
 				if(group_id === "unassigned") continue; // skip the unassigned pseudo-group
+				if(group_id === "gSystem") continue; // skip the system group (hardcoded, not persisted)
 				var methods = $(groups[i]).find(".settings-links-method");
 				var method_ids=[]
 				for (j = 0; j < methods.length; ++j) {
@@ -2913,14 +2992,35 @@ var DetachDatabase = edge.func({
 		}
 
 		// ---- Build installed library cards from DB ----
-		function impBuildLibraryCards(groupId, recentMode) {
+		function impBuildLibraryCards(groupId, recentMode, systemMode) {
 			var $container = $("#imp-cards-container");
 			$container.empty();
+
+			// ---- System-only mode: render only system library cards ----
+			if (systemMode) {
+				var sysLibs = getAllSystemLibraries();
+				if (!sysLibs || sysLibs.length === 0) {
+					$container.html(
+						'<div class="w-100 text-center py-5 imp-empty-state">' +
+							'<i class="fas fa-lock fa-3x color-lightgray"></i>' +
+							'<p class="text-muted mt-3">No system libraries found.</p>' +
+						'</div>'
+					);
+					return;
+				}
+				sysLibs.forEach(function(sLib) {
+					$container.append(buildSystemLibraryCard(sLib));
+				});
+				$container.append('<div class="col-md-12 my-3"></div>');
+				return;
+			}
 
 			var libs;
 			if (recentMode) {
 				// Recent mode: show all libraries (including deleted) sorted by installed_date (newest first), limited to max recent setting
+				// EXCLUDE system libraries from Recent
 				libs = db_installed_libs.installed_libs.find();
+				libs = libs.filter(function(l) { return !isSystemLibrary(l._id); });
 				libs.sort(function(a, b) {
 					var dateA = a.installed_date ? new Date(a.installed_date).getTime() : 0;
 					var dateB = b.installed_date ? new Date(b.installed_date).getTime() : 0;
@@ -2941,7 +3041,14 @@ var DetachDatabase = edge.func({
 				// Filter out deleted libraries from "All" view
 				libs = libs.filter(function(l) { return !l.deleted; });
 			}
-			if (!libs || libs.length === 0) {
+
+			// In "All" mode (no groupId, no recentMode), prepend system library cards
+			var hasSystemCards = false;
+			if (!groupId && !recentMode && systemLibraries.length > 0) {
+				hasSystemCards = true;
+			}
+
+			if ((!libs || libs.length === 0) && !hasSystemCards) {
 				var emptyMsg;
 				if (recentMode) {
 					emptyMsg = 'No recent imports.<br>Import a <b>.hxlibpkg</b> package to see it here.';
@@ -2957,6 +3064,28 @@ var DetachDatabase = edge.func({
 					'</div>'
 				);
 				return;
+			}
+
+			// In "All" mode, render system library cards first
+			if (hasSystemCards) {
+				var sysLibs = getAllSystemLibraries();
+				$container.append(
+					'<div class="col-md-12 mb-2">' +
+						'<span class="text-muted text-sm"><i class="fas fa-lock mr-1"></i>System Libraries</span>' +
+					'</div>'
+				);
+				sysLibs.forEach(function(sLib) {
+					$container.append(buildSystemLibraryCard(sLib));
+				});
+				// Separator between system and user libraries
+				if (libs && libs.length > 0) {
+					$container.append(
+						'<div class="col-md-12 mt-3 mb-2">' +
+							'<hr style="border-color:#dee2e6;">' +
+							'<span class="text-muted text-sm"><i class="fas fa-cube mr-1"></i>User-Installed Libraries</span>' +
+						'</div>'
+					);
+				}
 			}
 
 			libs.forEach(function(lib) {
@@ -3062,8 +3191,56 @@ var DetachDatabase = edge.func({
 			$container.append('<div class="col-md-12 my-3"></div>');
 		}
 
+		// ---- Build a single system library card HTML ----
+		function buildSystemLibraryCard(sLib) {
+			var libName = sLib.display_name || sLib.canonical_name || "Unknown";
+			var author = sLib.author || "Hamilton";
+			var fileCount = (sLib.discovered_files || []).length;
+			var resTypes = (sLib.resource_types || []).join(', ');
+			var hasPrimary = sLib.has_primary_definition;
+
+			var iconHtml = '<i class="fas fa-lock fa-3x" style="color:#adb5bd;"></i>';
+
+			var typeBadges = '';
+			if (hasPrimary) {
+				typeBadges = '<span class="badge badge-light mr-1" style="font-size:0.7rem;">System</span>';
+			} else {
+				typeBadges = '<span class="badge badge-light mr-1" style="font-size:0.7rem;">System Resource</span>';
+			}
+
+			var shortDesc = fileCount + ' file' + (fileCount !== 1 ? 's' : '') + ' (' + resTypes + ')';
+
+			var str =
+				'<div class="col-md-4 col-xl-3 d-flex align-items-stretch imp-lib-card-container imp-lib-card-system-container" data-lib-id="' + sLib._id + '" data-system="true">' +
+					'<div class="m-2 pl-3 pr-3 pt-3 pb-2 link-card imp-lib-card imp-lib-card-system w-100">' +
+						'<div class="d-flex align-items-start">' +
+							'<div class="mr-3 mt-1 imp-lib-card-icon">' + iconHtml + '</div>' +
+							'<div class="flex-grow-1" style="min-width:0;">' +
+								'<h6 class="mb-0 imp-lib-card-name cursor-pointer" style="color:#6c757d;">' + libName +
+									' <span class="badge badge-secondary ml-1" style="font-size:0.6rem;"><i class="fas fa-lock mr-1"></i>Read-Only</span>' +
+								'</h6>' +
+								'<div class="text-muted text-sm">' + author + '</div>' +
+							'</div>' +
+						'</div>' +
+						'<p class="text-muted mt-2 mb-1" style="font-size:0.85em;">' + shortDesc + '</p>' +
+						'<div class="mt-1 mb-1">' + typeBadges + '</div>' +
+						'<div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #eee;">' +
+							'<a href="#" class="text-sm imp-lib-card-details cursor-pointer" style="color:var(--medium);">View Details</a>' +
+							'<span class="text-muted text-sm"><i class="fas fa-lock"></i></span>' +
+						'</div>' +
+					'</div>' +
+				'</div>';
+			return str;
+		}
+
 		// ---- Show library detail modal ----
 		function impShowLibDetail(libId) {
+			// ---- Handle system library detail view ----
+			if (isSystemLibrary(libId)) {
+				impShowSystemLibDetail(libId);
+				return;
+			}
+
 			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
 			if (!lib) return;
 
@@ -3214,6 +3391,77 @@ var DetachDatabase = edge.func({
 
 			// Store library id on the modal so delete button can use it
 			$("#libDetailModal").attr("data-lib-id", libId);
+			$("#libDetailModal").attr("data-system", "false");
+			$("#libDetailModal").modal("show");
+		}
+
+		// ---- Show detail modal for a system library ----
+		function impShowSystemLibDetail(libId) {
+			var sLib = getSystemLibrary(libId);
+			if (!sLib) return;
+
+			var $icon = $("#libDetailModal .lib-detail-modal-icon");
+			$icon.empty();
+			$icon.html('<i class="fas fa-lock fa-3x" style="color:#adb5bd;"></i>');
+
+			// Metadata
+			$("#libDetailModal .lib-detail-name").text(sLib.display_name || sLib.canonical_name || "Unknown");
+			$("#libDetailModal .lib-detail-version").text("System Library");
+			$("#libDetailModal .lib-detail-author").text(sLib.author || "Hamilton");
+			$("#libDetailModal .lib-detail-organization").text(sLib.organization || "Hamilton");
+			$("#libDetailModal .lib-detail-venus").text("\u2014");
+			$("#libDetailModal .lib-detail-installed-date").text("Included with VENUS");
+
+			// Description
+			var resTypes = (sLib.resource_types || []).join(', ');
+			var sysDesc = "Built-in Hamilton system library. Contains " +
+				(sLib.discovered_files || []).length + " file(s) with resource types: " + resTypes + ".";
+			$("#libDetailModal .lib-detail-description").text(sysDesc);
+			$("#libDetailModal .lib-detail-desc-section").removeClass("d-none");
+
+			// Tags
+			$("#libDetailModal .lib-detail-tags").text("system, hamilton, read-only");
+			$("#libDetailModal .lib-detail-tags-section").removeClass("d-none");
+
+			// No image
+			$("#libDetailModal .lib-detail-image-section").addClass("d-none");
+
+			// Library files list (from discovered_files)
+			var $libFiles = $("#libDetailModal .lib-detail-lib-files");
+			$libFiles.empty();
+			var discoveredFiles = sLib.discovered_files || [];
+			if (discoveredFiles.length === 0) {
+				$libFiles.html('<div class="text-muted text-center py-2 pkg-empty-msg"><i class="fas fa-inbox mr-1"></i>None</div>');
+			} else {
+				discoveredFiles.forEach(function(f) {
+					var fileName = f.replace(/\\/g, '/').split('/').pop();
+					$libFiles.append(
+						'<div class="pkg-file-item"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name" style="color:#6c757d;">' + fileName + '</span>' +
+						'<span class="pkg-file-dir">' + f + '</span></div>'
+					);
+				});
+			}
+
+			// Demo files - none for system libraries
+			var $demoFiles = $("#libDetailModal .lib-detail-demo-files");
+			$demoFiles.empty();
+			$demoFiles.html('<div class="text-muted text-center py-2 pkg-empty-msg"><i class="fas fa-inbox mr-1"></i>None</div>');
+
+			// Install paths
+			$("#libDetailModal .lib-detail-lib-path").text("Source: " + (sLib.source_root || "Library"));
+			$("#libDetailModal .lib-detail-demo-path").text("");
+
+			// Hide COM, Integrity sections
+			$("#libDetailModal .lib-detail-com-section").addClass("d-none");
+			$("#libDetailModal .lib-detail-integrity-section").addClass("d-none");
+
+			// HIDE Delete and Export buttons for system libraries
+			$("#libDetailModal .lib-detail-delete-btn").addClass("d-none");
+			$("#libDetailModal .lib-detail-export-btn").addClass("d-none");
+
+			// Store library id and mark as system
+			$("#libDetailModal").attr("data-lib-id", libId);
+			$("#libDetailModal").attr("data-system", "true");
 			$("#libDetailModal").modal("show");
 		}
 
@@ -3222,6 +3470,11 @@ var DetachDatabase = edge.func({
 			e.preventDefault();
 			var libId = $("#libDetailModal").attr("data-lib-id");
 			if (!libId) return;
+			// Block export for system libraries
+			if (isSystemLibrary(libId)) {
+				alert("System libraries are read-only and cannot be exported.");
+				return;
+			}
 			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
 			if (!lib) { alert("Library not found."); return; }
 
@@ -3339,8 +3592,8 @@ var DetachDatabase = edge.func({
 			$list.empty();
 
 			var libs = db_installed_libs.installed_libs.find();
-			// Filter out deleted libraries
-			libs = libs.filter(function(l) { return !l.deleted; });
+			// Filter out deleted and system libraries (system cannot be exported)
+			libs = libs.filter(function(l) { return !l.deleted && !isSystemLibrary(l._id); });
 
 			if (!libs || libs.length === 0) {
 				$list.html(
@@ -3794,6 +4047,11 @@ var DetachDatabase = edge.func({
 			e.preventDefault();
 			var libId = $("#libDetailModal").attr("data-lib-id");
 			if (!libId) return;
+			// Block delete for system libraries
+			if (isSystemLibrary(libId)) {
+				alert("System libraries are read-only and cannot be deleted.");
+				return;
+			}
 			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
 			if (!lib) return;
 

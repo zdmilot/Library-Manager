@@ -1029,3 +1029,112 @@ body {
 	padding-right: 20px;
 }
 
+/* ---- System library card (read-only, Hamilton built-in) ---- */
+.imp-lib-card-system {
+	background-color: #f4f6f8 !important;
+	border-left: 4px solid #6c757d !important;
+	opacity: 0.82;
+	cursor: default;
+}
+
+.imp-lib-card-system:hover {
+	box-shadow: 0 2px 12px rgba(108, 117, 125, 0.15);
+	opacity: 0.92;
+}
+
+.imp-lib-card-system .imp-lib-card-name:hover {
+	text-decoration: none;
+	cursor: default;
+}
+
+.imp-system-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	font-size: 0.65rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #6c757d;
+	background: rgba(108, 117, 125, 0.10);
+	border: 1px solid rgba(108, 117, 125, 0.20);
+	border-radius: 3px;
+	padding: 1px 6px;
+	user-select: none;
+}
+
+.imp-system-badge i {
+	font-size: 0.6rem;
+}
+
+/* System section headers in All view */
+.imp-system-section-header {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #6c757d;
+	padding: 6px 12px;
+	user-select: none;
+}
+
+.imp-system-separator {
+	border-top: 2px solid #dee2e6;
+	margin: 6px 12px;
+}
+
+/* System group nav item lock icon */
+.nav-system-lock {
+	font-size: 0.6rem;
+	color: #adb5bd;
+	margin-left: 4px;
+}
+
+/* Settings accordion system group - non-draggable styling */
+.system-lib-item {
+	cursor: default !important;
+	opacity: 0.75;
+}
+
+.system-lib-item:hover {
+	opacity: 0.9;
+}
+
+.system-group-settings .card-header {
+	cursor: default !important;
+}
+
+.system-group-settings .badge-secondary {
+	font-size: 0.6rem;
+}
+
+/* System library detail modal overrides */
+.system-detail-lock {
+	color: #6c757d;
+	font-size: 1rem;
+	margin-right: 6px;
+}
+
+.system-detail-files-list {
+	max-height: 200px;
+	overflow-y: auto;
+	font-size: 0.78rem;
+	background: #f8f9fa;
+	border: 1px solid #e9ecef;
+	border-radius: 4px;
+	padding: 8px 12px;
+}
+
+.system-detail-files-list .file-item {
+	padding: 2px 0;
+	color: #495057;
+	font-family: 'Segoe UI', monospace;
+}
+
+.system-detail-files-list .file-item i {
+	width: 16px;
+	text-align: center;
+	margin-right: 4px;
+	color: #6c757d;
+	font-size: 0.7rem;
+}
