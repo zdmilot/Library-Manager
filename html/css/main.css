@@ -555,8 +555,9 @@ body {
 }
 
 .detail-modal-icon img {
-	max-width: 56px;
-	max-height: 56px;
+	width: 56px;
+	height: 56px;
+	object-fit: contain;
 	border-radius: 6px;
 }
 
@@ -784,6 +785,10 @@ body {
 	background: #f8f9fa;
 }
 
+.lib-detail-help-section .pkg-file-list {
+	min-height: unset;
+}
+
 .pkg-file-item {
 	padding: 5px 12px;
 	border-bottom: 1px solid #eee;
@@ -952,23 +957,9 @@ body {
 	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* ---- Integrity info icon (bottom-right of card) ---- */
-.imp-integrity-icon {
-	font-size: 0.9rem;
+/* ---- Integrity info tooltip on card (multiline via native title) ---- */
+.imp-lib-card-integrity-error[title] {
 	cursor: default;
-	position: relative;
-}
-
-.imp-integrity-icon.imp-integrity-error {
-	color: #d9534f;
-}
-
-.imp-integrity-icon.imp-integrity-warning {
-	color: #f0ad4e;
-}
-
-.imp-integrity-icon[title] {
-	white-space: pre-line;
 }
 
 /* ---- COM register checkbox in exporter ---- */
@@ -1042,6 +1033,18 @@ body {
 	opacity: 0.92;
 }
 
+/* System card with integrity error: red overrides system grey */
+.imp-lib-card-system.imp-lib-card-integrity-error {
+	background-color: #fce8e8 !important;
+	border-left: 4px solid #d9534f !important;
+	opacity: 0.9;
+}
+
+.imp-lib-card-system.imp-lib-card-integrity-error:hover {
+	box-shadow: 0 2px 12px rgba(217, 83, 79, 0.3);
+	opacity: 1;
+}
+
 .imp-lib-card-system .imp-lib-card-name:hover {
 	text-decoration: none;
 	cursor: default;
@@ -1066,8 +1069,9 @@ body {
 }
 
 .imp-sys-icon-img {
-	max-width: 48px;
-	max-height: 48px;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
 	border-radius: 4px;
 	filter: saturate(0.5) opacity(0.72);
 	transition: filter 0.2s;

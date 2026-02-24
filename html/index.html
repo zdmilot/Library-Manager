@@ -254,7 +254,6 @@
 					<div class="d-flex align-items-center mb-4" id="imp-header">
 						<div>
 							<h4 class="mb-0"><i class="fas fa-book mr-2 color-medium"></i>Installed Libraries</h4>
-							<p class="text-muted mb-0 text-sm">Libraries installed from <b>.hxlibpkg</b> and <b>.hxlibarch</b> packages</p>
 						</div>
 						<div class="ml-auto">
 							<button class="btn solid-button" id="imp-browse"><i class="fas fa-file-import mr-2"></i>Import</button>
@@ -977,6 +976,14 @@
 						<h6 class="detail-section-label">Tags</h6>
 						<p class="lib-detail-tags text-muted"></p>
 					</div>
+					<div class="detail-section lib-detail-integrity-section d-none">
+						<h6 class="detail-section-label">File Integrity</h6>
+						<div class="lib-detail-integrity-status"></div>
+					</div>
+					<div class="detail-section lib-detail-help-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>
+						<div class="pkg-file-list lib-detail-help-files"></div>
+					</div>
 					<div class="detail-section lib-detail-image-section d-none">
 						<h6 class="detail-section-label">Library Image</h6>
 						<div class="text-center py-2">
@@ -991,23 +998,23 @@
 						<h6 class="detail-section-label">Demo Method Files</h6>
 						<div class="pkg-file-list lib-detail-demo-files"></div>
 					</div>
-					<div class="detail-section lib-detail-help-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>
-						<div class="pkg-file-list lib-detail-help-files"></div>
+					<div class="detail-section lib-detail-functions-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-code mr-1" style="color:var(--medium)"></i>Public Functions</h6>
+						<div class="lib-detail-functions-list" style="max-height:280px; overflow-y:auto;"></div>
 					</div>
 					<div class="detail-section lib-detail-com-section d-none">
 						<h6 class="detail-section-label">COM Registered DLLs</h6>
 						<div class="lib-detail-com-dlls text-muted text-sm"></div>
 						<div class="lib-detail-com-warning-badge mt-1"></div>
 					</div>
+					<div class="detail-section lib-detail-versions-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-history mr-1" style="color:var(--medium);"></i>Cached Package Versions</h6>
+						<div class="lib-detail-versions-list" style="max-height:200px; overflow-y:auto;"></div>
+					</div>
 					<div class="detail-section">
 						<h6 class="detail-section-label">Install Paths</h6>
 						<p class="lib-detail-lib-path text-muted text-sm" style="font-family:Consolas,monospace; background:var(--body-background); padding:6px 10px; border-radius:6px;"></p>
 						<p class="lib-detail-demo-path text-muted text-sm" style="font-family:Consolas,monospace; background:var(--body-background); padding:6px 10px; border-radius:6px;"></p>
-					</div>
-					<div class="detail-section lib-detail-integrity-section d-none">
-						<h6 class="detail-section-label">File Integrity</h6>
-						<div class="lib-detail-integrity-status"></div>
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
@@ -1140,6 +1147,11 @@
 					<div class="detail-section">
 						<h6 class="detail-section-label">Demo Method Files</h6>
 						<div class="pkg-file-list imp-preview-demo-files"></div>
+					</div>
+					<!-- Help Files -->
+					<div class="detail-section imp-preview-help-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>
+						<div class="pkg-file-list imp-preview-help-files"></div>
 					</div>
 					<!-- Install Paths -->
 					<div class="detail-section">

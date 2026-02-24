@@ -93,6 +93,19 @@
       ]
     },
 
+    "help_files": {
+      "type": "array",
+      "description": "Basenames of .chm help files that ship with the library. These are installed in the library folder alongside library_files but tracked separately so the UI can surface them for quick access. If omitted, .chm files are auto-detected from library_files during import.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\.chm$"
+      },
+      "examples": [
+        ["MyVenusLibrary.chm"]
+      ]
+    },
+
     "com_register_dlls": {
       "type": "array",
       "description": "Basenames (not full paths) of DLL files listed in library_files that must be registered as COM objects using RegAsm.exe /codebase. Administrator rights are required at import time. DLL names must exactly match basenames of entries in library_files.",
@@ -129,6 +142,9 @@
       ],
       "demo_method_files": [
         "demo/Demo_MyVenusLibrary.hsl"
+      ],
+      "help_files": [
+        "MyVenusLibrary.chm"
       ],
       "com_register_dlls": []
     }

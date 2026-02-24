@@ -1,0 +1,59 @@
+// Demo method for ExampleComHelper
+// Demonstrates basic usage of the ExampleComHelper library functions.
+
+#include "ExampleComHelper.hsl"
+
+method Demo_ExampleComHelper()
+{
+   variable sum;
+   variable diff;
+   variable product;
+   variable quotient;
+   variable greeting;
+   variable reversed;
+   variable length;
+   variable version;
+
+   // Initialize the COM helper
+   ExampleComHelper::Initialize();
+
+   // Get version info
+   version = ExampleComHelper::GetVersion();
+   Trace("ExampleComHelper version: ", version);
+
+   // Arithmetic operations
+   sum     = ExampleComHelper::Add(100, 42);
+   Trace("100 + 42 = ", sum);
+
+   diff    = ExampleComHelper::Subtract(100, 42);
+   Trace("100 - 42 = ", diff);
+
+   product = ExampleComHelper::Multiply(7, 6);
+   Trace("7 * 6 = ", product);
+
+   quotient = ExampleComHelper::Divide(22, 7);
+   Trace("22 / 7 = ", quotient);
+
+   // Test division by zero handling
+   quotient = ExampleComHelper::Divide(10, 0);
+   Trace("10 / 0 = ", quotient, " (LastError: ", ExampleComHelper::GetLastError(), ")");
+
+   // String operations
+   greeting = ExampleComHelper::Greet("Hamilton User");
+   Trace(greeting);
+
+   reversed = ExampleComHelper::ReverseString("VENUS");
+   Trace("Reversed 'VENUS' = ", reversed);
+
+   length = ExampleComHelper::StringLength("Library Manager");
+   Trace("Length of 'Library Manager' = ", length);
+
+   // Concatenation
+   variable combined;
+   combined = ExampleComHelper::Concat("Hello ", "World!");
+   Trace("Concat: ", combined);
+
+   // Clean up
+   ExampleComHelper::Cleanup();
+   Trace("Demo complete.");
+}

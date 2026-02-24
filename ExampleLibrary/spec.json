@@ -1,0 +1,27 @@
+{
+  "$schema": "../cli-schema.json",
+
+  "library_name": "ExampleComHelper",
+  "author": "Library Manager Test Suite",
+  "organization": "Test",
+  "version": "1.0.0",
+  "venus_compatibility": "4.7+",
+  "description": "Example COM helper library for testing Library Manager COM registration, hashing, and packaging workflows. Provides arithmetic and string operations via a COM-visible C# DLL.",
+  "tags": ["example", "com", "test", "calculator"],
+
+  "library_files": [
+    "ExampleComHelper.hsl",
+    "ExampleComHelperEnu.hs_",
+    "ExampleComHelper.dll"
+  ],
+
+  "demo_method_files": [
+    "demo/Demo_ExampleComHelper.hsl"
+  ],
+
+  "help_files": [],
+
+  "com_register_dlls": [
+    "ExampleComHelper.dll"
+  ]
+}

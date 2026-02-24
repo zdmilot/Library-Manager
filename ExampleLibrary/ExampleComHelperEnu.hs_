@@ -1,0 +1,39 @@
+// ExampleComHelper String Table — English
+// This file provides the English string resources for ExampleComHelper.
+
+#pragma once
+
+namespace ExampleComHelperStringTableEnu
+{
+   // Library metadata
+   variable libraryName("ExampleComHelper");
+   variable libraryVersion("1.0.0");
+   variable libraryAuthor("Library Manager Test Suite");
+   variable libraryDescription("Example COM helper library for testing Library Manager COM registration, hashing, and packaging workflows.");
+
+   // Error messages
+   variable errComObjectNotInitialized("Error: COM object not initialized. Call ExampleComHelper::Initialize() first.");
+   variable errDivisionByZero("Error: Division by zero attempted.");
+   variable errInvalidParameter("Error: Invalid parameter supplied.");
+   variable errComCreationFailed("Error: Failed to create ExampleComHelper.Calculator COM object. Ensure the DLL is registered.");
+
+   // UI / Trace messages
+   variable msgInitialized("ExampleComHelper COM object initialized successfully.");
+   variable msgCleanedUp("ExampleComHelper COM object released.");
+   variable msgOperationComplete("Operation completed successfully.");
+
+   // Function descriptions (for step editor integration)
+   variable descAdd("Add two numbers and return their sum.");
+   variable descSubtract("Subtract the second number from the first.");
+   variable descMultiply("Multiply two numbers and return the product.");
+   variable descDivide("Divide the first number by the second. Returns 0 if divisor is zero.");
+   variable descConcat("Concatenate two strings.");
+   variable descReverse("Reverse a string.");
+   variable descStringLength("Get the character length of a string.");
+   variable descGreet("Get a personalized greeting message.");
+   variable descGetLastError("Retrieve the last error message from the COM object.");
+   variable descGetVersion("Get the COM library version string.");
+
+} // end namespace ExampleComHelperStringTableEnu
+
+// $$checksum=def456$$

@@ -1,0 +1,227 @@
+// {{{ 2 "ExampleComHelper" "begin"
+// Hamilton Example COM Helper Library
+// Provides HSL wrappers around the ExampleComHelper.Calculator COM object.
+//
+// Usage:
+//   #include "ExampleComHelper.hsl"
+//
+//   variable result;
+//   ExampleComHelper::Initialize();
+//   result = ExampleComHelper::Add(10, 5);    // 15
+//   result = ExampleComHelper::Greet("User"); // "Hello, User! ..."
+//   ExampleComHelper::Cleanup();
+// }}} 2 "ExampleComHelper" "end"
+
+#pragma once
+
+// ---------------------------------------------------------------------------
+// Namespace:  ExampleComHelper
+// Purpose:    Wraps the ExampleComHelper.Calculator COM object for use in
+//             Hamilton VENUS methods (HSL).
+// Author:     Library Manager Test Suite
+// Version:    1.0.0
+// ---------------------------------------------------------------------------
+
+namespace ExampleComHelper
+{
+   // Internal COM object handle
+   variable _comObject;
+   variable _initialized(hslFalse);
+
+   // -----------------------------------------------------------------------
+   // Function:  Initialize
+   // Purpose:   Create the COM object instance.
+   // Returns:   hslTrue on success, hslFalse on failure.
+   // -----------------------------------------------------------------------
+   function Initialize() variable
+   {
+      if (_initialized == hslTrue)
+      {
+         return(hslTrue);
+      }
+
+      object _comObject;
+      _comObject.CreateObject("ExampleComHelper.Calculator");
+      _initialized = hslTrue;
+      return(hslTrue);
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  Cleanup
+   // Purpose:   Release the COM object.
+   // -----------------------------------------------------------------------
+   function Cleanup() void
+   {
+      if (_initialized == hslTrue)
+      {
+         _comObject.ReleaseObject();
+         _initialized = hslFalse;
+      }
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  Add
+   // Purpose:   Add two numbers via the COM helper.
+   // Params:    a - first number
+   //            b - second number
+   // Returns:   Sum of a and b
+   // -----------------------------------------------------------------------
+   function Add(variable a, variable b) variable
+   {
+      variable result;
+      if (_initialized != hslTrue)
+      {
+         Initialize();
+      }
+      result = _comObject.Add(a, b);
+      return(result);
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  Subtract
+   // Purpose:   Subtract b from a via the COM helper.
+   // Params:    a - first number
+   //            b - second number
+   // Returns:   Difference (a - b)
+   // -----------------------------------------------------------------------
+   function Subtract(variable a, variable b) variable
+   {
+      variable result;
+      if (_initialized != hslTrue)
+      {
+         Initialize();
+      }
+      result = _comObject.Subtract(a, b);
+      return(result);
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  Multiply
+   // Purpose:   Multiply two numbers via the COM helper.
+   // Params:    a - first number
+   //            b - second number
+   // Returns:   Product of a and b
+   // -----------------------------------------------------------------------
+   function Multiply(variable a, variable b) variable
+   {
+      variable result;
+      if (_initialized != hslTrue)
+      {
+         Initialize();
+      }
+      result = _comObject.Multiply(a, b);
+      return(result);
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  Divide
+   // Purpose:   Divide a by b via the COM helper.
+   //            Returns 0 if b is zero; check GetLastError().
+   // Params:    a - numerator
+   //            b - denominator
+   // Returns:   Quotient (a / b)
+   // -----------------------------------------------------------------------
+   function Divide(variable a, variable b) variable
+   {
+      variable result;
+      if (_initialized != hslTrue)
+      {
+         Initialize();
+      }
+      result = _comObject.Divide(a, b);
+      return(result);
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  Concat
+   // Purpose:   Concatenate two strings.
+   // -----------------------------------------------------------------------
+   function Concat(variable a, variable b) variable
+   {
+      variable result;
+      if (_initialized != hslTrue)
+      {
+         Initialize();
+      }
+      result = _comObject.Concat(a, b);
+      return(result);
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  ReverseString
+   // Purpose:   Reverse a string via the COM helper.
+   // -----------------------------------------------------------------------
+   function ReverseString(variable input) variable
+   {
+      variable result;
+      if (_initialized != hslTrue)
+      {
+         Initialize();
+      }
+      result = _comObject.Reverse(input);
+      return(result);
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  StringLength
+   // Purpose:   Get the length of a string.
+   // -----------------------------------------------------------------------
+   function StringLength(variable input) variable
+   {
+      variable result;
+      if (_initialized != hslTrue)
+      {
+         Initialize();
+      }
+      result = _comObject.StringLength(input);
+      return(result);
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  Greet
+   // Purpose:   Get a greeting message with the caller's name.
+   // -----------------------------------------------------------------------
+   function Greet(variable name) variable
+   {
+      variable result;
+      if (_initialized != hslTrue)
+      {
+         Initialize();
+      }
+      result = _comObject.Greet(name);
+      return(result);
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  GetLastError
+   // Purpose:   Get the last error message from the COM object.
+   // -----------------------------------------------------------------------
+   function GetLastError() variable
+   {
+      variable result;
+      if (_initialized != hslTrue)
+      {
+         return("");
+      }
+      result = _comObject.LastError;
+      return(result);
+   }
+
+   // -----------------------------------------------------------------------
+   // Function:  GetVersion
+   // Purpose:   Get the COM library version string.
+   // -----------------------------------------------------------------------
+   function GetVersion() variable
+   {
+      variable result;
+      if (_initialized != hslTrue)
+      {
+         Initialize();
+      }
+      result = _comObject.Version;
+      return(result);
+   }
+
+} // end namespace ExampleComHelper
+
+// $$checksum=abc123$$

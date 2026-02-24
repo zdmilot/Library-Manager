@@ -25,5 +25,9 @@
     "demo/Demo_MyVenusLibrary.lay"
   ],
 
+  "help_files": [
+    "MyVenusLibrary.chm"
+  ],
+
   "com_register_dlls": []
 }
