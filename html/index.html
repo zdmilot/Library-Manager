@@ -13,57 +13,6 @@
 
 <body>
 	<div class="container-fluid p-0">
-		<div class="row header1 no-gutters">
-			<div class="col-md-12">
-				<nav class="navbar navbar-expand navbar-light bg-light">
-					<i class="fas fa-home brand-logo d-inline-block" style="cursor:pointer; font-size:20px; color:var(--navbar-font);"></i>
-
-					<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-						
-						<ul class="navbar-nav ml-4">
-						</ul>
-
-						<!-- Library Search Bar -->
-						<div class="imp-search-bar ml-auto mr-3">
-							<div class="input-group input-group-sm">
-								<div class="input-group-prepend">
-									<span class="input-group-text imp-search-icon"><i class="fas fa-search"></i></span>
-								</div>
-								<input type="text" class="form-control imp-search-input" id="imp-search-input" placeholder="Search libraries..." autocomplete="off">
-								<div class="input-group-append imp-search-clear-wrap d-none">
-									<button class="btn btn-outline-secondary imp-search-clear" type="button"><i class="fas fa-times"></i></button>
-								</div>
-							</div>
-						</div>
-
-						<form class="form-inline navbar-nav">
-							<div class="mr-5 cleanup-progress" style="display:none;">
-								<div class="text-sm cleanup-progress-text">Cleaning up run logs</div>
-								<div class="progress">
-									<div class="progress-bar cleanup-progress-bar bg-success" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-								</div>
-							</div>
-
-							<div class="dropdown btn-overflow-menu">
-								<button class="btn btn-sm my-2 ml-4 btn-overflow-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-									<i class="fas fa-ellipsis-v"></i>
-								</button>
-								<div class="dropdown-menu dropdown-menu-right">
-									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
-									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive mr-2"></i>Export Archive</a>
-									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list mr-2"></i>History</a>
-									<a class="dropdown-item overflow-audit" href="#"><i class="fas fa-clipboard-check mr-2"></i>Run Library Audit</a>
-									<div class="dropdown-divider"></div>
-									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group mr-2"></i>Library Groups</a>
-									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog mr-2"></i>Settings</a>
-									<a class="dropdown-item overflow-help" href="#"><i class="fas fa-question-circle mr-2"></i>Help</a>
-								</div>
-							</div>
-						</form>
-					</div>
-				</nav>
-			</div>
-		</div>
 		<div class="methods-page no-gutters">
 			<div class="row header2 no-gutters">
 				<div class="col-md-12">
@@ -86,6 +35,44 @@
 							<ul class="hidden-nav-items d-none">
 
 							</ul>
+						</div>
+
+						<!-- Search Bar & Overflow Menu -->
+						<div class="navbar-toolbar d-flex align-items-center ml-auto">
+							<div class="mr-5 cleanup-progress" style="display:none;">
+								<div class="text-sm cleanup-progress-text" style="color:var(--navbar-font);">Cleaning up run logs</div>
+								<div class="progress">
+									<div class="progress-bar cleanup-progress-bar bg-success" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+								</div>
+							</div>
+
+							<div class="imp-search-bar mr-2">
+								<div class="input-group input-group-sm">
+									<div class="input-group-prepend">
+										<span class="input-group-text imp-search-icon"><i class="fas fa-search"></i></span>
+									</div>
+									<input type="text" class="form-control imp-search-input" id="imp-search-input" placeholder="Search libraries..." autocomplete="off">
+									<div class="input-group-append imp-search-clear-wrap d-none">
+										<button class="btn btn-outline-secondary imp-search-clear" type="button"><i class="fas fa-times"></i></button>
+									</div>
+								</div>
+							</div>
+
+							<div class="dropdown btn-overflow-menu">
+								<button class="btn btn-sm btn-overflow-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<i class="fas fa-ellipsis-v"></i>
+								</button>
+								<div class="dropdown-menu dropdown-menu-right">
+									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
+									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive mr-2"></i>Export Archive</a>
+									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list mr-2"></i>History</a>
+									<a class="dropdown-item overflow-audit" href="#"><i class="fas fa-clipboard-check mr-2"></i>Run Library Audit</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group mr-2"></i>Library Groups</a>
+									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog mr-2"></i>Settings</a>
+									<a class="dropdown-item overflow-help" href="#"><i class="fas fa-question-circle mr-2"></i>Help</a>
+								</div>
+							</div>
 						</div>
 					</nav>
 				</div>

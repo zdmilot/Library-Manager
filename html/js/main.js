@@ -56,7 +56,7 @@
 			// Seed empty collections if they don't exist
 			var seedFiles = {
 				'installed_libs.json': '[]',
-				'groups.json': '[{"_id":"gAll","name":"All","icon-class":"fa-th","default":true,"navbar":"left","favorite":true},{"_id":"gRecent","name":"Recent","icon-class":"fa-history","default":true,"navbar":"left","favorite":true},{"_id":"gFolders","name":"Import","icon-class":"fa-download","default":true,"navbar":"right","favorite":false},{"_id":"gEditors","name":"Export","icon-class":"fa-upload","default":true,"navbar":"right","favorite":true},{"_id":"gHistory","name":"History","icon-class":"fa-list","default":true,"navbar":"right","favorite":true}]',
+				'groups.json': '[{"_id":"gAll","name":"All","icon-class":"fa-home","default":true,"navbar":"left","favorite":true},{"_id":"gRecent","name":"Recent","icon-class":"fa-history","default":true,"navbar":"left","favorite":true},{"_id":"gFolders","name":"Import","icon-class":"fa-download","default":true,"navbar":"right","favorite":false},{"_id":"gEditors","name":"Export","icon-class":"fa-upload","default":true,"navbar":"right","favorite":true},{"_id":"gHistory","name":"History","icon-class":"fa-list","default":true,"navbar":"right","favorite":true}]',
 				'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false}]',
 				'links.json': '[{"_id":"method-editor","name":"Method Editor","description":"","icon-customImage":"HxMet.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxMetEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lc-editor","name":"Liquid Class Editor","description":"","icon-customImage":"HxLiq.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxCoreLiquidEditor.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lbw-editor","name":"Labware Editor","description":"","icon-customImage":"HxLbw.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxLabwrEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"hsl-editor","name":"HSL Editor","description":"","icon-customImage":"HxHSL.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxHSLMetEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"sysCfg-editor","name":"System Configuration Editor","description":"","icon-customImage":"HxCfg.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\Hamilton.HxConfigEditor.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"run-control","group-id":"gEditors","name":"Run Control","description":"","icon-customImage":"HxRun.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxRun.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"ham-version","group-id":"gEditors","name":"Hamilton Version","description":"","icon-customImage":"HxVer.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxVersion.exe","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"bin-folder","name":"Bin","description":"VENUS software executables and dlls","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"cfg-folder","name":"Config","description":"VENUS software configuration files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Config","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lbw-folder","name":"Labware","description":"VENUS software labware definitions for carriers, racks, tubes and consumables","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Labware","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lib-folder","name":"Library","description":"VENUS software library files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Library","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"log-folder","name":"LogFiles","description":"Run traces and STAR communication logs","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Logfiles","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"met-folder","name":"Methods","description":"Method files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Methods","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0}]'
 			};
@@ -1292,7 +1292,7 @@
 		function fitMainDivHeight() {
 			if($(".methods-page").hasClass("d-none")){return;} //exit function if settings page is not visible
 			var linksDiv = $(".links-container");
-			var linksDiv_height = window.innerHeight - $(".header1").outerHeight() - $(".header2").outerHeight();
+			var linksDiv_height = window.innerHeight - $(".header2").outerHeight();
 			var linksDiv_padding = parseInt($(linksDiv).css('padding-top')) + parseInt($(linksDiv).css('padding-bottom')) + parseInt($(linksDiv).css('margin-bottom'));
 			linksDiv_height -= linksDiv_padding;
 			$(linksDiv).height(linksDiv_height);
@@ -2425,7 +2425,7 @@
 		function fitExporterHeight() {
 			if($(".methods-page").hasClass("d-none")){return;}
 			var exporterDiv = $(".exporter-container");
-			var height = window.innerHeight - $(".header1").outerHeight() - $(".header2").outerHeight();
+			var height = window.innerHeight - $(".header2").outerHeight();
 			exporterDiv.height(height);
 		}
 
@@ -3657,7 +3657,7 @@
 		function fitImporterHeight() {
 			if($(".methods-page").hasClass("d-none")){return;}
 			var importerDiv = $(".importer-container");
-			var height = window.innerHeight - $(".header1").outerHeight() - $(".header2").outerHeight();
+			var height = window.innerHeight - $(".header2").outerHeight();
 			importerDiv.height(height);
 		}
 
