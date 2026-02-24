@@ -3090,6 +3090,90 @@
 			pkgCreatePackageFile(savePath);
 		});
 
+		// ---- Static asset paths ----
+		var ASSETS_DIR = path.join(nw.__dirname, 'assets');
+		var LM_LOGO_GRAY_PATH = path.join(ASSETS_DIR, 'app_logo_gray_128.png');
+		var ARCHIVE_ICON_PATH = path.join(ASSETS_DIR, 'archive_icon_128.png');
+
+		// ---- Composite library icon: overlay grayscale LM logo on bottom 1/3 ----
+		// Returns a Promise that resolves to { base64, mime } (always PNG output).
+		// If sourceB64/sourceMime are provided, the user's image fills the canvas
+		// and the pre-rendered grayscale logo is drawn in the bottom-right corner.
+		// If no source image is provided, the grayscale logo fills the full canvas.
+		function pkgCompositeLibraryIcon(sourceB64, sourceMime) {
+			return new Promise(function(resolve, reject) {
+				var SIZE = 128;
+
+				if (!fs.existsSync(LM_LOGO_GRAY_PATH)) {
+					// No logo asset — pass through source image as-is
+					resolve({ base64: sourceB64 || null, mime: sourceMime || null });
+					return;
+				}
+
+				var logoB64 = fs.readFileSync(LM_LOGO_GRAY_PATH).toString('base64');
+				var logoImg = new Image();
+				logoImg.onload = function() {
+					if (sourceB64 && sourceMime) {
+						// User provided an image — composite with logo overlay
+						var userImg = new Image();
+						userImg.onload = function() {
+							try {
+								var canvas = document.createElement('canvas');
+								canvas.width = SIZE;
+								canvas.height = SIZE;
+								var ctx = canvas.getContext('2d');
+
+								// Draw user image scaled to fill
+								ctx.drawImage(userImg, 0, 0, SIZE, SIZE);
+
+								// Draw pre-rendered grayscale logo in bottom-right corner
+								var logoSize = Math.round(SIZE / 3);
+								var x = SIZE - logoSize - 2;
+								var y = SIZE - logoSize - 2;
+
+								// Semi-transparent white backing for readability
+								ctx.globalAlpha = 0.55;
+								ctx.fillStyle = '#ffffff';
+								ctx.beginPath();
+								ctx.arc(x + logoSize / 2, y + logoSize / 2, logoSize / 2 + 2, 0, Math.PI * 2);
+								ctx.fill();
+								ctx.globalAlpha = 1.0;
+
+								ctx.drawImage(logoImg, x, y, logoSize, logoSize);
+
+								var dataUrl = canvas.toDataURL('image/png');
+								var b64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+								resolve({ base64: b64, mime: 'image/png' });
+							} catch(e) {
+								reject(e);
+							}
+						};
+						userImg.onerror = function() { reject(new Error('Failed to load user image')); };
+						userImg.src = 'data:' + sourceMime + ';base64,' + sourceB64;
+					} else {
+						// No user image — use grayscale logo at full size
+						try {
+							var canvas = document.createElement('canvas');
+							canvas.width = SIZE;
+							canvas.height = SIZE;
+							var ctx = canvas.getContext('2d');
+							ctx.drawImage(logoImg, 0, 0, SIZE, SIZE);
+
+							var dataUrl = canvas.toDataURL('image/png');
+							var b64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+							resolve({ base64: b64, mime: 'image/png' });
+						} catch(e) {
+							reject(e);
+						}
+					}
+				};
+				logoImg.onerror = function() {
+					resolve({ base64: sourceB64 || null, mime: sourceMime || null });
+				};
+				logoImg.src = 'data:image/png;base64,' + logoB64;
+			});
+		}
+
 		// ---- Core packaging function ----
 		async function pkgCreatePackageFile(savePath) {
 			try {
@@ -3156,6 +3240,25 @@
 					}
 				}
 
+				// ---- Composite the library icon with grayscale LM logo overlay ----
+				// If user provided an image: overlay grayscale logo on bottom-right 1/3.
+				// If no image: use full-size grayscale logo.
+				try {
+					var composited = await pkgCompositeLibraryIcon(libImageBase64, libImageMime);
+					if (composited && composited.base64) {
+						libImageBase64 = composited.base64;
+						libImageMime = composited.mime || 'image/png';
+						libImageFilename = libImageFilename || (libName + '_icon.png');
+						// Ensure filename ends in .png since composite always outputs PNG
+						if (libImageFilename && !libImageFilename.toLowerCase().endsWith('.png')) {
+							libImageFilename = libImageFilename.replace(/\.[^.]+$/, '.png');
+						}
+					}
+				} catch(e) {
+					// Compositing failed — use the raw image as-is (non-critical)
+					console.warn('Icon compositing failed:', e);
+				}
+
 				// Build manifest JSON (matches C# HxLibPkgManifest.ToJson() format)
 				var manifest = {
 					format_version: "1.0",
@@ -3186,15 +3289,19 @@
 					zip.addLocalFile(fpath, "library");
 				});
 
-				// Add custom icon under icon/ directory (if a custom icon was chosen)
-				if (pkg_iconFilePath && fs.existsSync(pkg_iconFilePath)) {
-					zip.addLocalFile(pkg_iconFilePath, "icon");
+				// Add custom icon under icon/ directory (composited PNG)
+				if (libImageBase64) {
+					var iconFilename = libImageFilename || (libName + '_icon.png');
+					zip.addFile("icon/" + iconFilename, Buffer.from(libImageBase64, 'base64'));
 				}
 
 				// Add demo method files under demo_methods/ directory
 				pkg_demoMethodFiles.forEach(function(fpath) {
 					zip.addLocalFile(fpath, "demo_methods");
 				});
+
+				// Sign the package for integrity verification
+				signPackageZip(zip);
 
 				// Write the ZIP file
 				zip.writeZip(savePath);
@@ -3890,6 +3997,118 @@
 				}
 			});
 			return hashes;
+		}
+
+		// ---------------------------------------------------------------------------
+		// Package signing — HMAC-SHA256 integrity signatures for .hxlibpkg files
+		// ---------------------------------------------------------------------------
+
+		var PKG_SIGNING_KEY = 'VenusLibMgr::PackageIntegrity::a7e3f9d1c6b2';
+
+		/**
+		 * Compute SHA-256 hashes of all entries in an AdmZip instance (excluding signature.json).
+		 * Returns a sorted object of { entryName: sha256hex }.
+		 */
+		function computeZipEntryHashes(zip) {
+			var hashes = {};
+			zip.getEntries().forEach(function(entry) {
+				if (entry.isDirectory) return;
+				if (entry.entryName === 'signature.json') return;
+				var hash = crypto.createHash('sha256').update(entry.getData()).digest('hex');
+				hashes[entry.entryName] = hash;
+			});
+			var sorted = {};
+			Object.keys(hashes).sort().forEach(function(k) { sorted[k] = hashes[k]; });
+			return sorted;
+		}
+
+		/**
+		 * Sign a package ZIP by computing HMAC-SHA256 over all file hashes and embedding
+		 * a signature.json entry. Call AFTER all entries are added and BEFORE writing.
+		 * @param {AdmZip} zip - The AdmZip instance to sign (modified in place)
+		 * @returns {Object} The signature object that was embedded
+		 */
+		function signPackageZip(zip) {
+			var fileHashes = computeZipEntryHashes(zip);
+			var payload = JSON.stringify(fileHashes);
+			var hmac = crypto.createHmac('sha256', PKG_SIGNING_KEY).update(payload).digest('hex');
+
+			var signature = {
+				format_version: '1.0',
+				algorithm:      'HMAC-SHA256',
+				signed_date:    new Date().toISOString(),
+				file_hashes:    fileHashes,
+				hmac:           hmac
+			};
+
+			try { zip.deleteFile('signature.json'); } catch(e) {}
+			zip.addFile('signature.json', Buffer.from(JSON.stringify(signature, null, 2), 'utf8'));
+			return signature;
+		}
+
+		/**
+		 * Verify the integrity signature of a package ZIP.
+		 * @param {AdmZip} zip - The AdmZip instance to verify
+		 * @returns {Object} { valid: boolean, signed: boolean, errors: string[], warnings: string[] }
+		 */
+		function verifyPackageSignature(zip) {
+			var result = { valid: true, signed: false, errors: [], warnings: [] };
+
+			var sigEntry = zip.getEntry('signature.json');
+			if (!sigEntry) {
+				result.signed = false;
+				result.warnings.push('Package is unsigned (no signature.json). Integrity cannot be verified.');
+				return result;
+			}
+
+			result.signed = true;
+			var sig;
+			try {
+				sig = JSON.parse(zip.readAsText(sigEntry));
+			} catch(e) {
+				result.valid = false;
+				result.errors.push('signature.json is malformed: ' + e.message);
+				return result;
+			}
+
+			if (!sig.file_hashes || !sig.hmac) {
+				result.valid = false;
+				result.errors.push('signature.json is missing required fields (file_hashes or hmac).');
+				return result;
+			}
+
+			// Recompute HMAC over stored file_hashes
+			var storedPayload = JSON.stringify(sig.file_hashes);
+			var expectedHmac  = crypto.createHmac('sha256', PKG_SIGNING_KEY).update(storedPayload).digest('hex');
+			if (sig.hmac !== expectedHmac) {
+				result.valid = false;
+				result.errors.push('HMAC mismatch \u2014 signature.json has been tampered with.');
+				return result;
+			}
+
+			// Verify each file hash against actual ZIP content
+			var actualHashes = computeZipEntryHashes(zip);
+			var sigFiles = Object.keys(sig.file_hashes);
+			var actualFiles = Object.keys(actualHashes);
+
+			sigFiles.forEach(function(f) {
+				if (!actualHashes[f]) {
+					result.valid = false;
+					result.errors.push('File listed in signature but missing from package: ' + f);
+				} else if (actualHashes[f] !== sig.file_hashes[f]) {
+					result.valid = false;
+					result.errors.push('File hash mismatch (corrupted or modified): ' + f);
+				}
+			});
+
+			actualFiles.forEach(function(f) {
+				if (!sig.file_hashes[f]) {
+					result.valid = false;
+					result.errors.push('File present in package but not in signature (injected): ' + f);
+				}
+			});
+
+			return result;
 		}
 
 		/**
@@ -5121,6 +5340,9 @@
 					}
 				});
 
+				// Sign the package for integrity verification
+				signPackageZip(zip);
+
 				// Write ZIP
 				zip.writeZip(savePath);
 
@@ -5284,7 +5506,19 @@
 		});
 
 		// Core archive creation function
-		function expArchCreateArchive(libIds, savePath) {
+		// ---- Load static archive icon PNG ----
+		function getArchiveIconPng() {
+			try {
+				if (!fs.existsSync(ARCHIVE_ICON_PATH)) return { base64: null, mime: null };
+				var b64 = fs.readFileSync(ARCHIVE_ICON_PATH).toString('base64');
+				return { base64: b64, mime: 'image/png' };
+			} catch(e) {
+				return { base64: null, mime: null };
+			}
+		}
+
+		// Core archive creation function
+		async function expArchCreateArchive(libIds, savePath) {
 			try {
 				var archiveZip = new AdmZip();
 				var exportedLibs = [];
@@ -5365,6 +5599,9 @@
 						}
 					});
 
+					// Sign the inner package
+					signPackageZip(innerZip);
+
 					// Convert inner zip to buffer and add to archive
 					var innerBuffer = innerZip.toBuffer();
 					var innerFileName = libName + ".hxlibpkg";
@@ -5382,15 +5619,32 @@
 					return;
 				}
 
+				// Load the static purple archive icon
+				var archiveIconBase64 = null;
+				var archiveIconMime = null;
+				var iconResult = getArchiveIconPng();
+				if (iconResult && iconResult.base64) {
+					archiveIconBase64 = iconResult.base64;
+					archiveIconMime = iconResult.mime || 'image/png';
+				}
+
 				// Add archive manifest
 				var archManifest = {
 					format_version: "1.0",
 					archive_type: "hxlibarch",
 					created_date: new Date().toISOString(),
 					library_count: exportedLibs.length,
-					libraries: exportedLibs.map(function(l) { return l.name; })
+					libraries: exportedLibs.map(function(l) { return l.name; }),
+					archive_icon: archiveIconBase64 ? 'archive_icon.png' : null,
+					archive_icon_base64: archiveIconBase64,
+					archive_icon_mime: archiveIconMime
 				};
 				archiveZip.addFile("archive_manifest.json", Buffer.from(JSON.stringify(archManifest, null, 2), "utf8"));
+
+				// Add rendered archive icon to the zip
+				if (archiveIconBase64) {
+					archiveZip.addFile("icon/archive_icon.png", Buffer.from(archiveIconBase64, 'base64'));
+				}
 
 				// Write the archive
 				archiveZip.writeZip(savePath);
@@ -5471,6 +5725,14 @@
 						var manifestJson = innerZip.readAsText(manifestEntry);
 						var manifest = JSON.parse(manifestJson);
 						var libName = manifest.library_name || "Unknown";
+
+						// Verify inner package signature
+						var innerSig = verifyPackageSignature(innerZip);
+						if (innerSig.signed && !innerSig.valid) {
+							results.failed.push(libName + ": signature verification FAILED (" + innerSig.errors.join("; ") + ")");
+							return;
+						}
+
 						var origLibFiles = manifest.library_files || [];
 						var demoFiles = manifest.demo_method_files || [];
 						var comDlls = manifest.com_register_dlls || [];
@@ -5883,6 +6145,15 @@
 				var manifestJson = zip.readAsText(manifestEntry);
 				var manifest = JSON.parse(manifestJson);
 
+				// ---- Verify package signature ----
+				var sigResult = verifyPackageSignature(zip);
+				if (sigResult.signed && !sigResult.valid) {
+					var sigMsg = "WARNING: Package signature verification FAILED!\n\n";
+					sigResult.errors.forEach(function(e) { sigMsg += "  \u274C " + e + "\n"; });
+					sigMsg += "\nThis package may be corrupted or tampered with.\nDo you want to continue anyway?";
+					if (!confirm(sigMsg)) return;
+				}
+
 				// ---- Restricted author check on import ----
 				// If the package claims "Hamilton" as author but is NOT a known system library,
 				// require password authorization before allowing the import.
@@ -6030,6 +6301,26 @@
 					$modal.find(".imp-preview-help-section").removeClass("d-none");
 				} else {
 					$modal.find(".imp-preview-help-section").addClass("d-none");
+				}
+
+				// Package signature status
+				var $sigStatus = $modal.find(".imp-preview-signature-status");
+				if ($sigStatus.length > 0) {
+					$sigStatus.empty();
+					if (sigResult.signed && sigResult.valid) {
+						$sigStatus.html('<div class="d-flex align-items-center text-success"><i class="fas fa-shield-alt mr-2"></i><span>Package signature verified &mdash; integrity confirmed</span></div>');
+						$modal.find(".imp-preview-signature-section").removeClass("d-none");
+					} else if (sigResult.signed && !sigResult.valid) {
+						var errHtml = '<div class="text-danger"><i class="fas fa-exclamation-triangle mr-2"></i><strong>Signature verification FAILED</strong></div>';
+						sigResult.errors.forEach(function(e) {
+							errHtml += '<div class="text-danger text-sm ml-4">&bull; ' + e + '</div>';
+						});
+						$sigStatus.html(errHtml);
+						$modal.find(".imp-preview-signature-section").removeClass("d-none");
+					} else {
+						$sigStatus.html('<div class="d-flex align-items-center text-muted"><i class="fas fa-info-circle mr-2"></i><span>Unsigned package (legacy) &mdash; no signature to verify</span></div>');
+						$modal.find(".imp-preview-signature-section").removeClass("d-none");
+					}
 				}
 
 				// Install paths
@@ -6718,6 +7009,263 @@
 			$modal.find(".audit-verify-filename").text(fileName);
 			$modal.find(".audit-verify-message").text(message);
 			$modal.modal("show");
+		}
+
+		//**************************************************************************************
+		//****** VERIFY & REPAIR TOOL **********************************************************
+		//**************************************************************************************
+
+		// Click "Verify & Repair" from overflow menu
+		$(document).on("click", ".overflow-repair", function(e) {
+			e.preventDefault();
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
+			repairPopulateModal();
+			$("#repairModal").modal("show");
+		});
+
+		/**
+		 * Populate the repair modal with all installed (non-system) libraries
+		 * and their integrity + cached package status.
+		 */
+		function repairPopulateModal() {
+			var $list = $(".repair-lib-list");
+			$list.empty();
+
+			var libs = db_installed_libs.installed_libs.find() || [];
+			libs = libs.filter(function(l) { return !l.deleted && !isSystemLibrary(l._id); });
+
+			if (libs.length === 0) {
+				$list.html(
+					'<div class="text-muted text-center py-4">' +
+						'<i class="fas fa-inbox fa-2x color-lightgray"></i>' +
+						'<p class="mt-2">No installed libraries to verify.</p>' +
+					'</div>'
+				);
+				$(".repair-all-btn").prop("disabled", true);
+				$(".repair-status-text").text('');
+				return;
+			}
+
+			var failCount = 0;
+			var warnCount = 0;
+
+			libs.forEach(function(lib) {
+				var libName = lib.library_name || "Unknown";
+				var integrity = verifyLibraryIntegrity(lib);
+				var cached = listCachedVersions(libName);
+				var hasCached = cached.length > 0;
+
+				var statusClass, statusIcon, statusText;
+				if (!integrity.valid) {
+					statusClass = 'text-danger';
+					statusIcon = 'fa-times-circle';
+					statusText = 'FAILED';
+					failCount++;
+				} else if (integrity.warnings.length > 0) {
+					statusClass = 'text-warning';
+					statusIcon = 'fa-exclamation-triangle';
+					statusText = 'WARNING';
+					warnCount++;
+				} else {
+					statusClass = 'text-success';
+					statusIcon = 'fa-check-circle';
+					statusText = 'OK';
+				}
+
+				var detailLines = [];
+				integrity.errors.forEach(function(e) { detailLines.push('<span class="text-danger text-sm">&bull; ' + e + '</span>'); });
+				integrity.warnings.forEach(function(w) { detailLines.push('<span class="text-warning text-sm">&bull; ' + w + '</span>'); });
+
+				var repairBtnHtml = '';
+				if (!integrity.valid && hasCached) {
+					repairBtnHtml = '<button class="btn btn-sm btn-outline-success repair-single-btn ml-2" data-lib-name="' + libName.replace(/"/g, '&quot;') + '" title="Re-install from cached package"><i class="fas fa-wrench mr-1"></i>Repair</button>';
+				} else if (!integrity.valid && !hasCached) {
+					repairBtnHtml = '<span class="text-muted text-sm ml-2" title="No cached package available for repair"><i class="fas fa-ban mr-1"></i>No cached pkg</span>';
+				}
+
+				var cachedInfo = hasCached
+					? '<span class="text-muted text-sm ml-2" title="' + cached.length + ' cached version(s) available"><i class="fas fa-archive mr-1"></i>' + cached.length + ' cached</span>'
+					: '';
+
+				var html =
+					'<div class="repair-lib-item d-flex align-items-start py-2 px-1" style="border-bottom:1px solid var(--bg-divider);" data-lib-name="' + libName.replace(/"/g, '&quot;') + '">' +
+						'<div class="mr-3 mt-1"><i class="fas ' + statusIcon + ' ' + statusClass + '"></i></div>' +
+						'<div class="flex-grow-1" style="min-width:0;">' +
+							'<div class="d-flex align-items-center flex-wrap">' +
+								'<span class="font-weight-bold" style="color:var(--medium2);">' + libName + '</span>' +
+								'<span class="badge badge-light ml-2">' + (lib.version || '') + '</span>' +
+								'<span class="ml-2 ' + statusClass + ' text-sm font-weight-bold">' + statusText + '</span>' +
+								cachedInfo +
+							'</div>' +
+							(detailLines.length > 0 ? '<div class="mt-1">' + detailLines.join('<br>') + '</div>' : '') +
+						'</div>' +
+						'<div class="ml-2 d-flex align-items-center" style="white-space:nowrap;">' + repairBtnHtml + '</div>' +
+					'</div>';
+
+				$list.append(html);
+			});
+
+			var statusParts = [];
+			statusParts.push(libs.length + ' librar' + (libs.length === 1 ? 'y' : 'ies'));
+			if (failCount > 0) statusParts.push(failCount + ' failed');
+			if (warnCount > 0) statusParts.push(warnCount + ' warning' + (warnCount !== 1 ? 's' : ''));
+			if (failCount === 0 && warnCount === 0) statusParts.push('all OK');
+			$(".repair-status-text").text(statusParts.join(' \u2022 '));
+			$(".repair-all-btn").prop("disabled", failCount === 0);
+		}
+
+		// Repair a single library from its cached package
+		$(document).on("click", ".repair-single-btn", function(e) {
+			e.stopPropagation();
+			var libName = $(this).attr("data-lib-name");
+			if (!libName) return;
+			repairLibraryFromCache(libName);
+		});
+
+		// Repair all failed libraries
+		$(document).on("click", ".repair-all-btn", function() {
+			var failedItems = $(".repair-lib-item").filter(function() {
+				return $(this).find(".fa-times-circle").length > 0;
+			});
+			var names = [];
+			failedItems.each(function() {
+				var name = $(this).attr("data-lib-name");
+				if (name) names.push(name);
+			});
+			if (names.length === 0) return;
+			if (!confirm("Repair " + names.length + " librar" + (names.length === 1 ? "y" : "ies") + " from cached packages?\n\n" + names.join("\n"))) return;
+			var repaired = 0;
+			var errors = [];
+			names.forEach(function(name) {
+				var result = repairLibraryFromCache(name, true);
+				if (result.success) repaired++;
+				else errors.push(name + ": " + result.error);
+			});
+			var msg = repaired + " of " + names.length + " librar" + (names.length === 1 ? "y" : "ies") + " repaired.";
+			if (errors.length > 0) msg += "\n\nErrors:\n" + errors.join("\n");
+			alert(msg);
+			repairPopulateModal();
+		});
+
+		/**
+		 * Repair a library by re-extracting files from the newest cached package.
+		 * Verifies the cached package signature before extracting.
+		 * @param {string} libName - Library name to repair
+		 * @param {boolean} [silent] - If true, suppress alerts (for batch repair)
+		 * @returns {{ success: boolean, error: string }}
+		 */
+		function repairLibraryFromCache(libName, silent) {
+			try {
+				var cached = listCachedVersions(libName);
+				if (cached.length === 0) {
+					var msg = 'No cached packages found for "' + libName + '".';
+					if (!silent) alert(msg);
+					return { success: false, error: msg };
+				}
+
+				// Use the newest cached version
+				var newest = cached[0];
+				var zip;
+				try {
+					zip = new AdmZip(newest.fullPath);
+				} catch(e) {
+					var msg2 = 'Failed to read cached package: ' + e.message;
+					if (!silent) alert(msg2);
+					return { success: false, error: msg2 };
+				}
+
+				// Verify the cached package signature
+				var sigResult = verifyPackageSignature(zip);
+				if (sigResult.signed && !sigResult.valid) {
+					var msg3 = 'Cached package signature verification FAILED.\nThe cached package itself may be corrupted.\n\n' + sigResult.errors.join('\n');
+					if (!silent) alert(msg3);
+					return { success: false, error: 'Cached package signature failed' };
+				}
+
+				var manifestEntry = zip.getEntry('manifest.json');
+				if (!manifestEntry) {
+					var msg4 = 'Cached package is invalid (no manifest.json).';
+					if (!silent) alert(msg4);
+					return { success: false, error: msg4 };
+				}
+				var manifest = JSON.parse(zip.readAsText(manifestEntry));
+
+				// Find the installed library record
+				var lib = db_installed_libs.installed_libs.findOne({ library_name: libName });
+				if (!lib) {
+					var msg5 = 'Library "' + libName + '" not found in database.';
+					if (!silent) alert(msg5);
+					return { success: false, error: msg5 };
+				}
+
+				var libDestDir = lib.lib_install_path || '';
+				var demoDestDir = lib.demo_install_path || '';
+				if (!libDestDir) {
+					var msg6 = 'Library install path unknown.';
+					if (!silent) alert(msg6);
+					return { success: false, error: msg6 };
+				}
+
+				// Re-extract library files
+				if (!fs.existsSync(libDestDir)) {
+					fs.mkdirSync(libDestDir, { recursive: true });
+				}
+				if (demoDestDir && !fs.existsSync(demoDestDir)) {
+					fs.mkdirSync(demoDestDir, { recursive: true });
+				}
+
+				var extractedCount = 0;
+				var zipEntries = zip.getEntries();
+				zipEntries.forEach(function(entry) {
+					if (entry.isDirectory || entry.entryName === 'manifest.json' || entry.entryName === 'signature.json') return;
+					if (entry.entryName.indexOf('library/') === 0) {
+						var fname = entry.entryName.substring('library/'.length);
+						if (fname) {
+							fs.writeFileSync(path.join(libDestDir, fname), entry.getData());
+							extractedCount++;
+						}
+					} else if (entry.entryName.indexOf('demo_methods/') === 0) {
+						var fname2 = entry.entryName.substring('demo_methods/'.length);
+						if (fname2 && demoDestDir) {
+							fs.writeFileSync(path.join(demoDestDir, fname2), entry.getData());
+							extractedCount++;
+						}
+					} else if (entry.entryName.indexOf('help_files/') === 0) {
+						var fname3 = entry.entryName.substring('help_files/'.length);
+						if (fname3) {
+							fs.writeFileSync(path.join(libDestDir, fname3), entry.getData());
+							extractedCount++;
+						}
+					}
+				});
+
+				// Recompute hashes
+				var libFiles = lib.library_files || [];
+				var comDlls = lib.com_register_dlls || [];
+				var fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls);
+
+				// Update DB record with fresh hashes
+				db_installed_libs.installed_libs.update({ _id: lib._id }, {
+					file_hashes: fileHashes
+				}, { multi: false, upsert: false });
+
+				if (!silent) {
+					alert('Library "' + libName + '" repaired successfully!\n\n' +
+						extractedCount + ' files re-extracted from cached package.\n' +
+						'Version: ' + (newest.version || '?') +
+						(sigResult.signed ? '\nPackage signature: verified' : ''));
+					repairPopulateModal();
+					impBuildLibraryCards();
+				}
+
+				return { success: true, error: '' };
+
+			} catch(e) {
+				var errMsg = 'Repair failed: ' + e.message;
+				if (!silent) alert(errMsg);
+				return { success: false, error: errMsg };
+			}
 		}
 
         //**************************************************************************************

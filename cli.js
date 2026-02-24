@@ -16,6 +16,7 @@
  *   create-package   Create a .hxlibpkg from a JSON spec file
  *   list-versions    List cached package versions for a library
  *   rollback-lib     Reinstall a previously cached version of a library
+ *   verify-package   Verify integrity signature of a .hxlibpkg or .hxlibarch
  *
  * Run `node cli.js help` for full usage.
  */
@@ -334,6 +335,127 @@ function computeLibraryHashes(libraryFiles, libBasePath, comDlls) {
         }
     });
     return hashes;
+}
+
+// ---------------------------------------------------------------------------
+// Package signing — HMAC-SHA256 integrity signatures for .hxlibpkg files
+// ---------------------------------------------------------------------------
+
+const PKG_SIGNING_KEY = 'VenusLibMgr::PackageIntegrity::a7e3f9d1c6b2';
+
+/**
+ * Compute SHA-256 hashes of all entries in an AdmZip instance (excluding signature.json).
+ * Returns a sorted object of { entryName: sha256hex }.
+ */
+function computeZipEntryHashes(zip) {
+    const hashes = {};
+    zip.getEntries().forEach(function (entry) {
+        if (entry.isDirectory) return;
+        if (entry.entryName === 'signature.json') return;
+        const hash = crypto.createHash('sha256').update(entry.getData()).digest('hex');
+        hashes[entry.entryName] = hash;
+    });
+    // Return sorted by key for deterministic ordering
+    const sorted = {};
+    Object.keys(hashes).sort().forEach(function (k) { sorted[k] = hashes[k]; });
+    return sorted;
+}
+
+/**
+ * Sign a package ZIP by computing HMAC-SHA256 over all file hashes and embedding
+ * a signature.json entry. Must be called AFTER all other entries have been added,
+ * and BEFORE writing the ZIP to disk.
+ *
+ * @param {AdmZip} zip - The AdmZip instance to sign (modified in place)
+ * @returns {Object} The signature object that was embedded
+ */
+function signPackageZip(zip) {
+    const fileHashes = computeZipEntryHashes(zip);
+    const payload = JSON.stringify(fileHashes);
+    const hmac = crypto.createHmac('sha256', PKG_SIGNING_KEY).update(payload).digest('hex');
+
+    const signature = {
+        format_version: '1.0',
+        algorithm:      'HMAC-SHA256',
+        signed_date:    new Date().toISOString(),
+        file_hashes:    fileHashes,
+        hmac:           hmac
+    };
+
+    // Remove any existing signature.json before adding
+    try { zip.deleteFile('signature.json'); } catch (_) {}
+    zip.addFile('signature.json', Buffer.from(JSON.stringify(signature, null, 2), 'utf8'));
+    return signature;
+}
+
+/**
+ * Verify the integrity signature of a package ZIP.
+ *
+ * @param {AdmZip} zip - The AdmZip instance to verify
+ * @returns {Object} { valid: boolean, signed: boolean, errors: string[], warnings: string[] }
+ *   signed=false means no signature.json was found (legacy/unsigned package)
+ *   valid=true means all checks passed (or package is unsigned and valid is vacuously true)
+ */
+function verifyPackageSignature(zip) {
+    const result = { valid: true, signed: false, errors: [], warnings: [] };
+
+    const sigEntry = zip.getEntry('signature.json');
+    if (!sigEntry) {
+        result.signed = false;
+        result.warnings.push('Package is unsigned (no signature.json). Integrity cannot be verified.');
+        return result;
+    }
+
+    result.signed = true;
+    let sig;
+    try {
+        sig = JSON.parse(zip.readAsText(sigEntry));
+    } catch (e) {
+        result.valid = false;
+        result.errors.push('signature.json is malformed: ' + e.message);
+        return result;
+    }
+
+    if (!sig.file_hashes || !sig.hmac) {
+        result.valid = false;
+        result.errors.push('signature.json is missing required fields (file_hashes or hmac).');
+        return result;
+    }
+
+    // Recompute HMAC over stored file_hashes
+    const storedPayload = JSON.stringify(sig.file_hashes);
+    const expectedHmac  = crypto.createHmac('sha256', PKG_SIGNING_KEY).update(storedPayload).digest('hex');
+    if (sig.hmac !== expectedHmac) {
+        result.valid = false;
+        result.errors.push('HMAC mismatch — signature.json has been tampered with.');
+        return result;
+    }
+
+    // Verify each file hash against actual ZIP content
+    const actualHashes = computeZipEntryHashes(zip);
+    const sigFiles = Object.keys(sig.file_hashes);
+    const actualFiles = Object.keys(actualHashes);
+
+    // Check for files in signature but missing from ZIP
+    sigFiles.forEach(function (f) {
+        if (!actualHashes[f]) {
+            result.valid = false;
+            result.errors.push('File listed in signature but missing from package: ' + f);
+        } else if (actualHashes[f] !== sig.file_hashes[f]) {
+            result.valid = false;
+            result.errors.push('File hash mismatch (corrupted or modified): ' + f);
+        }
+    });
+
+    // Check for files in ZIP but not in signature
+    actualFiles.forEach(function (f) {
+        if (!sig.file_hashes[f]) {
+            result.valid = false;
+            result.errors.push('File present in package but not in signature (injected): ' + f);
+        }
+    });
+
+    return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -979,6 +1101,23 @@ function cmdImportLib(args) {
         die('Failed to read package: ' + e.message);
     }
 
+    // ---- Verify package signature ----
+    const sigResult = verifyPackageSignature(zip);
+    if (sigResult.signed) {
+        if (sigResult.valid) {
+            console.log('  Signature: VALID');
+        } else {
+            console.log('  Signature: FAILED');
+            sigResult.errors.forEach(e => process.stderr.write('    ' + e + '\n'));
+            if (!args['force']) {
+                die('Package signature verification failed. Use --force to import anyway.');
+            }
+            console.log('  WARNING: Importing despite failed signature (--force)');
+        }
+    } else {
+        console.log('  Signature: unsigned (legacy package)');
+    }
+
     const libName = manifest.library_name || 'Unknown';
 
     // ---- Restricted author check ----
@@ -1073,6 +1212,19 @@ function cmdImportArchive(args) {
 
             const manifest = JSON.parse(innerZip.readAsText(me));
             const libName  = manifest.library_name || 'Unknown';
+
+            // Verify inner package signature
+            const sigResult = verifyPackageSignature(innerZip);
+            if (sigResult.signed && !sigResult.valid) {
+                console.log(`  ! ${libName}: signature verification FAILED`);
+                sigResult.errors.forEach(e => process.stderr.write('      ' + e + '\n'));
+                if (!args['force']) {
+                    throw new Error('Signature verification failed (use --force to override)');
+                }
+                console.log(`    WARNING: Importing despite failed signature (--force)`);
+            } else if (sigResult.signed) {
+                console.log(`    ${libName}: signature OK`);
+            }
 
             const existing = db.installed_libs.findOne({ library_name: libName });
             if (existing && !existing.deleted && !args['force']) {
@@ -1174,6 +1326,9 @@ function cmdExportLib(args) {
         if (fs.existsSync(fp)) zip.addLocalFile(fp, 'demo_methods');
     });
 
+    // Sign the package for integrity verification
+    signPackageZip(zip);
+
     ensureOutDir(args['output']);
     zip.writeZip(args['output']);
 
@@ -1270,6 +1425,9 @@ function cmdExportArchive(args) {
                 const fp = path.join(demoBasePath, f);
                 if (fs.existsSync(fp)) { innerZip.addLocalFile(fp, 'demo_methods'); demoAdded++; }
             });
+
+            // Sign the inner package
+            signPackageZip(innerZip);
 
             archiveZip.addFile(lib.library_name + '.hxlibpkg', innerZip.toBuffer());
             exportedLibs.push({ name: lib.library_name, libFiles: libAdded, demoFiles: demoAdded });
@@ -1545,6 +1703,9 @@ function cmdCreatePackage(args) {
     resolvedHelpFiles.forEach(f => zip.addLocalFile(f, 'library'));
     resolvedDemoFiles.forEach(f => zip.addLocalFile(f, 'demo_methods'));
     if (iconSourcePath) zip.addLocalFile(iconSourcePath, 'icon');
+
+    // Sign the package for integrity verification
+    signPackageZip(zip);
 
     ensureOutDir(args['output']);
     zip.writeZip(args['output']);
@@ -2128,7 +2289,79 @@ verify-syslib-hashes
     node cli.js verify-syslib-hashes --json
 
 ──────────────────────────────────────────────────────────────────────────────
+verify-package
+  Verify the integrity signature of a .hxlibpkg or .hxlibarch file.
+  Checks that all files match the embedded HMAC-SHA256 signature.
+  Unsigned (legacy) packages are reported but not treated as errors.
+
+  --file <path>   [required]  Path to the .hxlibpkg or .hxlibarch file
+  --json                      Output results as JSON
+
+  Examples:
+    node cli.js verify-package --file MyLib.hxlibpkg
+    node cli.js verify-package --file archive.hxlibarch --json
+
+──────────────────────────────────────────────────────────────────────────────
 `);
+}
+
+// ===========================================================================
+// COMMAND: verify-package
+// ===========================================================================
+function cmdVerifyPackage(args) {
+    const filePath = args['file'];
+    if (!filePath)                { die('--file is required'); }
+    if (!fs.existsSync(filePath)) { die('File not found: ' + filePath); }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const results = [];
+
+    if (ext === '.hxlibarch') {
+        // Verify each inner .hxlibpkg
+        const archiveZip = new AdmZip(filePath);
+        const pkgEntries = archiveZip.getEntries().filter(
+            e => !e.isDirectory && e.entryName.toLowerCase().endsWith('.hxlibpkg')
+        );
+        if (pkgEntries.length === 0) die('No .hxlibpkg packages found in archive.');
+
+        pkgEntries.forEach(function (pkgEntry) {
+            try {
+                const innerZip = new AdmZip(pkgEntry.getData());
+                const sigResult = verifyPackageSignature(innerZip);
+                results.push({ package: pkgEntry.entryName, signed: sigResult.signed, valid: sigResult.valid, errors: sigResult.errors, warnings: sigResult.warnings });
+            } catch (e) {
+                results.push({ package: pkgEntry.entryName, signed: false, valid: false, errors: ['Failed to read: ' + e.message], warnings: [] });
+            }
+        });
+    } else {
+        // Single .hxlibpkg
+        try {
+            const zip = new AdmZip(fs.readFileSync(filePath));
+            const sigResult = verifyPackageSignature(zip);
+            results.push({ package: path.basename(filePath), signed: sigResult.signed, valid: sigResult.valid, errors: sigResult.errors, warnings: sigResult.warnings });
+        } catch (e) {
+            die('Failed to read package: ' + e.message);
+        }
+    }
+
+    if (args['json']) {
+        console.log(JSON.stringify(results, null, 2));
+    } else {
+        results.forEach(function (r) {
+            const status = !r.signed ? 'UNSIGNED' : (r.valid ? 'VALID' : 'FAILED');
+            console.log(`${r.package}: ${status}`);
+            r.errors.forEach(e   => console.log(`  [ERROR]   ${e}`));
+            r.warnings.forEach(w => console.log(`  [WARNING] ${w}`));
+        });
+        const allValid = results.every(r => r.valid);
+        const anyFailed = results.some(r => r.signed && !r.valid);
+        if (anyFailed) {
+            console.log('\nResult: INTEGRITY CHECK FAILED');
+            process.exit(1);
+        } else if (allValid) {
+            console.log('\nResult: ALL PACKAGES VERIFIED');
+        }
+    }
 }
 
 // ===========================================================================
@@ -2157,6 +2390,7 @@ switch (command) {
     case 'rollback-lib':    cmdRollbackLib(args);    break;
     case 'generate-syslib-hashes':  cmdGenerateSyslibHashes(args);  break;
     case 'verify-syslib-hashes':    cmdVerifySyslibHashes(args);    break;
+    case 'verify-package':          cmdVerifyPackage(args);          break;
     case 'help':
     case '--help':
     case '-h':

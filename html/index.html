@@ -66,8 +66,10 @@
 									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
 									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive mr-2"></i>Export Archive</a>
 									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list mr-2"></i>History</a>
+									<div class="dropdown-divider"></div>
 									<a class="dropdown-item overflow-audit" href="#"><i class="fas fa-file-signature mr-2"></i>Run Library Audit</a>
 									<a class="dropdown-item overflow-check-audit" href="#"><i class="fas fa-clipboard-check mr-2"></i>Check Audit File</a>
+									<a class="dropdown-item overflow-repair" href="#"><i class="fas fa-tools mr-2"></i>Verify &amp; Repair</a>
 									<div class="dropdown-divider"></div>
 									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group mr-2"></i>Library Groups</a>
 									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog mr-2"></i>Settings</a>
@@ -1207,6 +1209,11 @@
 						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>
 						<div class="pkg-file-list imp-preview-help-files"></div>
 					</div>
+					<!-- Package Signature Status -->
+					<div class="detail-section imp-preview-signature-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-shield-alt mr-1" style="color:var(--medium)"></i>Package Integrity</h6>
+						<div class="imp-preview-signature-status" style="padding:6px 10px; border-radius:6px; background:var(--body-background);"></div>
+					</div>
 					<!-- Install Paths -->
 					<div class="detail-section">
 						<h6 class="detail-section-label">Install Paths</h6>
@@ -1336,6 +1343,29 @@
 		</div>
 	</div>
 	<!---- Modal Audit Verify Result end --->
+
+	<!---- Modal Verify & Repair start --->
+	<div class="modal" tabindex="-1" role="dialog" id="repairModal">
+		<div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width:700px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<h5 class="modal-title"><i class="fas fa-tools mr-2"></i>Verify &amp; Repair Libraries</h5>
+					<button type="button" class="close" data-dismiss="modal" style="color:var(--light);">&times;</button>
+				</div>
+				<div class="modal-body" style="max-height:500px; overflow-y:auto; padding:0;">
+					<div class="repair-lib-list" style="padding:8px 16px;"></div>
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
+					<span class="repair-status-text text-muted text-sm"></span>
+					<div>
+						<button type="button" class="btn outline-button mr-2" data-dismiss="modal">Close</button>
+						<button type="button" class="btn solid-button repair-all-btn" disabled><i class="fas fa-wrench mr-1"></i>Repair Selected</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Verify & Repair end --->
 
 	<!-- Hidden open dialog for Check Audit File -->
 	<input type="file" class="d-none" id="audit-open-dialog" accept=".txt">
