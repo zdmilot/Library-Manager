@@ -52,22 +52,79 @@ const DEFAULT_MET_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Methods';
 // Package store — persists all imported .hxlibpkg files for repair & rollback
 const PACKAGE_STORE_DIR = path.join(DEFAULT_LIB_PATH, 'LibraryPackages');
 
+// ---------------------------------------------------------------------------
+// Default Groups (hardcoded — never stored in external JSON)
+// ---------------------------------------------------------------------------
+const DEFAULT_GROUPS = {
+    gAll:      { _id: 'gAll',      name: 'All',      'icon-class': 'fa-home',         'default': true, navbar: 'left',  favorite: true  },
+    gRecent:   { _id: 'gRecent',   name: 'Recent',   'icon-class': 'fa-history',      'default': true, navbar: 'left',  favorite: true  },
+    gFolders:  { _id: 'gFolders',  name: 'Import',   'icon-class': 'fa-download',     'default': true, navbar: 'right', favorite: false },
+    gEditors:  { _id: 'gEditors',  name: 'Export',   'icon-class': 'fa-upload',       'default': true, navbar: 'right', favorite: true  },
+    gHistory:  { _id: 'gHistory',  name: 'History',  'icon-class': 'fa-list',         'default': true, navbar: 'right', favorite: true  },
+    gHamilton: { _id: 'gHamilton', name: 'Hamilton', 'icon-class': 'fa-check-circle', 'default': true, navbar: 'left',  favorite: true, 'protected': true }
+};
+
+/**
+ * Look up a group by _id.  Hardcoded defaults take priority;
+ * falls back to the external groups database (custom groups).
+ */
+function getGroupById(db, id) {
+    if (DEFAULT_GROUPS[id]) return DEFAULT_GROUPS[id];
+    try { return db.groups.findOne({ _id: id }); } catch(e) { return null; }
+}
+
 // System libraries (Hamilton built-in, read-only)
 let _systemLibIds = null;
+let _systemLibNames = null;
 function loadSystemLibIds() {
     if (_systemLibIds) return _systemLibIds;
     try {
         const sysPath = path.join(__dirname, 'db', 'system_libraries.json');
         const data = JSON.parse(fs.readFileSync(sysPath, 'utf8'));
         _systemLibIds = new Set(data.map(function(e) { return e._id; }));
+        _systemLibNames = new Set(data.map(function(e) { return e.canonical_name; }));
     } catch (_) {
         _systemLibIds = new Set();
+        _systemLibNames = new Set();
     }
     return _systemLibIds;
 }
 
+function loadSystemLibNames() {
+    if (_systemLibNames) return _systemLibNames;
+    loadSystemLibIds();
+    return _systemLibNames;
+}
+
 function isSystemLibrary(libId) {
     return loadSystemLibIds().has(libId);
+}
+
+function isSystemLibraryByName(libName) {
+    return loadSystemLibNames().has(libName);
+}
+
+// ---------------------------------------------------------------------------
+// Restricted Author Protection
+// ---------------------------------------------------------------------------
+// Password required to use "Hamilton" (case-insensitive) as author on
+// non-system packages. Prevents spoofing and acts as an additional signing
+// mechanism for first-party libraries.
+const HAMILTON_AUTHOR_PASSWORD = 'password123';
+
+/**
+ * Check if an author name is restricted (i.e. "Hamilton" in any case).
+ */
+function isRestrictedAuthor(author) {
+    if (!author) return false;
+    return author.trim().toLowerCase() === 'hamilton';
+}
+
+/**
+ * Validate CLI --author-password against the restricted author password.
+ */
+function validateAuthorPassword(password) {
+    return password === HAMILTON_AUTHOR_PASSWORD;
 }
 
 // ---------------------------------------------------------------------------
@@ -173,7 +230,7 @@ function ensureUserDataDir(dirPath) {
     const seeds = {
         'installed_libs.json': '[]',
         'groups.json': '[]',
-        'tree.json': '[]',
+        'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gHamilton","method-ids":[],"locked":true}]',
         'links.json': '[]'
     };
     for (const [fname, content] of Object.entries(seeds)) {
@@ -542,23 +599,53 @@ function extractPublicFunctions(libFiles, libBasePath) {
 // Group auto-assignment
 // ---------------------------------------------------------------------------
 
-function autoAddToGroup(db, savedLibId) {
+function autoAddToGroup(db, savedLibId, authorName) {
     try {
         const navtree = db.tree.find();
         let targetGroupId = null;
 
-        for (let i = 0; i < navtree.length; i++) {
-            const gEntry = db.groups.findOne({ _id: navtree[i]['group-id'] });
-            if (gEntry && !gEntry['default']) {
-                targetGroupId = navtree[i]['group-id'];
-                const ids = navtree[i]['method-ids'] || [];
+        // If author is Hamilton, auto-assign to the Hamilton group
+        if (isRestrictedAuthor(authorName)) {
+            let hamiltonTreeEntry = null;
+            for (let i = 0; i < navtree.length; i++) {
+                if (navtree[i]['group-id'] === 'gHamilton') {
+                    hamiltonTreeEntry = navtree[i];
+                    break;
+                }
+            }
+            if (hamiltonTreeEntry) {
+                targetGroupId = 'gHamilton';
+                const ids = hamiltonTreeEntry['method-ids'] || [];
                 ids.push(savedLibId);
                 db.tree.update(
-                    { 'group-id': targetGroupId },
+                    { 'group-id': 'gHamilton' },
                     { 'method-ids': ids },
                     { multi: false, upsert: false }
                 );
-                break;
+            } else {
+                // Hamilton group is hardcoded; just create the tree entry
+                db.tree.save({
+                    'group-id': 'gHamilton',
+                    'method-ids': [savedLibId],
+                    locked: true
+                });
+                targetGroupId = 'gHamilton';
+            }
+        } else {
+            // Non-Hamilton: add to first custom group
+            for (let i = 0; i < navtree.length; i++) {
+                const gEntry = getGroupById(db, navtree[i]['group-id']);
+                if (gEntry && !gEntry['default']) {
+                    targetGroupId = navtree[i]['group-id'];
+                    const ids = navtree[i]['method-ids'] || [];
+                    ids.push(savedLibId);
+                    db.tree.update(
+                        { 'group-id': targetGroupId },
+                        { 'method-ids': ids },
+                        { multi: false, upsert: false }
+                    );
+                    break;
+                }
             }
         }
 
@@ -688,7 +775,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
     const saved = db.installed_libs.save(dbRecord);
 
     if (!skipGroup) {
-        autoAddToGroup(db, saved._id);
+        autoAddToGroup(db, saved._id, manifest.author);
     }
 
     return { extractedCount, libName: manifest.library_name };
@@ -893,6 +980,19 @@ function cmdImportLib(args) {
     }
 
     const libName = manifest.library_name || 'Unknown';
+
+    // ---- Restricted author check ----
+    // If the package claims \"Hamilton\" as author but is NOT a known system library,
+    // require --author-password for authorization
+    const importAuthor = (manifest.author || '').trim();
+    if (isRestrictedAuthor(importAuthor) && !isSystemLibraryByName(libName)) {
+        if (!args['author-password']) {
+            die('This package uses the restricted author name "Hamilton". Use --author-password <password> to authorize.');
+        }
+        if (!validateAuthorPassword(args['author-password'])) {
+            die('Incorrect author password. Import of Hamilton-authored packages requires valid authorization.');
+        }
+    }
 
     // Check for existing installation
     const existing = db.installed_libs.findOne({ library_name: libName });
@@ -1339,6 +1439,16 @@ function cmdCreatePackage(args) {
                                                    validationErrors.push('"library_files" must contain at least one entry');
     if (validationErrors.length > 0) {
         die('Spec validation failed:\n  ' + validationErrors.join('\n  '));
+    }
+
+    // ---- Restricted author check ----
+    if (isRestrictedAuthor(spec.author)) {
+        if (!args['author-password']) {
+            die('The author name "Hamilton" is restricted. Use --author-password <password> to authorize.');
+        }
+        if (!validateAuthorPassword(args['author-password'])) {
+            die('Incorrect author password. Creating packages with author "Hamilton" requires valid authorization.');
+        }
     }
 
     const specDir = path.dirname(specPath);

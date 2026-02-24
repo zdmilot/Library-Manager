@@ -28,6 +28,25 @@
         // Diskdb init
 		var db = require('diskdb');
 
+		// ---- Default Groups (hardcoded — never stored in external JSON) ----
+		var DEFAULT_GROUPS = {
+			"gAll":      { "_id": "gAll",      "name": "All",      "icon-class": "fa-home",         "default": true, "navbar": "left",  "favorite": true  },
+			"gRecent":   { "_id": "gRecent",   "name": "Recent",   "icon-class": "fa-history",      "default": true, "navbar": "left",  "favorite": true  },
+			"gFolders":  { "_id": "gFolders",  "name": "Import",   "icon-class": "fa-download",     "default": true, "navbar": "right", "favorite": false },
+			"gEditors":  { "_id": "gEditors",  "name": "Export",   "icon-class": "fa-upload",       "default": true, "navbar": "right", "favorite": true  },
+			"gHistory":  { "_id": "gHistory",  "name": "History",  "icon-class": "fa-list",         "default": true, "navbar": "right", "favorite": true  },
+			"gHamilton": { "_id": "gHamilton", "name": "Hamilton", "icon-class": "fa-check-circle", "default": true, "navbar": "left",  "favorite": true, "protected": true }
+		};
+
+		/**
+		 * Look up a group by _id.  Hardcoded defaults take priority;
+		 * falls back to the external groups database (custom groups).
+		 */
+		function getGroupById(id) {
+			if (DEFAULT_GROUPS[id]) return DEFAULT_GROUPS[id];
+			try { return db_groups.groups.findOne({"_id": id}); } catch(e) { return null; }
+		}
+
 		// ---- Settings DB (always in app's db/ folder — portable) ----
 		var db_settings = db.connect('db', ['settings']);
 
@@ -56,8 +75,8 @@
 			// Seed empty collections if they don't exist
 			var seedFiles = {
 				'installed_libs.json': '[]',
-				'groups.json': '[{"_id":"gAll","name":"All","icon-class":"fa-home","default":true,"navbar":"left","favorite":true},{"_id":"gRecent","name":"Recent","icon-class":"fa-history","default":true,"navbar":"left","favorite":true},{"_id":"gFolders","name":"Import","icon-class":"fa-download","default":true,"navbar":"right","favorite":false},{"_id":"gEditors","name":"Export","icon-class":"fa-upload","default":true,"navbar":"right","favorite":true},{"_id":"gHistory","name":"History","icon-class":"fa-list","default":true,"navbar":"right","favorite":true}]',
-				'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false}]',
+				'groups.json': '[]',
+				'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gHamilton","method-ids":[],"locked":true}]',
 				'links.json': '[{"_id":"method-editor","name":"Method Editor","description":"","icon-customImage":"HxMet.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxMetEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lc-editor","name":"Liquid Class Editor","description":"","icon-customImage":"HxLiq.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxCoreLiquidEditor.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lbw-editor","name":"Labware Editor","description":"","icon-customImage":"HxLbw.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxLabwrEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"hsl-editor","name":"HSL Editor","description":"","icon-customImage":"HxHSL.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxHSLMetEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"sysCfg-editor","name":"System Configuration Editor","description":"","icon-customImage":"HxCfg.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\Hamilton.HxConfigEditor.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"run-control","group-id":"gEditors","name":"Run Control","description":"","icon-customImage":"HxRun.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxRun.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"ham-version","group-id":"gEditors","name":"Hamilton Version","description":"","icon-customImage":"HxVer.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxVersion.exe","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"bin-folder","name":"Bin","description":"VENUS software executables and dlls","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"cfg-folder","name":"Config","description":"VENUS software configuration files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Config","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lbw-folder","name":"Labware","description":"VENUS software labware definitions for carriers, racks, tubes and consumables","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Labware","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lib-folder","name":"Library","description":"VENUS software library files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Library","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"log-folder","name":"LogFiles","description":"Run traces and STAR communication logs","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Logfiles","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"met-folder","name":"Methods","description":"Method files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Methods","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0}]'
 			};
 			for (var fname in seedFiles) {
@@ -156,6 +175,49 @@
 		console.log('App settings: db/');
 		console.log('User data:    ' + USER_DATA_DIR);
 
+		// ---- Migration: strip hardcoded default groups from external groups.json ----
+		// Default groups are now defined in DEFAULT_GROUPS and should not live in the JSON.
+		(function migrateDefaultGroups() {
+			try {
+				var groupsPath = path.join(USER_DATA_DIR, 'groups.json');
+				var groupsRaw = fs.readFileSync(groupsPath, 'utf8');
+				var groupsData = JSON.parse(groupsRaw);
+				var defaultIds = Object.keys(DEFAULT_GROUPS);
+				var before = groupsData.length;
+				// Also remove orphan Hamilton entries with random _ids
+				groupsData = groupsData.filter(function(g) {
+					if (defaultIds.indexOf(g._id) !== -1) return false;
+					if (g.name === 'Hamilton' && g['protected']) return false;
+					return true;
+				});
+				if (groupsData.length !== before) {
+					fs.writeFileSync(groupsPath, JSON.stringify(groupsData), 'utf8');
+					db_groups = db.connect(USER_DATA_DIR, ['groups']);
+					console.log('Migrated: removed ' + (before - groupsData.length) + ' default group(s) from external groups.json');
+				}
+
+				// Ensure tree entries exist for all default groups
+				var treePath = path.join(USER_DATA_DIR, 'tree.json');
+				var treeRaw = fs.readFileSync(treePath, 'utf8');
+				var treeData = JSON.parse(treeRaw);
+				var treeChanged = false;
+				defaultIds.forEach(function(gid) {
+					var found = treeData.some(function(t){ return t["group-id"] === gid; });
+					if (!found) {
+						treeData.push({ "group-id": gid, "method-ids": [], "locked": (gid === 'gHamilton') });
+						treeChanged = true;
+						console.log('Created tree entry for default group: ' + gid);
+					}
+				});
+				if (treeChanged) {
+					fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
+					db_tree = db.connect(USER_DATA_DIR, ['tree']);
+				}
+			} catch(e) {
+				console.warn('Could not migrate default groups: ' + e.message);
+			}
+		})();
+
 		// ---- System Libraries (hardcoded Hamilton base libraries) ----
 		var systemLibraries = [];
 		try {
@@ -174,6 +236,73 @@
 			systemLibraryBaseline = _sysHashData.libraries || {};
 		} catch(e) {
 			console.warn('Could not load system_library_hashes.json: ' + e.message);
+		}
+
+		// ---- Restricted Author Protection ----
+		// Password required to use "Hamilton" (case-insensitive) as author on non-system packages.
+		// This prevents spoofing and acts as an additional signing mechanism for first-party libraries.
+		var HAMILTON_AUTHOR_PASSWORD = 'password123';
+
+		/**
+		 * Check if an author name is restricted (i.e. "Hamilton" in any case).
+		 * @param {string} author
+		 * @returns {boolean}
+		 */
+		function isRestrictedAuthor(author) {
+			if (!author) return false;
+			return author.trim().toLowerCase() === 'hamilton';
+		}
+
+		/**
+		 * Validate the password for using a restricted author name.
+		 * @param {string} password
+		 * @returns {boolean}
+		 */
+		function validateAuthorPassword(password) {
+			return password === HAMILTON_AUTHOR_PASSWORD;
+		}
+
+		/**
+		 * Show a password prompt modal for restricted author usage.
+		 * Returns a Promise that resolves to true if password is correct, false otherwise.
+		 */
+		function promptAuthorPassword() {
+			return new Promise(function(resolve) {
+				var $modal = $("#authorPasswordModal");
+				$modal.find("#author-password-input").val('');
+				$modal.find(".author-password-error").addClass("d-none");
+				$modal.data('resolved', false);
+
+				// Confirm button
+				$modal.find(".btn-author-password-confirm").off('click').on('click', function() {
+					var pw = $modal.find("#author-password-input").val();
+					if (validateAuthorPassword(pw)) {
+						$modal.data('resolved', true);
+						$modal.modal('hide');
+						resolve(true);
+					} else {
+						$modal.find(".author-password-error").removeClass("d-none");
+						$modal.find("#author-password-input").val('').focus();
+					}
+				});
+
+				// Allow Enter key to submit
+				$modal.find("#author-password-input").off('keydown').on('keydown', function(e) {
+					if (e.keyCode === 13) {
+						$modal.find(".btn-author-password-confirm").trigger('click');
+					}
+				});
+
+				// Modal dismissed without confirming
+				$modal.off('hidden.bs.modal.authorpw').on('hidden.bs.modal.authorpw', function() {
+					if (!$modal.data('resolved')) {
+						resolve(false);
+					}
+				});
+
+				$modal.modal('show');
+				setTimeout(function() { $modal.find("#author-password-input").focus(); }, 300);
+			});
 		}
 
 		/** Check if a library ID belongs to a system library */
@@ -317,7 +446,7 @@
 				fitMainDivHeight();
 				fitExporterHeight();
 				fitImporterHeight();
-			}, 150, "");
+			}, 150, "window-resize");
 		});
 
         //Window load
@@ -330,7 +459,9 @@
 				}
 			} catch(e) { console.log('Could not restore window state: ' + e); }
 
-			waitForFinalEvent(function () {
+			// Use setTimeout instead of waitForFinalEvent so that an async
+			// resize triggered by win.maximize() cannot cancel this init.
+			setTimeout(function () {
 				try {
 					initVENUSData();
 					createGroups();
@@ -341,7 +472,7 @@
 				}
 				// Ensure we always navigate to home screen after startup
 				try { navigateHome(); } catch(e3) { console.log("Error navigating home: " + e3); }
-			}, 150, "");
+			}, 150);
         });
 
         //Click Hamilton logo to go home
@@ -418,8 +549,8 @@
 				fitImporterHeight();
 			} else {
 				// Custom group or other tab - show filtered library cards
-				var groupData = db_groups.groups.findOne({"_id": group_id});
-				if(groupData && !groupData["default"]){
+				var groupData = getGroupById(group_id);
+				if(groupData && (!groupData["default"] || group_id === "gHamilton")){
 					$(".links-container").addClass("d-none");
 					$(".exporter-container").addClass("d-none");
 					$(".importer-container").removeClass("d-none");
@@ -1390,7 +1521,7 @@
 			for (i = 0; i < navtree.length; ++i) {
 
 				var group_id = navtree[i]["group-id"];
-				var navgroup = db_groups.groups.findOne({"_id":group_id}); // loads all custom groups
+				var navgroup = getGroupById(group_id); // loads default or custom group
 				//find group data
 
 				if(navgroup){
@@ -1400,12 +1531,14 @@
 					var group_default = navgroup["default"];
 					var group_navbar = navgroup["navbar"];
 					var group_favorite = navgroup["favorite"];
+					var group_protected = navgroup["protected"] || false;
 
-					// Skip Export and History - they are in the overflow menu now
-					var skipNavItem = (group_id === "gEditors" || group_id === "gHistory");
+					// Skip Export, History, and Hamilton from normal nav rendering
+					// Hamilton nav item is injected after System below
+					var skipNavItem = (group_id === "gEditors" || group_id === "gHistory" || group_id === "gHamilton");
 
 					var classCustomGroup = "";
-					if(!group_default){
+					if(!group_default || group_protected){
 						classCustomGroup = " custom-group ";
 					}
 
@@ -1427,9 +1560,34 @@
 
 
 
-					// add custom groups to settings > links
+					// add groups to settings > links
+					// Hamilton/protected groups are always visible but without edit/delete
 					var displayClass = "";
-					if(group_default){displayClass = " d-none";}
+					if(group_default && !group_protected){displayClass = " d-none";}
+
+					if (group_protected) {
+						// Protected group: show in accordion with read-only badge, no edit/delete
+						str = '<div class="card mb-2 settings-links-group cursor-pointer'+displayClass+'" data-group-id="'+ group_id +'">' +
+								'<div class="card-header collapsed" role="tab" id="heading_'+group_id +'" data-toggle="collapse" href="#collapse_'+ group_id+'" aria-expanded="true" aria-controls="collapse_'+ group_id+'">' +
+										'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
+										'<span class="color-medium2"><i class="fas '+ group_icon +' fa-md ml-2 mr-2"></i><span class="group-name">'+ group_name +' </span></span>'+
+										'<span class="badge badge-warning ml-2" style="font-size:0.7rem;">Protected</span>';
+										if(group_favorite){
+											str+='<span class="cursor-pointer color-medium float-right pl-2 pr-2 favorite-icon favorite tooltip-delay1000" data-toggle="tooltip" title="Show/hide in home screen"">'+
+												'<i class="fas fa-star fa-md"></i>'+
+											'</span>';
+										}else{
+											str+='<span class="cursor-pointer color-medium float-right pl-2 pr-2 favorite-icon tooltip-delay1000" data-toggle="tooltip" title="Show/hide in home screen"">'+
+												'<i class="far fa-star fa-md"></i>'+
+											'</span>';
+										}
+								str+='</div>'+  
+								'<div id="collapse_'+ group_id+'" class="collapse" role="tabpanel" aria-labelledby="heading_'+group_id +'">'+
+									'<div class="card-body ml-5 mr-5 pl-4 pr-4 pt-2 pb-2">'+
+									'</div>'+
+								'</div>'+
+							'</div>';
+					} else {
 						str = '<div class="card mb-2 settings-links-group cursor-pointer'+displayClass+'" data-group-id="'+ group_id +'">' +
 								'<div class="card-header collapsed" role="tab" id="heading_'+group_id +'" data-toggle="collapse" href="#collapse_'+ group_id+'" aria-expanded="true" aria-controls="collapse_'+ group_id+'">' +
 										'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
@@ -1457,6 +1615,7 @@
 									'</div>'+
 								'</div>'+
 							'</div>';
+					} // end if group_protected else
 					$(".settings-links #accordion").append(str);
 
 
@@ -1531,10 +1690,23 @@
 				}
 			}
 
+			// ---- Inject the Hamilton group nav item (after System) ----
+			{
+				var hamiltonGrp = getGroupById("gHamilton");
+				if (hamiltonGrp) {
+					var hamFav = hamiltonGrp["favorite"];
+					var hamIcon = hamiltonGrp["icon-class"] || "fa-check-circle";
+					var hamNavStr = '<li class="nav-item custom-group' + (hamFav ? '' : ' d-none') + '" data-group-id="gHamilton">' +
+						'<div class="navitem-content"><div><i class="fas fa-1x ' + hamIcon + '"></i></div>' +
+						'<div><span class="nav-item-text">' + hamiltonGrp["name"] + '</span></div></div></li>';
+					$(".navbarLeft").append(hamNavStr);
+				}
+			}
+
 			// Add "Unassigned Libraries" section - shows libraries not in any custom group
 			var allAssignedIds = [];
 			for (var t = 0; t < navtree.length; t++) {
-				var treeGroup = db_groups.groups.findOne({"_id": navtree[t]["group-id"]});
+				var treeGroup = getGroupById(navtree[t]["group-id"]);
 				if(treeGroup && !treeGroup["default"]) {
 					allAssignedIds = allAssignedIds.concat(navtree[t]["method-ids"] || []);
 				}
@@ -1773,6 +1945,12 @@
 			editModal("group","edit",id);
 		}
 		function groupDelete(id){
+			// Prevent deletion of the protected Hamilton group
+			var grp = getGroupById(id);
+			if (grp && grp["protected"]) {
+				alert('The "' + grp.name + '" group is protected and cannot be deleted.');
+				return;
+			}
 			confirmDeleteModal(id, "group");
 		}
 
@@ -2095,7 +2273,7 @@
 
 				if(newOrEdit =="edit"){
 					//get data from the database and populate fields
-					var navgroup = db_groups.groups.findOne({"_id":id}); // loads all custom group
+					var navgroup = getGroupById(id); // loads default or custom group
 					var group_name = navgroup["name"];
 					var group_icon = navgroup["icon-class"];
 
@@ -2419,6 +2597,9 @@
 		var pkg_libraryFiles = [];
 		var pkg_demoMethodFiles = [];
 		var pkg_iconFilePath = null;   // custom icon/image path chosen by user
+		var pkg_iconAutoDetected = false;     // true if current preview is from auto-detected BMP
+		var pkg_iconAutoDetectedPath = null;  // file path of the auto-detected BMP
+		var pkg_iconDismissedAuto = false;    // true if user explicitly dismissed the auto-detected image
 		var pkg_comRegisterDlls = [];  // DLL filenames selected for COM registration via RegAsm
 
 		// Fit exporter container height to window
@@ -2468,6 +2649,9 @@
 				}
 
 				pkg_iconFilePath = filePath;
+				pkg_iconAutoDetected = false;
+				pkg_iconAutoDetectedPath = null;
+				pkg_iconDismissedAuto = false;
 				var ext = path.extname(filePath).toLowerCase();
 				var mimeMap = {'.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.bmp':'image/bmp', '.gif':'image/gif', '.ico':'image/x-icon', '.svg':'image/svg+xml'};
 				var mime = mimeMap[ext] || 'image/png';
@@ -2482,10 +2666,22 @@
 		});
 
 		$(document).on("click", "#pkg-removeIcon", function() {
+			var wasAutoDetected = pkg_iconAutoDetected;
 			pkg_iconFilePath = null;
+			pkg_iconAutoDetected = false;
+			pkg_iconAutoDetectedPath = null;
+
 			$("#pkg-icon-preview").html('<i class="fas fa-image fa-2x" style="color:#ccc;"></i>').removeClass('has-image');
 			$("#pkg-icon-name").text("No image selected");
 			$("#pkg-removeIcon").hide();
+
+			if (wasAutoDetected) {
+				// User dismissed the auto-detected image — suppress re-detection until files change
+				pkg_iconDismissedAuto = true;
+			} else {
+				// User removed a manually-chosen image — allow auto-detect to run again
+				pkgAutoDetectBmpImage();
+			}
 		});
 
 		// ---- Library file inputs ----
@@ -2622,6 +2818,63 @@
 			}
 		}
 
+		// ---- Auto-detect BMP image from library files ----
+		function pkgAutoDetectBmpImage() {
+			// Don't auto-detect if user has manually set an image
+			if (pkg_iconFilePath) return;
+			// Don't auto-detect if user explicitly dismissed the auto-detected image
+			if (pkg_iconDismissedAuto) return;
+
+			var libName = $("#pkg-library-name").val().trim();
+			if (!libName) {
+				// Clear auto-detected preview if library name is gone
+				if (pkg_iconAutoDetected) {
+					pkg_iconAutoDetected = false;
+					pkg_iconAutoDetectedPath = null;
+					$("#pkg-icon-preview").html('<i class="fas fa-image fa-2x" style="color:#ccc;"></i>').removeClass('has-image');
+					$("#pkg-icon-name").text("No image selected");
+					$("#pkg-removeIcon").hide();
+				}
+				return;
+			}
+
+			var targetBmp = libName + ".bmp";
+			var foundPath = null;
+			for (var i = 0; i < pkg_libraryFiles.length; i++) {
+				if (path.basename(pkg_libraryFiles[i]).toLowerCase() === targetBmp.toLowerCase()) {
+					foundPath = pkg_libraryFiles[i];
+					break;
+				}
+			}
+
+			if (foundPath) {
+				// Already showing this exact auto-detected image — skip
+				if (pkg_iconAutoDetected && pkg_iconAutoDetectedPath === foundPath) return;
+
+				try {
+					if (!fs.existsSync(foundPath)) return;
+					var stats = fs.statSync(foundPath);
+					if (stats.size > 2 * 1024 * 1024) return; // skip if > 2 MB
+
+					var b64 = fs.readFileSync(foundPath).toString('base64');
+					$("#pkg-icon-preview").html('<img src="data:image/bmp;base64,' + b64 + '">').addClass('has-image');
+					$("#pkg-icon-name").text(path.basename(foundPath) + " (auto-detected)");
+					$("#pkg-removeIcon").show();
+					pkg_iconAutoDetected = true;
+					pkg_iconAutoDetectedPath = foundPath;
+				} catch(e) {
+					// silently ignore read errors
+				}
+			} else if (pkg_iconAutoDetected) {
+				// BMP was removed from file list — clear auto-detected preview
+				pkg_iconAutoDetected = false;
+				pkg_iconAutoDetectedPath = null;
+				$("#pkg-icon-preview").html('<i class="fas fa-image fa-2x" style="color:#ccc;"></i>').removeClass('has-image');
+				$("#pkg-icon-name").text("No image selected");
+				$("#pkg-removeIcon").hide();
+			}
+		}
+
 		// ---- Toggle name override editing ----
 		$(document).on("click", "#pkg-toggle-name-edit", function() {
 			var $input = $("#pkg-library-name");
@@ -2689,6 +2942,9 @@
 			}
 			$("#pkg-lib-count").text(pkg_libraryFiles.length + " file" + (pkg_libraryFiles.length !== 1 ? "s" : ""));
 			pkgDetectLibraryName();
+			// Reset dismiss flag when file list changes, then try auto-detect
+			pkg_iconDismissedAuto = false;
+			pkgAutoDetectBmpImage();
 		}
 
 		// ---- COM register checkbox handler ----
@@ -2730,6 +2986,26 @@
 		}
 
 		// ---- Reset form ----
+		// Track whether Hamilton author was already authorized for this session
+		var pkg_hamiltonAuthorized = false;
+
+		// ---- Author field restriction: prompt for password when "Hamilton" is entered ----
+		$(document).on("blur", "#pkg-author", async function() {
+			var authorVal = $(this).val().trim();
+			if (isRestrictedAuthor(authorVal) && !pkg_hamiltonAuthorized) {
+				var pwOk = await promptAuthorPassword();
+				if (pwOk) {
+					pkg_hamiltonAuthorized = true;
+				} else {
+					$(this).val('');
+					$(this).focus();
+					pkg_hamiltonAuthorized = false;
+				}
+			} else if (!isRestrictedAuthor(authorVal)) {
+				pkg_hamiltonAuthorized = false;
+			}
+		});
+
 		$(document).on("click", "#pkg-reset", function() {
 			$("#pkg-author").val('');
 			$("#pkg-organization").val('');
@@ -2743,9 +3019,13 @@
 			$("#pkg-name-hint").removeClass("d-none");
 			pkg_autoDetectedName = "";
 			pkg_nameOverridden = false;
+			pkg_hamiltonAuthorized = false;
 			pkg_libraryFiles = [];
 			pkg_demoMethodFiles = [];
 			pkg_iconFilePath = null;
+			pkg_iconAutoDetected = false;
+			pkg_iconAutoDetectedPath = null;
+			pkg_iconDismissedAuto = false;
 			pkg_comRegisterDlls = [];
 			pkgUpdateLibFileList();
 			pkgUpdateDemoFileList();
@@ -2811,9 +3091,18 @@
 		});
 
 		// ---- Core packaging function ----
-		function pkgCreatePackageFile(savePath) {
+		async function pkgCreatePackageFile(savePath) {
 			try {
 				var author = $("#pkg-author").val().trim();
+
+				// Check restricted author name
+				if (isRestrictedAuthor(author)) {
+					var pwOk = await promptAuthorPassword();
+					if (!pwOk) {
+						alert('Package creation cancelled. The author name "Hamilton" requires authorization.');
+						return;
+					}
+				}
 				var organization = $("#pkg-organization").val().trim();
 				var version = $("#pkg-version").val().trim();
 				var venusCompat = $("#pkg-venus-compat").val().trim();
@@ -3735,6 +4024,8 @@
 				var emptyMsg;
 				if (recentMode) {
 					emptyMsg = 'No recent imports.<br>Import a <b>.hxlibpkg</b> package to see it here.';
+				} else if (groupId === 'gHamilton') {
+					emptyMsg = 'No Hamilton packages installed yet.<br>Import an official Hamilton <b>.hxlibpkg</b> to see it here.';
 				} else if (groupId) {
 					emptyMsg = 'No libraries assigned to this group.<br>Drag libraries into this group from <b>Settings &gt; Library Groups</b>.';
 				} else {
@@ -4459,7 +4750,7 @@
 				if (!inGroup) {
 					var targetGroupId = null;
 					for (var ti = 0; ti < navtree.length; ti++) {
-						var gEntry = db_groups.groups.findOne({"_id": navtree[ti]["group-id"]});
+						var gEntry = getGroupById(navtree[ti]["group-id"]);
 						if (gEntry && !gEntry["default"]) {
 							targetGroupId = navtree[ti]["group-id"];
 							var existingIds = navtree[ti]["method-ids"] || [];
@@ -5279,7 +5570,7 @@
 							var navtree = db_tree.tree.find();
 							var targetGroupId = null;
 							for (var ti = 0; ti < navtree.length; ti++) {
-								var gEntry = db_groups.groups.findOne({"_id": navtree[ti]["group-id"]});
+								var gEntry = getGroupById(navtree[ti]["group-id"]);
 								if (gEntry && !gEntry["default"]) {
 									targetGroupId = navtree[ti]["group-id"];
 									var existingIds = navtree[ti]["method-ids"] || [];
@@ -5580,7 +5871,7 @@
 		});
 
 		// ---- Load, preview, confirm and install package ----
-		function impLoadAndInstall(filePath) {
+		async function impLoadAndInstall(filePath) {
 			try {
 				var zipBuffer = fs.readFileSync(filePath);
 				var zip = new AdmZip(zipBuffer);
@@ -5591,6 +5882,24 @@
 				}
 				var manifestJson = zip.readAsText(manifestEntry);
 				var manifest = JSON.parse(manifestJson);
+
+				// ---- Restricted author check on import ----
+				// If the package claims "Hamilton" as author but is NOT a known system library,
+				// require password authorization before allowing the import.
+				var importAuthor = (manifest.author || '').trim();
+				if (isRestrictedAuthor(importAuthor)) {
+					// Check if this library name matches a known system library
+					var isKnownSysLib = systemLibraries.some(function(s) {
+						return s.canonical_name === manifest.library_name || s.library_name === manifest.library_name;
+					});
+					if (!isKnownSysLib) {
+						var pwOk = await promptAuthorPassword();
+						if (!pwOk) {
+							alert('Import cancelled. The package author "Hamilton" requires authorization for non-system libraries.');
+							return;
+						}
+					}
+				}
 
 				var libName = manifest.library_name || "Unknown";
 				var libFiles = manifest.library_files || [];
@@ -5928,20 +6237,63 @@
 				};
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
 
-				// Add the new library to the first custom group in the tree
+				// Add the new library to the appropriate group in the tree
 				var navtree = db_tree.tree.find();
 				var targetGroupId = null;
-				for (var ti = 0; ti < navtree.length; ti++) {
-					var gEntry = db_groups.groups.findOne({"_id": navtree[ti]["group-id"]});
-					if (gEntry && !gEntry["default"]) {
-						targetGroupId = navtree[ti]["group-id"];
-						var existingIds = navtree[ti]["method-ids"] || [];
+
+				// If author is Hamilton, auto-assign to the Hamilton group
+				var savedAuthor = (manifest.author || '').trim();
+				if (isRestrictedAuthor(savedAuthor)) {
+					// Find or create the Hamilton group entry in the tree
+					var hamiltonTreeEntry = null;
+					for (var ti = 0; ti < navtree.length; ti++) {
+						if (navtree[ti]["group-id"] === "gHamilton") {
+							hamiltonTreeEntry = navtree[ti];
+							break;
+						}
+					}
+					if (hamiltonTreeEntry) {
+						targetGroupId = "gHamilton";
+						var existingIds = hamiltonTreeEntry["method-ids"] || [];
 						existingIds.push(saved._id);
-						db_tree.tree.update({"group-id": targetGroupId}, {"method-ids": existingIds}, {multi: false, upsert: false});
-						break;
+						// Use raw file I/O to safely update tree (diskdb update may replace entire record)
+						var treePath = path.join(USER_DATA_DIR, 'tree.json');
+						var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
+						for (var ui = 0; ui < treeData.length; ui++) {
+							if (treeData[ui]["group-id"] === "gHamilton") {
+								treeData[ui]["method-ids"] = existingIds;
+								break;
+							}
+						}
+						fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
+						db_tree = db.connect(USER_DATA_DIR, ['tree']);
+					} else {
+						// Hamilton group is hardcoded; just create the tree entry
+						var treePath2 = path.join(USER_DATA_DIR, 'tree.json');
+						var treeData2 = JSON.parse(fs.readFileSync(treePath2, 'utf8'));
+						treeData2.push({
+							"group-id": "gHamilton",
+							"method-ids": [saved._id],
+							"locked": true
+						});
+						fs.writeFileSync(treePath2, JSON.stringify(treeData2), 'utf8');
+						db_tree = db.connect(USER_DATA_DIR, ['tree']);
+						targetGroupId = "gHamilton";
+					}
+				} else {
+					// Non-Hamilton author: add to first custom group
+					for (var ti = 0; ti < navtree.length; ti++) {
+						var gEntry = getGroupById(navtree[ti]["group-id"]);
+						if (gEntry && !gEntry["default"]) {
+							targetGroupId = navtree[ti]["group-id"];
+							var existingIds = navtree[ti]["method-ids"] || [];
+							existingIds.push(saved._id);
+							db_tree.tree.update({"group-id": targetGroupId}, {"method-ids": existingIds}, {multi: false, upsert: false});
+							break;
+						}
 					}
 				}
-				// If no custom group exists, create one
+				// If no target group was found, create a default one
 				if (!targetGroupId) {
 					var newGroup = db_groups.groups.save({
 						"name": "Libraries",
@@ -6009,6 +6361,11 @@
 		});
 
 		//**************************************************************************************
+		//****** AUDIT LOG CONSTANTS ***********************************************************
+		//**************************************************************************************
+		var AUDIT_SIGNING_KEY = 'VenusLibMgr::AuditIntegrity::b9f4e7c2a1d8';
+		var AUDIT_SIG_PREFIX  = '$$INTEGRITY_SIGNATURE$$ ';
+
 		//****** RUN LIBRARY AUDIT *************************************************************
 		//**************************************************************************************
 
@@ -6018,17 +6375,18 @@
 			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
 			$(".btn-overflow-toggle").attr("aria-expanded", "false");
 
-			// Set default filename with unix timestamp
+			// Save statically to Hamilton Logfiles directory
+			var logDir = "C:\\Program Files (x86)\\Hamilton\\Logfiles";
+			try {
+				if (!fs.existsSync(logDir)) {
+					fs.mkdirSync(logDir, { recursive: true });
+				}
+			} catch(mkdirErr) {
+				alert("Error creating log directory:\n" + logDir + "\n\n" + mkdirErr.message);
+				return;
+			}
 			var unixTime = Math.floor(Date.now() / 1000);
-			$("#audit-save-dialog").attr("nwsaveas", "libraryAuditLog_" + unixTime + ".txt");
-			$("#audit-save-dialog").trigger("click");
-		});
-
-		// Audit save dialog result
-		$(document).on("change", "#audit-save-dialog", function() {
-			var savePath = $(this).val();
-			if (!savePath) return;
-			$(this).val('');
+			var savePath = path.join(logDir, "libraryAuditLog_" + unixTime + ".txt");
 			generateLibraryAuditLog(savePath);
 		});
 
@@ -6266,16 +6624,100 @@
 				lines.push("Audit completed at: " + new Date().toISOString());
 				lines.push("");
 
-				// Write file
+				// Build content body and compute HMAC-SHA256 integrity signature
 				var content = lines.join("\r\n");
+				var hmac = crypto.createHmac('sha256', AUDIT_SIGNING_KEY);
+				hmac.update(content, 'utf8');
+				var signature = hmac.digest('hex');
+				content += "\r\n" + AUDIT_SIG_PREFIX + signature;
+
+				// Write file
 				fs.writeFileSync(savePath, content, 'utf8');
 
-				alert("Library audit log saved successfully.\n\n" + savePath);
+				// Show styled success modal
+				var $am = $("#auditSuccessModal");
+				$am.find(".audit-success-path").text(savePath);
+				$am.modal("show");
 
 			} catch(e) {
 				alert("Error generating audit log:\n" + e.message);
 				console.error("Audit log error:", e);
 			}
+		}
+
+		//****** CHECK AUDIT FILE **************************************************************
+		//**************************************************************************************
+
+		// Click "Check Audit File" from overflow menu
+		$(document).on("click", ".overflow-check-audit", function(e) {
+			e.preventDefault();
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
+			$("#audit-open-dialog").val('');
+			$("#audit-open-dialog").trigger("click");
+		});
+
+		// Audit file selected for verification
+		$(document).on("change", "#audit-open-dialog", function() {
+			var filePath = $(this).val();
+			if (!filePath) return;
+			$(this).val('');
+			verifyAuditLogIntegrity(filePath);
+		});
+
+		/**
+		 * Verifies the integrity of a saved audit log file by checking
+		 * the embedded HMAC-SHA256 signature against the file body.
+		 * @param {string} filePath - Full path to the audit log file
+		 */
+		function verifyAuditLogIntegrity(filePath) {
+			var $vm = $("#auditVerifyModal");
+			try {
+				var raw = fs.readFileSync(filePath, 'utf8');
+
+				// Find the signature line
+				var sigIdx = raw.lastIndexOf(AUDIT_SIG_PREFIX);
+				if (sigIdx === -1) {
+					showAuditVerifyResult($vm, false, path.basename(filePath),
+						'No integrity signature found in this file.\nThe file may not be a signed audit log, or the signature line was removed.');
+					return;
+				}
+
+				// Split body (everything before the sig line) and stored signature
+				var body = raw.substring(0, sigIdx);
+				var storedSig = raw.substring(sigIdx + AUDIT_SIG_PREFIX.length).trim();
+
+				// Remove trailing CRLF/LF from body that was added before signature
+				body = body.replace(/\r?\n$/, '');
+
+				// Recompute HMAC on body
+				var hmac = crypto.createHmac('sha256', AUDIT_SIGNING_KEY);
+				hmac.update(body, 'utf8');
+				var computedSig = hmac.digest('hex');
+
+				if (computedSig === storedSig) {
+					showAuditVerifyResult($vm, true, path.basename(filePath),
+						'The audit log integrity signature is valid.\nThis file has not been modified since it was generated.');
+				} else {
+					showAuditVerifyResult($vm, false, path.basename(filePath),
+						'Signature mismatch — the file contents have been altered.\n\nStored:    ' + storedSig + '\nComputed: ' + computedSig);
+				}
+			} catch(e) {
+				showAuditVerifyResult($vm, false, path.basename(filePath),
+					'Error reading audit log:\n' + e.message);
+			}
+		}
+
+		function showAuditVerifyResult($modal, passed, fileName, message) {
+			var icon = passed
+				? '<i class="fas fa-check-circle" style="color:#28a745;"></i>'
+				: '<i class="fas fa-times-circle" style="color:#dc3545;"></i>';
+			var title = passed ? 'Integrity Check Passed' : 'Integrity Check Failed';
+			$modal.find(".audit-verify-icon").html(icon);
+			$modal.find(".audit-verify-title").text(title);
+			$modal.find(".audit-verify-filename").text(fileName);
+			$modal.find(".audit-verify-message").text(message);
+			$modal.modal("show");
 		}
 
         //**************************************************************************************

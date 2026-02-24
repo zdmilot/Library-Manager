@@ -24,8 +24,9 @@ import os
 import io
 from PIL import Image, ImageFilter
 
-# Standard Windows ICO sizes (largest first)
-ICO_SIZES = [256, 128, 64, 48, 32, 24, 16]
+# Single max-size ICO layer: 256×256 is the maximum dimension the ICO format
+# can represent (directory entry BYTE uses 0 = 256). 32-bit RGBA, PNG-compressed.
+ICO_SIZES = [256]
 
 # Render SVG at this size for maximum quality before downscaling
 SVG_RENDER_SIZE = 1024
@@ -82,21 +83,13 @@ def pad_to_square(img: Image.Image) -> Image.Image:
     return canvas
 
 
-def sharpen_for_small_sizes(img: Image.Image) -> Image.Image:
-    """Apply subtle sharpening to small icon sizes to keep them crisp."""
-    if img.size[0] <= 48:
-        return img.filter(ImageFilter.SHARPEN)
-    return img
-
-
 def generate_ico(src_square: Image.Image, output_path: str) -> None:
-    """Generate a multi-resolution ICO file from a square source image."""
+    """Generate a single-layer 256×256 ICO (max ICO dimension, 32-bit RGBA)."""
     icon_images = []
     for size in ICO_SIZES:
         resized = src_square.resize((size, size), Image.LANCZOS)
-        resized = sharpen_for_small_sizes(resized)
         icon_images.append(resized)
-        print(f"[INFO] ICO layer: {size}x{size}")
+        print(f"[INFO] ICO layer: {size}x{size} (32-bit RGBA)")
 
     icon_images[0].save(
         output_path,

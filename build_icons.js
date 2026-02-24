@@ -28,12 +28,11 @@ const EXE_PATH = path.join(__dirname, "Library Manager.exe");
 // then downscale to master size with lanczos3 for pristine results.
 const MASTER_SIZE = 2048;
 
-// All PNG sizes to generate (used for ICO layers + general use)
-// Windows ICO standard sizes + extra HiDPI sizes
-const ICO_SIZES = [
-  1024, 768, 512, 384, 256, 192, 152, 144, 128, 96, 80, 72, 64, 60, 48, 40,
-  36, 32, 24, 20, 16,
-];
+// ICO layer — single max-size entry (256×256 is the ICO format maximum).
+// The directory entry uses a BYTE for width/height where 0 = 256,
+// making 256×256 the largest dimension the format can represent.
+// Windows renders this as the HD "jumbo" icon in Explorer, taskbar, etc.
+const ICO_SIZES = [256];
 
 // The PNG size used for the NW.js window icon (package.json "icon")
 const WINDOW_ICON_SIZE = 1024;
@@ -61,9 +60,9 @@ async function renderSvgToMaster() {
   return masterBuffer;
 }
 
-/** Generate individual PNG files at all required sizes */
+/** Generate the single 256×256 PNG for the ICO layer */
 async function generatePngs(masterBuffer) {
-  console.log(`\n[2/5] Generating ${ICO_SIZES.length} PNG sizes...`);
+  console.log(`\n[2/5] Generating ${ICO_SIZES.length} PNG size (${ICO_SIZES[0]}×${ICO_SIZES[0]})...`);
 
   // Ensure icons directory exists
   if (!fs.existsSync(ICONS_DIR)) {
@@ -73,22 +72,12 @@ async function generatePngs(masterBuffer) {
   const pngBuffers = {};
 
   for (const size of ICO_SIZES) {
-    let pipeline = sharp(masterBuffer).resize(size, size, {
-      fit: "contain",
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-      kernel: sharp.kernel.lanczos3,
-    });
-
-    // Apply subtle sharpening for smaller sizes to keep them crisp
-    if (size <= 32) {
-      pipeline = pipeline.sharpen({ sigma: 1.0, m1: 1.5, m2: 0.7 });
-    } else if (size <= 64) {
-      pipeline = pipeline.sharpen({ sigma: 0.8, m1: 1.0, m2: 0.5 });
-    } else if (size <= 128) {
-      pipeline = pipeline.sharpen({ sigma: 0.5, m1: 0.8, m2: 0.3 });
-    }
-
-    const pngBuffer = await pipeline
+    const pngBuffer = await sharp(masterBuffer)
+      .resize(size, size, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+        kernel: sharp.kernel.lanczos3,
+      })
       .png({ compressionLevel: 9, adaptiveFiltering: true })
       .toBuffer();
 
@@ -96,7 +85,7 @@ async function generatePngs(masterBuffer) {
 
     const outPath = path.join(ICONS_DIR, `icon-${size}x${size}.png`);
     fs.writeFileSync(outPath, pngBuffer);
-    console.log(`    ${String(size).padStart(4)}x${String(size).padEnd(4)}  ${(pngBuffer.length / 1024).toFixed(1).padStart(8)} KB`);
+    console.log(`    ${size}x${size}  ${(pngBuffer.length / 1024).toFixed(1)} KB  (32-bit RGBA)`);
   }
 
   return pngBuffers;
@@ -121,25 +110,21 @@ async function generateWindowPng(masterBuffer) {
 }
 
 /**
- * Build a multi-resolution ICO file.
+ * Build a single-layer ICO file at the maximum dimensions (256×256).
  *
- * ICO format spec (simplified):
- * - Header: 6 bytes (reserved=0, type=1 for ICO, count)
- * - Directory entries: 16 bytes each
- * - Image data: PNG-compressed for each layer
+ * ICO format spec:
+ * - Header: 6 bytes (reserved=0, type=1 for ICO, count=1)
+ * - Directory entry: 16 bytes (width=0 means 256, height=0 means 256)
+ * - Image data: PNG-compressed, 32-bit RGBA
  *
- * Using PNG-compressed layers (supported since Windows Vista) gives
- * maximum quality at every size. This is what modern tools produce.
+ * 256×256 is the maximum dimension the ICO directory entry can represent
+ * (the width/height fields are single bytes where 0 = 256).
+ * PNG compression (Vista+) gives lossless quality at full color depth.
  */
 function buildIco(pngBuffers) {
-  console.log(`\n[4/5] Building multi-resolution ICO...`);
+  console.log(`\n[4/5] Building single-layer 256×256 ICO (max size, 32-bit RGBA)...`);
 
-  // ICO can include sizes up to 256x256 in the standard format.
-  // Sizes > 256 are encoded as 0 in the directory entry (meaning 256).
-  // In practice, Windows only reads up to 256x256 from ICO files.
-  // We include all sizes up to 256 for maximum compatibility.
-  const icoSizes = ICO_SIZES.filter((s) => s <= 256);
-
+  const icoSizes = ICO_SIZES; // [256]
   const numImages = icoSizes.length;
 
   // ICO Header: 6 bytes
@@ -194,7 +179,8 @@ function buildIco(pngBuffers) {
   console.log(`    Size:  ${(stats.size / 1024).toFixed(1)} KB`);
   console.log(`    Layers: ${numImages}`);
   console.log(`    Sizes:  ${icoSizes.join(", ")}`);
-  console.log(`    Format: PNG-compressed (Vista+ standard, maximum quality)`);
+  console.log(`    Format: PNG-compressed, 32-bit RGBA (Vista+ standard, maximum quality)`);
+  console.log(`    Color:  32-bit (8 bits/channel × 4 channels = true color + alpha)`);
 }
 
 /** Apply the ICO to the .exe using rcedit */
@@ -212,7 +198,7 @@ async function applyToExe() {
   }
 
   try {
-    const rcedit = require("rcedit");
+    const { rcedit } = require("rcedit");
     await rcedit(EXE_PATH, { icon: OUTPUT_ICO });
     console.log(`    Applied icon to: ${EXE_PATH}`);
     console.log(`    The .exe will now show the crisp, high-res icon in Explorer.`);
@@ -229,7 +215,7 @@ async function main() {
   console.log("╚══════════════════════════════════════════════════════╝");
   console.log(`\nSource SVG:  ${SVG_SOURCE}`);
   console.log(`Master size: ${MASTER_SIZE}x${MASTER_SIZE}`);
-  console.log(`ICO sizes:   ${ICO_SIZES.length} layers`);
+  console.log(`ICO:         Single 256×256 layer (max ICO dimension, 32-bit RGBA)`);
 
   // Step 1: Render SVG at ultra-high resolution
   const masterBuffer = await renderSvgToMaster();
@@ -249,10 +235,9 @@ async function main() {
   console.log("\n══════════════════════════════════════════════════════");
   console.log("  DONE! All icons generated successfully.");
   console.log("══════════════════════════════════════════════════════");
-  console.log(`\n  ICO file:     ${OUTPUT_ICO}`);
+  console.log(`\n  ICO file:     ${OUTPUT_ICO}  (256×256, 32-bit RGBA, PNG-compressed)`);
   console.log(`  Window PNG:   ${OUTPUT_PNG}`);
-  console.log(`  All PNGs:     ${ICONS_DIR}/`);
-  console.log(`  Sizes in ICO: ${ICO_SIZES.filter((s) => s <= 256).join(", ")}`);
+  console.log(`  Icon PNGs:    ${ICONS_DIR}/`);
   console.log("");
 }
 
