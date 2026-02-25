@@ -1375,27 +1375,35 @@
 			// Use setTimeout instead of waitForFinalEvent so that an async
 			// resize triggered by win.maximize() cannot cancel this init.
 			setTimeout(function () {
-				try {
-					$('#splash-screen .splash-status').text('Loading library data...');
-					initVENUSData();
-					$('#splash-screen .splash-status').text('Building groups...');
-					createGroups();
-					setTimeout(function(){historyCleanup()},100);
-				} catch(e) {
-					console.log("Error in startup chain: " + e);
-					try { createGroups(); } catch(e2) { console.log("Error in createGroups: " + e2); }
-				}
-				// Ensure we always navigate to home screen after startup
-				$('#splash-screen .splash-status').text('Ready');
-				try { navigateHome(); } catch(e3) { console.log("Error navigating home: " + e3); }
-
-				// Dismiss splash screen
+				// Yield between heavy init steps so the splash SVG animation stays smooth
+				$('#splash-screen .splash-status').text('Loading library data...');
 				setTimeout(function() {
-					$('#splash-screen').addClass('splash-fade-out');
+					try {
+						initVENUSData();
+					} catch(e) {
+						console.log("Error in initVENUSData: " + e);
+					}
+					$('#splash-screen .splash-status').text('Building groups...');
 					setTimeout(function() {
-						$('#splash-screen').remove();
-					}, 700);
-				}, 400);
+						try {
+							createGroups();
+						} catch(e2) {
+							console.log("Error in createGroups: " + e2);
+						}
+						setTimeout(function(){historyCleanup()},100);
+						$('#splash-screen .splash-status').text('Ready');
+						setTimeout(function() {
+							try { navigateHome(); } catch(e3) { console.log("Error navigating home: " + e3); }
+							// Dismiss splash screen
+							setTimeout(function() {
+								$('#splash-screen').addClass('splash-fade-out');
+								setTimeout(function() {
+									$('#splash-screen').remove();
+								}, 700);
+							}, 400);
+						}, 0);
+					}, 0);
+				}, 0);
 			}, 150);
         });
 
