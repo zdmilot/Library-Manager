@@ -69,6 +69,18 @@
 <p><b>Note:</b> Exports read files from their <b>current location on disk</b>, not from a cached snapshot. If library files have been modified since they were installed (for example, during development or customization), the export will include the modified versions. This is by design, supporting iterative development workflows.</p>
 </div>
 <p>If you need the original imported version, use <a href="VersionRollback.html">Version Rollback</a> to access the cached package from the package store.</p>
+
+<h2>Exporting Unsigned Libraries</h2>
+<p>Libraries that were discovered via the <a href="UnsignedLibraries.html">Unsigned Libraries</a> scanner (files in the Library folder that are not tracked by any installed or system library) can also be exported as <code>.hxlibpkg</code> packages. This provides a convenient path for bringing unmanaged libraries under proper package management.</p>
+<p>To export an unsigned library:</p>
+<ol>
+  <li>Enable the <b>Include existing unsigned packages</b> setting and run a scan (or enable <b>Scan for new unsigned libraries each launch</b> to have the scan run automatically at startup)</li>
+  <li>Navigate to the <b>Unsigned</b> group tab</li>
+  <li>Click a library card to open the detail modal</li>
+  <li>Fill in the metadata fields (Author, Version, Description, etc.)</li>
+  <li>Click <b>Export as Package</b> and choose a save location</li>
+</ol>
+<p>The exported package includes all discovered files, a generated manifest, an icon (if a <code>.bmp</code> was found), and an HMAC-SHA256 integrity signature. See <a href="UnsignedLibraries.html">Unsigned Libraries</a> for full details.</p>
 </div>
 <div class="footer">
 <p>Venus Library Manager Help</p>

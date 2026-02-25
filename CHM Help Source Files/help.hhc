@@ -98,6 +98,10 @@
 				<param name="Name" value="Library Audit Log">
 				<param name="Local" value="LibraryAuditLog.html">
 				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Unsigned Libraries">
+				<param name="Local" value="UnsignedLibraries.html">
+				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="CLI Reference">

@@ -93,6 +93,18 @@
   "method-ids": ["lib-id-1", "lib-id-2", "lib-id-3"],
   "locked": false
 }</pre></div>
+
+<h2>Unsigned Group</h2>
+<p>When the <a href="UnsignedLibraries.html">Unsigned Libraries</a> feature is enabled and at least one unsigned library has been discovered by scanning, a special <b>Unsigned</b> group is injected into the navigation bar. This group is distinct from both default and custom groups:</p>
+<ul>
+  <li>Uses the <code>far fa-times-circle</code> icon</li>
+  <li>Appears before the System group in the left navigation</li>
+  <li><b>Locked</b> — libraries cannot be dragged into or out of it</li>
+  <li>Not stored in <code>tree.json</code> or <code>groups.json</code> — it is generated dynamically</li>
+  <li>Not included in the sortable group ordering</li>
+  <li>Hidden automatically when the feature is disabled or no unsigned libraries exist</li>
+</ul>
+<p>See <a href="UnsignedLibraries.html">Unsigned Libraries</a> for full details on enabling and using this feature.</p>
 </div>
 <div class="footer">
 <p>Venus Library Manager Help</p>

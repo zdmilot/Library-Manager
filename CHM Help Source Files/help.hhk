@@ -290,6 +290,38 @@
 		<param name="Local" value="Troubleshooting.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="unsigned libraries">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="unsigned_libs">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="scan unsigned">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="unsigned group">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="unsigned dependency">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="unsigned COM registration">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="unsigned demo methods">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="unmanaged libraries">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="user data directory">
 		<param name="Local" value="GettingStarted.html">
 		</OBJECT>
