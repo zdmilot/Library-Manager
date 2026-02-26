@@ -2348,10 +2348,13 @@
 			clearPendingDeleteChip();
 			var $span = $(this);
 			if ($span.hasClass('editing')) return;
+			// Measure the label's actual rendered width before hiding it
+			var $label = $span.find('.imp-search-text-label');
+			var labelWidth = $label[0].offsetWidth;
 			$span.addClass('editing');
 			var $editor = $span.find('.imp-search-text-input');
 			var val = $editor.val() || '';
-			$editor.css('width', Math.max(val.length + 1, 2) + 'ch');
+			$editor.css('width', labelWidth + 'px');
 			$editor.focus();
 
 			// Place caret near click position
@@ -2368,8 +2371,14 @@
 		});
 
 		$(document).on("input", ".imp-search-text-input", function() {
+			// Measure by temporarily showing the label with new text
 			var val = $(this).val() || '';
-			$(this).css('width', Math.max(val.length + 1, 2) + 'ch');
+			var $span = $(this).closest('.imp-search-inline-text');
+			var $label = $span.find('.imp-search-text-label');
+			$label.text(val || ' ').css('display', 'inline');
+			var w = $label[0].offsetWidth;
+			$label.css('display', '');
+			$(this).css('width', w + 'px');
 		});
 
 		$(document).on("keydown", ".imp-search-text-input", function(e) {

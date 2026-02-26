@@ -2035,7 +2035,6 @@ body {
 
 .imp-search-text-input {
 	display: none;
-	width: 4ch;
 	background: transparent;
 	border: none;
 	border-radius: 0;
@@ -2048,6 +2047,7 @@ body {
 	white-space: pre;
 	min-width: 0;
 	box-sizing: content-box;
+	font-family: inherit;
 }
 
 .imp-search-inline-text.editing .imp-search-text-label {
