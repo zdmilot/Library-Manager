@@ -9,13 +9,14 @@
 <div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; Integrity Verification</div>
 
 <h2>Overview</h2>
-<p>Venus Library Manager provides a multi-layered integrity system to detect when library files have been modified, tampered with, or deleted. The system uses three complementary mechanisms depending on the context:</p>
+<p>Venus Library Manager provides a multi-layered integrity system to detect when library files have been modified, tampered with, or deleted. The system uses four complementary mechanisms depending on the context:</p>
 <ol>
-  <li><b>SHA-256 file hashing</b> - tracks individual files in user-installed libraries after import</li>
-  <li><b>Hamilton metadata footer verification</b> - checks Hamilton's built-in <code>$$valid$$</code> / <code>$$checksum$$</code> fields in system library HSL files</li>
-  <li><b>HMAC-SHA256 package signing</b> - signs entire <code>.hxlibpkg</code> packages at creation time to detect corruption or tampering during distribution</li>
+  <li><b>Binary container HMAC</b> — cryptographic whole-file integrity check on every <code>.hxlibpkg</code> and <code>.hxlibarch</code> file (see <a href="BinaryContainerFormat.html">Binary Container Format</a>)</li>
+  <li><b>HMAC-SHA256 package signing</b> — per-file integrity signature (<code>signature.json</code>) inside each package’s internal ZIP</li>
+  <li><b>SHA-256 file hashing</b> — tracks individual files in user-installed libraries after import</li>
+  <li><b>Hamilton metadata footer verification</b> — checks Hamilton’s built-in <code>$$valid$$</code> / <code>$$checksum$$</code> fields in system library HSL files</li>
 </ol>
-<p>Together, these mechanisms ensure that library files remain unchanged from the time they were installed, that system libraries match Hamilton's original release state, and that packages are intact before import.</p>
+<p>Together, these mechanisms ensure that package files cannot be casually opened or modified, that packages are intact before import, that library files remain unchanged from the time they were installed, and that system libraries match Hamilton’s original release state.</p>
 
 <!-- ================================================================== -->
 <h2>User-Installed Libraries (SHA-256 File Hashing)</h2>
@@ -112,11 +113,11 @@
 <h2>Package Signing (HMAC-SHA256)</h2>
 <!-- ================================================================== -->
 
-<p>In addition to file-level integrity checking after installation, Venus Library Manager embeds a cryptographic signature in every <code>.hxlibpkg</code> package at creation time. This <b>package-level signing</b> ensures that packages have not been corrupted or tampered with during distribution or storage.</p>
+<p>In addition to file-level integrity checking after installation, Venus Library Manager embeds a cryptographic signature in every <code>.hxlibpkg</code> package at creation time. This <b>inner package signing</b> provides per-file integrity verification within the package’s internal ZIP archive, complementing the <a href="BinaryContainerFormat.html">binary container HMAC</a> that protects the file as a whole.</p>
 
 <h3>How Package Signing Works</h3>
 <ol>
-  <li>When a <code>.hxlibpkg</code> is created (via the GUI Library Packager, CLI <code>create-package</code>, or single-library export), SHA-256 hashes are computed for every entry in the ZIP archive except the signature itself.</li>
+  <li>When a <code>.hxlibpkg</code> is created (via the GUI Library Packager, CLI <code>create-package</code>, or single-library export), SHA-256 hashes are computed for every entry in the internal ZIP archive except the signature itself.</li>
   <li>The hashes are collected into a sorted map of <code>{ "entryName": "sha256hex" }</code>.</li>
   <li>An HMAC-SHA256 is computed over the canonical JSON serialization of that map using a fixed application key.</li>
   <li>A <code>signature.json</code> file is added to the ZIP containing:
@@ -131,7 +132,7 @@
 </ol>
 
 <h3>Three-Phase Verification</h3>
-<p>When a package is imported or used for repair, three verification phases run in sequence:</p>
+<p>When a package is imported or used for repair, the binary container is first validated (see <a href="BinaryContainerFormat.html">Binary Container Format</a>), then three inner verification phases run in sequence:</p>
 <table>
 <thead><tr><th>Phase</th><th>Check</th><th>Failure Meaning</th></tr></thead>
 <tbody>
@@ -328,9 +329,10 @@
 <table>
 <thead><tr><th>Mechanism</th><th>Scope</th><th>When Applied</th><th>Purpose</th></tr></thead>
 <tbody>
+<tr><td>Binary container HMAC</td><td>Entire <code>.hxlibpkg</code> / <code>.hxlibarch</code> file</td><td>At file write; before any read/import</td><td>Detect any byte-level corruption or tampering of the package file itself</td></tr>
+<tr><td>Inner <code>signature.json</code></td><td>Individual ZIP entries within a package</td><td>At package creation; before import; before repair</td><td>Per-file integrity verification within the package (defense-in-depth)</td></tr>
 <tr><td>SHA-256 file hashing</td><td>Individual installed files (user libs)</td><td>At install time; on each card/detail view</td><td>Detect modifications to installed library files</td></tr>
 <tr><td>Hamilton metadata footer</td><td>System library HSL files</td><td>Baseline generation; when viewing system lib cards or Verify &amp; Repair</td><td>Detect unauthorized changes to validated system libraries</td></tr>
-<tr><td>HMAC-SHA256 package signing</td><td>Entire <code>.hxlibpkg</code> package</td><td>At package creation; before import; before repair</td><td>Detect corruption or tampering during distribution or storage</td></tr>
 <tr><td>First-run system backup</td><td>All system libraries</td><td>Once, at first application launch</td><td>Create known-good recovery packages for system libraries</td></tr>
 </tbody>
 </table>
@@ -344,12 +346,15 @@
 <h3>User-Installed Library</h3>
 <div class="code"><pre>  Package Creation             Import                  Ongoing Use              Repair
   ─────────────────           ──────                  ───────────              ──────
-  1. ZIP created with         1. Signature verified   1. SHA-256 hashes       1. Cached pkg found
-     library + demo files     2. Files extracted         recomputed on view   2. Signature verified
-  2. SHA-256 computed for     3. SHA-256 hashes       2. Compared to stored   3. Files re-extracted
-     each ZIP entry              computed & stored       baseline             4. Hashes recomputed
-  3. HMAC-SHA256 signed       4. Package cached in    3. Errors/warnings         & stored
-  4. signature.json added        package store           shown on card/modal</pre></div>
+  1. ZIP created with         1. Container HMAC       1. SHA-256 hashes       1. Cached pkg found
+     library + demo files        verified (whole-file)   recomputed on view   2. Container HMAC
+  2. SHA-256 computed for     2. Inner signature.json 2. Compared to stored      verified
+     each ZIP entry              verified (per-file)     baseline             3. Inner signature
+  3. HMAC-SHA256 signed       3. Files extracted      3. Errors/warnings        verified
+  4. signature.json added     4. SHA-256 hashes          shown on card/modal  4. Files re-extracted
+  5. ZIP wrapped in binary       computed &amp; stored                            5. Hashes recomputed
+     container (XOR +         5. Container cached in                             &amp; stored
+     container HMAC)             package store</pre></div>
 
 <h3>System Library</h3>
 <div class="code"><pre>  First Run                     Ongoing Use                Repair

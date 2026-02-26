@@ -9,13 +9,17 @@
 <div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; Package Formats</div>
 
 <h2>Overview</h2>
-<p>Venus Library Manager uses two ZIP-based container formats for distributing and archiving Hamilton VENUS libraries. Both formats use standard ZIP compression and can be inspected with any ZIP tool, but they contain a structured internal layout that Venus Library Manager requires.</p>
+<p>Venus Library Manager uses two file formats for distributing and archiving Hamilton VENUS libraries: <code>.hxlibpkg</code> (single library package) and <code>.hxlibarch</code> (multi-library archive). Both formats use a <b>custom binary container</b> that wraps an internal ZIP archive inside a proprietary envelope. The binary container prevents the files from being opened, browsed, or extracted using standard tools such as 7-Zip, WinRAR, or Windows Explorer.</p>
+
+<p>For full details on the binary container layer — including the header layout, XOR scrambling, HMAC-SHA256 integrity verification, and fail-closed design — see <a href="BinaryContainerFormat.html">Binary Container Format</a>.</p>
+
+<p>This page describes the <b>internal ZIP structure</b> that lives inside each binary container: the manifest, signature, file layout, and metadata schema.</p>
 
 <h2>Single Library Package (<code>.hxlibpkg</code>)</h2>
-<p>A <code>.hxlibpkg</code> file encapsulates one complete library: its source files, demo methods, icon, and all metadata needed to install and manage the library.</p>
+<p>A <code>.hxlibpkg</code> file is a <a href="BinaryContainerFormat.html">binary container</a> that encapsulates one complete library: its source files, demo methods, icon, and all metadata needed to install and manage the library. The container's internal ZIP archive has the following structure:</p>
 
-<h3>Internal Structure</h3>
-<div class="code"><pre>MyLibrary.hxlibpkg (ZIP archive)
+<h3>Internal ZIP Structure</h3>
+<div class="code"><pre>MyLibrary.hxlibpkg (binary container → internal ZIP)
   ├── manifest.json            &lt;-- Required: library metadata
   ├── signature.json           &lt;-- Automatic: HMAC-SHA256 integrity signature
   ├── library/                 &lt;-- Library payload files
@@ -81,7 +85,7 @@
 }</pre></div>
 
 <h3>Package Signature (<code>signature.json</code>)</h3>
-<p>Every <code>.hxlibpkg</code> created by Venus Library Manager includes a <code>signature.json</code> entry containing an HMAC-SHA256 cryptographic signature. This signature covers every other entry in the ZIP archive and is used to verify that the package has not been corrupted or tampered with.</p>
+<p>Every <code>.hxlibpkg</code> created by Venus Library Manager includes a <code>signature.json</code> entry in the internal ZIP containing an HMAC-SHA256 cryptographic signature. This inner signature covers every other entry in the ZIP and provides per-file integrity verification, complementing the outer container-level HMAC that covers the entire file. See <a href="BinaryContainerFormat.html">Binary Container Format</a> for how these two integrity layers work together.</p>
 
 <table>
 <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
@@ -108,20 +112,20 @@
 }</pre></div>
 
 <div class="note">
-<p><b>Note:</b> Packages created before signing was added (legacy packages) do not contain a <code>signature.json</code>. These are treated as <b>unsigned</b> on import and are accepted without error - there is no forced rejection of unsigned packages.</p>
+<p><b>Note:</b> The inner <code>signature.json</code> provides per-file integrity checking within the ZIP. The outer binary container HMAC provides whole-file integrity checking. Together they form a defense-in-depth strategy. See <a href="BinaryContainerFormat.html">Binary Container Format</a> and <a href="IntegrityVerification.html">Integrity Verification</a> for details.</p>
 </div>
 
 <p>See <a href="IntegrityVerification.html">Integrity Verification</a> for details on how signing relates to file-level integrity checking, and <a href="CLIVerifyPackage.html">CLI: verify-package</a> for standalone package verification.</p>
 
 <h2>Multi-Library Archive (<code>.hxlibarch</code>)</h2>
-<p>A <code>.hxlibarch</code> file is a ZIP archive that contains multiple <code>.hxlibpkg</code> files plus an archive-level manifest. This format is used for bundling, backup, and distribution of entire library sets.</p>
+<p>A <code>.hxlibarch</code> file is a <a href="BinaryContainerFormat.html">binary container</a> whose internal ZIP contains multiple <code>.hxlibpkg</code> entries plus an archive-level manifest. Each inner <code>.hxlibpkg</code> entry is itself a full binary container (not a raw ZIP), providing consistent integrity verification at every level. See <a href="BinaryContainerFormat.html#nested">Nested Containers in Archives</a> for the nesting structure.</p>
 
-<h3>Internal Structure</h3>
-<div class="code"><pre>bundle.hxlibarch (ZIP archive)
+<h3>Internal ZIP Structure</h3>
+<div class="code"><pre>bundle.hxlibarch (binary container → internal ZIP)
   ├── archive_manifest.json    &lt;-- Archive-level metadata
-  ├── LibraryA.hxlibpkg        &lt;-- Complete .hxlibpkg for LibraryA
-  ├── LibraryB.hxlibpkg        &lt;-- Complete .hxlibpkg for LibraryB
-  └── LibraryC.hxlibpkg        &lt;-- Complete .hxlibpkg for LibraryC</pre></div>
+  ├── LibraryA.hxlibpkg        &lt;-- Binary container for LibraryA
+  ├── LibraryB.hxlibpkg        &lt;-- Binary container for LibraryB
+  └── LibraryC.hxlibpkg        &lt;-- Binary container for LibraryC</pre></div>
 
 <h3>Archive Manifest (<code>archive_manifest.json</code>)</h3>
 <table>

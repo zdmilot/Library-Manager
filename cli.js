@@ -39,6 +39,12 @@ const signPackageZip         = shared.signPackageZip;
 const verifyPackageSignature = shared.verifyPackageSignature;
 const parseHslMetadataFooter = shared.parseHslMetadataFooter;
 
+// Binary container format helpers
+const CONTAINER_MAGIC_PKG    = shared.CONTAINER_MAGIC_PKG;
+const CONTAINER_MAGIC_ARC    = shared.CONTAINER_MAGIC_ARC;
+const packContainer          = shared.packContainer;
+const unpackContainer        = shared.unpackContainer;
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -1045,7 +1051,9 @@ function listCachedVersions(libName, args) {
         var createdDate = '';
         var author = '';
         try {
-            var zip = new AdmZip(fullPath);
+            var rawBuf = fs.readFileSync(fullPath);
+            var zipBuf = unpackContainer(rawBuf, CONTAINER_MAGIC_PKG);
+            var zip = new AdmZip(zipBuf);
             var me  = zip.getEntry('manifest.json');
             if (me) {
                 var m = JSON.parse(zip.readAsText(me));
@@ -1151,7 +1159,9 @@ function cmdImportLib(args) {
 
     let zip, manifest;
     try {
-        zip = new AdmZip(fs.readFileSync(filePath));
+        var rawPkgBuf = fs.readFileSync(filePath);
+        var zipBuf = unpackContainer(rawPkgBuf, CONTAINER_MAGIC_PKG);
+        zip = new AdmZip(zipBuf);
         const me = zip.getEntry('manifest.json');
         if (!me) die('Invalid package: manifest.json not found');
         manifest = JSON.parse(zip.readAsText(me));
@@ -1263,7 +1273,9 @@ function cmdImportArchive(args) {
 
     let archiveZip;
     try {
-        archiveZip = new AdmZip(filePath);
+        var rawArchBuf = fs.readFileSync(filePath);
+        var outerZipBuf = unpackContainer(rawArchBuf, CONTAINER_MAGIC_ARC);
+        archiveZip = new AdmZip(outerZipBuf);
     } catch (e) {
         die('Failed to open archive: ' + e.message);
     }
@@ -1285,7 +1297,8 @@ function cmdImportArchive(args) {
     pkgEntries.forEach(function (pkgEntry) {
         const label = pkgEntry.entryName;
         try {
-            const innerZip = new AdmZip(pkgEntry.getData());
+            const innerZipBuf = unpackContainer(pkgEntry.getData(), CONTAINER_MAGIC_PKG);
+            const innerZip = new AdmZip(innerZipBuf);
             const me       = innerZip.getEntry('manifest.json');
             if (!me) throw new Error('manifest.json missing');
 
@@ -1437,7 +1450,7 @@ function cmdExportLib(args) {
     signPackageZip(zip);
 
     ensureOutDir(args['output']);
-    zip.writeZip(args['output']);
+    fs.writeFileSync(args['output'], packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
 
     console.log(`\nSuccess: exported to ${args['output']}`);
     console.log(`  Library files    : ${libraryFiles.length}`);
@@ -1536,7 +1549,7 @@ function cmdExportArchive(args) {
             // Sign the inner package
             signPackageZip(innerZip);
 
-            archiveZip.addFile(lib.library_name + '.hxlibpkg', innerZip.toBuffer());
+            archiveZip.addFile(lib.library_name + '.hxlibpkg', packContainer(innerZip.toBuffer(), CONTAINER_MAGIC_PKG));
             exportedLibs.push({ name: lib.library_name, libFiles: libAdded, demoFiles: demoAdded });
             console.log(`  + ${lib.library_name} (${libAdded} lib files, ${demoAdded} demo files)`);
         } catch (e) {
@@ -1561,7 +1574,7 @@ function cmdExportArchive(args) {
     );
 
     ensureOutDir(args['output']);
-    archiveZip.writeZip(args['output']);
+    fs.writeFileSync(args['output'], packContainer(archiveZip.toBuffer(), CONTAINER_MAGIC_ARC));
 
     console.log(`\nArchive created: ${args['output']}`);
     console.log(`  Libraries included: ${exportedLibs.length}`);
@@ -1839,7 +1852,7 @@ function cmdCreatePackage(args) {
     signPackageZip(zip);
 
     ensureOutDir(args['output']);
-    zip.writeZip(args['output']);
+    fs.writeFileSync(args['output'], packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
 
     console.log(`\nSuccess: ${args['output']}`);
     console.log(`  Library name      : ${libName}`);
@@ -2215,7 +2228,9 @@ function cmdRollbackLib(args) {
 
     let zip, manifest;
     try {
-        zip = new AdmZip(fs.readFileSync(target.fullPath));
+        var rawCacheBuf = fs.readFileSync(target.fullPath);
+        var cacheBuf = unpackContainer(rawCacheBuf, CONTAINER_MAGIC_PKG);
+        zip = new AdmZip(cacheBuf);
         const me = zip.getEntry('manifest.json');
         if (!me) die('Cached package is corrupt: manifest.json not found');
         manifest = JSON.parse(zip.readAsText(me));
@@ -2482,7 +2497,9 @@ function cmdVerifyPackage(args) {
 
     if (ext === '.hxlibarch') {
         // Verify each inner .hxlibpkg
-        const archiveZip = new AdmZip(filePath);
+        const rawArchBuf2 = fs.readFileSync(filePath);
+        const outerZipBuf2 = unpackContainer(rawArchBuf2, CONTAINER_MAGIC_ARC);
+        const archiveZip = new AdmZip(outerZipBuf2);
         const pkgEntries = archiveZip.getEntries().filter(
             e => !e.isDirectory && e.entryName.toLowerCase().endsWith('.hxlibpkg')
         );
@@ -2490,7 +2507,8 @@ function cmdVerifyPackage(args) {
 
         pkgEntries.forEach(function (pkgEntry) {
             try {
-                const innerZip = new AdmZip(pkgEntry.getData());
+                const innerZipBuf2 = unpackContainer(pkgEntry.getData(), CONTAINER_MAGIC_PKG);
+                const innerZip = new AdmZip(innerZipBuf2);
                 const sigResult = verifyPackageSignature(innerZip);
                 results.push({ package: pkgEntry.entryName, signed: sigResult.signed, valid: sigResult.valid, errors: sigResult.errors, warnings: sigResult.warnings });
             } catch (e) {
@@ -2500,7 +2518,9 @@ function cmdVerifyPackage(args) {
     } else {
         // Single .hxlibpkg
         try {
-            const zip = new AdmZip(fs.readFileSync(filePath));
+            const rawPkgBuf2 = fs.readFileSync(filePath);
+            const zipBuf2 = unpackContainer(rawPkgBuf2, CONTAINER_MAGIC_PKG);
+            const zip = new AdmZip(zipBuf2);
             const sigResult = verifyPackageSignature(zip);
             results.push({ package: path.basename(filePath), signed: sigResult.signed, valid: sigResult.valid, errors: sigResult.errors, warnings: sigResult.warnings });
         } catch (e) {

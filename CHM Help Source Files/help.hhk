@@ -34,6 +34,14 @@
 		<param name="Local" value="IntegrityVerification.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="binary container">
+		<param name="Local" value="BinaryContainerFormat.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="binary container format">
+		<param name="Local" value="BinaryContainerFormat.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="baseline">
 		<param name="Local" value="CLIGenerateSyslibHashes.html">
 		</OBJECT>
@@ -155,7 +163,11 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="HMAC">
-		<param name="Local" value="LibraryAuditLog.html">
+		<param name="Local" value="BinaryContainerFormat.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="HMAC-SHA256">
+		<param name="Local" value="BinaryContainerFormat.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="HSL">
@@ -163,11 +175,35 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="hxlibarch">
-		<param name="Local" value="PackageFormats.html">
+		<param name="Local" value="BinaryContainerFormat.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="hxlibpkg">
-		<param name="Local" value="PackageFormats.html">
+		<param name="Local" value="BinaryContainerFormat.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="XOR scramble">
+		<param name="Local" value="BinaryContainerFormat.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="container format">
+		<param name="Local" value="BinaryContainerFormat.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="scramble">
+		<param name="Local" value="BinaryContainerFormat.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="tamper detection">
+		<param name="Local" value="BinaryContainerFormat.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="magic bytes">
+		<param name="Local" value="BinaryContainerFormat.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="fail closed">
+		<param name="Local" value="BinaryContainerFormat.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="import-archive">

@@ -9,7 +9,7 @@
 <div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; verify-package</div>
 
 <h2>Description</h2>
-<p>Verifies the HMAC-SHA256 integrity signature embedded in a <code>.hxlibpkg</code> file without importing it. This command is useful for validating packages before distribution, after file transfer, or in CI/CD pipelines.</p>
+<p>Verifies the integrity of a <code>.hxlibpkg</code> or <code>.hxlibarch</code> file without importing it. This command validates both the outer <a href="BinaryContainerFormat.html">binary container</a> (HMAC-SHA256 over the entire file) and the inner <code>signature.json</code> (per-file integrity hashes). This is useful for validating packages before distribution, after file transfer, or in CI/CD pipelines.</p>
 
 <h2>Usage</h2>
 <div class="code"><pre>node cli.js verify-package --file &lt;path&gt; [--json]</pre></div>
@@ -25,8 +25,9 @@
 
 <h2>Verification Process</h2>
 <ol>
-  <li>The <code>.hxlibpkg</code> file is opened as a ZIP archive</li>
-  <li>The tool looks for a <code>signature.json</code> entry inside the archive</li>
+  <li>The <code>.hxlibpkg</code> file’s <a href="BinaryContainerFormat.html">binary container</a> is validated: magic bytes, HMAC-SHA256and payload length are checked. If the container is corrupted or tampered with, verification fails immediately.</li>
+  <li>The container is descrambled to recover the internal ZIP archive</li>
+  <li>The tool looks for a <code>signature.json</code> entry inside the internal ZIP</li>
   <li>If no <code>signature.json</code> is found, the package is reported as <b>UNSIGNED</b> (exit code <code>0</code>)</li>
   <li>If <code>signature.json</code> is present:
     <ul>

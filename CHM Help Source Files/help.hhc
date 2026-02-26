@@ -42,6 +42,10 @@
 				<param name="Local" value="PackageFormats.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Binary Container Format">
+				<param name="Local" value="BinaryContainerFormat.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Package Spec JSON Schema">
 				<param name="Local" value="PackageSpecSchema.html">
 				</OBJECT>

@@ -9,7 +9,7 @@
 <div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; Importing Libraries</div>
 
 <h2>Overview</h2>
-<p>Importing is the primary way to install new VENUS libraries. Venus Library Manager supports importing a single library package (<code>.hxlibpkg</code>) or a multi-library archive (<code>.hxlibarch</code>). Both the GUI and the CLI provide full import capabilities.</p>
+<p>Importing is the primary way to install new VENUS libraries. Venus Library Manager supports importing a single library package (<code>.hxlibpkg</code>) or a multi-library archive (<code>.hxlibarch</code>). Both file types use the <a href="BinaryContainerFormat.html">binary container format</a> — they are not plain ZIP files and cannot be opened by standard archive tools. Both the GUI and the CLI provide full import capabilities.</p>
 
 <h2>Single Package Import (<code>.hxlibpkg</code>)</h2>
 
@@ -17,7 +17,7 @@
 <ol>
   <li>Navigate to the <b>Import</b> tab in the main window</li>
   <li>Browse and select a <code>.hxlibpkg</code> file</li>
-  <li>Venus Library Manager reads the package contents and validates that a <code>manifest.json</code> is present</li>
+  <li>Venus Library Manager validates the <a href="BinaryContainerFormat.html">binary container</a> integrity (HMAC-SHA256), then reads the package contents and validates that a <code>manifest.json</code> is present</li>
   <li><b>Signature verification:</b> The package's HMAC-SHA256 signature is checked. The result is displayed in a <b>Signature Status</b> section of the preview modal:
     <ul>
       <li><b>Verified</b> (green) - All file hashes match and the HMAC is valid</li>
@@ -75,8 +75,8 @@
 <h3>Archive Processing</h3>
 <p>Each embedded <code>.hxlibpkg</code> is extracted and installed sequentially using the same process as single-package import. For each package:</p>
 <ul>
-  <li>The inner ZIP is opened and its HMAC-SHA256 signature is verified - packages that fail verification are <b>automatically rejected</b> and skipped</li>
-  <li>The inner ZIP's <code>manifest.json</code> is read</li>
+  <li>The inner <code>.hxlibpkg</code> binary container is validated, opened, and its HMAC-SHA256 signature is verified - packages that fail container or signature verification are <b>automatically rejected</b> and skipped</li>
+  <li>The inner package’s <code>manifest.json</code> is read</li>
   <li>Files are extracted to the appropriate directories</li>
   <li>Integrity hashes are computed</li>
   <li>The database record is created/updated</li>

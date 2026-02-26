@@ -1150,7 +1150,9 @@
 				var createdDate = '';
 				var author = '';
 				try {
-					var zip = new AdmZip(fullPath);
+					var rawBuf = fs.readFileSync(fullPath);
+					var zipBuf = unpackContainer(rawBuf, CONTAINER_MAGIC_PKG);
+					var zip = new AdmZip(zipBuf);
 					var me  = zip.getEntry('manifest.json');
 					if (me) {
 						var m = JSON.parse(zip.readAsText(me));
@@ -1272,8 +1274,8 @@
 				// Sign the package
 				signPackageZip(zip);
 
-				// Cache to package store
-				var pkgBuffer = zip.toBuffer();
+				// Wrap in binary container and cache to package store
+				var pkgBuffer = packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG);
 				var storedPath = cachePackageToStore(pkgBuffer, libName, "system");
 				return { success: true, path: storedPath, error: '' };
 
@@ -1348,7 +1350,9 @@
 				var newest = cached[0];
 				var zip;
 				try {
-					zip = new AdmZip(newest.fullPath);
+					var rawBuf = fs.readFileSync(newest.fullPath);
+					var zipBuf = unpackContainer(rawBuf, CONTAINER_MAGIC_PKG);
+					zip = new AdmZip(zipBuf);
 				} catch(e) {
 					var msg2 = 'Failed to read backup package: ' + e.message;
 					if (!silent) alert(msg2);
@@ -5906,8 +5910,8 @@
 				// Sign the package for integrity verification
 				signPackageZip(zip);
 
-				// Write the ZIP file
-				zip.writeZip(savePath);
+				// Wrap in binary container and write
+				fs.writeFileSync(savePath, packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
 
 				// ---- Audit trail entry ----
 				try {
@@ -6571,6 +6575,12 @@
 		var computeZipEntryHashes = shared.computeZipEntryHashes;
 		var signPackageZip        = shared.signPackageZip;
 		var verifyPackageSignature = shared.verifyPackageSignature;
+
+		// ---- Binary container format (delegated to shared module) ----
+		var CONTAINER_MAGIC_PKG   = shared.CONTAINER_MAGIC_PKG;
+		var CONTAINER_MAGIC_ARC   = shared.CONTAINER_MAGIC_ARC;
+		var packContainer         = shared.packContainer;
+		var unpackContainer       = shared.unpackContainer;
 
 		/**
 		 * Verifies the integrity of installed library files against stored hashes.
@@ -7413,7 +7423,8 @@
 			}
 
 			try {
-				var zipBuffer = fs.readFileSync(fullPath);
+				var rawBuf = fs.readFileSync(fullPath);
+				var zipBuffer = unpackContainer(rawBuf, CONTAINER_MAGIC_PKG);
 				var zip = new AdmZip(zipBuffer);
 				var manifestEntry = zip.getEntry("manifest.json");
 				if (!manifestEntry) {
@@ -8050,8 +8061,8 @@
 				// Sign the package for integrity verification
 				signPackageZip(zip);
 
-				// Write ZIP
-				zip.writeZip(savePath);
+				// Wrap in binary container and write
+				fs.writeFileSync(savePath, packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
 
 				showGenericSuccessModal({
 					title: "Library Exported Successfully!",
@@ -8198,7 +8209,7 @@
 
 					signPackageZip(innerZip);
 
-					var innerBuffer = innerZip.toBuffer();
+					var innerBuffer = packContainer(innerZip.toBuffer(), CONTAINER_MAGIC_PKG);
 					var innerFileName = libName.replace(/[<>:"\\\/|?*]/g, '_') + ".hxlibpkg";
 					archiveZip.addFile(innerFileName, innerBuffer);
 
@@ -8241,7 +8252,8 @@
 					archiveZip.addFile("icon/archive_icon.png", Buffer.from(archiveIconBase64, 'base64'));
 				}
 
-				archiveZip.writeZip(savePath);
+				// Wrap outer archive in binary container and write
+				fs.writeFileSync(savePath, packContainer(archiveZip.toBuffer(), CONTAINER_MAGIC_ARC));
 
 				// Build success list
 				var rootLib = exportedLibs.filter(function(l) { return l.isRoot; })[0];
@@ -8523,8 +8535,8 @@
 					// Sign the inner package
 					signPackageZip(innerZip);
 
-					// Convert inner zip to buffer and add to archive
-					var innerBuffer = innerZip.toBuffer();
+					// Convert inner zip to binary container and add to archive
+					var innerBuffer = packContainer(innerZip.toBuffer(), CONTAINER_MAGIC_PKG);
 					var innerFileName = libName.replace(/[<>:"\\\/|?*]/g, '_') + ".hxlibpkg";
 					archiveZip.addFile(innerFileName, innerBuffer);
 
@@ -8567,8 +8579,8 @@
 					archiveZip.addFile("icon/archive_icon.png", Buffer.from(archiveIconBase64, 'base64'));
 				}
 
-				// Write the archive
-				archiveZip.writeZip(savePath);
+				// Write the archive as binary container
+				fs.writeFileSync(savePath, packContainer(archiveZip.toBuffer(), CONTAINER_MAGIC_ARC));
 
 				var archListHtml = '<div style="text-align:left;">';
 				exportedLibs.forEach(function(l) {
@@ -8616,7 +8628,9 @@
 					return;
 				}
 
-				var archiveZip = new AdmZip(archivePath);
+				var rawArchBuf = fs.readFileSync(archivePath);
+				var outerZipBuf = unpackContainer(rawArchBuf, CONTAINER_MAGIC_ARC);
+				var archiveZip = new AdmZip(outerZipBuf);
 				var entries = archiveZip.getEntries();
 
 				// Find all .hxlibpkg entries
@@ -8652,7 +8666,8 @@
 				pkgEntries.forEach(function(pkgEntry) {
 					try {
 						var pkgBuffer = pkgEntry.getData();
-						var innerZip = new AdmZip(pkgBuffer);
+						var innerZipBuf = unpackContainer(pkgBuffer, CONTAINER_MAGIC_PKG);
+						var innerZip = new AdmZip(innerZipBuf);
 						var manifestEntry = innerZip.getEntry("manifest.json");
 						if (!manifestEntry) {
 							results.failed.push(pkgEntry.entryName + ": manifest.json not found");
@@ -9219,7 +9234,8 @@
 			}
 			_isImporting = true;
 			try {
-				var zipBuffer = fs.readFileSync(filePath);
+				var rawBuffer = fs.readFileSync(filePath);
+				var zipBuffer = unpackContainer(rawBuffer, CONTAINER_MAGIC_PKG);
 				var zip = new AdmZip(zipBuffer);
 				var manifestEntry = zip.getEntry("manifest.json");
 				if (!manifestEntry) {
@@ -11735,8 +11751,8 @@
 				// Sign the package
 				signPackageZip(zip);
 
-				// Write ZIP
-				zip.writeZip(savePath);
+				// Write binary container
+				fs.writeFileSync(savePath, packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
 
 				var totalFiles = allLibPaths.length + demoFiles.length;
 

@@ -586,6 +586,94 @@ test('limits to TAG_MAX_COUNT tags', function () {
 });
 
 // -----------------------------------------------------------------------
+console.log('\n=== Binary Container (packContainer / unpackContainer) ===');
+// -----------------------------------------------------------------------
+
+test('round-trip: pack then unpack recovers original ZIP buffer', function () {
+    var AdmZip = require('adm-zip');
+    var zip = new AdmZip();
+    zip.addFile('hello.txt', Buffer.from('Hello, world!', 'utf8'));
+    var original = zip.toBuffer();
+
+    var container = shared.packContainer(original, shared.CONTAINER_MAGIC_PKG);
+    var recovered = shared.unpackContainer(container, shared.CONTAINER_MAGIC_PKG);
+    assert.ok(Buffer.isBuffer(recovered), 'unpackContainer should return a Buffer');
+    assert.ok(original.equals(recovered), 'recovered buffer must equal original');
+});
+
+test('round-trip with ARC magic', function () {
+    var payload = Buffer.from('arbitrary archive payload data', 'utf8');
+    var container = shared.packContainer(payload, shared.CONTAINER_MAGIC_ARC);
+    var recovered = shared.unpackContainer(container, shared.CONTAINER_MAGIC_ARC);
+    assert.ok(payload.equals(recovered));
+});
+
+test('container header starts with correct magic bytes', function () {
+    var payload = Buffer.alloc(64, 0xAB);
+    var container = shared.packContainer(payload, shared.CONTAINER_MAGIC_PKG);
+    assert.ok(container.slice(0, 8).equals(shared.CONTAINER_MAGIC_PKG), 'first 8 bytes must be PKG magic');
+});
+
+test('container is NOT a valid ZIP (no PK\\x03\\x04 header)', function () {
+    var AdmZip = require('adm-zip');
+    var zip = new AdmZip();
+    zip.addFile('test.txt', Buffer.from('test', 'utf8'));
+    var container = shared.packContainer(zip.toBuffer(), shared.CONTAINER_MAGIC_PKG);
+    // ZIP files start with PK\x03\x04 (0x50 0x4B 0x03 0x04)
+    var hasZipMagic = container[0] === 0x50 && container[1] === 0x4B && container[2] === 0x03 && container[3] === 0x04;
+    assert.ok(!hasZipMagic, 'container must NOT start with ZIP magic');
+    // Also verify the scrambled payload portion doesn't start with ZIP magic
+    var payloadStart = shared.CONTAINER_HEADER_SIZE;
+    var hasZipMagicInPayload = container[payloadStart] === 0x50 && container[payloadStart+1] === 0x4B;
+    assert.ok(!hasZipMagicInPayload, 'scrambled payload must NOT start with ZIP signature');
+});
+
+test('single-byte corruption is detected', function () {
+    var payload = Buffer.from('integrity test data', 'utf8');
+    var container = shared.packContainer(payload, shared.CONTAINER_MAGIC_PKG);
+    // Flip a byte in the payload portion
+    var corrupted = Buffer.from(container);
+    corrupted[shared.CONTAINER_HEADER_SIZE + 5] ^= 0xFF;
+    assert.throws(function () {
+        shared.unpackContainer(corrupted, shared.CONTAINER_MAGIC_PKG);
+    }, /integrity|corrupt|tamper/i, 'should reject corrupted container');
+});
+
+test('wrong magic is rejected', function () {
+    var payload = Buffer.from('magic mismatch test', 'utf8');
+    var container = shared.packContainer(payload, shared.CONTAINER_MAGIC_PKG);
+    assert.throws(function () {
+        shared.unpackContainer(container, shared.CONTAINER_MAGIC_ARC);
+    }, /unrecognized|invalid|format/i, 'should reject container with wrong magic');
+});
+
+test('truncated container is rejected', function () {
+    var payload = Buffer.from('truncation test data', 'utf8');
+    var container = shared.packContainer(payload, shared.CONTAINER_MAGIC_PKG);
+    var truncated = container.slice(0, shared.CONTAINER_HEADER_SIZE + 2);
+    assert.throws(function () {
+        shared.unpackContainer(truncated, shared.CONTAINER_MAGIC_PKG);
+    }, /truncat|corrupt|too small/i, 'should reject truncated container');
+});
+
+test('buffer too small (< header size) is rejected', function () {
+    assert.throws(function () {
+        shared.unpackContainer(Buffer.alloc(10), shared.CONTAINER_MAGIC_PKG);
+    }, /too small|invalid/i, 'should reject undersized buffer');
+});
+
+test('HMAC corruption in header is detected', function () {
+    var payload = Buffer.from('hmac header test', 'utf8');
+    var container = shared.packContainer(payload, shared.CONTAINER_MAGIC_PKG);
+    var corrupted = Buffer.from(container);
+    // Flip a byte in the HMAC (bytes 16-47)
+    corrupted[20] ^= 0xFF;
+    assert.throws(function () {
+        shared.unpackContainer(corrupted, shared.CONTAINER_MAGIC_PKG);
+    }, /integrity|corrupt|tamper/i, 'should reject HMAC-corrupted container');
+});
+
+// -----------------------------------------------------------------------
 // Summary
 // -----------------------------------------------------------------------
 console.log('\n' + (passed + failed) + ' tests: ' + passed + ' passed, ' + failed + ' failed\n');
