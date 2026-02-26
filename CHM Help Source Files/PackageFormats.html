@@ -43,7 +43,7 @@
 <tr><td><code>version</code></td><td>string</td><td>Yes</td><td>Library version string (e.g., <code>"1.0.0"</code>)</td></tr>
 <tr><td><code>venus_compatibility</code></td><td>string</td><td>No</td><td>Compatible VENUS version range (e.g., <code>"4.7+"</code>)</td></tr>
 <tr><td><code>description</code></td><td>string</td><td>No</td><td>Human-readable description of the library</td></tr>
-<tr><td><code>tags</code></td><td>string[]</td><td>No</td><td>Searchable keyword tags</td></tr>
+<tr><td><code>tags</code></td><td>string[]</td><td>No</td><td>Searchable keyword tags. The values <code>"System"</code> and <code>"Hamilton"</code> are reserved and cannot be used (case-insensitive).</td></tr>
 <tr><td><code>created_date</code></td><td>string</td><td>No</td><td>ISO 8601 timestamp of package creation</td></tr>
 <tr><td><code>library_image</code></td><td>string</td><td>No</td><td>Filename of the library icon image</td></tr>
 <tr><td><code>library_image_base64</code></td><td>string</td><td>No</td><td>Base64-encoded <b>raw</b> library image data (no overlay). The composited icon with the Library Manager logo overlay is stored separately in the <code>icon/</code> directory for Windows file-system display only (see <a href="VisualIdentity.html">Visual Identity</a>)</td></tr>
@@ -108,7 +108,7 @@
 }</pre></div>
 
 <div class="note">
-<p><b>Note:</b> Packages created before signing was added (legacy packages) do not contain a <code>signature.json</code>. These are treated as <b>unsigned</b> on import and are accepted without error — there is no forced rejection of unsigned packages.</p>
+<p><b>Note:</b> Packages created before signing was added (legacy packages) do not contain a <code>signature.json</code>. These are treated as <b>unsigned</b> on import and are accepted without error - there is no forced rejection of unsigned packages.</p>
 </div>
 
 <p>See <a href="IntegrityVerification.html">Integrity Verification</a> for details on how signing relates to file-level integrity checking, and <a href="CLIVerifyPackage.html">CLI: verify-package</a> for standalone package verification.</p>

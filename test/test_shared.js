@@ -1,5 +1,5 @@
 /**
- * Venus Library Manager — Shared Module Tests
+ * Venus Library Manager - Shared Module Tests
  *
  * Minimal smoke tests for the shared validation, hashing, and signing
  * routines.  Run with:  npm test  (or  node test/test_shared.js)
@@ -335,6 +335,254 @@ test('HSL_METADATA_EXTS contains expected values', function () {
 
 test('IMAGE_MIME_MAP has PNG entry', function () {
     assert.strictEqual(shared.IMAGE_MIME_MAP['.png'], 'image/png');
+});
+
+// -----------------------------------------------------------------------
+console.log('\n=== isReservedTag ===');
+// -----------------------------------------------------------------------
+
+test('detects "system" as reserved (lowercase)', function () {
+    assert.strictEqual(shared.isReservedTag('system'), true);
+});
+
+test('detects "System" as reserved (mixed case)', function () {
+    assert.strictEqual(shared.isReservedTag('System'), true);
+});
+
+test('detects "SYSTEM" as reserved (uppercase)', function () {
+    assert.strictEqual(shared.isReservedTag('SYSTEM'), true);
+});
+
+test('detects "hamilton" as reserved (lowercase)', function () {
+    assert.strictEqual(shared.isReservedTag('hamilton'), true);
+});
+
+test('detects "Hamilton" as reserved (mixed case)', function () {
+    assert.strictEqual(shared.isReservedTag('Hamilton'), true);
+});
+
+test('detects "HAMILTON" as reserved (uppercase)', function () {
+    assert.strictEqual(shared.isReservedTag('HAMILTON'), true);
+});
+
+test('detects reserved tag with surrounding whitespace', function () {
+    assert.strictEqual(shared.isReservedTag('  system  '), true);
+    assert.strictEqual(shared.isReservedTag(' Hamilton '), true);
+});
+
+test('does not flag non-reserved tags', function () {
+    assert.strictEqual(shared.isReservedTag('pipetting'), false);
+    assert.strictEqual(shared.isReservedTag('assay'), false);
+    assert.strictEqual(shared.isReservedTag('systemtools'), false);
+    assert.strictEqual(shared.isReservedTag('myhamilton'), false);
+});
+
+test('returns false for null/undefined/empty', function () {
+    assert.strictEqual(shared.isReservedTag(null), false);
+    assert.strictEqual(shared.isReservedTag(undefined), false);
+    assert.strictEqual(shared.isReservedTag(''), false);
+});
+
+// -----------------------------------------------------------------------
+console.log('\n=== filterReservedTags ===');
+// -----------------------------------------------------------------------
+
+test('filters out reserved tags and reports them', function () {
+    var result = shared.filterReservedTags(['pipetting', 'System', 'Hamilton', 'PCR']);
+    assert.deepStrictEqual(result.filtered, ['pipetting', 'PCR']);
+    assert.deepStrictEqual(result.removed, ['System', 'Hamilton']);
+});
+
+test('returns all tags when none are reserved', function () {
+    var result = shared.filterReservedTags(['pipetting', 'assay', 'PCR']);
+    assert.deepStrictEqual(result.filtered, ['pipetting', 'assay', 'PCR']);
+    assert.deepStrictEqual(result.removed, []);
+});
+
+test('returns empty arrays for empty input', function () {
+    var result = shared.filterReservedTags([]);
+    assert.deepStrictEqual(result.filtered, []);
+    assert.deepStrictEqual(result.removed, []);
+});
+
+test('handles non-array input gracefully', function () {
+    var result = shared.filterReservedTags(null);
+    assert.deepStrictEqual(result.filtered, []);
+    assert.deepStrictEqual(result.removed, []);
+});
+
+test('is case-insensitive for mixed-case reserved tags', function () {
+    var result = shared.filterReservedTags(['sYsTeM', 'hAmIlToN']);
+    assert.deepStrictEqual(result.filtered, []);
+    assert.deepStrictEqual(result.removed, ['sYsTeM', 'hAmIlToN']);
+});
+
+// -----------------------------------------------------------------------
+console.log('\n=== RESERVED_TAGS constant ===');
+// -----------------------------------------------------------------------
+
+test('RESERVED_TAGS contains system and hamilton', function () {
+    assert.ok(shared.RESERVED_TAGS.indexOf('system') !== -1);
+    assert.ok(shared.RESERVED_TAGS.indexOf('hamilton') !== -1);
+});
+
+test('RESERVED_TAGS contains all expanded reserved keywords', function () {
+    ['stared', 'starred', 'signed', 'unsigned', 'registered', 'unregistered'].forEach(function(t) {
+        assert.ok(shared.RESERVED_TAGS.indexOf(t) !== -1, 'Missing reserved tag: ' + t);
+    });
+});
+
+test('filterReservedTags removes new reserved tags', function () {
+    var result = shared.filterReservedTags(['pipetting', 'stared', 'Starred', 'unsigned', 'PCR', 'Registered']);
+    assert.deepStrictEqual(result.filtered, ['pipetting', 'PCR']);
+    assert.deepStrictEqual(result.removed, ['stared', 'Starred', 'unsigned', 'Registered']);
+});
+
+// -----------------------------------------------------------------------
+console.log('\n=== isReservedGroupName ===');
+// -----------------------------------------------------------------------
+
+test('detects reserved group names (case-insensitive)', function () {
+    ['Starred', 'Hamilton', 'System', 'Signed', 'Unsigned', 'Registered', 'Unregistered',
+     'All', 'Recent', 'Import', 'Export', 'History'].forEach(function(n) {
+        assert.strictEqual(shared.isReservedGroupName(n), true, 'Should be reserved: ' + n);
+        assert.strictEqual(shared.isReservedGroupName(n.toUpperCase()), true, 'Should be reserved (upper): ' + n);
+        assert.strictEqual(shared.isReservedGroupName(n.toLowerCase()), true, 'Should be reserved (lower): ' + n);
+    });
+});
+
+test('does not flag non-reserved group names', function () {
+    assert.strictEqual(shared.isReservedGroupName('My Custom Group'), false);
+    assert.strictEqual(shared.isReservedGroupName('Pipetting'), false);
+    assert.strictEqual(shared.isReservedGroupName('Assay Methods'), false);
+});
+
+test('isReservedGroupName returns false for null/undefined/empty', function () {
+    assert.strictEqual(shared.isReservedGroupName(null), false);
+    assert.strictEqual(shared.isReservedGroupName(undefined), false);
+    assert.strictEqual(shared.isReservedGroupName(''), false);
+});
+
+test('isReservedGroupName handles whitespace', function () {
+    assert.strictEqual(shared.isReservedGroupName('  Starred  '), true);
+    assert.strictEqual(shared.isReservedGroupName(' All '), true);
+});
+
+// -----------------------------------------------------------------------
+console.log('\n=== sanitizeTag ===');
+// -----------------------------------------------------------------------
+
+test('lowercases and strips spaces from a tag', function () {
+    assert.strictEqual(shared.sanitizeTag('Pipetting'), 'pipetting');
+    assert.strictEqual(shared.sanitizeTag('My Tag'), 'mytag');
+    assert.strictEqual(shared.sanitizeTag('  2D Array  '), '2darray');
+    assert.strictEqual(shared.sanitizeTag('PCR'), 'pcr');
+});
+
+test('collapses multiple internal spaces', function () {
+    assert.strictEqual(shared.sanitizeTag('multi   word   tag'), 'multiwordtag');
+});
+
+test('returns empty string for null/undefined/empty', function () {
+    assert.strictEqual(shared.sanitizeTag(null), '');
+    assert.strictEqual(shared.sanitizeTag(undefined), '');
+    assert.strictEqual(shared.sanitizeTag(''), '');
+    assert.strictEqual(shared.sanitizeTag('   '), '');
+});
+
+test('returns empty string for non-string input', function () {
+    assert.strictEqual(shared.sanitizeTag(123), '');
+    assert.strictEqual(shared.sanitizeTag(true), '');
+});
+
+test('removes underscore and invalid punctuation', function () {
+    assert.strictEqual(shared.sanitizeTag('my_tag'), 'mytag');
+    assert.strictEqual(shared.sanitizeTag('my.tag'), 'mytag');
+    assert.strictEqual(shared.sanitizeTag('my/tag'), 'mytag');
+});
+
+test('normalizes invalid hyphen placement and repeated separators', function () {
+    assert.strictEqual(shared.sanitizeTag('-start'), 'start');
+    assert.strictEqual(shared.sanitizeTag('end-'), 'end');
+    assert.strictEqual(shared.sanitizeTag('double--dash'), 'double-dash');
+});
+
+test('rejects numeric-only tags', function () {
+    assert.strictEqual(shared.sanitizeTag('1234'), '');
+});
+
+test('enforces min/max length', function () {
+    assert.strictEqual(shared.sanitizeTag('a'), '');
+    assert.strictEqual(shared.sanitizeTag('averyveryveryveryverylongtag'), '');
+    assert.strictEqual(shared.sanitizeTag('ab'), 'ab');
+});
+
+test('removes colon from tags', function () {
+    assert.strictEqual(shared.sanitizeTag('domain:liquid-handling'), 'domainliquid-handling');
+    assert.strictEqual(shared.sanitizeTag('domain:1234'), 'domain1234');
+    assert.strictEqual(shared.sanitizeTag('domain::value'), 'domainvalue');
+});
+
+test('blocks restricted words anywhere inside a tag', function () {
+    assert.strictEqual(shared.sanitizeTag('myhamiltontool'), '');
+    assert.strictEqual(shared.sanitizeTag('prestarredtag'), '');
+    assert.strictEqual(shared.sanitizeTag('core-read-only-lib'), '');
+});
+
+test('allows star substrings when not restricted words', function () {
+    assert.strictEqual(shared.sanitizeTag('mlstar'), 'mlstar');
+    assert.strictEqual(shared.sanitizeTag('starassist'), 'starassist');
+});
+
+test('allows ml_star underscore exception only', function () {
+    assert.strictEqual(shared.sanitizeTag('ml_star'), 'ml_star');
+    assert.strictEqual(shared.sanitizeTag('ML_STAR'), 'ml_star');
+    assert.strictEqual(shared.sanitizeTag('ml_star_tool'), 'mlstartool');
+});
+
+test('provides feedback for adjusted and blocked tags', function () {
+    var feedback = shared.sanitizeTagsWithFeedback(['my_tag', 'myhamiltontool', 'mlstar']);
+    assert.deepStrictEqual(feedback.tags, ['mytag', 'mlstar']);
+    assert.ok(feedback.adjusted.length >= 1);
+    assert.ok(feedback.blocked.length >= 1);
+    assert.ok((feedback.blocked[0].restrictedWords || []).length >= 1);
+});
+
+// -----------------------------------------------------------------------
+console.log('\n=== sanitizeTags ===');
+// -----------------------------------------------------------------------
+
+test('sanitizes an array of tags (lowercase, no spaces, deduped)', function () {
+    var result = shared.sanitizeTags(['Pipetting', ' 2D Array ', 'PCR', 'pipetting']);
+    assert.deepStrictEqual(result, ['pipetting', '2darray', 'pcr']);
+});
+
+test('removes empty entries after sanitization', function () {
+    var result = shared.sanitizeTags(['  ', '', 'valid']);
+    assert.deepStrictEqual(result, ['valid']);
+});
+
+test('returns empty array for non-array input', function () {
+    assert.deepStrictEqual(shared.sanitizeTags(null), []);
+    assert.deepStrictEqual(shared.sanitizeTags(undefined), []);
+    assert.deepStrictEqual(shared.sanitizeTags('not-an-array'), []);
+});
+
+test('deduplicates case-insensitive duplicates', function () {
+    var result = shared.sanitizeTags(['Assay', 'ASSAY', 'assay']);
+    assert.deepStrictEqual(result, ['assay']);
+});
+
+test('deduplicates canonical near-duplicates', function () {
+    var result = shared.sanitizeTags(['arraytable', 'array-table', 'array:table']);
+    assert.deepStrictEqual(result, ['arraytable']);
+});
+
+test('limits to TAG_MAX_COUNT tags', function () {
+    var tags = [];
+    for (var i = 0; i < 20; i++) tags.push('tag' + i);
+    var result = shared.sanitizeTags(tags);
+    assert.strictEqual(result.length, shared.TAG_MAX_COUNT);
 });
 
 // -----------------------------------------------------------------------

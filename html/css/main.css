@@ -386,6 +386,15 @@ body {
 				/* cursor: pointer; */
 			}
 
+			/* Protected / restricted groups in settings accordion */
+			.settings-links-group.protected-group {
+				opacity: 0.55;
+				cursor: default;
+			}
+			.settings-links-group.protected-group .card-header {
+				cursor: pointer;
+			}
+
 			.settings-links-method .name{
 				line-height:16px !important;
 				color: var(--medium2);
@@ -426,6 +435,11 @@ body {
 			.container-imageicon{
 				cursor: pointer;
 			}
+
+			#editModal { z-index: 1060; }
+			#editModal + .modal-backdrop { z-index: 1055; }
+			#deleteModal { z-index: 1060; }
+			#deleteModal + .modal-backdrop { z-index: 1055; }
 
 			.editModal-icon:hover, .editModal-image:hover{
 				opacity: 0.5;
@@ -752,7 +766,7 @@ body {
 	border-color: #b22a37;
 }
 
-/* ---- Upgrade Library Confirmation Modal (Green theme) ---- */
+/* ---- Upgrade Library Confirmation Modal (Destructive red theme) ---- */
 .upgrade-confirm-content {
 	border: none;
 	border-radius: 12px;
@@ -761,14 +775,14 @@ body {
 }
 
 .upgrade-confirm-header {
-	background: #14532d;
-	color: #d1fae5;
-	border-bottom: 3px solid #22c55e;
+	background: #8a1f2b;
+	color: #ffe3e7;
+	border-bottom: 3px solid #d73a49;
 	padding: 20px 24px;
 }
 
 .upgrade-confirm-header .close {
-	color: #d1fae5;
+	color: #ffe3e7;
 	opacity: 0.7;
 	text-shadow: none;
 }
@@ -778,11 +792,11 @@ body {
 }
 
 .upgrade-confirm-icon i {
-	color: #22c55e;
+	color: #f28b95;
 }
 
 .upgrade-confirm-libname-header {
-	color: #86efac;
+	color: #ffc6cd;
 	font-size: 0.85rem;
 	font-weight: 500;
 }
@@ -793,21 +807,21 @@ body {
 }
 
 .upgrade-confirm-warning-box {
-	background: #f0fdf4;
-	border: 1px solid #22c55e;
+	background: #fff5f5;
+	border: 1px solid #d73a49;
 	border-radius: 8px;
 	padding: 16px;
-	color: #14532d;
+	color: #7a1a25;
 	font-size: 0.9rem;
 	line-height: 1.5;
 }
 
 .upgrade-confirm-warning-box strong {
-	color: #15803d;
+	color: #8a1f2b;
 }
 
 .upgrade-confirm-consequences {
-	color: #166534;
+	color: #7a1a25;
 	font-size: 0.85rem;
 }
 
@@ -831,14 +845,14 @@ body {
 }
 
 .upgrade-confirm-input:focus {
-	border-color: #22c55e;
-	box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+	border-color: #d73a49;
+	box-shadow: 0 0 0 3px rgba(215, 58, 73, 0.15);
 	outline: none;
 }
 
 .upgrade-confirm-input.is-valid {
-	border-color: #22c55e;
-	box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+	border-color: #28a745;
+	box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.15);
 }
 
 .upgrade-confirm-footer {
@@ -851,8 +865,8 @@ body {
 }
 
 .upgrade-confirm-btn {
-	background: #16a34a;
-	border-color: #16a34a;
+	background: #d73a49;
+	border-color: #d73a49;
 	color: #ffffff;
 	font-weight: 600;
 	letter-spacing: 0.2px;
@@ -862,18 +876,18 @@ body {
 .upgrade-confirm-btn:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
-	background: #16a34a;
-	border-color: #16a34a;
+	background: #d73a49;
+	border-color: #d73a49;
 	color: #ffffff;
 }
 
 .upgrade-confirm-btn:not(:disabled):hover {
-	background: #15803d;
-	border-color: #15803d;
+	background: #b22a37;
+	border-color: #b22a37;
 	color: #ffffff;
 }
 
-/* ---- Rollback Library Confirmation Modal (Purple theme) ---- */
+/* ---- Rollback Library Confirmation Modal (Destructive red theme) ---- */
 .rollback-confirm-content {
 	border: none;
 	border-radius: 12px;
@@ -882,14 +896,14 @@ body {
 }
 
 .rollback-confirm-header {
-	background: #3b1564;
-	color: #e9d5ff;
-	border-bottom: 3px solid #a855f7;
+	background: #8a1f2b;
+	color: #ffe3e7;
+	border-bottom: 3px solid #d73a49;
 	padding: 20px 24px;
 }
 
 .rollback-confirm-header .close {
-	color: #e9d5ff;
+	color: #ffe3e7;
 	opacity: 0.7;
 	text-shadow: none;
 }
@@ -899,11 +913,11 @@ body {
 }
 
 .rollback-confirm-icon i {
-	color: #a855f7;
+	color: #f28b95;
 }
 
 .rollback-confirm-libname-header {
-	color: #d8b4fe;
+	color: #ffc6cd;
 	font-size: 0.85rem;
 	font-weight: 500;
 }
@@ -914,21 +928,21 @@ body {
 }
 
 .rollback-confirm-warning-box {
-	background: #faf5ff;
-	border: 1px solid #a855f7;
+	background: #fff5f5;
+	border: 1px solid #d73a49;
 	border-radius: 8px;
 	padding: 16px;
-	color: #3b1564;
+	color: #7a1a25;
 	font-size: 0.9rem;
 	line-height: 1.5;
 }
 
 .rollback-confirm-warning-box strong {
-	color: #7e22ce;
+	color: #8a1f2b;
 }
 
 .rollback-confirm-consequences {
-	color: #581c87;
+	color: #7a1a25;
 	font-size: 0.85rem;
 }
 
@@ -952,14 +966,14 @@ body {
 }
 
 .rollback-confirm-input:focus {
-	border-color: #a855f7;
-	box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+	border-color: #d73a49;
+	box-shadow: 0 0 0 3px rgba(215, 58, 73, 0.15);
 	outline: none;
 }
 
 .rollback-confirm-input.is-valid {
-	border-color: #a855f7;
-	box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+	border-color: #28a745;
+	box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.15);
 }
 
 .rollback-confirm-footer {
@@ -972,8 +986,8 @@ body {
 }
 
 .rollback-confirm-btn {
-	background: #9333ea;
-	border-color: #9333ea;
+	background: #d73a49;
+	border-color: #d73a49;
 	color: #ffffff;
 	font-weight: 600;
 	letter-spacing: 0.2px;
@@ -983,15 +997,27 @@ body {
 .rollback-confirm-btn:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
-	background: #9333ea;
-	border-color: #9333ea;
+	background: #d73a49;
+	border-color: #d73a49;
 	color: #ffffff;
 }
 
 .rollback-confirm-btn:not(:disabled):hover {
-	background: #7e22ce;
-	border-color: #7e22ce;
+	background: #b22a37;
+	border-color: #b22a37;
 	color: #ffffff;
+}
+
+.arch-conflict-table thead th {
+	background: #fff0f2;
+	color: #7a1a25;
+	font-weight: 600;
+	font-size: 0.82rem;
+}
+
+.arch-conflict-table td {
+	font-size: 0.82rem;
+	background: #ffffff;
 }
 
 /* ---- Import Success Modal ---- */
@@ -1280,6 +1306,28 @@ body {
 	border-color: #aaa;
 }
 
+.pkg-filetype-warn-content.pkg-filetype-warn-error .pkg-filetype-warn-body {
+	background: #fff5f5;
+	border-top: 4px solid #d73a49;
+}
+
+.pkg-filetype-warn-content.pkg-filetype-warn-error .pkg-filetype-warn-icon {
+	color: #d73a49;
+}
+
+.pkg-filetype-warn-content.pkg-filetype-warn-error .pkg-filetype-warn-title {
+	color: #8a1f2b;
+}
+
+.pkg-filetype-warn-content.pkg-filetype-warn-error .pkg-filetype-warn-message {
+	color: #7a1a25;
+}
+
+.pkg-filetype-warn-content.pkg-filetype-warn-error .pkg-filetype-warn-footer {
+	background: #fff5f5;
+	border-top: 1px solid #f1c5ca;
+}
+
 /* ---- Importer / Installed Libraries ---- */
 .importer-container {
 	overflow-y: auto;
@@ -1292,11 +1340,141 @@ body {
 
 .imp-lib-card {
 	border-radius: 6px;
-	transition: box-shadow 0.15s;
+	transition: box-shadow 0.2s ease, transform 0.2s ease;
+	cursor: pointer;
 }
 
 .imp-lib-card:hover {
-	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+
+.imp-lib-card.imp-lib-card-tag-hover,
+.imp-lib-card.imp-lib-card-tag-hover:hover {
+	box-shadow: none !important;
+	transform: none !important;
+}
+
+.imp-tag-badge {
+	border: 0;
+	background-color: rgba(0, 0, 0, 0.05);
+	color: #6c757d;
+	font-size: 0.7rem;
+	line-height: 1.1;
+	padding: 0.2rem 0.4rem;
+	border-radius: 0.25rem;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+}
+
+.imp-tag-badge:hover,
+.imp-tag-badge:focus {
+	background-color: rgba(0, 0, 0, 0.08);
+	border-color: #6c757d;
+	outline: none;
+}
+
+.imp-tag-list {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0;
+}
+
+.imp-tag-list > .imp-tag-item,
+.imp-tag-list > .imp-tag-add,
+.imp-tag-list > .imp-tag-input-wrap {
+	margin-right: 0.317rem;
+	margin-bottom: 0.113rem;
+}
+
+.imp-tag-item {
+	display: inline-flex;
+	align-items: center;
+	border-radius: 0.25rem;
+	overflow: hidden;
+	border: 0;
+	background-color: rgba(0, 0, 0, 0.05);
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.10);
+}
+
+.imp-tag-item .imp-tag-badge {
+	margin: 0;
+	border: 0;
+	border-radius: 0;
+	background-color: transparent;
+	padding-right: 0.28rem;
+}
+
+.imp-tag-item .imp-tag-badge:hover,
+.imp-tag-item .imp-tag-badge:focus {
+	background-color: transparent;
+	border-color: transparent;
+}
+
+.imp-tag-remove,
+.imp-tag-add {
+	border: 0;
+	background-color: rgba(0, 0, 0, 0.05);
+	color: #6c757d;
+	font-size: 0.7rem;
+	line-height: 1;
+	padding: 0.2rem 0.38rem;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.imp-tag-remove {
+	border: 0;
+	border-radius: 0;
+	background-color: transparent;
+}
+
+.imp-tag-add {
+	border-radius: 0.25rem;
+	min-width: 1.6rem;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.10);
+}
+
+.imp-tag-input-wrap {
+	border: 0;
+	background-color: rgba(0, 0, 0, 0.05);
+	color: #6c757d;
+	font-size: 0.7rem;
+	line-height: 1.1;
+	padding: 0.2rem 0.4rem;
+	border-radius: 0.25rem;
+	display: inline-flex;
+	align-items: center;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.10);
+}
+
+.imp-tag-inline-input {
+	border: 0;
+	background: transparent;
+	color: #6c757d;
+	font-size: 0.7rem;
+	outline: none;
+	min-width: 72px;
+	max-width: 120px;
+	padding: 0;
+}
+
+.imp-tag-inline-input::placeholder {
+	color: var(--gray);
+}
+
+.imp-tag-remove:hover,
+.imp-tag-remove:focus,
+.imp-tag-add:hover,
+.imp-tag-add:focus,
+.imp-tag-item:hover,
+.imp-tag-input-wrap:focus-within {
+	background-color: rgba(0, 0, 0, 0.08);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+	outline: none;
 }
 
 .imp-lib-card-icon img {
@@ -1311,16 +1489,30 @@ body {
 	text-decoration: underline !important;
 }
 
-.imp-lib-card-details {
+.imp-lib-card-help-link {
 	text-decoration: none !important;
+	font-size: 0.85rem;
 }
 
-.imp-lib-card-details:hover {
+.imp-lib-card-help-link:hover {
 	text-decoration: underline !important;
 }
 
-.imp-lib-card-name:hover {
-	text-decoration: underline;
+.imp-lib-star {
+	cursor: pointer;
+	font-size: 1rem;
+	color: #ccc;
+	transition: color 0.15s ease, transform 0.15s ease;
+	line-height: 1;
+}
+
+.imp-lib-star:hover {
+	color: #f5a623;
+	transform: scale(1.2);
+}
+
+.imp-lib-star .fas.fa-star {
+	color: #f5a623;
 }
 
 .imp-empty-state {
@@ -1339,7 +1531,7 @@ body {
 }
 
 .imp-lib-card-warning:hover {
-	box-shadow: 0 2px 12px rgba(240, 173, 78, 0.25);
+	box-shadow: 0 3px 6px rgba(240, 173, 78, 0.3), 0 3px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* ---- Issues banner at top of library list ---- */
@@ -1439,7 +1631,7 @@ body {
 }
 
 .imp-lib-card-integrity-error:hover {
-	box-shadow: 0 2px 12px rgba(217, 83, 79, 0.3);
+	box-shadow: 0 3px 6px rgba(217, 83, 79, 0.35), 0 3px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* ---- Deleted library card (faded) ---- */
@@ -1450,7 +1642,7 @@ body {
 
 .imp-lib-card-deleted:hover {
 	opacity: 0.8;
-	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
 }
 
 /* ---- Integrity info tooltip on card (multiline via native title) ---- */
@@ -1520,13 +1712,12 @@ body {
 .imp-lib-card-system {
 	background-color: #f4f6f8 !important;
 	border-left: 4px solid #6c757d !important;
-	opacity: 0.82;
-	cursor: default;
+	opacity: 0.88;
 }
 
 .imp-lib-card-system:hover {
-	box-shadow: 0 2px 12px rgba(108, 117, 125, 0.15);
-	opacity: 0.92;
+	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+	opacity: 1;
 }
 
 /* System card with integrity error: red overrides system grey */
@@ -1537,13 +1728,8 @@ body {
 }
 
 .imp-lib-card-system.imp-lib-card-integrity-error:hover {
-	box-shadow: 0 2px 12px rgba(217, 83, 79, 0.3);
+	box-shadow: 0 3px 6px rgba(217, 83, 79, 0.35), 0 3px 6px rgba(0, 0, 0, 0.15);
 	opacity: 1;
-}
-
-.imp-lib-card-system .imp-lib-card-name:hover {
-	text-decoration: none;
-	cursor: default;
 }
 
 /* ---- Unsigned library cards ---- */

@@ -93,9 +93,9 @@
 <table>
 <thead><tr><th>Result</th><th>Icon</th><th>Meaning</th></tr></thead>
 <tbody>
-<tr><td><b>Integrity Check Passed</b></td><td style="color:green;">&#10004;</td><td>The HMAC signature matches — the file has not been modified since it was generated</td></tr>
-<tr><td><b>Integrity Check Failed</b></td><td style="color:red;">&#10008;</td><td>The HMAC signature does not match — the file contents have been altered</td></tr>
-<tr><td><b>No Signature Found</b></td><td style="color:red;">&#10008;</td><td>The file does not contain an <code>$$INTEGRITY_SIGNATURE$$</code> line — it may not be a signed audit log, or the signature was removed</td></tr>
+<tr><td><b>Integrity Check Passed</b></td><td style="color:green;">&#10004;</td><td>The HMAC signature matches - the file has not been modified since it was generated</td></tr>
+<tr><td><b>Integrity Check Failed</b></td><td style="color:red;">&#10008;</td><td>The HMAC signature does not match - the file contents have been altered</td></tr>
+<tr><td><b>No Signature Found</b></td><td style="color:red;">&#10008;</td><td>The file does not contain an <code>$$INTEGRITY_SIGNATURE$$</code> line - it may not be a signed audit log, or the signature was removed</td></tr>
 </tbody>
 </table>
 
@@ -106,7 +106,7 @@
   <li>Run a library audit after each library import, deletion, or rollback to maintain a traceable audit trail</li>
   <li>Run an audit as part of instrument qualification (IQ/OQ/PQ) to document the exact library state at the time of qualification</li>
   <li>Use <b>Check Audit File</b> whenever you retrieve a historical audit log to confirm it has not been altered</li>
-  <li>Do not open or edit audit log files in a text editor before verification — even invisible changes (encoding, line endings) will invalidate the signature</li>
+  <li>Do not open or edit audit log files in a text editor before verification - even invisible changes (encoding, line endings) will invalidate the signature</li>
   <li>Audit logs are stored alongside VENUS run logs in <code>C:\Program Files (x86)\Hamilton\Logfiles\Library Audit Logs\</code> for centralized log management</li>
   <li>Review the <b>Audit Trail</b> (see below) to trace the full history of who packaged, imported, deleted, or rolled back libraries and from which machine</li>
 </ul>

@@ -49,7 +49,7 @@
 <tr><td><code>version</code></td><td>string</td><td>Version string</td></tr>
 <tr><td><code>venus_compatibility</code></td><td>string</td><td>VENUS version compatibility</td></tr>
 <tr><td><code>description</code></td><td>string</td><td>Library description text</td></tr>
-<tr><td><code>tags</code></td><td>string[]</td><td>Searchable keyword tags</td></tr>
+<tr><td><code>tags</code></td><td>string[]</td><td>Searchable keyword tags. The values <code>"System"</code> and <code>"Hamilton"</code> are reserved and rejected during package creation (case-insensitive).</td></tr>
 <tr><td><code>created_date</code></td><td>string (ISO 8601)</td><td>Date the package was originally created</td></tr>
 <tr><td><code>library_image</code></td><td>string | null</td><td>Image filename (or null if no image)</td></tr>
 <tr><td><code>library_image_base64</code></td><td>string | null</td><td>Base64-encoded image data for display in the GUI</td></tr>
@@ -146,14 +146,14 @@
 </table>
 
 <div class="tip">
-<b>Note:</b> The <code>lib-folder</code> and <code>met-folder</code> links serve double duty — they provide user-facing shortcuts <i>and</i> are used by the CLI to resolve the library and methods installation directories.
+<b>Note:</b> The <code>lib-folder</code> and <code>met-folder</code> links serve double duty - they provide user-facing shortcuts <i>and</i> are used by the CLI to resolve the library and methods installation directories.
 </div>
 
 <h2>groups Collection</h2>
 <p>Defines the navigation groups (tabs) shown in the GUI. The application uses a <b>two-tier group architecture</b>:</p>
 
 <h3>Default Groups (Hardcoded)</h3>
-<p>Six built-in groups are defined in a <code>DEFAULT_GROUPS</code> map in the application source code. These are <b>never stored</b> in <code>groups.json</code> — they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the JSON file to prevent duplicates.</p>
+<p>Six built-in groups are defined in a <code>DEFAULT_GROUPS</code> map in the application source code. These are <b>never stored</b> in <code>groups.json</code> - they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the JSON file to prevent duplicates.</p>
 
 <table>
 <thead><tr><th>ID</th><th>Name</th><th>Icon</th><th>Side</th><th>Purpose</th></tr></thead>
@@ -184,7 +184,7 @@
 <h3>Default Groups</h3>
 <p>The following default groups are <b>hardcoded</b> and not stored in <code>groups.json</code>. See the table above for the complete list. The code sample below shows what a default group entry looks like in the <code>DEFAULT_GROUPS</code> map (but this is not persisted to disk):</p>
 
-<div class="code"><pre>// In-memory only — not stored in groups.json
+<div class="code"><pre>// In-memory only - not stored in groups.json
 {
   "_id": "gHamilton",
   "name": "Hamilton",
@@ -252,16 +252,16 @@
 <div class="code"><pre>C:\Program Files (x86)\Hamilton\Library\VenusLibraryManager\</pre></div>
 <p>This directory mirrors the <code>db/</code> structure and contains the live, mutable copy of the database that reflects the current installation state. It also contains:</p>
 <ul>
-  <li><code>audit_trail.json</code> — A persistent audit trail recording all library lifecycle events (package creation, import, delete, rollback) with environmental context such as the Windows username, Windows OS version, VENUS version, and hostname. See <a href="LibraryAuditLog.html">Library Audit Log</a> for details.</li>
-  <li><code>system_library_metadata.json</code> — VENUS install metadata for system libraries (populated on first launch)</li>
+  <li><code>audit_trail.json</code> - A persistent audit trail recording all library lifecycle events (package creation, import, delete, rollback) with environmental context such as the Windows username, Windows OS version, VENUS version, and hostname. See <a href="LibraryAuditLog.html">Library Audit Log</a> for details.</li>
+  <li><code>system_library_metadata.json</code> - VENUS install metadata for system libraries (populated on first launch)</li>
 </ul>
 
 <h2>Related</h2>
 <ul>
-  <li><a href="LibraryGrouping.html">Library Grouping</a> — How groups and tree records work together</li>
-  <li><a href="IntegrityVerification.html">Integrity Verification</a> — How <code>file_hashes</code> are used</li>
-  <li><a href="VENUSIntegration.html">VENUS Integration</a> — Links and directory shortcuts</li>
-  <li><a href="GettingStarted.html">Getting Started</a> — User data directory setup</li>
+  <li><a href="LibraryGrouping.html">Library Grouping</a> - How groups and tree records work together</li>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a> - How <code>file_hashes</code> are used</li>
+  <li><a href="VENUSIntegration.html">VENUS Integration</a> - Links and directory shortcuts</li>
+  <li><a href="GettingStarted.html">Getting Started</a> - User data directory setup</li>
 </ul>
 </div>
 <div class="footer">

@@ -102,7 +102,7 @@ It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` fi
 - Produces an archive with:
   - Multiple embedded `.hxlibpkg` files
   - `archive_manifest.json` (archive metadata, count, included library names)
-  - **Archive icon** — A distinctive purple archive icon (three stacked purple diamonds) is embedded into every `.hxlibarch`. It is stored as base64 in `archive_manifest.json` and as a PNG file in an `icon/` directory within the archive. The icon is loaded from the static asset `assets/archive_icon_128.png` at export time.
+  - **Archive icon** - A distinctive purple archive icon (three stacked purple diamonds) is embedded into every `.hxlibarch`. It is stored as base64 in `archive_manifest.json` and as a PNG file in an `icon/` directory within the archive. The icon is loaded from the static asset `assets/archive_icon_128.png` at export time.
 - Displays export summary including included libraries and file counts.
 
 ## 6) Deleting a library
@@ -139,7 +139,7 @@ It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` fi
 - Supports manual override of detected library name with warning UI.
 - Supports optional custom icon/image selection with size/type handling.
 - Image picker accepts `.png`, `.jpg`, `.jpeg`, `.bmp`, `.ico`, `.gif`, and `.svg` formats.
-- Auto-detects matching `.bmp` when custom image not supplied (exact-name match only: the packager looks for `<LibraryName>.bmp` in the library files list — partial matches like `<LibraryName>.extra.bmp` are not matched).
+- Auto-detects matching `.bmp` when custom image not supplied (exact-name match only: the packager looks for `<LibraryName>.bmp` in the library files list - partial matches like `<LibraryName>.extra.bmp` are not matched).
 - **Package icon compositing:** When a package is built, a composited icon is generated for the `icon/` directory inside the ZIP (used for Windows file-system display). The manifest's `library_image_base64` stores the **raw, uncomposited** image so imported libraries display the original artwork:
   - If the user supplies a library image, the file-system icon is that image with a **grayscale Library Manager logo** overlaid in the bottom-right third (similar to a Windows shortcut arrow).
   - If no image is supplied (and no `.bmp` auto-detected), the file-system icon is a **full-size grayscale Library Manager logo**.
@@ -153,7 +153,7 @@ It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` fi
 - **User-installed libraries:** Computes SHA-256 hashes for tracked files during install:
   - `.hsl`, `.hs_`, `.sub` (hashes all except last line)
   - COM-registered `.dll` files (full-file hash)
-- **System libraries (Hamilton built-in):** Uses Hamilton's own metadata footer — only HSL-type files with footers are tracked:
+- **System libraries (Hamilton built-in):** Uses Hamilton's own metadata footer - only HSL-type files with footers are tracked:
   - `.hsl`, `.hs_`, `.smt` files are verified using the `$$valid$$` flag and `$$checksum$$` from the footer
   - Binary resource files are **not** baselined (keeps the baseline portable and lightweight)
   - See [docs/HSL-File-Architecture.md](docs/HSL-File-Architecture.md) for full details on the metadata footer format
@@ -163,18 +163,18 @@ It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` fi
   - Modified file / tampered checksum / valid flag changed
   - Missing file / metadata footer removed
   - Legacy/no-hash warning
-  - “All tracked files pass” success- **Package-level signing** (see §16) complements file-level hashing by ensuring packages have not been corrupted or tampered with in transit.
+  - "All tracked files pass" success- **Package-level signing** (see §16) complements file-level hashing by ensuring packages have not been corrupted or tampered with in transit.
 ## 9) Library grouping and organization
 
 - Supports custom library groups (create, rename, delete).
 - Supports drag-and-drop reorder of groups and group contents in settings.
 - Supports drag-and-drop assignment/movement of libraries across groups.
-- Provides “Unassigned Libraries” pseudo-group in settings for ungrouped items.
+- Provides "Unassigned Libraries" pseudo-group in settings for ungrouped items.
 - Supports favorite/show-hide behavior for custom group visibility in navigation.
 - Persists group + assignment tree structure via local DB JSON.
 ### Default groups (hardcoded)
 
-The application defines six built-in groups that are **hardcoded** in both `main.js` and `cli.js` via a `DEFAULT_GROUPS` map. These groups are never stored in `groups.json` — they are resolved in-memory at runtime. A startup migration IIFE automatically strips any stale default-group records from the external JSON file to prevent duplicates.
+The application defines six built-in groups that are **hardcoded** in both `main.js` and `cli.js` via a `DEFAULT_GROUPS` map. These groups are never stored in `groups.json` - they are resolved in-memory at runtime. A startup migration IIFE automatically strips any stale default-group records from the external JSON file to prevent duplicates.
 
 | ID | Name | Icon | Side | Purpose |
 |----|------|------|------|---------|
@@ -191,13 +191,13 @@ User-created groups are stored in `groups.json` with `"default": false` and auto
 
 The **Hamilton** group (`gHamilton`) is a special protected group that ships with the application. It is designed to contain libraries authored by Hamilton and is distinguished from regular custom groups in several ways:
 
-- **Non-deletable / non-renamable** — The Hamilton group has `"protected": true` in the `DEFAULT_GROUPS` map, preventing users from deleting or renaming it.
-- **Always visible** — It appears in the left-side navigation between the System libraries group and user-created groups.
-- **Solid checkmark icon** — Uses `fas fa-check-circle` (Font Awesome 5 Solid) to visually distinguish it from user-created groups.
-- **Password-protected author name** — The author name "Hamilton" is restricted. When a user enters "Hamilton" (case-insensitive) as the author in the Library Packager, a password prompt modal is displayed. The correct password must be entered before the package can be built. This prevents unauthorized attribution of packages to Hamilton.
+- **Non-deletable / non-renamable** - The Hamilton group has `"protected": true` in the `DEFAULT_GROUPS` map, preventing users from deleting or renaming it.
+- **Always visible** - It appears in the left-side navigation between the System libraries group and user-created groups.
+- **Solid checkmark icon** - Uses `fas fa-check-circle` (Font Awesome 5 Solid) to visually distinguish it from user-created groups.
+- **Password-protected author name** - The author name "Hamilton" is restricted. When a user enters "Hamilton" (case-insensitive) as the author in the Library Packager, a password prompt modal is displayed. The correct password must be entered before the package can be built. This prevents unauthorized attribution of packages to Hamilton.
   - **GUI:** The `#authorPasswordModal` is triggered when the author field loses focus (`blur` event) and the value matches "Hamilton". The user must enter the password or clear the author field.
   - **CLI:** The `--author-password` flag must be supplied when `--spec` contains `"author": "Hamilton"`. If the password is missing or incorrect, the CLI exits with an error.
-- **Empty state message** — When no Hamilton packages are installed, the Hamilton tab displays a dedicated placeholder message: *"No Hamilton packages installed yet. Import a Hamilton-authored library package to see it here."*
+- **Empty state message** - When no Hamilton packages are installed, the Hamilton tab displays a dedicated placeholder message: *"No Hamilton packages installed yet. Import a Hamilton-authored library package to see it here."*
 ## 10) Recent/history and housekeeping
 
 - Tracks recent imports and exposes Recent view.
@@ -228,7 +228,7 @@ The **Hamilton** group (`gHamilton`) is a special protected group that ships wit
 ## 13) Local persistence and data model
 
 - Uses local JSON-backed storage (`diskdb`) under `db/` for:
-  - Custom groups (user-created only — default groups are hardcoded)
+  - Custom groups (user-created only - default groups are hardcoded)
   - Links
   - Settings
   - Group tree assignments
@@ -266,8 +266,8 @@ Venus Library Manager uses a consistent visual branding system across packages a
 
 The static assets are generated from source files using two methods:
 
-- **`archive_icon_*.png`** — Rendered from `ArchiveIcon.svg` using Inkscape CLI at 64, 128, and 256px resolutions. The SVG depicts three stacked purple diamonds representing a multi-library bundle.
-- **`app_logo_gray_128.png`** — Generated from the application's colour logo using Pillow (Python), applying a full desaturation (grayscale conversion) and resizing to 128×128px.
+- **`archive_icon_*.png`** - Rendered from `ArchiveIcon.svg` using Inkscape CLI at 64, 128, and 256px resolutions. The SVG depicts three stacked purple diamonds representing a multi-library bundle.
+- **`app_logo_gray_128.png`** - Generated from the application's colour logo using Pillow (Python), applying a full desaturation (grayscale conversion) and resizing to 128×128px.
 
 These pre-rendered PNGs replace earlier runtime approaches (SVG→Canvas rendering and live grayscale conversion), reducing code complexity and improving reliability.
 
@@ -275,7 +275,7 @@ These pre-rendered PNGs replace earlier runtime approaches (SVG→Canvas renderi
 
 When a `.hxlibpkg` is built via the GUI, a **composited icon** is generated and written only to the `icon/` directory inside the package ZIP. This composited icon is what Windows displays for the `.hxlibpkg` file in Explorer. The manifest's `library_image_base64` stores the **raw, uncomposited** library image so that imported libraries display the original artwork without any overlay.
 
-1. **With user image:** The user's chosen library image is drawn at full size on an HTML5 Canvas, then the grayscale logo (`app_logo_gray_128.png`) is overlaid in the bottom-right corner at one-third of the canvas size. This produces a branded file-system icon — similar to how Windows draws shortcut arrows on shortcuts.
+1. **With user image:** The user's chosen library image is drawn at full size on an HTML5 Canvas, then the grayscale logo (`app_logo_gray_128.png`) is overlaid in the bottom-right corner at one-third of the canvas size. This produces a branded file-system icon - similar to how Windows draws shortcut arrows on shortcuts.
 2. **Without user image:** The grayscale logo is drawn at full canvas size, providing a consistent placeholder file-system icon.
 
 The compositing is performed by `pkgCompositeLibraryIcon()` in `main.js`, which returns a base64-encoded PNG used exclusively for the `icon/` ZIP entry.
@@ -314,7 +314,7 @@ node cli.js help
 
 ---
 
-### `list-libs` — List installed libraries
+### `list-libs` - List installed libraries
 
 Prints a summary of every installed library record in the database.
 
@@ -341,7 +341,7 @@ node cli.js list-libs --include-deleted --json
 
 ---
 
-### `import-lib` — Import a single `.hxlibpkg`
+### `import-lib` - Import a single `.hxlibpkg`
 
 Reads a `.hxlibpkg` file, extracts payload files to the configured VENUS library and demo-methods directories, and registers the library record in the database.
 
@@ -373,7 +373,7 @@ node cli.js import-lib --file MyLibrary.hxlibpkg ^
 
 ---
 
-### `import-archive` — Import a `.hxlibarch` (multiple libraries)
+### `import-archive` - Import a `.hxlibarch` (multiple libraries)
 
 Extracts every `.hxlibpkg` embedded inside a `.hxlibarch` zip archive and installs each one sequentially.
 
@@ -400,7 +400,7 @@ node cli.js import-archive --file bundle.hxlibarch --force
 
 ---
 
-### `export-lib` — Export a single installed library as `.hxlibpkg`
+### `export-lib` - Export a single installed library as `.hxlibpkg`
 
 Rebuilds a `.hxlibpkg` from the currently installed files on disk for the named library. This captures any changes made since the original install ("mutable export"). The exported package is automatically signed with an HMAC-SHA256 signature.
 
@@ -423,7 +423,7 @@ node cli.js export-lib --id e5c6a701 --output dist\MyLibrary.hxlibpkg
 
 ---
 
-### `export-archive` — Export libraries as `.hxlibarch`
+### `export-archive` - Export libraries as `.hxlibarch`
 
 Bundles one or more installed libraries into a single `.hxlibarch` file. Each library is re-packed from current disk state, so the archive reflects any post-install modifications. Each inner `.hxlibpkg` is individually signed with an HMAC-SHA256 signature.
 
@@ -452,7 +452,7 @@ node cli.js export-archive --ids "abc123,def456" --output out\specific.hxlibarch
 
 ---
 
-### `delete-lib` — Delete a library
+### `delete-lib` - Delete a library
 
 Removes library files from disk and soft-deletes the database record (history is preserved unless `--hard` is specified). **Requires `--yes` to prevent accidental deletion.**
 
@@ -472,7 +472,7 @@ node cli.js delete-lib (--name <name> | --id <id>) --yes [options]
 
 **Examples**
 ```bat
-:: Soft-delete (default — history preserved)
+:: Soft-delete (default - history preserved)
 node cli.js delete-lib --name "MyLibrary" --yes
 
 :: Hard delete (record removed from DB entirely)
@@ -484,7 +484,7 @@ node cli.js delete-lib --name "MyLibrary" --yes --keep-files
 
 ---
 
-### `create-package` — Build a `.hxlibpkg` from raw files
+### `create-package` - Build a `.hxlibpkg` from raw files
 
 Creates a `.hxlibpkg` from library source files and metadata defined in a JSON spec file. This is the CLI equivalent of the GUI Library Packager. The resulting package is automatically signed with an HMAC-SHA256 signature.
 
@@ -558,7 +558,7 @@ All **file paths** inside the spec are resolved **relative to the directory cont
 
 ---
 
-### `verify-package` — Verify a package signature
+### `verify-package` - Verify a package signature
 
 Checks the HMAC-SHA256 signature embedded in a `.hxlibpkg` file without importing it. Useful for validating packages before distribution, after file transfer, or in CI pipelines.
 
@@ -572,9 +572,9 @@ node cli.js verify-package --file <path> [--json]
 | `--json` | Print machine-readable JSON output |
 
 **Possible outcomes:**
-- **VERIFIED** — `signature.json` is present, all file hashes match, and the HMAC is valid. Exit code `0`.
-- **UNSIGNED** — No `signature.json` found. The package is a legacy or third-party package. Exit code `0`.
-- **FAILED** — One or more file hashes do not match, or the HMAC is invalid. Exit code `1`.
+- **VERIFIED** - `signature.json` is present, all file hashes match, and the HMAC is valid. Exit code `0`.
+- **UNSIGNED** - No `signature.json` found. The package is a legacy or third-party package. Exit code `0`.
+- **FAILED** - One or more file hashes do not match, or the HMAC is invalid. Exit code `1`.
 
 **Examples**
 ```bat
@@ -635,9 +635,9 @@ All commands exit with code `0` on success and non-zero on failure, making them 
 
 The repository also includes Python desktop tools under `Library Packager/`:
 
-- `packager.py` – standalone Tkinter packager for building `.hxlibpkg` from raw files.
-- `reader.py` – standalone package reader/viewer/extractor for `.hxlibpkg`.
-- `test_roundtrip.py` – package roundtrip test helper.
+- `packager.py` - standalone Tkinter packager for building `.hxlibpkg` from raw files.
+- `reader.py` - standalone package reader/viewer/extractor for `.hxlibpkg`.
+- `test_roundtrip.py` - package roundtrip test helper.
 - C# reference projects under `Library Packager/CSharp/` for packaging/reading interop classes and testing.
 
 ---
@@ -652,7 +652,7 @@ The repository also includes Python desktop tools under `Library Packager/`:
 
 ## Documentation
 
-- **[HSL File Architecture](docs/HSL-File-Architecture.md)** — Detailed reference on Hamilton's HSL metadata footer, the `$$valid$$` / `$$checksum$$` mechanism, read-only flags, and how integrity checking works for system vs. user libraries.
+- **[HSL File Architecture](docs/HSL-File-Architecture.md)** - Detailed reference on Hamilton's HSL metadata footer, the `$$valid$$` / `$$checksum$$` mechanism, read-only flags, and how integrity checking works for system vs. user libraries.
 
 ---
 

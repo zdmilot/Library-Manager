@@ -20,9 +20,9 @@
   <li>Venus Library Manager reads the package contents and validates that a <code>manifest.json</code> is present</li>
   <li><b>Signature verification:</b> The package's HMAC-SHA256 signature is checked. The result is displayed in a <b>Signature Status</b> section of the preview modal:
     <ul>
-      <li><b>Verified</b> (green) — All file hashes match and the HMAC is valid</li>
-      <li><b>Unsigned</b> (yellow) — No signature found (legacy/third-party package). Import proceeds normally.</li>
-      <li><b>Failed</b> (red) — Package may be corrupt or tampered with. A confirmation dialog warns the user before proceeding.</li>
+      <li><b>Verified</b> (green) - All file hashes match and the HMAC is valid</li>
+      <li><b>Unsigned</b> (yellow) - No signature found (legacy/third-party package). Import proceeds normally.</li>
+      <li><b>Failed</b> (red) - Package may be corrupt or tampered with. A confirmation dialog warns the user before proceeding.</li>
     </ul>
   </li>
   <li>A <b>pre-install preview modal</b> appears showing:
@@ -71,7 +71,7 @@
 <h3>Archive Processing</h3>
 <p>Each embedded <code>.hxlibpkg</code> is extracted and installed sequentially using the same process as single-package import. For each package:</p>
 <ul>
-  <li>The inner ZIP is opened and its HMAC-SHA256 signature is verified — packages that fail verification are <b>automatically rejected</b> and skipped</li>
+  <li>The inner ZIP is opened and its HMAC-SHA256 signature is verified - packages that fail verification are <b>automatically rejected</b> and skipped</li>
   <li>The inner ZIP's <code>manifest.json</code> is read</li>
   <li>Files are extracted to the appropriate directories</li>
   <li>Integrity hashes are computed</li>

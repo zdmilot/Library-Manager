@@ -9,14 +9,14 @@
 <div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; Unsigned Libraries</div>
 
 <h2>Overview</h2>
-<p>The <b>Unsigned Libraries</b> feature provides a convenience mechanism for discovering and working with <code>.hsl</code> and <code>.smt</code> files in the Library folder that were <b>not</b> installed through Venus Library Manager and are <b>not</b> part of any Hamilton system library. These are files that were placed in the Library folder manually, by another tool, or by an older VENUS installation — they exist on disk but have no corresponding database record or signed package.</p>
+<p>The <b>Unsigned Libraries</b> feature provides a convenience mechanism for discovering and working with <code>.hsl</code> and <code>.smt</code> files in the Library folder that were <b>not</b> installed through Venus Library Manager and are <b>not</b> part of any Hamilton system library. These are files that were placed in the Library folder manually, by another tool, or by an older VENUS installation - they exist on disk but have no corresponding database record or signed package.</p>
 
 <p>This feature is purely for convenience. It performs <b>no hashing, integrity checking, or validation</b> of unsigned files. Its purpose is to make these libraries visible within the application so users can:</p>
 <ul>
   <li>See what unmanaged libraries are present in their Library folder</li>
   <li>Annotate them with metadata (author, version, description, tags)</li>
   <li>Quickly export them as signed <code>.hxlibpkg</code> packages for proper distribution</li>
-  <li>Satisfy dependency resolution — unsigned libraries can fulfill <code>#include</code> dependencies with a warning</li>
+  <li>Satisfy dependency resolution - unsigned libraries can fulfill <code>#include</code> dependencies with a warning</li>
 </ul>
 
 <h2>Enabling the Feature</h2>
@@ -36,14 +36,14 @@
 <h2>Scanning</h2>
 <p>When you click <b>Scan Now</b>, the application performs the following steps:</p>
 <ol>
-  <li><b>Reads the Library folder</b> — recursively scans the directory configured via the Library Path setting (default: <code>C:\Program Files (x86)\HAMILTON\Library</code>). Certain directories are excluded from scanning: <code>VenusLibraryManager</code>, <code>LibraryPackages</code>, <code>.VenusLibraryManager</code>, and <code>LibraryIntegrityAudit</code>. Temporary files whose names begin with <code>~</code> (tilde) are also ignored.</li>
-  <li><b>Identifies primary files</b> — discovers all <code>.hsl</code> and <code>.smt</code> files.</li>
-  <li><b>Excludes claimed files</b> — filters out any file that is already tracked by a system library (from <code>system_libraries.json</code>) or an installed user library (from <code>installed_libs.json</code>).</li>
-  <li><b>Groups by library name</b> — derives a library name from the filename (without extension). Language-variant suffixes (e.g., <code>Enu</code>, <code>Deu</code>, <code>Jpn</code>) are folded into the base library name.</li>
-  <li><b>Discovers related files</b> — for each library name, gathers associated files with related extensions: <code>.hs_</code>, <code>.sub</code>, <code>.bmp</code>, <code>.ico</code>, <code>.chm</code>, <code>.stp</code>, <code>.res</code>, <code>.fdb</code>, <code>.sii</code>, <code>.dec</code>, <code>.dll</code>.</li>
-  <li><b>Resolves icons</b> — if a <code>.bmp</code> file matching the library name is found, it is encoded as base64 and stored for display as the library card icon.</li>
-  <li><b>Preserves metadata</b> — if the library was discovered by a previous scan and the user has edited metadata (author, version, description, etc.), those edits are preserved across rescans.</li>
-  <li><b>Saves results</b> — all discovered unsigned libraries are stored in <code>unsigned_libs.json</code> in the user data directory.</li>
+  <li><b>Reads the Library folder</b> - recursively scans the directory configured via the Library Path setting (default: <code>C:\Program Files (x86)\HAMILTON\Library</code>). Certain directories are excluded from scanning: <code>VenusLibraryManager</code>, <code>LibraryPackages</code>, <code>.VenusLibraryManager</code>, and <code>LibraryIntegrityAudit</code>. Temporary files whose names begin with <code>~</code> (tilde) or <code>.</code> (dot) are also ignored, as are any directories whose names begin with <code>.</code> (dot). Dot-prefixed files and folders are commonly created as temporary or hidden artifacts by VENUS, text editors, and other tools and should never appear as libraries.</li>
+  <li><b>Identifies primary files</b> - discovers all <code>.hsl</code> and <code>.smt</code> files.</li>
+  <li><b>Excludes claimed files</b> - filters out any file that is already tracked by a system library (from <code>system_libraries.json</code>) or an installed user library (from <code>installed_libs.json</code>).</li>
+  <li><b>Groups by library name</b> - derives a library name from the filename (without extension). Language-variant suffixes (e.g., <code>Enu</code>, <code>Deu</code>, <code>Jpn</code>) are folded into the base library name.</li>
+  <li><b>Discovers related files</b> - for each library name, gathers associated files with related extensions: <code>.hs_</code>, <code>.sub</code>, <code>.bmp</code>, <code>.ico</code>, <code>.chm</code>, <code>.stp</code>, <code>.res</code>, <code>.fdb</code>, <code>.sii</code>, <code>.dec</code>, <code>.dll</code>.</li>
+  <li><b>Resolves icons</b> - if a <code>.bmp</code> file matching the library name is found, it is encoded as base64 and stored for display as the library card icon.</li>
+  <li><b>Preserves metadata</b> - if the library was discovered by a previous scan and the user has edited metadata (author, version, description, etc.), those edits are preserved across rescans.</li>
+  <li><b>Saves results</b> - all discovered unsigned libraries are stored in <code>unsigned_libs.json</code> in the user data directory.</li>
 </ol>
 
 <h3>Visual Feedback</h3>
@@ -54,9 +54,9 @@
 <ul>
   <li>Uses the <code>far fa-times-circle</code> icon to visually distinguish it from other groups</li>
   <li>Displays an <b>"Auto-Detected"</b> badge in the Settings accordion</li>
-  <li>Is <b>locked</b> — libraries cannot be dragged into or out of the Unsigned group</li>
+  <li>Is <b>locked</b> - libraries cannot be dragged into or out of the Unsigned group</li>
   <li>Is excluded from the sortable group ordering in Settings</li>
-  <li>Is not stored in <code>tree.json</code> — it is generated dynamically based on the scan results</li>
+  <li>Is not stored in <code>tree.json</code> - it is generated dynamically based on the scan results</li>
   <li>Is hidden automatically when the feature is disabled or no unsigned libraries exist</li>
 </ul>
 
@@ -71,7 +71,7 @@
 </ul>
 
 <h2>Detail &amp; Edit Modal</h2>
-<p>Clicking a library card name or the <b>Edit &amp; Export</b> link opens the Unsigned Library Detail modal. This modal uses the same <b>card-based layout</b> as the <a href="CreatingPackages.html">Create Package</a> form, providing a consistent visual experience across the application. Each section — Package Metadata, Library Icon / Image, Library Files, and Demo Method Files — is presented within its own styled card with a header, matching the packager form 1:1.</p>
+<p>Clicking a library card name or the <b>Edit &amp; Export</b> link opens the Unsigned Library Detail modal. This modal uses the same <b>card-based layout</b> as the <a href="CreatingPackages.html">Create Package</a> form, providing a consistent visual experience across the application. Each section - Package Metadata, Library Icon / Image, Library Files, and Demo Method Files - is presented within its own styled card with a header, matching the packager form 1:1.</p>
 
 <h3>Editable Fields</h3>
 <p>The <b>Package Metadata</b> card contains the following form fields:</p>
@@ -79,12 +79,12 @@
 <thead><tr><th>Field</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td><b>Library Name</b></td><td>Display name (pre-filled from the filename, read-only display in the modal header)</td></tr>
-<tr><td><b>Author</b></td><td>Author name — blank by default, fill in before exporting. The name <i>Hamilton</i> is restricted and requires password authorization (same restriction as the package creator form).</td></tr>
+<tr><td><b>Author</b></td><td>Author name - blank by default, fill in before exporting. The name <i>Hamilton</i> is restricted and requires password authorization (same restriction as the package creator form).</td></tr>
 <tr><td><b>Organization</b></td><td>Author's organization. The name <i>Hamilton</i> is restricted (same as Author).</td></tr>
 <tr><td><b>Version</b></td><td>Version string (e.g., <code>1.0.0</code>)</td></tr>
 <tr><td><b>VENUS Compatibility</b></td><td>Minimum VENUS version required</td></tr>
 <tr><td><b>Description</b></td><td>Free-text description of the library</td></tr>
-<tr><td><b>Tags</b></td><td>Comma-separated keywords for search and filtering</td></tr>
+<tr><td><b>Tags</b></td><td>Comma-separated keywords for search and filtering. The keywords <code>System</code> and <code>Hamilton</code> are <b>reserved</b> and cannot be used (case-insensitive). If entered, they are automatically removed and an error message is displayed.</td></tr>
 </tbody>
 </table>
 
@@ -94,9 +94,9 @@
 <h3>Library Files</h3>
 <p>The <b>Library Files</b> card displays all files discovered for this library and allows adding more. Its card header includes a subtitle showing the install destination path: <code>...\Hamilton\Library\&lt;libraryname&gt;</code>. Users can manage files using:</p>
 <ul>
-  <li><b>Add Files...</b> — opens a file picker to add individual library files</li>
-  <li><b>Add Folder...</b> — opens a folder picker; all files in the selected folder are added</li>
-  <li><b>Remove Selected</b> — removes files selected in the list (click to select, Ctrl+click for multi-select)</li>
+  <li><b>Add Files...</b> - opens a file picker to add individual library files</li>
+  <li><b>Add Folder...</b> - opens a folder picker; all files in the selected folder are added</li>
+  <li><b>Remove Selected</b> - removes files selected in the list (click to select, Ctrl+click for multi-select)</li>
 </ul>
 <p>A file count is displayed next to the buttons. Files are shown in a styled scrollable list container (matching the Create Package form). Files added by the user are persisted as <code>additional_library_files</code> in the database record, separate from the originally discovered files.</p>
 
@@ -104,7 +104,7 @@
 <p>For any <code>.dll</code> file in the library file list, a <b>COM Register</b> checkbox is shown next to the filename. Check this box if the DLL requires COM registration via <code>RegAsm.exe /codebase</code> during import (administrator rights will be required).</p>
 
 <div class="note">
-<p><b>Note:</b> When one or more DLLs are marked for COM registration, a warning is displayed in the modal footer: <i>"One or more DLLs are marked for COM registration. Administrator rights will be required during import."</i> The package can still be exported normally — the COM registration data is included in the package manifest and will be applied during import.</p>
+<p><b>Note:</b> When one or more DLLs are marked for COM registration, a warning is displayed in the modal footer: <i>"One or more DLLs are marked for COM registration. Administrator rights will be required during import."</i> The package can still be exported normally - the COM registration data is included in the package manifest and will be applied during import.</p>
 </div>
 
 <p>When exactly one DLL is added in a single batch (via Add Files or Add Folder), it is automatically checked for COM registration. Uncheck it manually if registration is not needed.</p>
@@ -112,16 +112,16 @@
 <h3>Demo Method Files</h3>
 <p>The <b>Demo Method Files</b> card allows users to attach demo or example method files to the unsigned library. Its card header includes a subtitle showing the install destination path: <code>...\Hamilton\Methods\Library Demo Methods\&lt;libraryname&gt;</code>. These files are placed in the <code>demo_methods/</code> directory inside the exported package and installed to <code>Hamilton\Methods\Library Demo Methods\&lt;libraryname&gt;</code> during import.</p>
 <ul>
-  <li><b>Add Files...</b> — opens a file picker for demo method files (<code>.hsl</code>, <code>.stp</code>, <code>.csv</code>, <code>.txt</code>, <code>.med</code>, <code>.wfl</code>)</li>
-  <li><b>Add Folder...</b> — adds all files from a selected folder</li>
-  <li><b>Remove Selected</b> — removes selected demo files from the list</li>
+  <li><b>Add Files...</b> - opens a file picker for demo method files (<code>.hsl</code>, <code>.stp</code>, <code>.csv</code>, <code>.txt</code>, <code>.med</code>, <code>.wfl</code>)</li>
+  <li><b>Add Folder...</b> - adds all files from a selected folder</li>
+  <li><b>Remove Selected</b> - removes selected demo files from the list</li>
 </ul>
 
 <h3>Actions</h3>
 <ul>
-  <li><b>Save</b> — persists any metadata edits to the database. A visual confirmation (<i>"Saved!"</i>) is shown briefly.</li>
-  <li><b>Remove</b> — removes the library from the unsigned libraries list (with confirmation). The actual files on disk are <b>not</b> modified or deleted.</li>
-  <li><b>Export as Package</b> — saves the library as a signed <code>.hxlibpkg</code> package (see below).</li>
+  <li><b>Save</b> - persists any metadata edits to the database. A visual confirmation (<i>"Saved!"</i>) is shown briefly.</li>
+  <li><b>Remove</b> - removes the library from the unsigned libraries list (with confirmation). The actual files on disk are <b>not</b> modified or deleted.</li>
+  <li><b>Export as Package</b> - saves the library as a signed <code>.hxlibpkg</code> package (see below).</li>
 </ul>
 
 <h2>Exporting as a Package</h2>
@@ -136,7 +136,7 @@
 <ol>
   <li>Any pending metadata edits are automatically saved</li>
   <li>A save dialog prompts for the output file location (suggested filename: <code>&lt;LibraryName&gt;.hxlibpkg</code>)</li>
-  <li>All library files (discovered + user-added) and demo method files are verified to still exist on disk — if any are missing, the export is aborted</li>
+  <li>All library files (discovered + user-added) and demo method files are verified to still exist on disk - if any are missing, the export is aborted</li>
   <li>A <code>manifest.json</code> is generated from the current metadata fields, including the demo method file list</li>
   <li>Library files are added to the <code>library/</code> directory inside the ZIP</li>
   <li>Demo method files are added to the <code>demo_methods/</code> directory inside the ZIP</li>
@@ -154,7 +154,7 @@
 <h2>Dependency Resolution</h2>
 <p>When the unsigned libraries feature is enabled, unsigned libraries participate in dependency resolution. If a library has an <code>#include</code> directive that resolves to a file belonging to an unsigned library:</p>
 <ul>
-  <li>The dependency is considered <b>satisfied</b> — it will not be listed as "missing"</li>
+  <li>The dependency is considered <b>satisfied</b> - it will not be listed as "missing"</li>
   <li>A <b>warning</b> is shown instead, indicating the dependency is fulfilled by an unsigned (unpackaged) library</li>
   <li>Dependencies on unsigned libraries are displayed with a <b>yellow warning triangle</b> and an <b>"Unsigned"</b> badge in the library detail modal</li>
   <li>A summary line reading <i>"N unsigned dependencies (not packaged)"</i> appears in the dependencies section header</li>
@@ -208,27 +208,28 @@
 <tr><td><code>library_image_base64</code></td><td>string | null</td><td>Base64-encoded icon data</td></tr>
 <tr><td><code>library_image_mime</code></td><td>string | null</td><td>MIME type of the icon</td></tr>
 <tr><td><code>scanned_date</code></td><td>string (ISO 8601)</td><td>Timestamp of the last scan that discovered this library</td></tr>
-<tr><td><code>is_unsigned</code></td><td>boolean</td><td>Always <code>true</code> — distinguishes from installed library records</td></tr>
+<tr><td><code>is_unsigned</code></td><td>boolean</td><td>Always <code>true</code> - distinguishes from installed library records</td></tr>
 </tbody>
 </table>
 
 <h2>Limitations</h2>
 <ul>
-  <li><b>No hashing or integrity checking</b> — unsigned libraries are not hashed or validated. This feature is for convenience only.</li>
-  <li><b>No automatic file watching</b> — files placed in the Library folder between scans are not detected in real-time. However, the <b>Scan for new unsigned libraries each launch</b> option can be enabled to automatically re-scan at startup, or you can click Scan Now at any time.</li>
-  <li><b>Flat grouping</b> — all unsigned libraries are placed in the single Unsigned group. They cannot be moved to custom user groups.</li>
-  <li><b>No version history</b> — unsigned libraries are not cached in the package store and do not support version rollback.</li>
-  <li><b>Metadata is user-supplied</b> — unlike installed libraries, metadata fields (author, version, etc.) start blank and must be filled in manually.</li>
-  <li><b>File removal is soft</b> — removing an unsigned library from the list only deletes the database record. The actual files on disk remain untouched. The library will reappear on the next scan unless the files are manually deleted or claimed by a proper import.</li>
+  <li><b>No hashing or integrity checking</b> - unsigned libraries are not hashed or validated. This feature is for convenience only.</li>
+  <li><b>No automatic file watching</b> - files placed in the Library folder between scans are not detected in real-time. However, the <b>Scan for new unsigned libraries each launch</b> option can be enabled to automatically re-scan at startup, or you can click Scan Now at any time.</li>
+  <li><b>Flat grouping</b> - all unsigned libraries are placed in the single Unsigned group. They cannot be moved to custom user groups.</li>
+  <li><b>No version history</b> - unsigned libraries are not cached in the package store and do not support version rollback.</li>
+  <li><b>Metadata is user-supplied</b> - unlike installed libraries, metadata fields (author, version, etc.) start blank and must be filled in manually.</li>
+  <li><b>File removal is soft</b> - removing an unsigned library from the list only deletes the database record. The actual files on disk remain untouched. The library will reappear on the next scan unless the files are manually deleted or claimed by a proper import.</li>
+  <li><b>Dot-prefixed files and folders are excluded</b> - any file or directory whose name starts with <code>.</code> (e.g., <code>.MyLibrary.hsl</code>, <code>.tmp</code>) is treated as a hidden or temporary artifact and is completely excluded from unsigned library scanning. These files will never appear in the Library Manager.</li>
 </ul>
 
 <h2>Related Topics</h2>
 <ul>
-  <li><a href="ExportingLibraries.html">Exporting Libraries</a> — standard export workflow for installed libraries</li>
-  <li><a href="CreatingPackages.html">Creating Packages</a> — creating packages from a spec file</li>
-  <li><a href="LibraryGrouping.html">Library Grouping</a> — navigation groups and the locked Unsigned group</li>
-  <li><a href="DataModel.html">Data Model &amp; Persistence</a> — database collections including <code>unsigned_libs.json</code></li>
-  <li><a href="IntegrityVerification.html">Integrity Verification</a> — signing and hashing for installed and system libraries</li>
+  <li><a href="ExportingLibraries.html">Exporting Libraries</a> - standard export workflow for installed libraries</li>
+  <li><a href="CreatingPackages.html">Creating Packages</a> - creating packages from a spec file</li>
+  <li><a href="LibraryGrouping.html">Library Grouping</a> - navigation groups and the locked Unsigned group</li>
+  <li><a href="DataModel.html">Data Model &amp; Persistence</a> - database collections including <code>unsigned_libs.json</code></li>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a> - signing and hashing for installed and system libraries</li>
 </ul>
 </div>
 <div class="footer">

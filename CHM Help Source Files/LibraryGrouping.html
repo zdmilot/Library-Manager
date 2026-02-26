@@ -12,7 +12,7 @@
 <p>Venus Library Manager supports organizing installed libraries into custom groups for easier navigation and management. Groups appear as tabs in the main window, allowing you to filter the library view to show only libraries assigned to a specific group.</p>
 
 <h2>Default Groups (Hardcoded)</h2>
-<p>The application defines six built-in groups that are <b>hardcoded</b> in the application source code via a <code>DEFAULT_GROUPS</code> map. These groups are never stored in <code>groups.json</code> — they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the external JSON file to prevent duplicates.</p>
+<p>The application defines six built-in groups that are <b>hardcoded</b> in the application source code via a <code>DEFAULT_GROUPS</code> map. These groups are never stored in <code>groups.json</code> - they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the external JSON file to prevent duplicates.</p>
 
 <table>
 <thead><tr><th>ID</th><th>Name</th><th>Icon</th><th>Side</th><th>Purpose</th></tr></thead>
@@ -33,9 +33,9 @@
 
 <h3>Protection</h3>
 <ul>
-  <li><b>Non-deletable and non-renamable</b> — The Hamilton group has <code>"protected": true</code> in the <code>DEFAULT_GROUPS</code> map, preventing users from deleting or renaming it through the settings panel.</li>
-  <li><b>Always visible</b> — It appears in the left-side navigation between the System libraries group and user-created groups. It cannot be hidden.</li>
-  <li><b>Solid checkmark icon</b> — Uses the Font Awesome 5 Solid <code>fa-check-circle</code> icon to visually distinguish it from user-created groups.</li>
+  <li><b>Non-deletable and non-renamable</b> - The Hamilton group has <code>"protected": true</code> in the <code>DEFAULT_GROUPS</code> map, preventing users from deleting or renaming it through the settings panel.</li>
+  <li><b>Always visible</b> - It appears in the left-side navigation between the System libraries group and user-created groups. It cannot be hidden.</li>
+  <li><b>Solid checkmark icon</b> - Uses the Font Awesome 5 Solid <code>fa-check-circle</code> icon to visually distinguish it from user-created groups.</li>
 </ul>
 
 <h3>Password-Protected Author Name</h3>
@@ -55,7 +55,7 @@
 <div class="image-placeholder">PLACE IMAGE OF GROUP CREATION IN SETTINGS HERE</div>
 
 <h3>Renaming and Deleting Groups</h3>
-<p>Groups can be renamed or deleted from the Settings panel. Deleting a group does not delete the libraries assigned to it — they become "unassigned" and remain visible in the All view.</p>
+<p>Groups can be renamed or deleted from the Settings panel. Deleting a group does not delete the libraries assigned to it - they become "unassigned" and remain visible in the All view.</p>
 
 <h3>Reordering Groups</h3>
 <p>Drag-and-drop reordering is supported in the Settings panel. The order you set determines the tab display order in the main window.</p>
@@ -99,8 +99,8 @@
 <ul>
   <li>Uses the <code>far fa-times-circle</code> icon</li>
   <li>Appears before the System group in the left navigation</li>
-  <li><b>Locked</b> — libraries cannot be dragged into or out of it</li>
-  <li>Not stored in <code>tree.json</code> or <code>groups.json</code> — it is generated dynamically</li>
+  <li><b>Locked</b> - libraries cannot be dragged into or out of it</li>
+  <li>Not stored in <code>tree.json</code> or <code>groups.json</code> - it is generated dynamically</li>
   <li>Not included in the sortable group ordering</li>
   <li>Hidden automatically when the feature is disabled or no unsigned libraries exist</li>
 </ul>

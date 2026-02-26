@@ -51,11 +51,11 @@ const HSL_METADATA_EXTS = shared.HSL_METADATA_EXTS;
 const DEFAULT_LIB_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Library';
 const DEFAULT_MET_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Methods';
 
-// Package store — persists all imported .hxlibpkg files for repair & rollback
+// Package store - persists all imported .hxlibpkg files for repair & rollback
 const PACKAGE_STORE_DIR = path.join(DEFAULT_LIB_PATH, 'LibraryPackages');
 
 // ---------------------------------------------------------------------------
-// Default Groups (hardcoded — never stored in external JSON)
+// Default Groups (hardcoded - never stored in external JSON)
 // ---------------------------------------------------------------------------
 const DEFAULT_GROUPS = {
     gAll:      { _id: 'gAll',      name: 'All',      'icon-class': 'fa-home',         'default': true, navbar: 'left',  favorite: true  },
@@ -432,7 +432,7 @@ const hashFile = shared.computeFileHash;
 const computeLibraryHashes = shared.computeLibraryHashes;
 
 // ---------------------------------------------------------------------------
-// Package signing — HMAC-SHA256 integrity signatures for .hxlibpkg files
+// Package signing - HMAC-SHA256 integrity signatures for .hxlibpkg files
 // ---------------------------------------------------------------------------
 
 const PKG_SIGNING_KEY = shared.PKG_SIGNING_KEY;
@@ -440,10 +440,10 @@ const PKG_SIGNING_KEY = shared.PKG_SIGNING_KEY;
 // computeZipEntryHashes, signPackageZip, verifyPackageSignature are
 // imported from the shared module above.
 
-// verifyPackageSignature — see shared module import at top of file
+// verifyPackageSignature - see shared module import at top of file
 
 // ---------------------------------------------------------------------------
-// HSL function parser — extracts public function signatures from .hsl files
+// HSL function parser - extracts public function signatures from .hsl files
 // Ported from the VS Code HSL IntelliSense extension.
 // ---------------------------------------------------------------------------
 
@@ -870,7 +870,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         fs.mkdirSync(demoDestDir, { recursive: true });
     }
 
-    // Extract payload files — CHM files are extracted to the library directory
+    // Extract payload files - CHM files are extracted to the library directory
     let extractedCount = 0;
     zip.getEntries().forEach(function (entry) {
         if (entry.isDirectory || entry.entryName === 'manifest.json' || entry.entryName === 'signature.json') return;
@@ -896,7 +896,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
                 extractedCount++;
             }
         } else if (entry.entryName.startsWith('help_files/')) {
-            // Legacy/explicit help_files folder — extract to library directory
+            // Legacy/explicit help_files folder - extract to library directory
             const fname = entry.entryName.substring('help_files/'.length);
             if (fname) {
                 const safePath = safeZipExtractPath(libDestDir, fname);
@@ -907,10 +907,10 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
                 extractedCount++;
             }
         }
-        // icon/ entries are not extracted to disk — they remain embedded in manifest base64
+        // icon/ entries are not extracted to disk - they remain embedded in manifest base64
     });
 
-    // Upsert DB record — remove old entry if it exists
+    // Upsert DB record - remove old entry if it exists
     const existing = db.installed_libs.findOne({ library_name: manifest.library_name });
     if (existing) {
         db.installed_libs.remove({ _id: existing._id });
@@ -969,7 +969,7 @@ function ensureOutDir(filePath) {
 }
 
 // ---------------------------------------------------------------------------
-// Package store helpers — cache .hxlibpkg files for repair & version rollback
+// Package store helpers - cache .hxlibpkg files for repair & version rollback
 // ---------------------------------------------------------------------------
 
 /**
@@ -1112,13 +1112,13 @@ function cmdListLibs(args) {
         const status = lib.deleted ? ` [DELETED ${lib.deleted_date || ''}]` : '';
         console.log(`  ID:          ${lib._id}`);
         console.log(`  Name:        ${lib.library_name || '(unknown)'}${status}`);
-        console.log(`  Version:     ${lib.version      || '—'}`);
-        console.log(`  Author:      ${lib.author        || '—'}`);
-        console.log(`  Tags:        ${(lib.tags || []).join(', ') || '—'}`);
-        console.log(`  Lib path:    ${lib.lib_install_path  || '—'}`);
-        console.log(`  Demo path:   ${lib.demo_install_path || '—'}`);
-        console.log(`  Installed:   ${lib.installed_date    || '—'}`);
-        console.log(`  Installed By:${lib.installed_by       || '—'}`);
+        console.log(`  Version:     ${lib.version      || '-'}`);
+        console.log(`  Author:      ${lib.author        || '-'}`);
+        console.log(`  Tags:        ${(lib.tags || []).join(', ') || '-'}`);
+        console.log(`  Lib path:    ${lib.lib_install_path  || '-'}`);
+        console.log(`  Demo path:   ${lib.demo_install_path || '-'}`);
+        console.log(`  Installed:   ${lib.installed_date    || '-'}`);
+        console.log(`  Installed By:${lib.installed_by       || '-'}`);
         if ((lib.com_register_dlls || []).length > 0)
             console.log(`  COM DLLs:    ${lib.com_register_dlls.join(', ')}`);
         const pubFns = lib.public_functions || [];
@@ -1335,7 +1335,7 @@ function cmdImportArchive(args) {
             );
 
             results.success.push(`${libName} (${result.extractedCount} files)`);
-            console.log(`  + ${libName} — ${result.extractedCount} files extracted`);
+            console.log(`  + ${libName} - ${result.extractedCount} files extracted`);
 
             // Cache each package for repair & rollback
             if (!args['no-cache']) {
@@ -1464,9 +1464,9 @@ function cmdExportArchive(args) {
             if (found && !found.deleted && !isSystemLibrary(found._id)) {
                 targetLibs.push(found);
             } else if (found && isSystemLibrary(found._id)) {
-                process.stderr.write(`Warning: "${n}" is a system library and cannot be exported — skipping\n`);
+                process.stderr.write(`Warning: "${n}" is a system library and cannot be exported - skipping\n`);
             } else {
-                process.stderr.write(`Warning: library "${n}" not found or is deleted — skipping\n`);
+                process.stderr.write(`Warning: library "${n}" not found or is deleted - skipping\n`);
             }
         });
     } else if (args['ids']) {
@@ -1475,9 +1475,9 @@ function cmdExportArchive(args) {
             if (found && !found.deleted && !isSystemLibrary(found._id)) {
                 targetLibs.push(found);
             } else if (found && isSystemLibrary(found._id)) {
-                process.stderr.write(`Warning: library ID "${id}" is a system library and cannot be exported — skipping\n`);
+                process.stderr.write(`Warning: library ID "${id}" is a system library and cannot be exported - skipping\n`);
             } else {
-                process.stderr.write(`Warning: library ID "${id}" not found or is deleted — skipping\n`);
+                process.stderr.write(`Warning: library ID "${id}" not found or is deleted - skipping\n`);
             }
         });
     }
@@ -1730,6 +1730,16 @@ function cmdCreatePackage(args) {
         }
     }
 
+    // ---- Sanitize & validate tags ----
+    if (spec.tags && Array.isArray(spec.tags)) {
+        spec.tags = shared.sanitizeTags(spec.tags);
+        var tagCheck = shared.filterReservedTags(spec.tags);
+        if (tagCheck.removed.length > 0) {
+            die('Tags contain reserved keywords that cannot be used: ' + tagCheck.removed.join(', ') +
+                '\nThe reserved tag keywords are: ' + shared.RESERVED_TAGS.join(', '));
+        }
+    }
+
     const specDir = path.dirname(specPath);
 
     // ---- Resolve and validate file paths (relative to spec directory) ----
@@ -1785,13 +1795,13 @@ function cmdCreatePackage(args) {
     const comDlls = spec.com_register_dlls || [];
     const specHelpFiles = spec.help_files || [];
 
-    // Resolve help files (optional — basenames that should match library files)
+    // Resolve help files (optional - basenames that should match library files)
     const resolvedHelpFiles = specHelpFiles.map(f => path.resolve(specDir, f));
     for (const fp of resolvedHelpFiles) {
         if (!fs.existsSync(fp)) die(`Help file not found: ${fp}`);
     }
 
-    // Build manifest — include help_files and keep CHMs in library_files for backward compat
+    // Build manifest - include help_files and keep CHMs in library_files for backward compat
     const libBasenames = resolvedLibFiles.map(f => path.basename(f));
     const helpBasenames = resolvedHelpFiles.map(f => path.basename(f));
     const manifestLibFiles = libBasenames.slice();
@@ -2146,8 +2156,8 @@ function cmdListVersions(args) {
     entries.forEach(function (e, i) {
         const sizeKB = (e.size / 1024).toFixed(1);
         console.log(`  [${i + 1}] Version: ${e.version}`);
-        console.log(`      Author:  ${e.author || '\u2014'}`);
-        console.log(`      Created: ${e.created || '\u2014'}`);
+        console.log(`      Author:  ${e.author || '-'}`);
+        console.log(`      Created: ${e.created || '-'}`);
         console.log(`      Cached:  ${e.cached}`);
         console.log(`      Size:    ${sizeKB} KB`);
         console.log(`      File:    ${e.file}`);

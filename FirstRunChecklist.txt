@@ -1,4 +1,4 @@
-First Run Checklist — Venus Library Manager
+First Run Checklist - Venus Library Manager
 =============================================
 
 The following actions are performed automatically on the very first launch
@@ -22,9 +22,9 @@ not yet set in db/settings.json):
    - If the registry InstallDate is missing, falls back to the creation
      time of C:\Program Files (x86)\HAMILTON as a proxy.
    - Stamps every system library in the in-memory array with:
-       installed_date  — VENUS install date (UTC ISO 8601)
-       installed_by    — "System"
-       venus_version   — e.g. "6.2.2.4006"
+       installed_date  - VENUS install date (UTC ISO 8601)
+       installed_by    - "System"
+       venus_version   - e.g. "6.2.2.4006"
    - Writes system_library_metadata.json to the user data directory
      (NOT the program directory) so metadata persists across restarts
      without modifying app-bundled files.
@@ -40,7 +40,7 @@ not yet set in db/settings.json):
      package store (C:\Program Files (x86)\HAMILTON\Library\LibraryPackages\<LibName>\),
      a signed .hxlibpkg backup package is created containing:
        • All discovered library files (hsl, hs_, bmp, ico, stp, sub, etc.)
-       • All help files (chm) — stored in a help_files/ folder in the ZIP
+       • All help files (chm) - stored in a help_files/ folder in the ZIP
        • A manifest.json with version "system", author "Hamilton", and
          the tag "backup"
        • A signature.json (HMAC-SHA256 signed) for integrity verification
@@ -63,7 +63,7 @@ not yet set in db/settings.json):
 
 -----------------------------------------------------------------------
 
-System Library Repair — How It Works
+System Library Repair - How It Works
 -------------------------------------
 Once the first-run backup has been created, users can repair any system
 library whose files have been modified or corrupted:

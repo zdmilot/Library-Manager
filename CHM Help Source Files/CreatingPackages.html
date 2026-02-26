@@ -9,7 +9,7 @@
 <div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; Creating Packages</div>
 
 <h2>Overview</h2>
-<p>Venus Library Manager provides two ways to create a <code>.hxlibpkg</code> package from raw library source files: the GUI Library Packager and the CLI <code>create-package</code> command. Both produce identical output — a standards-compliant <code>.hxlibpkg</code> ready for distribution and import. All packages are automatically signed with an HMAC-SHA256 integrity signature (see <a href="IntegrityVerification.html">Integrity Verification</a>).</p>
+<p>Venus Library Manager provides two ways to create a <code>.hxlibpkg</code> package from raw library source files: the GUI Library Packager and the CLI <code>create-package</code> command. Both produce identical output - a standards-compliant <code>.hxlibpkg</code> ready for distribution and import. All packages are automatically signed with an HMAC-SHA256 integrity signature (see <a href="IntegrityVerification.html">Integrity Verification</a>).</p>
 
 <h2>GUI Library Packager</h2>
 <div class="image-placeholder">PLACE IMAGE OF LIBRARY PACKAGER MAIN VIEW HERE</div>
@@ -19,12 +19,12 @@
   <li><b>Open the Library Packager</b> from the application menu or toolbar</li>
   <li><b>Enter Metadata:</b>
     <ul>
-      <li><b>Author</b> (required) — Your name or team name</li>
-      <li><b>Organization</b> (optional) — Your company or institution</li>
-      <li><b>Library Version</b> (required) — A version string (e.g., <code>1.0.0</code>)</li>
-      <li><b>VENUS Compatibility</b> (optional) — Target VENUS version range (e.g., <code>4.7+</code>)</li>
-      <li><b>Description</b> (optional) — A human-readable summary of the library</li>
-      <li><b>Tags</b> (optional) — Searchable keywords</li>
+      <li><b>Author</b> (required) - Your name or team name</li>
+      <li><b>Organization</b> (optional) - Your company or institution</li>
+      <li><b>Library Version</b> (required) - A version string (e.g., <code>1.0.0</code>)</li>
+      <li><b>VENUS Compatibility</b> (optional) - Target VENUS version range (e.g., <code>4.7+</code>)</li>
+      <li><b>Description</b> (optional) - A human-readable summary of the library</li>
+      <li><b>Tags</b> (optional) - Searchable keywords. <b>Note:</b> The keywords <code>System</code> and <code>Hamilton</code> are <b>reserved</b> and cannot be used as tags (case-insensitive). If entered, they are automatically removed and an error message is displayed. See <a href="PackageSpecSchema.html">Package Spec JSON Schema</a> for details.</li>
     </ul>
   </li>
   <li><b>Add Library Files:</b> Add individual files or entire folders. Supported types include <code>.hsl</code>, <code>.hs_</code>, <code>.hsi</code>, <code>.smt</code>, <code>.stp</code>, <code>.sub</code>, <code>.dll</code>, <code>.bmp</code>, <code>.chm</code>, and others.</li>
@@ -46,7 +46,7 @@
 <h3>Package Icon Compositing</h3>
 <p>When the package is built, a <b>composited icon</b> is generated for the file-system representation of the <code>.hxlibpkg</code> file (the <code>icon/</code> directory inside the ZIP). The <b>manifest</b> stores the <b>raw, uncomposited</b> library image so that imported libraries display your original artwork without any overlay:</p>
 <ul>
-  <li><b>With a selected image:</b> Your library image is drawn at full size, then a <b>grayscale Library Manager logo</b> is overlaid in the bottom-right corner at one-third of the image size. This composited version is used only as the Windows file-system icon for the <code>.hxlibpkg</code> file — similar to how Windows draws shortcut arrows on shortcut icons.</li>
+  <li><b>With a selected image:</b> Your library image is drawn at full size, then a <b>grayscale Library Manager logo</b> is overlaid in the bottom-right corner at one-third of the image size. This composited version is used only as the Windows file-system icon for the <code>.hxlibpkg</code> file - similar to how Windows draws shortcut arrows on shortcut icons.</li>
   <li><b>Without an image:</b> If no image was selected or auto-detected, a full-size grayscale Library Manager logo is used as the file-system icon.</li>
 </ul>
 <p>The compositing is performed using the HTML5 Canvas API at package build time. The grayscale logo is a pre-rendered static asset (<code>assets/app_logo_gray_128.png</code>). See <a href="VisualIdentity.html">Visual Identity &amp; Assets</a> for details on how assets are generated.</p>

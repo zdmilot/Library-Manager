@@ -29,18 +29,18 @@
 <h2>Library Cards</h2>
 <p>Each installed library is displayed as a visual card showing:</p>
 <ul>
-  <li><b>Library Icon/Image</b> — The embedded library image, or a default icon if none was provided</li>
+  <li><b>Library Icon/Image</b> - The embedded library image, or a default icon if none was provided</li>
   <li><b>Library Name</b> and <b>Version</b></li>
   <li><b>Author</b> and <b>Description</b> (truncated)</li>
-  <li><b>Tags</b> — Searchable keyword labels</li>
+  <li><b>Tags</b> - Searchable keyword labels</li>
   <li><b>Status Badges:</b>
     <ul>
-      <li><b>COM badge</b> — Indicates the library requires COM DLL registration</li>
-      <li><b>COM warning</b> — COM registration failed or was incomplete</li>
-      <li><b>Deleted badge</b> — Library has been soft-deleted</li>
+      <li><b>COM badge</b> - Indicates the library requires COM DLL registration</li>
+      <li><b>COM warning</b> - COM registration failed or was incomplete</li>
+      <li><b>Deleted badge</b> - Library has been soft-deleted</li>
     </ul>
   </li>
-  <li><b>Integrity Indicator</b> — Shows whether tracked files have been modified, are missing, or pass verification</li>
+  <li><b>Integrity Indicator</b> - Shows whether tracked files have been modified, are missing, or pass verification</li>
 </ul>
 <div class="image-placeholder">PLACE IMAGE OF A LIBRARY CARD WITH ANNOTATIONS HERE</div>
 
@@ -98,7 +98,7 @@
 <ol>
   <li>Select a <code>.hxlibarch</code> file</li>
   <li>Review all contained packages in the confirmation dialog</li>
-  <li>Each package's signature is verified before installation — packages that fail verification are automatically rejected and skipped</li>
+  <li>Each package's signature is verified before installation - packages that fail verification are automatically rejected and skipped</li>
   <li>Each passing package is extracted and installed sequentially</li>
   <li>An aggregate summary reports success/failure for each library</li>
 </ol>
@@ -127,7 +127,7 @@
 <p>Access the compiled help file (<code>Venus Library Manager.chm</code>) from the overflow menu. Video tutorial infrastructure is also available for in-app help playback.</p>
 
 <h2>Verify &amp; Repair Tool</h2>
-<p>The overflow menu includes a <b>Verify &amp; Repair</b> tool that provides a comprehensive integrity scan and one-click repair for <b>all</b> libraries — both Hamilton system libraries and user-installed libraries. See <a href="IntegrityVerification.html">Integrity Verification</a> for the full technical documentation.</p>
+<p>The overflow menu includes a <b>Verify &amp; Repair</b> tool that provides a comprehensive integrity scan and one-click repair for <b>all</b> libraries - both Hamilton system libraries and user-installed libraries. See <a href="IntegrityVerification.html">Integrity Verification</a> for the full technical documentation.</p>
 
 <h3>How It Works</h3>
 <ol>
@@ -137,13 +137,13 @@
       <li><b>User-installed libraries</b> are verified by recomputing SHA-256 hashes for all tracked files and comparing them against the stored baselines.</li>
     </ul>
   </li>
-  <li><b>Report:</b> Results are displayed in two sections — <b>System Libraries</b> (with a [System] badge) followed by <b>Installed Libraries</b>. Each library shows one of three statuses: <b>OK</b> (green), <b>WARNING</b> (yellow), or <b>FAILED</b> (red), along with specific error details per file.</li>
+  <li><b>Report:</b> Results are displayed in two sections - <b>System Libraries</b> (with a [System] badge) followed by <b>Installed Libraries</b>. Each library shows one of three statuses: <b>OK</b> (green), <b>WARNING</b> (yellow), or <b>FAILED</b> (red), along with specific error details per file.</li>
   <li><b>Repair:</b> For any library with issues, if a cached or backup <code>.hxlibpkg</code> exists in the package store, a <b>Repair</b> button re-extracts the original files. The cached package's HMAC-SHA256 signature is verified before repair to prevent restoring from a corrupt source.</li>
   <li><b>Batch Repair:</b> A <b>Repair Selected</b> button repairs all failed libraries (system and user) in one operation. A confirmation dialog lists the libraries before proceeding, and a summary is shown afterward.</li>
 </ol>
 
 <h3>First-Run System Library Backup</h3>
-<p>On the very first launch, Venus Library Manager automatically creates a signed <code>.hxlibpkg</code> backup for every Hamilton system library and stores it in the package store. This ensures that system libraries can always be repaired even though they were not originally imported through the application. See <a href="IntegrityVerification.html#repair">Integrity Verification — First-Run System Library Backup</a> for details.</p>
+<p>On the very first launch, Venus Library Manager automatically creates a signed <code>.hxlibpkg</code> backup for every Hamilton system library and stores it in the package store. This ensures that system libraries can always be repaired even though they were not originally imported through the application. See <a href="IntegrityVerification.html#repair">Integrity Verification - First-Run System Library Backup</a> for details.</p>
 
 <h3>Repair from the Detail Modal</h3>
 <p>You can also repair a single library directly from its detail modal. Open any library card and scroll to the <b>File Integrity</b> section. If errors are detected and a backup/cached package exists, a <b>Repair from Backup</b> button appears below the error list. This works for both system and user-installed libraries.</p>

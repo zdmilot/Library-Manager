@@ -17,7 +17,7 @@ var fs = require('fs');
 var path = require('path');
 var shared = require('../../lib/shared');
 
-/** Parse Hamilton's metadata footer — delegated to shared module */
+/** Parse Hamilton's metadata footer - delegated to shared module */
 var parseHslMetadataFooter = shared.parseHslMetadataFooter;
 
 /**

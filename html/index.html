@@ -184,9 +184,9 @@
 										</div>
 									</div>
 									<div class="form-group row mb-0">
-										<label class="col-sm-4 col-form-label col-form-label-sm">Tags</label>
+										<label class="col-sm-4 col-form-label col-form-label-sm">Default Tags</label>
 										<div class="col-sm-8">
-											<input type="text" class="form-control form-control-sm" id="pkg-tags" placeholder="Comma-separated (e.g. pipetting, assay, PCR)">
+											<input type="text" class="form-control form-control-sm" id="pkg-tags" placeholder="Default tags (comma-separated, e.g. pipetting, assay, pcr)">
 										</div>
 									</div>
 								</div>
@@ -315,23 +315,37 @@
 
 	<!----modal delete start--->
 	<div class="modal" tabindex="-1" role="dialog" id="deleteModal">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title">Delete ?</h5>
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:480px;">
+			<div class="modal-content delete-confirm-content">
+				<div class="modal-header delete-confirm-header">
+					<div class="d-flex align-items-center">
+						<div class="delete-confirm-icon mr-3">
+							<i class="fas fa-exclamation-triangle fa-2x"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Delete <span class="text-capitalize delete-linkorgroup">group</span></h5>
+							<span class="delete-item-name-header"></span>
+						</div>
+					</div>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 					</button>
 				</div>
-				<div class="modal-body">
-					<p><span class="text-capitalize linkorgroup"></span></p>
-					<h4 class="name"></h4>
+				<div class="modal-body delete-confirm-body">
+					<div class="delete-confirm-warning-box">
+						<p class="mb-2"><strong>This action cannot be undone.</strong></p>
+						<p class="delete-item-consequences mb-0"></p>
+					</div>
+					<div class="delete-item-input-section mt-3">
+						<label class="delete-confirm-label">To confirm, type "<strong class="delete-item-expected-text"></strong>" in the box below</label>
+						<input type="text" class="form-control delete-confirm-input delete-item-input" autocomplete="off" spellcheck="false">
+					</div>
 				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-danger btn-delete solid-button-shape"
-						>Delete</button>
-					<button type="button" class="btn btn-secondary solid-button-shape"
-						data-dismiss="modal">Cancel</button>
+				<div class="modal-footer delete-confirm-footer">
+					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-danger delete-confirm-btn btn-delete" disabled>
+						<i class="fas fa-trash-alt mr-1"></i>I understand, delete this <span class="text-lowercase delete-linkorgroup">group</span>
+					</button>
 				</div>
 			</div>
 		</div>
@@ -905,7 +919,7 @@
 					</div>
 					<div class="detail-section lib-detail-tags-section">
 						<h6 class="detail-section-label">Tags</h6>
-						<p class="lib-detail-tags text-muted"></p>
+						<div class="lib-detail-tags"></div>
 					</div>
 					<div class="detail-section lib-detail-integrity-section d-none">
 						<h6 class="detail-section-label">File Integrity</h6>
@@ -1276,7 +1290,7 @@
 								<input type="checkbox" class="custom-control-input" id="chk_includeUnsignedLibs">
 								<label class="custom-control-label" for="chk_includeUnsignedLibs">Include existing unsigned libraries on the front page</label>
 							</div>
-							<small class="text-muted ml-4 d-block mb-2">Scans the Library folder for .hsl and .smt files that are not part of a signed package or system library. These can be edited and quickly exported as .hxlibpkg packages.</small>
+							<small class="text-muted ml-4 d-block mb-2">Scans the Library folder for .hsl and .smt files that are not part of a signed package or system library. Files and folders starting with ~ or . are automatically excluded (temporary/hidden files). These can be edited and quickly exported as .hxlibpkg packages.</small>
 							<button class="btn btn-sm btn-outlined ml-4" id="btn-scan-unsigned-libs" disabled><i class="fas fa-search mr-1"></i>Scan Now</button>
 							<i class="fas fa-circle-notch fa-spin ml-2 unsigned-scan-spinner" style="display:none; color:#6c757d;"></i>
 							<i class="fas fa-check-circle ml-2 unsigned-scan-done" style="display:none; color:#28a745;"></i>
@@ -1378,9 +1392,9 @@
 								</div>
 							</div>
 							<div class="form-group row mb-0">
-								<label class="col-sm-4 col-form-label col-form-label-sm">Tags</label>
+								<label class="col-sm-4 col-form-label col-form-label-sm">Default Tags</label>
 								<div class="col-sm-8">
-									<input type="text" class="form-control form-control-sm" id="ulib-tags" placeholder="Comma-separated (e.g. pipetting, assay)">
+									<input type="text" class="form-control form-control-sm" id="ulib-tags" placeholder="Default tags (comma-separated, e.g. pipetting, assay)">
 								</div>
 							</div>
 						</div>
@@ -1610,6 +1624,60 @@
 	</div>
 	<!---- Modal Import Success end --->
 
+	<!---- Modal Archive Conflict Resolution start --->
+	<div class="modal" tabindex="-1" role="dialog" id="archiveConflictModal">
+		<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+			<div class="modal-content rollback-confirm-content">
+				<div class="modal-header rollback-confirm-header">
+					<div class="d-flex align-items-center">
+						<div class="rollback-confirm-icon mr-3">
+							<i class="fas fa-exclamation-triangle fa-2x"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Archive Conflict Resolution</h5>
+							<span class="rollback-confirm-libname-header"><span class="arch-conflict-count">0</span> conflict(s) detected</span>
+						</div>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body rollback-confirm-body">
+					<div class="rollback-confirm-warning-box mb-3">
+						<p class="mb-0"><strong>Potential destructive actions detected.</strong> For each conflicting library, choose whether to skip it or overwrite the installed version.</p>
+					</div>
+					<div class="d-flex justify-content-end mb-2" style="gap:8px;">
+						<button type="button" class="btn btn-sm btn-outlined arch-conflict-skip-all">Set all to Skip</button>
+						<button type="button" class="btn btn-sm btn-outlined arch-conflict-overwrite-all">Set all to Overwrite</button>
+					</div>
+					<div class="table-responsive">
+						<table class="table table-sm table-bordered arch-conflict-table mb-0">
+							<thead>
+								<tr>
+									<th>Library</th>
+									<th>Installed</th>
+									<th>Incoming</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody class="arch-conflict-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+				<div class="modal-footer rollback-confirm-footer">
+					<span class="arch-conflict-hint text-muted mr-auto" style="font-size:0.8rem;">
+						Choose an action for every conflict to continue.
+					</span>
+					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel import</button>
+					<button type="button" class="btn rollback-confirm-btn arch-conflict-apply" disabled>
+						<i class="fas fa-check mr-1"></i>Apply and continue import
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Archive Conflict Resolution end --->
+
 	<!---- Modal Author Password Prompt start --->
 	<div class="modal" tabindex="-1" role="dialog" id="authorPasswordModal" data-backdrop="static" data-keyboard="false">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 420px;">
@@ -1810,8 +1878,8 @@
 					</div>
 				</div>
 				<div class="modal-footer pkg-filetype-warn-footer">
-					<button type="button" class="btn btn-primary pkg-filetype-warn-no">No, remove them</button>
 					<button type="button" class="btn btn-outline-secondary btn-sm pkg-filetype-warn-yes">Yes, I'm sure</button>
+					<button type="button" class="btn btn-primary pkg-filetype-warn-no">No, remove them</button>
 				</div>
 			</div>
 		</div>

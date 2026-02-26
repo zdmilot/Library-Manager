@@ -1,5 +1,5 @@
 /**
- * build_icons.js — Apply pre-built ICO to the .exe
+ * build_icons.js - Apply pre-built ICO to the .exe
  * ==================================================
  * Uses resedit/pe-library to fully replace ALL icon resources in
  * the .exe with our single 256×256 ICO. This removes the leftover
@@ -49,7 +49,7 @@ function parseIco(icoBuffer) {
 // ── Main ───────────────────────────────────────────────────────
 async function main() {
   console.log("╔══════════════════════════════════════════════════════╗");
-  console.log("║   Venus Library Manager — Apply Icon to .exe        ║");
+  console.log("║   Venus Library Manager - Apply Icon to .exe        ║");
   console.log("╚══════════════════════════════════════════════════════╝");
 
   // Validate files exist
@@ -136,7 +136,7 @@ async function main() {
     vi.outputToResourceEntries(res.entries);
     console.log(`\nVersion info updated: InternalName / ProductName / FileDescription → "Venus Library Manager"`);
   } else {
-    console.log(`\n[WARN] No version info found in .exe — skipping version string update.`);
+    console.log(`\n[WARN] No version info found in .exe - skipping version string update.`);
   }
 
   // Write back to the .exe
@@ -148,7 +148,7 @@ async function main() {
   const verifyExe = NtExecutable.from(fs.readFileSync(EXE_PATH));
   const verifyRes = NtExecutableResource.from(verifyExe);
   const verifyGroups = Resource.IconGroupEntry.fromEntries(verifyRes.entries);
-  console.log(`\nVerification — icon groups in .exe: ${verifyGroups.length}`);
+  console.log(`\nVerification - icon groups in .exe: ${verifyGroups.length}`);
   verifyGroups.forEach((group) => {
     const label = typeof group.id === "string" ? group.id : `#${group.id}`;
     group.icons.forEach((icon) => {

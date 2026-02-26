@@ -27,7 +27,7 @@
 <p>The Export Choice Modal automatically scans the library's HSL source files for <code>#include</code> directives and recursively resolves them to user-installed libraries. A summary is displayed beneath the "Export with All Dependencies" option showing the number of dependencies found and their names.</p>
 
 <h3>Disabled State</h3>
-<p>If the library has <b>no exportable user-installed dependencies</b>, the "Export with All Dependencies" option is greyed out and cannot be selected. Only user-installed libraries can be included in a dependency export — system libraries and unresolved references are excluded.</p>
+<p>If the library has <b>no exportable user-installed dependencies</b>, the "Export with All Dependencies" option is greyed out and cannot be selected. Only user-installed libraries can be included in a dependency export - system libraries and unresolved references are excluded.</p>
 
 <h2>Single Library Export (<code>.hxlibpkg</code>)</h2>
 
@@ -36,7 +36,7 @@
   <li>Click on a library card to open the <b>Library Detail Modal</b></li>
   <li>Click the <b>Export Library</b> button</li>
   <li>In the Export Choice Modal, select <b>Export Single Library</b></li>
-  <li>Choose a save location — the suggested filename is <code>&lt;LibraryName&gt;.hxlibpkg</code></li>
+  <li>Choose a save location - the suggested filename is <code>&lt;LibraryName&gt;.hxlibpkg</code></li>
   <li>Venus Library Manager verifies that all expected library files exist on disk before exporting</li>
   <li>A new <code>.hxlibpkg</code> is built from the current files and metadata</li>
 </ol>
@@ -49,7 +49,7 @@
   <li>All library files in the <code>library/</code> directory (including <code>.chm</code> help files)</li>
   <li>All demo method files in the <code>demo_methods/</code> directory</li>
   <li>Metadata fields: tags, base64-encoded image, COM DLL list</li>
-  <li><code>signature.json</code> — HMAC-SHA256 integrity signature covering all package entries</li>
+  <li><code>signature.json</code> - HMAC-SHA256 integrity signature covering all package entries</li>
 </ul>
 
 <h3>Restrictions</h3>
@@ -69,7 +69,7 @@
   <li>Click on a library card to open the <b>Library Detail Modal</b></li>
   <li>Click the <b>Export Library</b> button</li>
   <li>In the Export Choice Modal, select <b>Export with All Dependencies</b></li>
-  <li>Choose a save location — the suggested filename is <code>&lt;LibraryName&gt;_with_dependencies.hxlibarch</code></li>
+  <li>Choose a save location - the suggested filename is <code>&lt;LibraryName&gt;_with_dependencies.hxlibarch</code></li>
   <li>Venus Library Manager recursively resolves all dependencies and packages everything into a single archive</li>
 </ol>
 <div class="image-placeholder">PLACE IMAGE OF EXPORT CHOICE MODAL WITH DEPENDENCIES LISTED HERE</div>
@@ -95,9 +95,9 @@
 
 <h3>What Is NOT Included</h3>
 <ul>
-  <li><b>System libraries</b> (Hamilton built-in) — these are assumed to exist on the target system</li>
-  <li><b>Unresolved dependencies</b> — includes that cannot be matched to any installed library</li>
-  <li><b>Unsigned libraries</b> — libraries discovered via the unsigned scanner but not formally installed</li>
+  <li><b>System libraries</b> (Hamilton built-in) - these are assumed to exist on the target system</li>
+  <li><b>Unresolved dependencies</b> - includes that cannot be matched to any installed library</li>
+  <li><b>Unsigned libraries</b> - libraries discovered via the unsigned scanner but not formally installed</li>
 </ul>
 
 <div class="note">
@@ -124,7 +124,7 @@
 <ul>
   <li>An <code>archive_manifest.json</code> with archive metadata, library count, included library names, and a base64-encoded purple archive icon</li>
   <li>One <code>.hxlibpkg</code> entry per selected library, each with its own <code>manifest.json</code>, payload, and <code>signature.json</code> integrity signature</li>
-  <li>An <code>icon/archive_icon.png</code> file — a distinctive purple icon (three stacked purple diamonds) that visually identifies the file as a multi-library archive</li>
+  <li>An <code>icon/archive_icon.png</code> file - a distinctive purple icon (three stacked purple diamonds) that visually identifies the file as a multi-library archive</li>
 </ul>
 <p>The archive icon is loaded from the static asset <code>assets/archive_icon_128.png</code> at export time. See <a href="VisualIdentity.html">Visual Identity &amp; Assets</a> for details.</p>
 

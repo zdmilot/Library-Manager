@@ -11,9 +11,9 @@
 <h2>Overview</h2>
 <p>Venus Library Manager provides a multi-layered integrity system to detect when library files have been modified, tampered with, or deleted. The system uses three complementary mechanisms depending on the context:</p>
 <ol>
-  <li><b>SHA-256 file hashing</b> — tracks individual files in user-installed libraries after import</li>
-  <li><b>Hamilton metadata footer verification</b> — checks Hamilton's built-in <code>$$valid$$</code> / <code>$$checksum$$</code> fields in system library HSL files</li>
-  <li><b>HMAC-SHA256 package signing</b> — signs entire <code>.hxlibpkg</code> packages at creation time to detect corruption or tampering during distribution</li>
+  <li><b>SHA-256 file hashing</b> - tracks individual files in user-installed libraries after import</li>
+  <li><b>Hamilton metadata footer verification</b> - checks Hamilton's built-in <code>$$valid$$</code> / <code>$$checksum$$</code> fields in system library HSL files</li>
+  <li><b>HMAC-SHA256 package signing</b> - signs entire <code>.hxlibpkg</code> packages at creation time to detect corruption or tampering during distribution</li>
 </ol>
 <p>Together, these mechanisms ensure that library files remain unchanged from the time they were installed, that system libraries match Hamilton's original release state, and that packages are intact before import.</p>
 
@@ -30,7 +30,7 @@
 <tbody>
 <tr><td><code>.hsl</code>, <code>.hs_</code>, <code>.sub</code></td><td>SHA-256 of all content <b>except the last line</b> (line endings normalised to <code>\n</code>)</td><td>The last line contains Hamilton's metadata footer (timestamps, checksums) which changes whenever a file is re-saved in the VENUS Method Editor, even without functional changes. Excluding it prevents false positives.</td></tr>
 <tr><td><code>.dll</code> (COM-registered only)</td><td>SHA-256 of the entire binary file</td><td>DLLs have no metadata footer, so the full content is hashed.</td></tr>
-<tr><td>Other (<code>.bmp</code>, <code>.ico</code>, <code>.chm</code>, <code>.stp</code>)</td><td><b>Not hashed</b></td><td>Binary resource files do not contain executable logic — their modification does not affect library behavior.</td></tr>
+<tr><td>Other (<code>.bmp</code>, <code>.ico</code>, <code>.chm</code>, <code>.stp</code>)</td><td><b>Not hashed</b></td><td>Binary resource files do not contain executable logic - their modification does not affect library behavior.</td></tr>
 </tbody>
 </table>
 
@@ -46,10 +46,10 @@
 <thead><tr><th>State</th><th>Icon</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td><b>All tracked files pass</b></td><td style="color:#5cb85c;">&#10004;</td><td>Every tracked file exists and its hash matches the stored baseline.</td></tr>
-<tr><td><b>File modified</b></td><td style="color:#d9534f;">&#10008;</td><td>A file exists on disk but its SHA-256 hash no longer matches — content has been changed since installation.</td></tr>
+<tr><td><b>File modified</b></td><td style="color:#d9534f;">&#10008;</td><td>A file exists on disk but its SHA-256 hash no longer matches - content has been changed since installation.</td></tr>
 <tr><td><b>File missing</b></td><td style="color:#d9534f;">&#10008;</td><td>A tracked file no longer exists at its expected path.</td></tr>
-<tr><td><b>No stored hash</b></td><td style="color:#f0ad4e;">&#9888;</td><td>Warning — a qualifying file exists but no hash was stored for it (may have been added to the library after initial import).</td></tr>
-<tr><td><b>Legacy / no-hash library</b></td><td style="color:#f0ad4e;">&#9888;</td><td>Warning — the library was imported before integrity tracking was added and has no stored hashes. The library still passes validation but shows a warning.</td></tr>
+<tr><td><b>No stored hash</b></td><td style="color:#f0ad4e;">&#9888;</td><td>Warning - a qualifying file exists but no hash was stored for it (may have been added to the library after initial import).</td></tr>
+<tr><td><b>Legacy / no-hash library</b></td><td style="color:#f0ad4e;">&#9888;</td><td>Warning - the library was imported before integrity tracking was added and has no stored hashes. The library still passes validation but shows a warning.</td></tr>
 </tbody>
 </table>
 
@@ -95,8 +95,8 @@
 <tr><td>File no longer exists on disk</td><td>File missing</td><td style="color:#d9534f;">Error</td></tr>
 <tr><td>Footer removed entirely (baseline had <code>valid=1</code>)</td><td>Metadata footer removed</td><td style="color:#d9534f;">Error</td></tr>
 <tr><td>Footer removed (baseline had <code>valid≠1</code>)</td><td>Metadata footer removed</td><td style="color:#f0ad4e;">Warning</td></tr>
-<tr><td><code>valid</code> changed from <code>1</code> to <code>0</code></td><td>Valid flag changed — file was re-saved or unlocked</td><td style="color:#d9534f;">Error</td></tr>
-<tr><td><code>checksum</code> differs from baseline</td><td>Checksum changed — file content was modified</td><td style="color:#d9534f;">Error</td></tr>
+<tr><td><code>valid</code> changed from <code>1</code> to <code>0</code></td><td>Valid flag changed - file was re-saved or unlocked</td><td style="color:#d9534f;">Error</td></tr>
+<tr><td><code>checksum</code> differs from baseline</td><td>Checksum changed - file content was modified</td><td style="color:#d9534f;">Error</td></tr>
 <tr><td>All fields match baseline</td><td>OK</td><td style="color:#5cb85c;">Pass</td></tr>
 <tr><td>No baseline exists for this library</td><td>No integrity baseline stored</td><td style="color:#f0ad4e;">Warning</td></tr>
 </tbody>
@@ -121,11 +121,11 @@
   <li>An HMAC-SHA256 is computed over the canonical JSON serialization of that map using a fixed application key.</li>
   <li>A <code>signature.json</code> file is added to the ZIP containing:
     <ul>
-      <li><code>format_version</code> — always <code>"1.0"</code></li>
-      <li><code>algorithm</code> — always <code>"HMAC-SHA256"</code></li>
-      <li><code>signed_date</code> — ISO 8601 timestamp</li>
-      <li><code>file_hashes</code> — the per-entry SHA-256 hash map</li>
-      <li><code>hmac</code> — the HMAC-SHA256 digest</li>
+      <li><code>format_version</code> - always <code>"1.0"</code></li>
+      <li><code>algorithm</code> - always <code>"HMAC-SHA256"</code></li>
+      <li><code>signed_date</code> - ISO 8601 timestamp</li>
+      <li><code>file_hashes</code> - the per-entry SHA-256 hash map</li>
+      <li><code>hmac</code> - the HMAC-SHA256 digest</li>
     </ul>
   </li>
 </ol>
@@ -135,7 +135,7 @@
 <table>
 <thead><tr><th>Phase</th><th>Check</th><th>Failure Meaning</th></tr></thead>
 <tbody>
-<tr><td><b>1. Presence</b></td><td>Does <code>signature.json</code> exist in the ZIP?</td><td>Package is <b>unsigned</b> — it was created by a third party or an older version. Import proceeds with a notice; the package is not considered failed.</td></tr>
+<tr><td><b>1. Presence</b></td><td>Does <code>signature.json</code> exist in the ZIP?</td><td>Package is <b>unsigned</b> - it was created by a third party or an older version. Import proceeds with a notice; the package is not considered failed.</td></tr>
 <tr><td><b>2. HMAC</b></td><td>Recompute HMAC from the stored <code>file_hashes</code> and compare to the stored <code>hmac</code>.</td><td><code>signature.json</code> itself has been tampered with.</td></tr>
 <tr><td><b>3. Content</b></td><td>Recompute SHA-256 of each actual ZIP entry and compare to the signed hashes.</td><td>Individual files inside the package have been modified, removed, or injected since signing.</td></tr>
 </tbody>
@@ -168,7 +168,7 @@
       <li>All help files (<code>.chm</code>) are packaged under a <code>help_files/</code> folder in the ZIP.</li>
       <li>A <code>manifest.json</code> is created with version <code>"system"</code>, author <code>"Hamilton"</code>, and the tags <code>["system", "hamilton", "backup"]</code>. It also includes the flag <code>is_system_backup: true</code>.</li>
       <li>The ZIP is signed using the same HMAC-SHA256 mechanism as regular packages (via <code>signPackageZip</code>).</li>
-      <li><b>No demo method files</b> are included — system libraries do not ship with demo methods.</li>
+      <li><b>No demo method files</b> are included - system libraries do not ship with demo methods.</li>
       <li>If the library has a <code>.bmp</code> file, it is embedded in the manifest as a Base64-encoded library image.</li>
     </ul>
   </li>
@@ -208,7 +208,7 @@
 <p>The repair process follows the same steps regardless of whether the library is a user-installed library or a system library:</p>
 <ol>
   <li>The newest cached <code>.hxlibpkg</code> for the library is located in the package store.</li>
-  <li>The package's HMAC-SHA256 signature is verified. If the signature is present and <b>invalid</b>, the repair is aborted — repairing from a corrupt source would make matters worse.</li>
+  <li>The package's HMAC-SHA256 signature is verified. If the signature is present and <b>invalid</b>, the repair is aborted - repairing from a corrupt source would make matters worse.</li>
   <li>The package's <code>manifest.json</code> is read and validated.</li>
   <li>Files are extracted from the ZIP back to their original locations, overwriting the modified or corrupted files on disk:
     <ul>
@@ -225,8 +225,8 @@
 <thead><tr><th>Aspect</th><th>User Library Repair</th><th>System Library Repair</th></tr></thead>
 <tbody>
 <tr><td><b>Backup source</b></td><td>Cached <code>.hxlibpkg</code> from original import</td><td>Backup <code>.hxlibpkg</code> created at first run</td></tr>
-<tr><td><b>Demo methods</b></td><td>Re-extracted if present in the cached package</td><td>Not applicable — system libraries have no demo methods</td></tr>
-<tr><td><b>Hash update after repair</b></td><td>SHA-256 hashes are recomputed and saved to the database</td><td>Not needed — system libraries use footer-based verification, not hash-based</td></tr>
+<tr><td><b>Demo methods</b></td><td>Re-extracted if present in the cached package</td><td>Not applicable - system libraries have no demo methods</td></tr>
+<tr><td><b>Hash update after repair</b></td><td>SHA-256 hashes are recomputed and saved to the database</td><td>Not needed - system libraries use footer-based verification, not hash-based</td></tr>
 <tr><td><b>Target directory</b></td><td>The library's <code>lib_install_path</code> and <code>demo_install_path</code> from the database record</td><td>The VENUS Library directory (typically <code>C:\Program Files (x86)\HAMILTON\Library</code>)</td></tr>
 </tbody>
 </table>
@@ -238,7 +238,7 @@
 <p>Open any library (user or system) by clicking its card. If the <b>File Integrity</b> section shows errors and a backup package exists in the package store, a <b>Repair from Backup</b> button appears below the error list. Clicking it prompts for confirmation, then restores the files. The detail modal automatically refreshes after repair.</p>
 
 <h4>2. Verify &amp; Repair Tool</h4>
-<p>Open the overflow menu (<b>⋮</b> button in the top-right toolbar) and select <b>Verify &amp; Repair</b>. This opens a modal that scans <b>all</b> libraries — both system and user-installed — and displays their integrity status in a single list. See the <a href="#verify-repair-tool">Verify &amp; Repair Tool</a> section below for details.</p>
+<p>Open the overflow menu (<b>⋮</b> button in the top-right toolbar) and select <b>Verify &amp; Repair</b>. This opens a modal that scans <b>all</b> libraries - both system and user-installed - and displays their integrity status in a single list. See the <a href="#verify-repair-tool">Verify &amp; Repair Tool</a> section below for details.</p>
 
 <!-- ================================================================== -->
 <a name="verify-repair-tool"></a>
@@ -366,9 +366,9 @@
 <!-- ================================================================== -->
 
 <ul>
-  <li><a href="CLIGenerateSyslibHashes.html">CLI: generate-syslib-hashes</a> — Generate system library integrity baseline from a known-good VENUS installation</li>
-  <li><a href="CLIVerifySyslibHashes.html">CLI: verify-syslib-hashes</a> — Verify system libraries against the stored baseline</li>
-  <li><a href="CLIVerifyPackage.html">CLI: verify-package</a> — Verify a <code>.hxlibpkg</code> file's HMAC-SHA256 signature</li>
+  <li><a href="CLIGenerateSyslibHashes.html">CLI: generate-syslib-hashes</a> - Generate system library integrity baseline from a known-good VENUS installation</li>
+  <li><a href="CLIVerifySyslibHashes.html">CLI: verify-syslib-hashes</a> - Verify system libraries against the stored baseline</li>
+  <li><a href="CLIVerifyPackage.html">CLI: verify-package</a> - Verify a <code>.hxlibpkg</code> file's HMAC-SHA256 signature</li>
 </ul>
 
 <!-- ================================================================== -->
