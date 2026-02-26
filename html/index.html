@@ -88,7 +88,10 @@
 									<div class="input-group-prepend">
 										<span class="input-group-text imp-search-icon"><i class="fas fa-search"></i></span>
 									</div>
-									<input type="text" class="form-control imp-search-input" id="imp-search-input" placeholder="Search libraries..." autocomplete="off">
+										<div class="imp-search-flow">
+											<div class="imp-search-chip-wrap d-none" id="imp-search-chip-wrap"></div>
+											<input type="text" class="form-control imp-search-input" id="imp-search-input" placeholder="Search Libraries..." autocomplete="off">
+										</div>
 									<div class="input-group-append imp-search-clear-wrap d-none">
 										<button class="btn btn-outline-secondary imp-search-clear" type="button"><i class="fas fa-times"></i></button>
 									</div>
@@ -1069,6 +1072,18 @@
 						<label class="delete-confirm-label">To confirm, type "<strong class="delete-confirm-expected-text"></strong>" in the box below</label>
 						<input type="text" class="form-control delete-confirm-input" autocomplete="off" spellcheck="false">
 					</div>
+					<div class="action-audit-section d-none mt-3">
+						<div class="form-group mb-2 action-audit-comment-group">
+							<label class="text-sm mb-1">Required Audit Comment</label>
+							<textarea class="form-control form-control-sm action-audit-comment" rows="3" autocomplete="off" spellcheck="false" placeholder="Describe why this action is being performed."></textarea>
+							<small class="text-danger d-none action-audit-comment-feedback">Comment must be at least 26 characters, include a space, include more than 10 letters, and contain at least one 2-letter sequence.</small>
+						</div>
+						<div class="form-group mb-0 action-audit-signature-group">
+							<label class="text-sm mb-1">Required Signature</label>
+							<input type="text" class="form-control form-control-sm action-audit-signature" autocomplete="off" spellcheck="false" placeholder="Enter full name">
+							<small class="text-danger d-none action-audit-signature-feedback">Signature must be longer than 4 characters and include a space (first and last name).</small>
+						</div>
+					</div>
 				</div>
 				<div class="modal-footer delete-confirm-footer">
 					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
@@ -1108,6 +1123,18 @@
 						<label class="upgrade-confirm-label">To confirm, type "<strong class="upgrade-confirm-expected-text"></strong>" in the box below</label>
 						<input type="text" class="form-control upgrade-confirm-input" autocomplete="off" spellcheck="false">
 					</div>
+					<div class="action-audit-section d-none mt-3">
+						<div class="form-group mb-2 action-audit-comment-group">
+							<label class="text-sm mb-1">Required Audit Comment</label>
+							<textarea class="form-control form-control-sm action-audit-comment" rows="3" autocomplete="off" spellcheck="false" placeholder="Describe why this action is being performed."></textarea>
+							<small class="text-danger d-none action-audit-comment-feedback">Comment must be at least 26 characters, include a space, include more than 10 letters, and contain at least one 2-letter sequence.</small>
+						</div>
+						<div class="form-group mb-0 action-audit-signature-group">
+							<label class="text-sm mb-1">Required Signature</label>
+							<input type="text" class="form-control form-control-sm action-audit-signature" autocomplete="off" spellcheck="false" placeholder="Enter full name">
+							<small class="text-danger d-none action-audit-signature-feedback">Signature must be longer than 4 characters and include a space (first and last name).</small>
+						</div>
+					</div>
 				</div>
 				<div class="modal-footer upgrade-confirm-footer">
 					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
@@ -1146,6 +1173,18 @@
 					<div class="rollback-confirm-input-section mt-3">
 						<label class="rollback-confirm-label">To confirm, type "<strong class="rollback-confirm-expected-text"></strong>" in the box below</label>
 						<input type="text" class="form-control rollback-confirm-input" autocomplete="off" spellcheck="false">
+					</div>
+					<div class="action-audit-section d-none mt-3">
+						<div class="form-group mb-2 action-audit-comment-group">
+							<label class="text-sm mb-1">Required Audit Comment</label>
+							<textarea class="form-control form-control-sm action-audit-comment" rows="3" autocomplete="off" spellcheck="false" placeholder="Describe why this action is being performed."></textarea>
+							<small class="text-danger d-none action-audit-comment-feedback">Comment must be at least 26 characters, include a space, include more than 10 letters, and contain at least one 2-letter sequence.</small>
+						</div>
+						<div class="form-group mb-0 action-audit-signature-group">
+							<label class="text-sm mb-1">Required Signature</label>
+							<input type="text" class="form-control form-control-sm action-audit-signature" autocomplete="off" spellcheck="false" placeholder="Enter full name">
+							<small class="text-danger d-none action-audit-signature-feedback">Signature must be longer than 4 characters and include a space (first and last name).</small>
+						</div>
 					</div>
 				</div>
 				<div class="modal-footer rollback-confirm-footer">
@@ -1263,6 +1302,18 @@
 							<div class="custom-control custom-checkbox mt-2">
 								<input type="checkbox" class="custom-control-input" id="chk_autoAddToGroup" checked>
 								<label class="custom-control-label" for="chk_autoAddToGroup">Automatically add newly imported libraries to a group</label>
+							</div>
+						</div>
+						<div class="settings-section col-md-12 p-3 no-gutters">
+							<h6>Audit Trail Enforcement</h6>
+							<small class="text-muted d-block mb-2">Actions are always logged in history, but these options ensure comments and signatures are included for audit trail accountability.</small>
+							<div class="custom-control custom-checkbox">
+								<input type="checkbox" class="custom-control-input" id="chk_requireActionComment">
+								<label class="custom-control-label" for="chk_requireActionComment">Require comment for destructive and impactful actions</label>
+							</div>
+							<div class="custom-control custom-checkbox mt-2">
+								<input type="checkbox" class="custom-control-input" id="chk_requireActionSignature">
+								<label class="custom-control-label" for="chk_requireActionSignature">Require user signature for destructive and impactful actions</label>
 							</div>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
@@ -1468,7 +1519,8 @@
 					</div>
 					<div class="w-100 d-flex">
 						<button type="button" class="btn btn-outlined mr-auto" id="ulib-remove-btn" title="Remove this entry from the unsigned list"><i class="fas fa-trash-alt mr-1"></i>Remove</button>
-						<button type="button" class="btn btn-outlined" id="ulib-save-btn"><i class="fas fa-save mr-1"></i>Save</button>
+						<button type="button" class="btn btn-outlined" id="ulib-register-btn" title="Register this library directly into Library Manager as a signed library"><i class="fas fa-check-circle mr-1"></i>Register to Library Manager</button>
+						<button type="button" class="btn btn-outlined ml-2" id="ulib-save-btn"><i class="fas fa-save mr-1"></i>Save</button>
 						<button type="button" class="btn solid-button ml-2" id="ulib-export-btn"><i class="fas fa-file-export mr-1"></i>Export .hxlibpkg</button>
 						<input type="file" class="d-none" id="ulib-export-save-dialog" nwsaveas="library.hxlibpkg" accept=".hxlibpkg">
 					</div>
@@ -1662,6 +1714,18 @@
 							</thead>
 							<tbody class="arch-conflict-tbody"></tbody>
 						</table>
+					</div>
+					<div class="action-audit-section d-none mt-3">
+						<div class="form-group mb-2 action-audit-comment-group">
+							<label class="text-sm mb-1">Required Audit Comment</label>
+							<textarea class="form-control form-control-sm action-audit-comment" rows="3" autocomplete="off" spellcheck="false" placeholder="Describe why overwrite actions are being performed."></textarea>
+							<small class="text-danger d-none action-audit-comment-feedback">Comment must be at least 26 characters, include a space, include more than 10 letters, and contain at least one 2-letter sequence.</small>
+						</div>
+						<div class="form-group mb-0 action-audit-signature-group">
+							<label class="text-sm mb-1">Required Signature</label>
+							<input type="text" class="form-control form-control-sm action-audit-signature" autocomplete="off" spellcheck="false" placeholder="Enter full name">
+							<small class="text-danger d-none action-audit-signature-feedback">Signature must be longer than 4 characters and include a space (first and last name).</small>
+						</div>
 					</div>
 				</div>
 				<div class="modal-footer rollback-confirm-footer">

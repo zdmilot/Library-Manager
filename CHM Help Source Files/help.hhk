@@ -338,6 +338,22 @@
 		<param name="Local" value="UnsignedLibraries.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="register unsigned library">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="register to library manager">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="auto-register">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="sign unsigned library">
+		<param name="Local" value="UnsignedLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="user data directory">
 		<param name="Local" value="GettingStarted.html">
 		</OBJECT>

@@ -37,6 +37,8 @@
     </ul>
   </li>
   <li>Confirm the import to proceed</li>
+  <li>If the package is an upgrade/overwrite of an existing library, a destructive confirmation modal requires re-typing the library name before installation can continue</li>
+  <li>If audit-enforcement settings are enabled, the same destructive modal can also require an audit comment and/or operator signature before the action can proceed</li>
 </ol>
 <div class="image-placeholder">PLACE IMAGE OF IMPORT PREVIEW MODAL WITH LIBRARY METADATA AND SIGNATURE STATUS HERE</div>
 
@@ -65,7 +67,9 @@
   <li>Use the <b>Import Archive</b> workflow from the Import tab</li>
   <li>Select a <code>.hxlibarch</code> file</li>
   <li>Venus Library Manager validates the archive and lists all contained <code>.hxlibpkg</code> entries</li>
-  <li>Confirm to install all packages</li>
+  <li>If conflicts are detected (same library already installed), a conflict-resolution modal requires an explicit decision per library: <b>Skip</b> or <b>Overwrite</b></li>
+  <li>The import cannot continue until every conflict row has an explicit action</li>
+  <li>If at least one conflict is set to overwrite and audit-enforcement settings are enabled, the modal also requires audit comment/signature fields before continuing</li>
 </ol>
 
 <h3>Archive Processing</h3>
@@ -87,8 +91,16 @@
 <h2>Overwrite Behavior</h2>
 <p>If a library with the same name is already installed:</p>
 <ul>
-  <li><b>GUI:</b> The pre-install preview shows a warning. The user can choose to proceed (overwrite) or cancel.</li>
+  <li><b>GUI:</b> The pre-install preview shows a warning. The user must complete a destructive confirmation modal by typing the exact library name before overwrite is allowed.</li>
   <li><b>CLI:</b> The command fails with an error unless <code>--force</code> is specified. With <code>--force</code>, the existing database record is removed and the new package is installed in its place.</li>
+</ul>
+
+<h3>Audit Comment and Signature Requirements</h3>
+<p>In GUI workflows, overwrite/upgrade actions can be configured to require additional audit fields:</p>
+<ul>
+  <li><b>Required Audit Comment:</b> At least 26 characters, must include a space, must contain more than 10 letters, and must include at least one sequence of 2 or more letters.</li>
+  <li><b>Required Signature:</b> Must be longer than 4 characters and include at least one space (intended to enforce first + last name style signatures).</li>
+  <li>These fields appear only when enabled in Settings; otherwise they are hidden and not required.</li>
 </ul>
 
 <div class="warning">
@@ -114,6 +126,7 @@
   <li>The installed Hamilton VENUS version at the time of import</li>
   <li>The computer hostname</li>
   <li>The library name, version, author, source file path, install paths, and signature verification status</li>
+  <li>When required in GUI destructive flows, operator-provided <code>action_comment</code> and <code>action_signature</code> values</li>
 </ul>
 <p>This enables full traceability of who installed each library, on which system, and under what environmental conditions. Combined with the packaging audit trail entry (recorded on the packager's machine), a complete chain of custody is established from package creation to deployment. See <a href="LibraryAuditLog.html">Library Audit Log</a> for details.</p>
 </div>

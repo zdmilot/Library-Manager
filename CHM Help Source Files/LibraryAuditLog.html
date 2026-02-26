@@ -139,6 +139,23 @@
 </tbody>
 </table>
 
+<h3>Destructive Action Audit Fields</h3>
+<p>When enabled in GUI Settings, destructive or potentially destructive actions (delete, rollback, upgrade/overwrite, archive overwrite decisions) can require operator-entered audit fields. These values are written to the event <code>details</code> object:</p>
+<table>
+<thead><tr><th>Field</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><b>action_comment</b></td><td>Operator-supplied justification/comment captured at confirmation time</td></tr>
+<tr><td><b>action_signature</b></td><td>Operator signature text (typically first and last name)</td></tr>
+</tbody>
+</table>
+
+<p><b>Validation rules:</b></p>
+<ul>
+  <li><b>Comment:</b> At least 26 characters, includes a space, includes more than 10 letters, and includes at least one sequence of 2 or more letters.</li>
+  <li><b>Signature:</b> Longer than 4 characters and includes at least one space.</li>
+  <li>Fields are shown and required only when the corresponding Settings toggles are enabled.</li>
+</ul>
+
 <h3>Storage Location</h3>
 <p>The audit trail is saved as <code>audit_trail.json</code> in the <b>user data directory</b>:</p>
 <pre>&lt;User Data Directory&gt;\audit_trail.json</pre>

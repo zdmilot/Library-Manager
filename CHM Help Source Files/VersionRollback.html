@@ -57,11 +57,20 @@
 
 <h3>What Happens During Rollback</h3>
 <ol>
+  <li>In GUI rollback, a destructive confirmation modal requires typing the exact library name before rollback proceeds</li>
+  <li>If audit-enforcement settings are enabled, required audit comment/signature fields must be completed in the same modal</li>
   <li>The specified cached package is located in the package store</li>
   <li>Its <code>manifest.json</code> is read and validated</li>
   <li>The standard import process runs: files are extracted, the database record is replaced, integrity hashes are computed, and functions are parsed</li>
   <li>The current installed version is overwritten with the rolled-back version</li>
 </ol>
+
+<h3>Audit Field Validation Rules (GUI)</h3>
+<ul>
+  <li><b>Comment:</b> At least 26 characters, includes a space, includes more than 10 letters, and includes at least one 2+ letter sequence.</li>
+  <li><b>Signature:</b> Longer than 4 characters and includes at least one space.</li>
+  <li>These fields appear only when enabled in Settings.</li>
+</ul>
 
 <div class="warning">
 <p><b>Warning:</b> Rolling back replaces the currently installed version. If the current version was modified on disk but never exported or cached, those modifications will be lost.</p>
@@ -79,7 +88,7 @@
 </ul>
 
 <h2>Audit Trail</h2>
-<p>Every rollback operation is automatically recorded in the persistent <b>audit trail</b> (<code>audit_trail.json</code>). The entry captures the Windows username, Windows OS version, VENUS version, hostname, library name, and the version rolled back to. See <a href="LibraryAuditLog.html">Library Audit Log</a> for details.</p>
+<p>Every rollback operation is automatically recorded in the persistent <b>audit trail</b> (<code>audit_trail.json</code>). The entry captures the Windows username, Windows OS version, VENUS version, hostname, library name, and the version rolled back to. When configured for GUI destructive actions, <code>action_comment</code> and <code>action_signature</code> are also recorded. See <a href="LibraryAuditLog.html">Library Audit Log</a> for details.</p>
 </div>
 <div class="footer">
 <p>Venus Library Manager Help</p>

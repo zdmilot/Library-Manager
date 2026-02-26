@@ -7,7 +7,7 @@
 		var spawn = require('child_process').spawn; 
 
 		// ---------------------------------------------------------------------------
-		// Global error boundary - catch unhandled errors to prevent silent failures
+		// Global error boundary — catch unhandled errors to prevent silent failures
 		// ---------------------------------------------------------------------------
 		window.onerror = function(message, source, lineno, colno, error) {
 			console.error('Unhandled error:', message, 'at', source, ':', lineno);
@@ -48,13 +48,13 @@
 			'.bmp':'image/bmp', '.gif':'image/gif', '.ico':'image/x-icon', '.svg':'image/svg+xml'
 		};
 
-		/** Sanitize a ZIP entry filename - delegated to shared module */
+		/** Sanitize a ZIP entry filename — delegated to shared module */
 		var safeZipExtractPath = shared.safeZipExtractPath;
 
-		/** Escape HTML - delegated to shared module */
+		/** Escape HTML — delegated to shared module */
 		var escapeHtml = shared.escapeHtml;
 
-		/** Validate library name - delegated to shared module */
+		/** Validate library name — delegated to shared module */
 		var isValidLibraryName = shared.isValidLibraryName;
 
 		/**
@@ -96,7 +96,7 @@
 								var entryRaw = execSync('reg query "' + subkeys[sk] + '" /v DisplayName', { encoding: 'utf8', timeout: 5000 });
 								if (!/Hamilton\s+VENUS\s+\d/i.test(entryRaw)) continue;
 
-								// Found the Hamilton VENUS entry - read all values
+								// Found the Hamilton VENUS entry — read all values
 								var allVals = execSync('reg query "' + subkeys[sk] + '"', { encoding: 'utf8', timeout: 5000 });
 
 								// Extract DisplayVersion
@@ -114,7 +114,7 @@
 									)).toISOString();
 								}
 
-								// If we got a version, we found the right entry - stop searching
+								// If we got a version, we found the right entry — stop searching
 								if (result.version) break;
 							} catch(e2) { /* skip subkey */ }
 						}
@@ -147,7 +147,7 @@
 		function ensureSystemLibraryMetadata() {
 			if (getSettingValue('sysLibMetadataComplete')) return;
 
-			console.log('First run detected - stamping system libraries with VENUS install metadata...');
+			console.log('First run detected \u2014 stamping system libraries with VENUS install metadata...');
 			var info = getVENUSInstallInfo();
 			console.log('VENUS install info: version=' + (info.version || 'N/A') + ', installDate=' + (info.installDate || 'N/A'));
 
@@ -252,7 +252,7 @@
 		}
 
 		/* ================================================================
-		 *  EVENT HISTORY - modal UI for browsing the audit trail
+		 *  EVENT HISTORY – modal UI for browsing the audit trail
 		 * ================================================================ */
 
 		/** Event-type → human-readable label */
@@ -567,7 +567,7 @@
         // Diskdb init
 		var db = require('diskdb');
 
-		// ---- Default Groups (hardcoded - never stored in external JSON) ----
+		// ---- Default Groups (hardcoded — never stored in external JSON) ----
 		var DEFAULT_GROUPS = {
 			"gStarred":  { "_id": "gStarred",  "name": "Starred",  "icon-class": "fa-star",         "default": true, "navbar": "left",  "favorite": true, "protected": true },
 			"gAll":      { "_id": "gAll",      "name": "All",      "icon-class": "fa-home",         "default": true, "navbar": "left",  "favorite": true  },
@@ -587,7 +587,7 @@
 			try { return db_groups.groups.findOne({"_id": id}); } catch(e) { return null; }
 		}
 
-		// ---- Settings DB (always in app's db/ folder - portable) ----
+		// ---- Settings DB (always in app's db/ folder — portable) ----
 		var db_settings = db.connect('db', ['settings']);
 
 		// ---- User Data Path ----
@@ -815,9 +815,6 @@
 							if (_metaData[_sId].installed_date) systemLibraries[_mi].installed_date = _metaData[_sId].installed_date;
 							if (_metaData[_sId].installed_by)   systemLibraries[_mi].installed_by   = _metaData[_sId].installed_by;
 							if (_metaData[_sId].venus_version)  systemLibraries[_mi].venus_version  = _metaData[_sId].venus_version;
-							if (Array.isArray(_metaData[_sId].tags)) {
-								systemLibraries[_mi].tags = shared.filterReservedTags(shared.sanitizeTags(_metaData[_sId].tags)).filtered;
-							}
 						}
 					}
 				}
@@ -937,71 +934,7 @@
 			return systemLibraries.slice();
 		}
 
-		function getSystemDefaultTags() {
-			return ['system', 'hamilton'];
-		}
-
-		function getSystemLibraryEffectiveTags(sLib) {
-			var customTags = (sLib && Array.isArray(sLib.tags)) ? sLib.tags : [];
-			customTags = shared.filterReservedTags(shared.sanitizeTags(customTags)).filtered;
-			return shared.sanitizeTags(getSystemDefaultTags().concat(customTags));
-		}
-
-		function isProtectedTag(tag, ownerType) {
-			var normalized = shared.sanitizeTag(tag);
-			if (!normalized) return true;
-			if (ownerType === 'system') return getSystemDefaultTags().indexOf(normalized) !== -1;
-			return shared.isReservedTag(normalized);
-		}
-
-		function buildEditableTagsHtml(tags, ownerType, ownerId, context) {
-			var safeTags = shared.sanitizeTags(tags || []);
-			var owner = ownerType || 'user';
-			var ownerIdEsc = $('<span>').text(ownerId || '').html();
-			var contextEsc = $('<span>').text(context || 'card').html();
-			var html = '<div class="imp-tag-list" data-tag-owner="' + owner + '" data-tag-owner-id="' + ownerIdEsc + '" data-tag-context="' + contextEsc + '">';
-			safeTags.forEach(function(tag) {
-				var safeTag = $('<span>').text(tag).html();
-				html += '<span class="imp-tag-item" data-tag="' + safeTag + '">';
-				html += '<button type="button" class="imp-tag-badge" data-tag="' + safeTag + '"><i class="fas fa-tag mr-1"></i>' + safeTag + '</button>';
-				if (!isProtectedTag(tag, owner)) {
-					html += '<button type="button" class="imp-tag-remove" data-tag="' + safeTag + '" title="Remove tag"><i class="fas fa-times"></i></button>';
-				}
-				html += '</span>';
-			});
-			html += '<button type="button" class="imp-tag-add" title="Add tag"><i class="fas fa-plus"></i></button>';
-			html += '</div>';
-			return html;
-		}
-
-		function persistSystemLibraryTags(libId, tags) {
-			var sLib = getSystemLibrary(libId);
-			if (!sLib) return false;
-			var sanitized = shared.sanitizeTags(tags || []);
-			var customOnly = sanitized.filter(function(tag) {
-				return getSystemDefaultTags().indexOf(tag) === -1;
-			});
-			customOnly = shared.filterReservedTags(customOnly).filtered;
-			sLib.tags = customOnly;
-
-			try {
-				var metaPath = getSystemLibraryMetadataPath();
-				var data = {};
-				if (fs.existsSync(metaPath)) data = JSON.parse(fs.readFileSync(metaPath, 'utf8') || '{}');
-				if (!data[libId]) data[libId] = {};
-				data[libId].tags = customOnly;
-				if (!data[libId].installed_date && sLib.installed_date) data[libId].installed_date = sLib.installed_date;
-				if (!data[libId].installed_by && sLib.installed_by) data[libId].installed_by = sLib.installed_by;
-				if (!data[libId].venus_version && sLib.venus_version) data[libId].venus_version = sLib.venus_version;
-				fs.writeFileSync(metaPath, JSON.stringify(data, null, 2), 'utf8');
-				return true;
-			} catch(e) {
-				console.warn('Could not persist system tags: ' + e.message);
-				return false;
-			}
-		}
-
-		// ---- Package Store - cache .hxlibpkg files for repair & version rollback ----
+		// ---- Package Store — cache .hxlibpkg files for repair & version rollback ----
 		function getPackageStoreDir() {
 			var libFolderRec = db_links.links.findOne({"_id":"lib-folder"});
 			var libPath = (libFolderRec && libFolderRec.path) ? libFolderRec.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
@@ -1098,7 +1031,7 @@
 
 		/**
 		 * Package a single system library into a .hxlibpkg backup in the package store.
-		 * System libraries have no demo methods - only library files and help files.
+		 * System libraries have no demo methods — only library files and help files.
 		 * @param {Object} sLib - system library record from system_libraries.json
 		 * @returns {{ success: boolean, path: string, error: string }}
 		 */
@@ -1177,7 +1110,7 @@
 					}
 				});
 
-				// Add help files (CHMs) - packed into help_files/ folder
+				// Add help files (CHMs) — packed into help_files/ folder
 				helpFiles.forEach(function(f) {
 					var fullPath = path.join(sysLibDir, f);
 					if (fs.existsSync(fullPath)) {
@@ -1235,7 +1168,7 @@
 			if (getSettingValue('sysLibBackupComplete')) {
 				return; // Already backed up
 			}
-			console.log('First run detected - backing up system libraries to package store...');
+			console.log('First run detected — backing up system libraries to package store...');
 			var result = backupAllSystemLibraries();
 			console.log('System library backup complete: ' + result.backed + ' backed up, ' +
 				result.skipped + ' already cached, ' + result.errors.length + ' errors.');
@@ -1373,7 +1306,7 @@
 			}, 150, "window-resize");
 		});
 
-        //Window load - race-safe: handles case where native load event fires
+        //Window load — race-safe: handles case where native load event fires
 		//before jQuery can bind its handler (script parse time > resource load time)
 		(function _windowLoadInit() {
 			function _onWindowLoad() {
@@ -1763,6 +1696,7 @@
 		var _searchTimeout = null;
 		var _searchActive = false;
 		var _preSearchGroupId = null; // remembers which tab was active before search
+		var _searchInlineTokens = [];
 
 		// Lazily-built cache: maps system library _id → space-separated public function names
 		var _sysLibFnCache = null;
@@ -1799,27 +1733,355 @@
 			return _sysLibFnCache;
 		}
 
-		$(document).on("input", "#imp-search-input", function() {
-			var query = $(this).val().trim().toLowerCase();
-			// Show/hide clear button
-			if (query.length > 0) {
-				$(".imp-search-clear-wrap").removeClass("d-none");
-			} else {
-				$(".imp-search-clear-wrap").addClass("d-none");
+		function renderSearchInlineTokens() {
+			var $wrap = $("#imp-search-chip-wrap");
+			if (!$wrap.length) return;
+			if (!_searchInlineTokens || _searchInlineTokens.length === 0) {
+				$wrap.addClass("d-none").empty();
+				updateSearchInputWidth();
+				return;
 			}
-			// Debounce the filter
+			var html = '';
+			_searchInlineTokens.forEach(function(token, idx) {
+				if (!token || !token.type) return;
+				if (token.type === 'text') {
+					if (!token.value) return;
+					html += '<span class="imp-search-inline-text" data-idx="' + idx + '">' + escapeHtml(token.value) + '</span>';
+					return;
+				}
+				html += '<span class="imp-search-chip" data-idx="' + idx + '" data-tag="' + escapeHtml(token.value || '') + '">' +
+					'<span class="imp-search-chip-label">#' + escapeHtml(token.value || '') + '</span>' +
+					'<input type="text" class="imp-search-chip-input" value="' + escapeHtml(token.value || '') + '" aria-label="Edit tag">' +
+					'<button type="button" class="imp-search-chip-remove" aria-label="Remove tag" title="Remove tag"><i class="fas fa-times"></i></button>' +
+				'</span>';
+			});
+			$wrap.html(html).removeClass("d-none");
+			updateSearchInputWidth();
+			scrollSearchFlowToEnd();
+		}
+
+		function updateSearchInputWidth() {
+			var $input = $("#imp-search-input");
+			if (!$input.length) return;
+			var hasTokens = _searchInlineTokens && _searchInlineTokens.length > 0;
+			var val = $input.val() || '';
+			if (hasTokens) {
+				// Auto-size to content so chips + text overflow & scroll as one stream
+				$input.attr('placeholder', '');
+				$input.css('width', Math.max(val.length + 1, 4) + 'ch');
+			} else {
+				$input.attr('placeholder', 'Search Libraries...');
+				// Wide enough for placeholder, or content
+				$input.css('width', Math.max(val.length + 1, 19) + 'ch');
+			}
+		}
+
+		function scrollSearchFlowToEnd() {
+			var $flow = $(".imp-search-flow");
+			if (!$flow.length) return;
+			// Defer to next animation frame so the browser has reflowed
+			// the new DOM content and scrollWidth is up to date.
+			requestAnimationFrame(function() {
+				$flow.scrollLeft($flow.get(0).scrollWidth);
+			});
+		}
+
+		function normalizeSearchInlineTokens() {
+			var normalized = [];
+			(_searchInlineTokens || []).forEach(function(token) {
+				if (!token || !token.type) return;
+				if (token.type === 'text') {
+					var value = (token.value || '');
+					if (!value) return;
+					if (normalized.length && normalized[normalized.length - 1].type === 'text') {
+						normalized[normalized.length - 1].value += value;
+					} else {
+						normalized.push({ type: 'text', value: value });
+					}
+					return;
+				}
+				var sanitized = shared.sanitizeTag(token.value || '');
+				if (!sanitized) return;
+				normalized.push({ type: 'tag', value: sanitized });
+			});
+			_searchInlineTokens = normalized;
+		}
+
+		function insertSearchTagToken(rawTag, options) {
+			options = options || {};
+			var sanitized = shared.sanitizeTag(rawTag || '');
+			if (!sanitized) return false;
+			_searchInlineTokens.push({ type: 'tag', value: sanitized });
+			if (options.trailingSpace === true) {
+				_searchInlineTokens.push({ type: 'text', value: ' ' });
+			}
+			normalizeSearchInlineTokens();
+			renderSearchInlineTokens();
+			return true;
+		}
+
+		function updateSearchTagChipByIndex(idx, rawNewTag) {
+			if (idx < 0 || idx >= _searchInlineTokens.length) return false;
+			var token = _searchInlineTokens[idx];
+			if (!token || token.type !== 'tag') return false;
+
+			var sanitized = shared.sanitizeTag(rawNewTag || '');
+			if (!sanitized) return false;
+			_searchInlineTokens[idx].value = sanitized;
+			normalizeSearchInlineTokens();
+			renderSearchInlineTokens();
+			return true;
+		}
+
+		function consumeCompletedTagTokens() {
+			var $input = $("#imp-search-input");
+			var raw = $input.val() || '';
+			if (raw.indexOf('#') === -1 || raw.search(/\s/) === -1) return;
+			var pending = raw;
+			var consumedAny = false;
+
+			while (true) {
+				var match = pending.match(/(^|\s)#([^\s#]+)(?=\s)/);
+				if (!match) break;
+
+				var marker = '#' + match[2];
+				var markerIndex = pending.indexOf(marker);
+				if (markerIndex === -1) break;
+
+				var prefixText = pending.slice(0, markerIndex);
+				if (prefixText) {
+					_searchInlineTokens.push({ type: 'text', value: prefixText });
+				}
+
+				if (!insertSearchTagToken(match[2], { trailingSpace: true })) {
+					break;
+				}
+
+				pending = pending.slice(markerIndex + marker.length);
+				if (pending.charAt(0) === ' ') {
+					pending = pending.slice(1);
+				}
+				consumedAny = true;
+			}
+
+			if (consumedAny) {
+				normalizeSearchInlineTokens();
+				renderSearchInlineTokens();
+				$input.val(pending);
+				updateSearchInputWidth();
+				scrollSearchFlowToEnd();
+			}
+		}
+
+		function commitTrailingSearchTag(options) {
+			options = options || {};
+			var $input = $("#imp-search-input");
+			var raw = $input.val() || '';
+			var match = raw.match(/(^|\s)#([^\s#]+)\s*$/);
+			if (!match) return false;
+
+			var candidate = match[2] || '';
+			var marker = '#' + candidate;
+			var markerIndex = raw.lastIndexOf(marker);
+			if (markerIndex === -1) return false;
+
+			var prefixText = raw.slice(0, markerIndex);
+			if (prefixText) {
+				_searchInlineTokens.push({ type: 'text', value: prefixText });
+			}
+
+			if (!insertSearchTagToken(candidate, { trailingSpace: options.appendSpace === true })) return false;
+
+			var nextRaw = '';
+			$input.val(nextRaw);
+			normalizeSearchInlineTokens();
+			renderSearchInlineTokens();
+			updateSearchInputWidth();
+			scrollSearchFlowToEnd();
+			return true;
+		}
+
+		function getSearchInlineRawText() {
+			var tokenText = (_searchInlineTokens || []).map(function(token) {
+				if (!token) return '';
+				if (token.type === 'tag') return '#' + (token.value || '');
+				return token.value || '';
+			}).join('');
+			return tokenText + ($("#imp-search-input").val() || '');
+		}
+
+		function getSearchStateFromInput() {
+			var rawInput = getSearchInlineRawText().trim().toLowerCase();
+			var tagFilters = [];
+			var textTokens = [];
+
+			(_searchInlineTokens || []).forEach(function(token) {
+				if (token && token.type === 'tag') {
+					var tag = shared.sanitizeTag(token.value || '');
+					if (tag) tagFilters.push(tag);
+				}
+			});
+
+			if (rawInput) {
+				rawInput.split(/\s+/).forEach(function(token) {
+					if (!token) return;
+					if (token.charAt(0) === '#' && token.length > 1) {
+						var tag = shared.sanitizeTag(token.substring(1));
+						if (tag && tagFilters.indexOf(tag) === -1) {
+							tagFilters.push(tag);
+						} else if (!tag) {
+							textTokens.push(token);
+						}
+					} else {
+						textTokens.push(token);
+					}
+				});
+			}
+
+			var textQuery = textTokens.join(' ').trim();
+			var displayBits = [];
+			tagFilters.forEach(function(t) { displayBits.push('#' + t); });
+			if (textQuery) displayBits.push(textQuery);
+			var displayQuery = displayBits.join(' ').trim();
+
+			return {
+				tagFilters: tagFilters,
+				textQuery: textQuery,
+				displayQuery: displayQuery,
+				hasSearch: tagFilters.length > 0 || textQuery.length > 0
+			};
+		}
+
+		function refreshLibrarySearchFromInput() {
+			consumeCompletedTagTokens();
+			var state = getSearchStateFromInput();
+			$(".imp-search-clear-wrap").toggleClass("d-none", !state.hasSearch);
+
 			clearTimeout(_searchTimeout);
 			_searchTimeout = setTimeout(function() {
-				if (query.length > 0) {
-					impEnterSearchMode(query);
+				if (state.hasSearch) {
+					impEnterSearchMode(state.displayQuery, {
+						tagFilters: state.tagFilters,
+						textQuery: state.textQuery
+					});
 				} else {
 					impExitSearchMode();
 				}
 			}, 150);
+		}
+
+		$(document).on("input", "#imp-search-input", function() {
+			updateSearchInputWidth();
+			scrollSearchFlowToEnd();
+			refreshLibrarySearchFromInput();
 		});
 
+		updateSearchInputWidth();
+
 		$(document).on("click", ".imp-search-clear", function() {
+			_searchInlineTokens = [];
+			renderSearchInlineTokens();
 			$("#imp-search-input").val("").trigger("input");
+			updateSearchInputWidth();
+		});
+
+		$(document).on("click", ".imp-search-chip-remove", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var idx = parseInt($(this).closest('.imp-search-chip').attr('data-idx'), 10);
+			if (!isNaN(idx) && idx >= 0 && idx < _searchInlineTokens.length) {
+				_searchInlineTokens.splice(idx, 1);
+				normalizeSearchInlineTokens();
+				renderSearchInlineTokens();
+			}
+			refreshLibrarySearchFromInput();
+			$("#imp-search-input").focus();
+			scrollSearchFlowToEnd();
+		});
+
+		$(document).on("click", ".imp-search-chip-label", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var $chip = $(this).closest('.imp-search-chip');
+			if (!$chip.length) return;
+			$chip.addClass('editing');
+			var tag = ($chip.attr('data-tag') || '');
+			var $editor = $chip.find('.imp-search-chip-input');
+			$editor.val(tag).focus().select();
+			scrollSearchFlowToEnd();
+		});
+
+		$(document).on("keydown", ".imp-search-chip-input", function(e) {
+			if (e.key === 'Enter' || e.key === 'Tab' || e.key === ' ') {
+				e.preventDefault();
+				$(this).data('focus-main-input', true);
+				$(this).blur();
+				return;
+			}
+			if (e.key === 'Escape') {
+				e.preventDefault();
+				$(this).data('cancel-edit', true);
+				$(this).blur();
+			}
+		});
+
+		$(document).on("blur", ".imp-search-chip-input", function() {
+			var $editor = $(this);
+			var $chip = $editor.closest('.imp-search-chip');
+			if (!$chip.length) return;
+
+			var idx = parseInt($chip.attr('data-idx'), 10);
+			var cancelEdit = $editor.data('cancel-edit') === true;
+			var focusMainInput = $editor.data('focus-main-input') === true;
+			$editor.removeData('cancel-edit');
+			$editor.removeData('focus-main-input');
+
+			if (!cancelEdit) {
+				updateSearchTagChipByIndex(idx, $editor.val());
+			}
+
+			renderSearchInlineTokens();
+			refreshLibrarySearchFromInput();
+			if (focusMainInput || !cancelEdit) {
+				$("#imp-search-input").focus();
+				scrollSearchFlowToEnd();
+			}
+		});
+
+		$(document).on("keydown", "#imp-search-input", function(e) {
+			if (e.key === 'Enter') {
+				if (commitTrailingSearchTag({ appendSpace: true })) {
+					e.preventDefault();
+					refreshLibrarySearchFromInput();
+				}
+				return;
+			}
+
+			if (e.key === 'Tab') {
+				if (commitTrailingSearchTag({ appendSpace: true })) {
+					refreshLibrarySearchFromInput();
+				}
+				return;
+			}
+
+			if (e.key === 'Backspace' && !$(this).val() && _searchInlineTokens.length > 0) {
+				e.preventDefault();
+				var token = _searchInlineTokens.pop();
+				while (token && token.type === 'text' && !token.value.trim() && _searchInlineTokens.length > 0) {
+					token = _searchInlineTokens.pop();
+				}
+				if (token) {
+					if (token.type === 'tag') {
+						$(this).val('#' + token.value).trigger('input');
+					} else {
+						$(this).val(token.value).trigger('input');
+					}
+				}
+				normalizeSearchInlineTokens();
+				renderSearchInlineTokens();
+				updateSearchInputWidth();
+				scrollSearchFlowToEnd();
+			}
 		});
 
 		// Keyboard shortcut: Ctrl+F focuses search bar
@@ -1837,7 +2099,8 @@
 			}
 		});
 
-		function impEnterSearchMode(query) {
+		function impEnterSearchMode(query, options) {
+			options = options || {};
 			// Remember current tab before entering search mode
 			if (!_searchActive) {
 				var activeNav = $(".navbar-custom .nav-item.active, .navbar-custom .dropdown-navitem.active");
@@ -1855,14 +2118,29 @@
 			// Deactivate all nav tabs to signal search mode
 			$(".navbar-custom .nav-item, .navbar-custom .dropdown-navitem").removeClass("active");
 
-			// Detect #tag search mode: "#pipetting" matches only libraries
-			// whose tags contain "pipetting" (tag-only filter).
-			var tagOnly = false;
-			var displayQuery = query; // original query shown in the UI
-			if (query.charAt(0) === '#' && query.length > 1) {
-				tagOnly = true;
-				query = query.substring(1); // strip the "#" for matching
+			var displayQuery = (typeof query === 'string') ? query : '';
+			var tagFilters = [];
+			(options.tagFilters || []).forEach(function(rawTag) {
+				var sanitized = shared.sanitizeTag(rawTag || '');
+				if (sanitized && tagFilters.indexOf(sanitized) === -1) tagFilters.push(sanitized);
+			});
+
+			var textQuery = ((options.textQuery || '') + '').toLowerCase().trim();
+
+			// Backward compatibility for legacy single-string callers.
+			if (!tagFilters.length && !textQuery && typeof query === 'string') {
+				var legacyQuery = query.trim().toLowerCase();
+				if (legacyQuery.charAt(0) === '#' && legacyQuery.length > 1) {
+					var legacyTag = shared.sanitizeTag(legacyQuery.substring(1));
+					if (legacyTag) tagFilters.push(legacyTag);
+					else textQuery = legacyQuery;
+				} else {
+					textQuery = legacyQuery;
+				}
 			}
+
+			var hasTagFilters = tagFilters.length > 0;
+			var hasTextQuery = textQuery.length > 0;
 
 			// Build combined search results: all user libs + all system libs
 			var $container = $("#imp-cards-container");
@@ -1878,33 +2156,34 @@
 			// Build combined list of {name, html} for filtering
 			var allCards = [];
 
+			function matchesTagFilters(tags) {
+				if (!hasTagFilters) return true;
+				var normalizedTags = (tags || []).map(function(t) { return (t || '').toLowerCase(); });
+				return tagFilters.every(function(filterTag) {
+					return normalizedTags.some(function(tag) { return tag.indexOf(filterTag) !== -1; });
+				});
+			}
+
 			// User library cards
 			userLibs.forEach(function(lib) {
-				if (tagOnly) {
-					// Tag-only mode: match against tags only
-					var tags = shared.filterReservedTags(shared.sanitizeTags(lib.tags || [])).filtered;
-					var matched = tags.some(function(t) { return t.toLowerCase().indexOf(query) !== -1; });
-					if (!matched) return;
-				} else {
+				if (!matchesTagFilters(lib.tags || [])) return;
+				if (hasTextQuery) {
 					var fnNames = (lib.public_functions || []).map(function(fn) { return fn.qualifiedName || fn.name || ''; }).join(' ');
 					var searchText = ((lib.library_name || '') + ' ' + (lib.author || '') + ' ' + (lib.description || '') + ' ' + (lib.tags || []).join(' ') + ' ' + fnNames).toLowerCase();
-					if (searchText.indexOf(query) === -1) return;
+					if (searchText.indexOf(textQuery) === -1) return;
 				}
 				allCards.push({ type: 'user', html: impBuildSingleCardHtml(lib) });
 			});
 
-			// System library cards - include public function names in search
+			// System library cards — include public function names in search
 			// System libs carry a virtual "system" tag so #system matches them.
-			var fnCache = tagOnly ? null : _buildSysLibFnCache();
+			var fnCache = hasTextQuery ? _buildSysLibFnCache() : null;
 			sysLibs.forEach(function(sLib) {
-				if (tagOnly) {
-					var sysTags = getSystemLibraryEffectiveTags(sLib);
-					var sysMatched = sysTags.some(function(t) { return t.indexOf(query) !== -1; });
-					if (!sysMatched) return;
-				} else {
+				if (!matchesTagFilters(['system'])) return;
+				if (hasTextQuery) {
 					var fnNames = fnCache[sLib._id] || '';
 					var searchText = ((sLib.display_name || sLib.canonical_name || '') + ' ' + (sLib.author || '') + ' ' + (sLib.resource_types || []).join(' ') + ' ' + fnNames).toLowerCase();
-					if (searchText.indexOf(query) === -1) return;
+					if (searchText.indexOf(textQuery) === -1) return;
 				}
 				allCards.push({ type: 'system', html: buildSystemLibraryCard(sLib) });
 			});
@@ -1918,7 +2197,7 @@
 				);
 			} else {
 				// Search results header
-				var headerIcon = tagOnly ? '<i class="fas fa-tag mr-1"></i>' : '<i class="fas fa-search mr-1"></i>';
+				var headerIcon = (hasTagFilters && !hasTextQuery) ? '<i class="fas fa-tag mr-1"></i>' : '<i class="fas fa-search mr-1"></i>';
 				$container.append(
 					'<div class="col-md-12 mb-2">' +
 						'<span class="text-muted text-sm">' + headerIcon + allCards.length + ' result' + (allCards.length !== 1 ? 's' : '') + ' for "<b>' + $("<span>").text(displayQuery).html() + '</b>"</span>' +
@@ -1961,7 +2240,7 @@
 			var version = escapeHtml(lib.version || "");
 			var author = escapeHtml(lib.author || "");
 			var description = escapeHtml(lib.description || "");
-			var tags = shared.filterReservedTags(shared.sanitizeTags(lib.tags || [])).filtered;
+			var tags = (lib.tags || []).map(function(t) { return escapeHtml(t); });
 			var hasImage = !!lib.library_image_base64;
 			var hasComWarning = lib.com_warning === true;
 			var comDlls = (lib.com_register_dlls || []).map(function(d) { return escapeHtml(d); });
@@ -1987,7 +2266,12 @@
 			var shortDesc = description;
 			if (shortDesc.length > 80) { shortDesc = shortDesc.substring(0, 80) + "..."; }
 
-			var tagsHtml = buildEditableTagsHtml(tags, 'user', lib._id, 'card');
+			var tagsHtml = "";
+			if (tags.length > 0) {
+				tags.forEach(function(t) {
+					tagsHtml += '<button type="button" class="imp-tag-badge mr-1 mb-1" data-tag="' + t + '"><i class="fas fa-tag mr-1"></i>' + t + '</button>';
+				});
+			}
 
 			var comWarningBadge = "";
 			if (hasComWarning && comDlls.length > 0) {
@@ -2091,12 +2375,12 @@
 			}
 		});
 
-		//Settings > Unsigned Libraries - Scan Now
+		//Settings > Unsigned Libraries — Scan Now
 		$(document).on("click", "#btn-scan-unsigned-libs", function(){
 			scanUnsignedLibraries(true);
 		});
 
-		//Settings > Unsigned Libraries - Scan on launch checkbox
+		//Settings > Unsigned Libraries — Scan on launch checkbox
 		$(document).on("click", "#chk_scanUnsignedOnLaunch", function(){
 			var checked = $(this).prop("checked");
 			saveSetting("chk_scanUnsignedOnLaunch", checked);
@@ -2109,7 +2393,7 @@
 			saveSetting("recent-max",txt);
 		});
 
-		// Settings > Data Location - browse and apply
+		// Settings > Data Location — browse and apply
 		$(document).on("click", ".btn-browseDataPath", function() {
 			// Use a hidden nwdirectory input to pick a folder
 			var $picker = $("#input-dataPathBrowse");
@@ -2542,7 +2826,7 @@
 		}
 
 
-		//fitSettingsDivHeight removed - groups and settings are now modals with their own scrolling
+		//fitSettingsDivHeight removed – groups and settings are now modals with their own scrolling
 
 
         // Adjusts the elements in the nav bar and hides the ones that exceed the total width available
@@ -2860,9 +3144,9 @@
 			// ---- HARDCODED NAV ORDER ENFORCEMENT ----
 			// All is ALWAYS the leftmost nav item (it is the home screen).
 			// System groups come next, then user-defined groups at the end.
-			// Order: All | Starred | Recent | Unsigned | System | Hamilton | [user groups]
+			// Order: All | Starred | Recent | System | Hamilton | Unsigned | [user groups]
 			// ** AI NOTE: gAll must NEVER be moved from the leftmost position **
-			var _sysNavIds = { gAll:1, gRecent:1, gStarred:1, gUnsigned:1, gSystem:1, gHamilton:1 };
+			var _sysNavIds = { gAll:1, gRecent:1, gStarred:1, gSystem:1, gHamilton:1, gUnsigned:1 };
 			// Move all user-defined groups to the end of navbarLeft
 			$(".navbarLeft .nav-item").each(function() {
 				var gid = $(this).attr('data-group-id');
@@ -2870,10 +3154,15 @@
 					$(this).appendTo($(this).parent());
 				}
 			});
-			// Guarantee All is always first - move it to position 0 no matter what
-			var $allNavItem = $(".navbarLeft .nav-item[data-group-id='gAll']");
-			if ($allNavItem.length) {
-				$allNavItem.prependTo($allNavItem.parent());
+			// Enforce exact system group order in navbar:
+			// All | Starred | Recent | System | Hamilton | Unsigned | [user groups]
+			var _navOrder = ['gAll', 'gStarred', 'gRecent', 'gSystem', 'gHamilton', 'gUnsigned'];
+			var $navbarLeft = $(".navbarLeft");
+			for (var _ni = _navOrder.length - 1; _ni >= 0; _ni--) {
+				var $navEntry = $navbarLeft.find('.nav-item[data-group-id="' + _navOrder[_ni] + '"]');
+				if ($navEntry.length) {
+					$navEntry.prependTo($navbarLeft);
+				}
 			}
 
 			// Add "Unassigned Libraries" section - shows libraries not in any custom group
@@ -2924,8 +3213,8 @@
 
 			// ---- ACCORDION ORDER ENFORCEMENT ----
 			// Must be a 1:1 match with the nav bar order for system/auto-generated groups.
-			// Nav order:  All | Starred | Recent | Unsigned | System | Hamilton | [user groups]
-			// Accordion visible order: Starred | Unsigned | System | Hamilton | [user groups] | Unassigned
+			// Nav order:  All | Starred | Recent | System | Hamilton | Unsigned | [user groups]
+			// Accordion visible order: Starred | System | Hamilton | Unsigned | [user groups] | Unassigned
 			// (All, Recent, Folders, Editors, History are hidden via d-none)
 			{
 				var $accordion = $(".settings-links #accordion");
@@ -2937,7 +3226,7 @@
 					var gid = $(this).attr('data-group-id');
 					if (gid) {
 						if (_seenAccIds[gid]) {
-							$(this).remove(); // duplicate - remove it
+							$(this).remove(); // duplicate — remove it
 						} else {
 							_seenAccIds[gid] = true;
 						}
@@ -2946,7 +3235,7 @@
 
 				// 2) Enforce exact order: system groups in fixed order, then user groups, then Unassigned
 				//    This matches the nav bar order exactly.
-				var _accOrder = ['gStarred', 'gUnsigned', 'gSystem', 'gHamilton'];
+				var _accOrder = ['gStarred', 'gSystem', 'gHamilton', 'gUnsigned'];
 				// Detach system groups and re-prepend them in the correct order
 				for (var _oi = _accOrder.length - 1; _oi >= 0; _oi--) {
 					var $sysEntry = $accordion.find('.settings-links-group[data-group-id="' + _accOrder[_oi] + '"]');
@@ -3631,7 +3920,7 @@
 
 			// Guard: if settings record is missing, create a default one
 			if (!settings) {
-				console.warn('Settings record not found - initializing defaults.');
+				console.warn('Settings record not found — initializing defaults.');
 				var defaults = {
 					"_id": "0",
 					"recent-max": 20,
@@ -3783,7 +4072,7 @@
 				var counter = 0;
 				fs.readdir(HxFolder_LogFiles, function(err, files) {
 				if (err) {
-					console.warn('Could not read log directory: ' + HxFolder_LogFiles + ' - ' + err.message);
+					console.warn('Could not read log directory: ' + HxFolder_LogFiles + ' — ' + err.message);
 					return;
 				}
 				$(".cleanup-progress-bar").text("0%").css("width","0%").attr("aria-valuenow", 0);
@@ -3797,7 +4086,7 @@
 							var bool_processFile = false;
 							fs.stat(currentPath, function(err, stats) {
 										if (err) {
-												console.warn('Error getting stat from file: ' + currentPath + ' - ' + (err.code || err.message));
+												console.warn('Error getting stat from file: ' + currentPath + ' — ' + (err.code || err.message));
 										}else{
 										  bool_processFile = true;
 										}
@@ -3863,7 +4152,7 @@
 		}
 
 		function initVENUSData(){
-			// VENUS paths are hardcoded - no DLL/registry lookup needed
+			// VENUS paths are hardcoded — no DLL/registry lookup needed
 			var HxBin = "C:\\Program Files (x86)\\HAMILTON\\Bin";
 
 			// Helper: only set a link key if it has no value yet (preserve user customizations)
@@ -3999,10 +4288,10 @@
 			$("#pkg-removeIcon").hide();
 
 			if (wasAutoDetected) {
-				// User dismissed the auto-detected image - suppress re-detection until files change
+				// User dismissed the auto-detected image — suppress re-detection until files change
 				pkg_iconDismissedAuto = true;
 			} else {
-				// User removed a manually-chosen image - allow auto-detect to run again
+				// User removed a manually-chosen image — allow auto-detect to run again
 				pkgAutoDetectBmpImage();
 			}
 		});
@@ -4063,47 +4352,6 @@
 			$modal.modal('show');
 		}
 
-		function showTagValidationWarningModal(message) {
-			var $modal = $("#pkgFileTypeWarningModal");
-			var $content = $modal.find('.pkg-filetype-warn-content');
-			$content.removeClass('pkg-filetype-warn-error');
-			$modal.find('.pkg-filetype-warn-title').text('Tag Formatting Notice');
-			$modal.find('.pkg-filetype-warn-message').html($('<span>').text(message || 'Tag was adjusted to match allowed format.').html().replace(/\n/g, '<br>'));
-
-			$modal.find('.pkg-filetype-warn-yes').off('click').hide();
-			$modal.find('.pkg-filetype-warn-no')
-				.off('click')
-				.removeClass('btn-danger')
-				.addClass('btn-primary')
-				.text('OK')
-				.on('click', function() {
-					$modal.modal('hide');
-				});
-
-			$modal.off('hidden.bs.modal.ftw').on('hidden.bs.modal.ftw', function() {
-				$modal.off('hidden.bs.modal.ftw');
-			});
-
-			$modal.modal('show');
-		}
-
-		function buildTagFeedbackMessages(feedback) {
-			var warningLines = [];
-			var errorLines = [];
-			if (!feedback) return { warning: '', error: '' };
-
-			(feedback.adjusted || []).forEach(function(item) {
-				warningLines.push('Adjusted "' + (item.input || '') + '" to "' + (item.output || '') + '" (' + (item.adjustments || []).join(', ') + ').');
-			});
-
-			(feedback.blocked || []).forEach(function(item) {
-				var words = (item.restrictedWords || []).length ? ' Restricted words: ' + item.restrictedWords.join(', ') + '.' : '';
-				errorLines.push('Removed "' + (item.input || '') + '" - ' + (item.reason || 'invalid') + '.' + words);
-			});
-
-			return { warning: warningLines.join('\n'), error: errorLines.join('\n') };
-		}
-
 		// ---- Library file inputs ----
 		$(document).on("change", "#pkg-input-libfiles", function() {
 			var fileInput = this;
@@ -4139,9 +4387,9 @@
 					' like ' + (medFiles.length === 1 ? 'it belongs' : 'they belong') +
 					' in the <b>Demo Method Files</b> section instead.<br><br>Are you absolutely sure you want to add ' +
 					(medFiles.length === 1 ? 'this method' : 'these methods') + ' here?',
-					null, // onYes - keep the files
+					null, // onYes — keep the files
 					function() {
-						// onNo - remove the .med files from library files
+						// onNo — remove the .med files from library files
 						pkg_libraryFiles = pkg_libraryFiles.filter(function(f) {
 							return medFiles.indexOf(f) === -1;
 						});
@@ -4188,9 +4436,9 @@
 							' like ' + (medFiles.length === 1 ? 'it belongs' : 'they belong') +
 							' in the <b>Demo Method Files</b> section instead.<br><br>Are you absolutely sure you want to add ' +
 							(medFiles.length === 1 ? 'this method' : 'these methods') + ' here?',
-							null, // onYes - keep the files
+							null, // onYes — keep the files
 							function() {
-								// onNo - remove the .med files from library files
+								// onNo — remove the .med files from library files
 								pkg_libraryFiles = pkg_libraryFiles.filter(function(f) {
 									return medFiles.indexOf(f) === -1;
 								});
@@ -4231,9 +4479,9 @@
 					' like ' + (dllFiles.length === 1 ? 'it belongs' : 'they belong') +
 					' in the <b>Library Files</b> section instead.<br><br>Are you absolutely sure you want to add ' +
 					(dllFiles.length === 1 ? 'this DLL' : 'these DLLs') + ' here?',
-					null, // onYes - keep the files
+					null, // onYes — keep the files
 					function() {
-						// onNo - remove the .dll files from demo method files
+						// onNo — remove the .dll files from demo method files
 						pkg_demoMethodFiles = pkg_demoMethodFiles.filter(function(f) {
 							return dllFiles.indexOf(f) === -1;
 						});
@@ -4272,9 +4520,9 @@
 							' like ' + (dllFiles.length === 1 ? 'it belongs' : 'they belong') +
 							' in the <b>Library Files</b> section instead.<br><br>Are you absolutely sure you want to add ' +
 							(dllFiles.length === 1 ? 'this DLL' : 'these DLLs') + ' here?',
-							null, // onYes - keep the files
+							null, // onYes — keep the files
 							function() {
-								// onNo - remove the .dll files from demo method files
+								// onNo — remove the .dll files from demo method files
 								pkg_demoMethodFiles = pkg_demoMethodFiles.filter(function(f) {
 									return dllFiles.indexOf(f) === -1;
 								});
@@ -4385,7 +4633,7 @@
 			}
 
 			if (foundPath) {
-				// Already showing this exact auto-detected image - skip
+				// Already showing this exact auto-detected image — skip
 				if (pkg_iconAutoDetected && pkg_iconAutoDetectedPath === foundPath) return;
 
 				try {
@@ -4403,7 +4651,7 @@
 					// silently ignore read errors
 				}
 			} else if (pkg_iconAutoDetected) {
-				// BMP was removed from file list - clear auto-detected preview
+				// BMP was removed from file list — clear auto-detected preview
 				pkg_iconAutoDetected = false;
 				pkg_iconAutoDetectedPath = null;
 				$("#pkg-icon-preview").html('<i class="fas fa-image fa-2x" style="color:#ccc;"></i>').removeClass('has-image');
@@ -4665,7 +4913,7 @@
 				var SIZE = 128;
 
 				if (!fs.existsSync(LM_LOGO_GRAY_PATH)) {
-					// No logo asset - pass through source image as-is
+					// No logo asset — pass through source image as-is
 					resolve({ base64: sourceB64 || null, mime: sourceMime || null });
 					return;
 				}
@@ -4674,7 +4922,7 @@
 				var logoImg = new Image();
 				logoImg.onload = function() {
 					if (sourceB64 && sourceMime) {
-						// User provided an image - composite with logo overlay
+						// User provided an image — composite with logo overlay
 						var userImg = new Image();
 						userImg.onload = function() {
 							try {
@@ -4711,7 +4959,7 @@
 						userImg.onerror = function() { reject(new Error('Failed to load user image')); };
 						userImg.src = 'data:' + sourceMime + ';base64,' + sourceB64;
 					} else {
-						// No user image - use grayscale logo at full size
+						// No user image — use grayscale logo at full size
 						try {
 							var canvas = document.createElement('canvas');
 							canvas.width = SIZE;
@@ -4753,17 +5001,27 @@
 				var description = $("#pkg-description").val().trim();
 				var tagsRaw = $("#pkg-tags").val().trim();
 
-				var tagFeedback = shared.sanitizeTagsWithFeedback(tagsRaw ? tagsRaw.split(",") : []);
-				var tags = tagFeedback.tags;
-				var tagMsgs = buildTagFeedbackMessages(tagFeedback);
-				if (tagMsgs.warning) showTagValidationWarningModal(tagMsgs.warning);
-				if (tagMsgs.error) showTagValidationErrorModal(tagMsgs.error);
+				// Parse and sanitize tags (lowercase, no spaces)
+				var tags = [];
+				if (tagsRaw) {
+					tagsRaw.split(",").forEach(function(t) {
+						var s = shared.sanitizeTag(t);
+						if (s) tags.push(s);
+					});
+				}
+
+				// Filter reserved tags ("System" and "Hamilton" are not allowed)
+				var tagCheck = shared.filterReservedTags(tags);
+				if (tagCheck.removed.length > 0) {
+					showTagValidationErrorModal('The following tags are reserved and cannot be used: ' + tagCheck.removed.join(', ') + '\n\nThese tags have been automatically removed.');
+					tags = tagCheck.filtered;
+				}
 				$("#pkg-tags").val(tags.join(", "));
 
 				// Use library name from the detected field
 				var libName = $("#pkg-library-name").val().trim() || "Unknown";
 
-				// Find matching BMP image (same name as .hsl file) - auto-detect fallback
+				// Find matching BMP image (same name as .hsl file) — auto-detect fallback
 				var libImageFilename = null;
 				var libImageBase64 = null;
 				var libImageMime = null;
@@ -4799,7 +5057,7 @@
 
 				// ---- Composite the library icon with grayscale LM logo overlay ----
 				// The composited icon (with LM logo overlay) is used ONLY for the
-				// icon/ directory inside the package ZIP - this is what Windows shows
+				// icon/ directory inside the package ZIP — this is what Windows shows
 				// for the .hxlibpkg file in Explorer.  The manifest stores the RAW
 				// (uncomposited) image so imported libraries display the original
 				// library artwork without the overlay.
@@ -4816,12 +5074,12 @@
 						}
 					}
 				} catch(e) {
-					// Compositing failed - icon/ will use the raw image (non-critical)
+					// Compositing failed — icon/ will use the raw image (non-critical)
 					console.warn('Icon compositing failed:', e);
 				}
 
 				// Build manifest JSON (matches C# HxLibPkgManifest.ToJson() format)
-				// Manifest stores the RAW library image - no overlay
+				// Manifest stores the RAW library image — no overlay
 				var manifest = {
 					format_version: "1.0",
 					library_name: libName,
@@ -4909,7 +5167,7 @@
 		 * Returns the full path to RegAsm.exe or null if not found.
 		 */
 		function findRegAsmPath() {
-			// Always use the 32-bit (x86) .NET Framework - Hamilton VENUS is a 32-bit application
+			// Always use the 32-bit (x86) .NET Framework – Hamilton VENUS is a 32-bit application
 			var frameworkDir = "C:\\Windows\\Microsoft.NET\\Framework\\";
 			if (!fs.existsSync(frameworkDir)) return null;
 
@@ -5025,7 +5283,7 @@
 		var imp_zipData = null;
 		var imp_filePath = null;
 
-		// ---- HSL function parser - extracts public function signatures ----
+		// ---- HSL function parser — extracts public function signatures ----
 		// Ported from the VS Code HSL IntelliSense extension.
 
 		/**
@@ -5122,18 +5380,6 @@
 				buf.reverse();
 				return buf.join('\n').replace(/^\s*\/\*+/, '').replace(/\*+\/\s*$/, '')
 					.split(/\r?\n/).map(function(s) { return s.replace(/^\s*\*\s?/, ''); }).join('\n').trim();
-			}
-			return '';
-		}
-
-		function getFunctionDocPreviewLine(doc) {
-			if (!doc || typeof doc !== 'string') return '';
-			var lines = doc.split(/\r?\n/);
-			for (var i = 0; i < lines.length; i++) {
-				var line = (lines[i] || '').trim();
-				if (!line) continue;
-				if (/^[-=_*~`\.]{3,}$/.test(line)) continue;
-				return line;
 			}
 			return '';
 		}
@@ -5767,7 +6013,7 @@
 				var version = escapeHtml(lib.version || "");
 				var author = escapeHtml(lib.author || "");
 				var description = escapeHtml(lib.description || "");
-				var tags = shared.filterReservedTags(shared.sanitizeTags(lib.tags || [])).filtered;
+				var tags = (lib.tags || []).map(function(t) { return escapeHtml(t); });
 				var hasImage = !!lib.library_image_base64;
 				var hasComWarning = lib.com_warning === true;
 				var comDlls = (lib.com_register_dlls || []).map(function(d) { return escapeHtml(d); });
@@ -5797,7 +6043,12 @@
 				var shortDesc = description;
 				if (shortDesc.length > 80) { shortDesc = shortDesc.substring(0, 80) + "..."; }
 
-				var tagsHtml = buildEditableTagsHtml(tags, 'user', lib._id, 'card');
+				var tagsHtml = "";
+				if (tags.length > 0) {
+					tags.forEach(function(t) {
+						tagsHtml += '<button type="button" class="imp-tag-badge mr-1 mb-1" data-tag="' + t + '"><i class="fas fa-tag mr-1"></i>' + t + '</button>';
+					});
+				}
 
 				// COM warning badge
 				var comWarningBadge = "";
@@ -5937,7 +6188,7 @@
 				} catch(e) { /* fall through */ }
 			}
 
-			// 2) No root icon found - collect submethod icons and tile them
+			// 2) No root icon found — collect submethod icons and tile them
 			var subIcons = [];
 			var canonDot = canonLower + '.';
 			for (var si = 0; si < discovered.length; si++) {
@@ -5991,7 +6242,7 @@
 			var author = escapeHtml(sLib.author || "Hamilton");
 			var fileCount = (sLib.discovered_files || []).length;
 			var resTypes = escapeHtml((sLib.resource_types || []).join(', '));
-			var effectiveTags = getSystemLibraryEffectiveTags(sLib);
+			var hasPrimary = sLib.has_primary_definition;
 
 			var iconHtml = resolveSystemLibIcon(sLib, 48);
 
@@ -6000,7 +6251,12 @@
 			var hasIntegrityError = !integrity.valid;
 			var hasIntegrityWarning = integrity.warnings.length > 0;
 
-			var typeBadges = buildEditableTagsHtml(effectiveTags, 'system', sLib._id, 'card');
+			var typeBadges = '';
+			if (hasPrimary) {
+				typeBadges = '<button type="button" class="imp-tag-badge mr-1 mb-1" data-tag="system"><i class="fas fa-tag mr-1"></i>System</button>';
+			} else {
+				typeBadges = '<button type="button" class="imp-tag-badge mr-1 mb-1" data-tag="system"><i class="fas fa-tag mr-1"></i>System Resource</button>';
+			}
 
 			var shortDesc = fileCount + ' file' + (fileCount !== 1 ? 's' : '') + ' (' + resTypes + ')';
 
@@ -6074,12 +6330,12 @@
 			// Metadata
 			$("#libDetailModal .lib-detail-name").text(lib.library_name || "Unknown");
 			$("#libDetailModal .lib-detail-version").text(lib.version ? "v" + lib.version : "");
-			$("#libDetailModal .lib-detail-author").text(lib.author || "-");
-			$("#libDetailModal .lib-detail-organization").text(lib.organization || "-");
-			$("#libDetailModal .lib-detail-venus").text(lib.venus_compatibility || "-");
-			$("#libDetailModal .lib-detail-installed-date").text(lib.installed_date ? new Date(lib.installed_date).toLocaleString() : "-");
-			$("#libDetailModal .lib-detail-created-date").text(lib.created_date ? new Date(lib.created_date).toLocaleString() : "-");
-			$("#libDetailModal .lib-detail-installed-by").text(lib.installed_by || "-");
+			$("#libDetailModal .lib-detail-author").text(lib.author || "\u2014");
+			$("#libDetailModal .lib-detail-organization").text(lib.organization || "\u2014");
+			$("#libDetailModal .lib-detail-venus").text(lib.venus_compatibility || "\u2014");
+			$("#libDetailModal .lib-detail-installed-date").text(lib.installed_date ? new Date(lib.installed_date).toLocaleString() : "\u2014");
+			$("#libDetailModal .lib-detail-created-date").text(lib.created_date ? new Date(lib.created_date).toLocaleString() : "\u2014");
+			$("#libDetailModal .lib-detail-installed-by").text(lib.installed_by || "\u2014");
 
 			// Description
 			if (lib.description) {
@@ -6090,9 +6346,13 @@
 			}
 
 			// Tags
-			var tags = shared.filterReservedTags(shared.sanitizeTags(lib.tags || [])).filtered;
-			$("#libDetailModal .lib-detail-tags").html(buildEditableTagsHtml(tags, 'user', libId, 'detail'));
-			$("#libDetailModal .lib-detail-tags-section").removeClass("d-none");
+			var tags = lib.tags || [];
+			if (tags.length > 0) {
+				$("#libDetailModal .lib-detail-tags").text(tags.join(", "));
+				$("#libDetailModal .lib-detail-tags-section").removeClass("d-none");
+			} else {
+				$("#libDetailModal .lib-detail-tags-section").addClass("d-none");
+			}
 
 			// Library image in body
 			if (lib.library_image_base64) {
@@ -6151,8 +6411,8 @@
 			}
 
 			// Install paths
-			$("#libDetailModal .lib-detail-lib-path").text("Library: " + (lib.lib_install_path || "-"));
-			$("#libDetailModal .lib-detail-demo-path").text("Demo Methods: " + (lib.demo_install_path || "-"));
+			$("#libDetailModal .lib-detail-lib-path").text("Library: " + (lib.lib_install_path || "\u2014"));
+			$("#libDetailModal .lib-detail-demo-path").text("Demo Methods: " + (lib.demo_install_path || "\u2014"));
 
 			// Required dependencies section
 			var deps = extractRequiredDependencies(lib.library_files || [], lib.lib_install_path || '');
@@ -6230,9 +6490,8 @@
 					var retBadge = fn.returnType && fn.returnType !== 'void'
 						? '<span class="badge badge-light ml-1" style="font-size:0.65rem; vertical-align:middle;">' + escapeHtml(fn.returnType) + '</span>'
 						: '<span class="badge badge-light ml-1" style="font-size:0.65rem; vertical-align:middle; opacity:0.5;">void</span>';
-					var docPreview = getFunctionDocPreviewLine(fn.doc);
-					var docHtml = docPreview
-						? '<div class="fn-doc text-muted text-sm" style="margin-left:22px; font-size:0.75rem; white-space:pre-wrap;">' + $("<span>").text(docPreview).html() + '</div>'
+					var docHtml = fn.doc
+						? '<div class="fn-doc text-muted text-sm" style="margin-left:22px; font-size:0.75rem; white-space:pre-wrap;">' + $("<span>").text(fn.doc.split('\n')[0]).html() + '</div>'
 						: '';
 					$fnList.append(
 						'<div class="fn-item" style="padding:3px 0; border-bottom:1px solid rgba(128,128,128,0.1);">' +
@@ -6327,7 +6586,7 @@
 						var isCurrent = (cv.version === lib.version);
 						var currentBadge = isCurrent ? ' <span class="badge badge-success" style="font-size:0.65rem;">current</span>' : '';
 						var sizeKB = (cv.size / 1024).toFixed(1);
-						var cachedDate = cv.cached ? new Date(cv.cached).toLocaleString() : '-';
+						var cachedDate = cv.cached ? new Date(cv.cached).toLocaleString() : '\u2014';
 						var rollbackBtn = !isCurrent
 							? '<button class="btn btn-sm btn-outline-primary lib-detail-rollback-btn ml-auto" style="font-size:0.7rem; padding:1px 8px;" data-fullpath="' + cv.fullPath.replace(/"/g, '&quot;') + '" data-version="' + (cv.version || '?') + '" data-libname="' + (lib.library_name || '').replace(/"/g, '&quot;') + '"><i class="fas fa-undo-alt mr-1"></i>Rollback</button>'
 							: '<span class="badge badge-light ml-auto" style="font-size:0.65rem;">installed</span>';
@@ -6355,7 +6614,7 @@
 		}
 
 		// ---- Rollback to a cached package version from detail modal ----
-		$(document).on("click", ".lib-detail-rollback-btn", async function(e) {
+		$(document).on("click", ".lib-detail-rollback-btn", function(e) {
 			e.preventDefault();
 			var fullPath = $(this).attr("data-fullpath");
 			var version  = $(this).attr("data-version");
@@ -6363,8 +6622,11 @@
 
 			if (!fullPath || !libName) return;
 
-			var rollbackConfirmed = await showRollbackConfirmModal(libName, version);
-			if (!rollbackConfirmed) {
+			if (!confirm('Roll back "' + libName + '" to version ' + version + '?\n\nThis will replace the currently installed files with the selected version.')) {
+				return;
+			}
+
+			if (!confirm('Are you sure? This will overwrite all current library files for "' + libName + '".')) {
 				return;
 			}
 
@@ -6465,7 +6727,7 @@
 					version: manifest.version || "",
 					venus_compatibility: manifest.venus_compatibility || "",
 					description: manifest.description || "",
-					tags: shared.filterReservedTags(shared.sanitizeTags(manifest.tags || [])).filtered,
+					tags: manifest.tags || [],
 					created_date: manifest.created_date || "",
 					library_image: manifest.library_image || null,
 					library_image_base64: manifest.library_image_base64 || null,
@@ -6513,7 +6775,7 @@
 				showGenericSuccessModal({
 					title: "Version Rollback Successful!",
 					name: rLibName,
-					detail: extractedCount + " file" + (extractedCount !== 1 ? "s" : "") + " installed - rolled back to version " + (manifest.version || '?')
+					detail: extractedCount + " file" + (extractedCount !== 1 ? "s" : "") + " installed — rolled back to version " + (manifest.version || '?')
 				});
 
 				// ---- Audit trail entry ----
@@ -6552,7 +6814,7 @@
 			$("#libDetailModal .lib-detail-version").text(sysVerText);
 			$("#libDetailModal .lib-detail-author").text(sLib.author || "Hamilton");
 			$("#libDetailModal .lib-detail-organization").text(sLib.organization || "Hamilton");
-			$("#libDetailModal .lib-detail-venus").text(sLib.venus_version || "-");
+			$("#libDetailModal .lib-detail-venus").text(sLib.venus_version || "\u2014");
 			$("#libDetailModal .lib-detail-installed-date").text(sLib.installed_date ? new Date(sLib.installed_date).toLocaleString() : "Included with VENUS");
 			$("#libDetailModal .lib-detail-installed-by").text(sLib.installed_by || "System");
 			$("#libDetailModal .lib-detail-created-date").text("N/A");
@@ -6565,13 +6827,13 @@
 			$("#libDetailModal .lib-detail-desc-section").removeClass("d-none");
 
 			// Tags
-			$("#libDetailModal .lib-detail-tags").html(buildEditableTagsHtml(getSystemLibraryEffectiveTags(sLib), 'system', libId, 'detail'));
+			$("#libDetailModal .lib-detail-tags").text("system, hamilton, read-only");
 			$("#libDetailModal .lib-detail-tags-section").removeClass("d-none");
 
 			// No image
 			$("#libDetailModal .lib-detail-image-section").addClass("d-none");
 
-			// Library files list (from discovered_files) - separate CHMs into help section
+			// Library files list (from discovered_files) — separate CHMs into help section
 			var $libFiles = $("#libDetailModal .lib-detail-lib-files");
 			$libFiles.empty();
 			var discoveredFiles = sLib.discovered_files || [];
@@ -6695,7 +6957,7 @@
 				$sysDepSection.addClass("d-none");
 			}
 
-			// Public functions section - parse .hsl files from discovered_files
+			// Public functions section — parse .hsl files from discovered_files
 			var sysPubFns = [];
 			(discoveredFiles || []).forEach(function(f) {
 				if (path.extname(f).toLowerCase() !== '.hsl') return;
@@ -6727,9 +6989,8 @@
 					var retBadge = fn.returnType && fn.returnType !== 'void'
 						? '<span class="badge badge-light ml-1" style="font-size:0.65rem; vertical-align:middle;">' + escapeHtml(fn.returnType) + '</span>'
 						: '<span class="badge badge-light ml-1" style="font-size:0.65rem; vertical-align:middle; opacity:0.5;">void</span>';
-					var docPreview = getFunctionDocPreviewLine(fn.doc);
-					var docHtml = docPreview
-						? '<div class="fn-doc text-muted text-sm" style="margin-left:22px; font-size:0.75rem; white-space:pre-wrap;">' + $("<span>").text(docPreview).html() + '</div>'
+					var docHtml = fn.doc
+						? '<div class="fn-doc text-muted text-sm" style="margin-left:22px; font-size:0.75rem; white-space:pre-wrap;">' + $("<span>").text(fn.doc.split('\n')[0]).html() + '</div>'
 						: '';
 					$fnList.append(
 						'<div class="fn-item" style="padding:3px 0; border-bottom:1px solid rgba(128,128,128,0.1);">' +
@@ -6867,14 +7128,14 @@
 			$("#exportChoiceModal").modal("show");
 		});
 
-		// Export choice modal - hover effect (skip disabled)
+		// Export choice modal — hover effect (skip disabled)
 		$(document).on("mouseenter", ".export-choice-option:not(.export-choice-disabled)", function() {
 			$(this).css("background", "var(--body-background)");
 		}).on("mouseleave", ".export-choice-option:not(.export-choice-disabled)", function() {
 			$(this).css("background", "");
 		});
 
-		// Export choice modal - click an option (ignore disabled)
+		// Export choice modal — click an option (ignore disabled)
 		$(document).on("click", ".export-choice-option:not(.export-choice-disabled)", function() {
 			var choice = $(this).attr("data-choice");
 			var libId = $("#exportChoiceModal").attr("data-lib-id");
@@ -6943,7 +7204,7 @@
 				var libImageBase64 = lib.library_image_base64 || null;
 				var libImageMime = lib.library_image_mime || null;
 
-				// Build manifest - include help_files for the importer
+				// Build manifest — include help_files for the importer
 				// Also include CHMs in library_files for backward compatibility
 				var manifestLibFiles = libraryFiles.slice();
 				helpFiles.forEach(function(hf) {
@@ -6983,7 +7244,7 @@
 					}
 				});
 
-				// Add help files (CHMs - packed into library/ folder)
+				// Add help files (CHMs — packed into library/ folder)
 				helpFiles.forEach(function(f) {
 					var fullPath = path.join(libBasePath, f);
 					if (fs.existsSync(fullPath)) {
@@ -7454,7 +7715,7 @@
 						}
 					});
 
-					// Add help files (CHMs - packed into library/ folder)
+					// Add help files (CHMs — packed into library/ folder)
 					helpFiles.forEach(function(f) {
 						var fullPath = path.join(libBasePath, f);
 						if (fs.existsSync(fullPath)) {
@@ -7555,85 +7816,8 @@
 		//****** IMPORT ARCHIVE (.hxlibarch) - Import multiple libraries at once ****************
 		//**************************************************************************************
 
-		function showArchiveConflictResolutionModal(conflicts) {
-			return new Promise(function(resolve) {
-				var $modal = $("#archiveConflictModal");
-				var resolved = false;
-				var updateApplyEnabled = function() {
-					var allChosen = true;
-					$modal.find('.arch-conflict-action').each(function() {
-						if (!$(this).val()) allChosen = false;
-					});
-					$modal.find('.arch-conflict-apply').prop('disabled', !allChosen);
-					$modal.find('.arch-conflict-hint').toggle(!allChosen);
-				};
-
-				if (!$modal.length) {
-					resolve(null);
-					return;
-				}
-
-				var rowsHtml = '';
-				(conflicts || []).forEach(function(c) {
-					rowsHtml +=
-						'<tr>' +
-							'<td style="vertical-align:middle;"><strong>' + escapeHtml(c.libName || '') + '</strong></td>' +
-							'<td style="vertical-align:middle;">v' + escapeHtml(c.currentVersion || '?') + '</td>' +
-							'<td style="vertical-align:middle;">v' + escapeHtml(c.incomingVersion || '?') + '</td>' +
-							'<td style="vertical-align:middle; min-width:170px;">' +
-								'<select class="form-control form-control-sm arch-conflict-action" data-conflict-id="' + escapeHtml(c.id || '') + '">' +
-									'<option value="" selected disabled>Choose action...</option>' +
-									'<option value="skip">Skip (keep installed)</option>' +
-									'<option value="overwrite">Overwrite (upgrade/replace)</option>' +
-								'</select>' +
-							'</td>' +
-						'</tr>';
-				});
-
-				$modal.find('.arch-conflict-count').text((conflicts || []).length);
-				$modal.find('.arch-conflict-tbody').html(rowsHtml);
-
-				$modal.find('.arch-conflict-overwrite-all').off('click.archConflict').on('click.archConflict', function() {
-					$modal.find('.arch-conflict-action').val('overwrite');
-					updateApplyEnabled();
-				});
-				$modal.find('.arch-conflict-skip-all').off('click.archConflict').on('click.archConflict', function() {
-					$modal.find('.arch-conflict-action').val('skip');
-					updateApplyEnabled();
-				});
-
-				$modal.find('.arch-conflict-action').off('change.archConflict').on('change.archConflict', function() {
-					updateApplyEnabled();
-				});
-
-				updateApplyEnabled();
-
-				$modal.find('.arch-conflict-apply').off('click.archConflict').on('click.archConflict', function() {
-					if ($(this).prop('disabled')) return;
-					if (resolved) return;
-					resolved = true;
-					var decisions = {};
-					$modal.find('.arch-conflict-action').each(function() {
-						var id = $(this).attr('data-conflict-id');
-						decisions[id] = $(this).val();
-					});
-					$modal.modal('hide');
-					resolve(decisions);
-				});
-
-				$modal.off('hidden.bs.modal.archConflict').on('hidden.bs.modal.archConflict', function() {
-					if (!resolved) {
-						resolved = true;
-						resolve(null);
-					}
-				});
-
-				$modal.modal('show');
-			});
-		}
-
 		// Import archive: extract each .hxlibpkg and install sequentially
-		async function impArchImportArchive(archivePath) {
+		function impArchImportArchive(archivePath) {
 			if (_isImporting) {
 				alert("An import is already in progress. Please wait for it to complete.");
 				return;
@@ -7669,7 +7853,7 @@
 
 				if (!confirm(confirmMsg)) return;
 
-				var results = { success: [], failed: [], skipped: [] };
+				var results = { success: [], failed: [] };
 
 				// Determine base install paths
 				var libFolder = db_links.links.findOne({"_id":"lib-folder"});
@@ -7677,8 +7861,7 @@
 				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
 				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
 
-				var packagePlans = [];
-				var conflicts = [];
+				// Process each package
 				pkgEntries.forEach(function(pkgEntry) {
 					try {
 						var pkgBuffer = pkgEntry.getData();
@@ -7698,55 +7881,10 @@
 							return;
 						}
 
+						// Verify inner package signature
 						var innerSig = verifyPackageSignature(innerZip);
 						if (innerSig.signed && !innerSig.valid) {
 							results.failed.push(libName + ": signature verification FAILED (" + innerSig.errors.join("; ") + ")");
-							return;
-						}
-
-						var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
-						var plan = {
-							id: pkgEntry.entryName,
-							pkgEntry: pkgEntry,
-							pkgBuffer: pkgBuffer,
-							innerZip: innerZip,
-							manifest: manifest,
-							libName: libName,
-							existing: existing
-						};
-						packagePlans.push(plan);
-
-						if (existing) {
-							conflicts.push({
-								id: plan.id,
-								libName: libName,
-								currentVersion: existing.version || '?',
-								incomingVersion: manifest.version || '?'
-							});
-						}
-					} catch(planErr) {
-						results.failed.push(pkgEntry.entryName + ": " + planErr.message);
-					}
-				});
-
-				var conflictDecisions = {};
-				if (conflicts.length > 0) {
-					var decisions = await showArchiveConflictResolutionModal(conflicts);
-					if (!decisions) return;
-					conflictDecisions = decisions;
-				}
-
-				// Process each package
-				packagePlans.forEach(function(plan) {
-					try {
-						var pkgEntry = plan.pkgEntry;
-						var pkgBuffer = plan.pkgBuffer;
-						var innerZip = plan.innerZip;
-						var manifest = plan.manifest;
-						var libName = plan.libName;
-
-						if (plan.existing && conflictDecisions[plan.id] === 'skip') {
-							results.skipped.push(libName + ' (kept installed v' + (plan.existing.version || '?') + ')');
 							return;
 						}
 
@@ -7833,7 +7971,7 @@
 							version: manifest.version || "",
 							venus_compatibility: manifest.venus_compatibility || "",
 							description: manifest.description || "",
-							tags: shared.filterReservedTags(shared.sanitizeTags(manifest.tags || [])).filtered,
+							tags: manifest.tags || [],
 							created_date: manifest.created_date || "",
 							library_image: manifest.library_image || null,
 							library_image_base64: manifest.library_image_base64 || null,
@@ -7914,7 +8052,7 @@
 						}
 
 					} catch(e) {
-						results.failed.push(plan.pkgEntry.entryName + ": " + e.message);
+						results.failed.push(pkgEntry.entryName + ": " + e.message);
 					}
 				});
 
@@ -7930,20 +8068,13 @@
 						archImpListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-times text-danger mr-1"></i>' + n.replace(/</g,'&lt;') + '</div>';
 					});
 				}
-				if (results.skipped.length > 0) {
-					results.skipped.forEach(function(n) {
-						archImpListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-forward text-warning mr-1"></i>' + n.replace(/</g,'&lt;') + '</div>';
-					});
-				}
 				archImpListHtml += '</div>';
 
-				var archImpTitle = (results.failed.length > 0 || results.skipped.length > 0) ? "Archive Import Complete" : "Archive Imported Successfully!";
+				var archImpTitle = results.failed.length > 0 ? "Archive Import Complete" : "Archive Imported Successfully!";
 
 				showGenericSuccessModal({
 					title: archImpTitle,
-					detail: results.success.length + " succeeded" +
-						(results.failed.length > 0 ? ", " + results.failed.length + " failed" : "") +
-						(results.skipped.length > 0 ? ", " + results.skipped.length + " skipped" : ""),
+					detail: results.success.length + " succeeded" + (results.failed.length > 0 ? ", " + results.failed.length + " failed" : ""),
 					listHtml: archImpListHtml
 				});
 
@@ -7953,8 +8084,7 @@
 						archive_file:    archivePath,
 						packages_total:  pkgEntries.length,
 						succeeded:       results.success,
-						failed:          results.failed,
-						skipped:         results.skipped
+						failed:          results.failed
 					}));
 				} catch(_) { /* non-critical */ }
 
@@ -7977,145 +8107,6 @@
 			$("#imp-search-input").val("#" + tag).trigger("input");
 		});
 
-		function getOwnerTags(owner, ownerId) {
-			if (owner === 'system') {
-				var sLib = getSystemLibrary(ownerId);
-				return sLib ? getSystemLibraryEffectiveTags(sLib) : [];
-			}
-			if (owner === 'unsigned') {
-				var uLib = db_unsigned_libs.unsigned_libs.findOne({"_id": ownerId});
-				return uLib ? shared.filterReservedTags(shared.sanitizeTags(uLib.tags || [])).filtered : [];
-			}
-			var lib = db_installed_libs.installed_libs.findOne({"_id": ownerId});
-			return lib ? shared.filterReservedTags(shared.sanitizeTags(lib.tags || [])).filtered : [];
-		}
-
-		function saveOwnerTags(owner, ownerId, tags) {
-			var sanitized = shared.filterReservedTags(shared.sanitizeTags(tags || [])).filtered;
-			if (owner === 'system') {
-				return persistSystemLibraryTags(ownerId, sanitized);
-			}
-			if (owner === 'unsigned') {
-				db_unsigned_libs.unsigned_libs.update({"_id": ownerId}, { tags: sanitized }, {multi: false, upsert: false});
-				var $uModal = $("#unsignedLibDetailModal");
-				if ($uModal.hasClass('show') && $uModal.attr('data-ulib-id') === ownerId) {
-					$("#ulib-tags").val(sanitized.join(', '));
-				}
-				return true;
-			}
-			db_installed_libs.installed_libs.update({"_id": ownerId}, { tags: sanitized }, {multi: false, upsert: false});
-			return true;
-		}
-
-		function refreshTagsAfterUpdate(owner, ownerId) {
-			if (_searchActive) {
-				$("#imp-search-input").trigger("input");
-			} else {
-				var $active = $(".navbar-custom .nav-item.active, .navbar-custom .dropdown-navitem.active").first();
-				if ($active.length) $active.trigger("click");
-				else impBuildLibraryCards();
-			}
-
-			var $modal = $("#libDetailModal");
-			if ($modal.hasClass('show') && $modal.attr('data-lib-id') === ownerId) {
-				if (owner === 'system') {
-					var sLib = getSystemLibrary(ownerId);
-					if (sLib) $("#libDetailModal .lib-detail-tags").html(buildEditableTagsHtml(getSystemLibraryEffectiveTags(sLib), 'system', ownerId, 'detail'));
-				} else if (owner === 'user') {
-					var lib = db_installed_libs.installed_libs.findOne({"_id": ownerId});
-					if (lib) $("#libDetailModal .lib-detail-tags").html(buildEditableTagsHtml(shared.filterReservedTags(shared.sanitizeTags(lib.tags || [])).filtered, 'user', ownerId, 'detail'));
-				}
-			}
-		}
-
-		function closeInlineTagInput($list, keepAddVisible) {
-			$list.find('.imp-tag-input-wrap').remove();
-			if (keepAddVisible !== false) $list.find('.imp-tag-add').removeClass('d-none');
-		}
-
-		$(document).on('click', '.imp-tag-add', function(e) {
-			e.preventDefault();
-			e.stopPropagation();
-			var $add = $(this);
-			var $list = $add.closest('.imp-tag-list');
-			if ($list.find('.imp-tag-input-wrap').length) {
-				$list.find('.imp-tag-inline-input').focus();
-				return;
-			}
-			$add.addClass('d-none');
-			$list.append('<span class="imp-tag-input-wrap"><input type="text" class="imp-tag-inline-input" placeholder="new tag"></span>');
-			$list.find('.imp-tag-inline-input').focus();
-		});
-
-		$(document).on('keydown', '.imp-tag-inline-input', function(e) {
-			if (e.keyCode === 13) {
-				e.preventDefault();
-				$(this).trigger('blur');
-			} else if (e.keyCode === 27) {
-				e.preventDefault();
-				closeInlineTagInput($(this).closest('.imp-tag-list'));
-			}
-		});
-
-		$(document).on('blur', '.imp-tag-inline-input', function() {
-			var $input = $(this);
-			var $list = $input.closest('.imp-tag-list');
-			var owner = $list.attr('data-tag-owner') || 'user';
-			var ownerId = $list.attr('data-tag-owner-id');
-			var feedback = shared.sanitizeTagsWithFeedback([$input.val() || '']);
-			var msgs = buildTagFeedbackMessages(feedback);
-			var tag = (feedback.tags && feedback.tags.length > 0) ? feedback.tags[0] : '';
-
-			if (msgs.warning) showTagValidationWarningModal(msgs.warning);
-
-			if (!tag) {
-				if (msgs.error) showTagValidationErrorModal(msgs.error);
-				closeInlineTagInput($list);
-				return;
-			}
-
-			if (isProtectedTag(tag, owner)) {
-				showTagValidationErrorModal('The tag "' + tag + '" is reserved and cannot be added.');
-				closeInlineTagInput($list);
-				return;
-			}
-
-			var tags = getOwnerTags(owner, ownerId);
-			if (tags.indexOf(tag) !== -1) {
-				closeInlineTagInput($list);
-				return;
-			}
-
-			tags.push(tag);
-			if (!saveOwnerTags(owner, ownerId, tags)) {
-				showTagValidationErrorModal('Tag cannot be added right now.');
-				closeInlineTagInput($list);
-				return;
-			}
-			closeInlineTagInput($list);
-			refreshTagsAfterUpdate(owner, ownerId);
-		});
-
-		$(document).on('click', '.imp-tag-remove', function(e) {
-			e.preventDefault();
-			e.stopPropagation();
-			var $btn = $(this);
-			var $list = $btn.closest('.imp-tag-list');
-			var owner = $list.attr('data-tag-owner') || 'user';
-			var ownerId = $list.attr('data-tag-owner-id');
-			var tag = shared.sanitizeTag($btn.attr('data-tag') || '');
-			if (!tag || isProtectedTag(tag, owner)) {
-				showTagValidationErrorModal('The tag "' + tag + '" is protected and cannot be removed.');
-				return;
-			}
-			var tags = getOwnerTags(owner, ownerId).filter(function(t) { return t !== tag; });
-			if (!saveOwnerTags(owner, ownerId, tags)) {
-				showTagValidationErrorModal('Tag cannot be removed right now.');
-				return;
-			}
-			refreshTagsAfterUpdate(owner, ownerId);
-		});
-
 		$(document).on("mouseenter", ".imp-tag-badge", function() {
 			$(this).closest(".imp-lib-card").addClass("imp-lib-card-tag-hover");
 		});
@@ -8128,7 +8119,7 @@
 			// Don't open detail modal when clicking the Help link, Star, or Tag badge
 			if ($(e.target).closest(".imp-lib-card-help-link").length) return;
 			if ($(e.target).closest(".imp-lib-star").length) return;
-			if ($(e.target).closest(".imp-tag-badge, .imp-tag-add, .imp-tag-remove, .imp-tag-input-wrap").length) return;
+			if ($(e.target).closest(".imp-tag-badge").length) return;
 			e.preventDefault();
 			var libId = $(this).closest(".imp-lib-card-container").attr("data-lib-id");
 			if (libId) impShowLibDetail(libId);
@@ -8242,86 +8233,6 @@
 
 				// Cancel / dismiss handler
 				$modal.off("hidden.bs.modal.deleteConfirm").on("hidden.bs.modal.deleteConfirm", function() {
-					if (!resolved) {
-						resolved = true;
-						resolve(false);
-					}
-				});
-
-				$modal.modal("show");
-			});
-		}
-
-		function showUpgradeConfirmModal(libName, fromVersion, toVersion) {
-			return new Promise(function(resolve) {
-				var $modal = $("#upgradeLibConfirmModal");
-				var expectedText = libName;
-				var resolved = false;
-
-				$modal.find(".upgrade-confirm-libname-header").text(libName);
-				$modal.find(".upgrade-confirm-expected-text").text(expectedText);
-				$modal.find(".upgrade-confirm-input").val("");
-				$modal.find(".upgrade-confirm-btn").prop("disabled", true);
-
-				var fromVer = fromVersion || '?';
-				var toVer = toVersion || '?';
-				$modal.find(".upgrade-confirm-consequences").text(
-					'This will overwrite the currently installed version (v' + fromVer + ') with the incoming version (v' + toVer + ').'
-				);
-
-				$modal.find(".upgrade-confirm-input").off("input.upgradeConfirm").on("input.upgradeConfirm", function() {
-					var typed = $(this).val().trim();
-					$modal.find(".upgrade-confirm-btn").prop("disabled", typed !== expectedText);
-				});
-
-				$modal.find(".upgrade-confirm-btn").off("click.upgradeConfirm").on("click.upgradeConfirm", function() {
-					if (!resolved) {
-						resolved = true;
-						$modal.modal("hide");
-						resolve(true);
-					}
-				});
-
-				$modal.off("hidden.bs.modal.upgradeConfirm").on("hidden.bs.modal.upgradeConfirm", function() {
-					if (!resolved) {
-						resolved = true;
-						resolve(false);
-					}
-				});
-
-				$modal.modal("show");
-			});
-		}
-
-		function showRollbackConfirmModal(libName, targetVersion) {
-			return new Promise(function(resolve) {
-				var $modal = $("#rollbackLibConfirmModal");
-				var expectedText = libName;
-				var resolved = false;
-
-				$modal.find(".rollback-confirm-libname-header").text(libName);
-				$modal.find(".rollback-confirm-expected-text").text(expectedText);
-				$modal.find(".rollback-confirm-input").val("");
-				$modal.find(".rollback-confirm-btn").prop("disabled", true);
-
-				$modal.find(".rollback-confirm-consequences").text(
-					'This will overwrite all current files with version ' + (targetVersion || '?') + ' from the package store.'
-				);
-
-				$modal.find(".rollback-confirm-input").off("input.rollbackConfirm").on("input.rollbackConfirm", function() {
-					var typed = $(this).val().trim();
-					$modal.find(".rollback-confirm-btn").prop("disabled", typed !== expectedText);
-				});
-
-				$modal.find(".rollback-confirm-btn").off("click.rollbackConfirm").on("click.rollbackConfirm", function() {
-					if (!resolved) {
-						resolved = true;
-						$modal.modal("hide");
-						resolve(true);
-					}
-				});
-
-				$modal.off("hidden.bs.modal.rollbackConfirm").on("hidden.bs.modal.rollbackConfirm", function() {
 					if (!resolved) {
 						resolved = true;
 						resolve(false);
@@ -8605,10 +8516,10 @@
 				// Metadata
 				$modal.find(".imp-preview-name").text(libName);
 				$modal.find(".imp-preview-version").text(manifest.version ? "v" + manifest.version : "");
-				$modal.find(".imp-preview-author").text(manifest.author || "-");
-				$modal.find(".imp-preview-organization").text(manifest.organization || "-");
-				$modal.find(".imp-preview-venus").text(manifest.venus_compatibility || "-");
-				$modal.find(".imp-preview-created").text(manifest.created_date ? new Date(manifest.created_date).toLocaleString() : "-");
+				$modal.find(".imp-preview-author").text(manifest.author || "\u2014");
+				$modal.find(".imp-preview-organization").text(manifest.organization || "\u2014");
+				$modal.find(".imp-preview-venus").text(manifest.venus_compatibility || "\u2014");
+				$modal.find(".imp-preview-created").text(manifest.created_date ? new Date(manifest.created_date).toLocaleString() : "\u2014");
 
 				// Description
 				if (manifest.description) {
@@ -8769,17 +8680,6 @@
 			var comDlls = manifest.com_register_dlls || [];
 			var comWarning = false;  // tracks if COM registration failed but user chose to proceed
 
-			// If this import upgrades an existing installed library, require
-			// typed destructive confirmation before any file operations.
-			var existingUpgrade = db_installed_libs.installed_libs.findOne({"library_name": libName});
-			if (existingUpgrade) {
-				var upgradeConfirmed = await showUpgradeConfirmModal(libName, existingUpgrade.version, manifest.version);
-				if (!upgradeConfirmed) {
-					_isImporting = false;
-					return;
-				}
-			}
-
 			// ---- COM REGISTRATION FIRST (before extracting files) ----
 			if (comDlls.length > 0) {
 				// We need to extract the DLLs to a temp location first for registration,
@@ -8893,7 +8793,7 @@
 							extractedCount++;
 						}
 					} else if (entry.entryName.indexOf("help_files/") === 0) {
-						// Legacy/explicit help_files folder - extract to library directory
+						// Legacy/explicit help_files folder — extract to library directory
 						var fname = entry.entryName.substring("help_files/".length);
 						if (fname) {
 							var outPath = safeZipExtractPath(libDestDir, fname);
@@ -8928,7 +8828,7 @@
 					version: manifest.version || "",
 					venus_compatibility: manifest.venus_compatibility || "",
 					description: manifest.description || "",
-					tags: shared.filterReservedTags(shared.sanitizeTags(manifest.tags || [])).filtered,
+					tags: manifest.tags || [],
 					created_date: manifest.created_date || "",
 					library_image: manifest.library_image || null,
 					library_image_base64: manifest.library_image_base64 || null,
@@ -9440,7 +9340,7 @@
 						'The audit log integrity signature is valid.\nThis file has not been modified since it was generated.');
 				} else {
 					showAuditVerifyResult($vm, false, path.basename(filePath),
-						'Signature mismatch - the file contents have been altered.\n\nStored:    ' + storedSig + '\nComputed: ' + computedSig);
+						'Signature mismatch — the file contents have been altered.\n\nStored:    ' + storedSig + '\nComputed: ' + computedSig);
 				}
 			} catch(e) {
 				showAuditVerifyResult($vm, false, path.basename(filePath),
@@ -9801,7 +9701,7 @@
 					showGenericSuccessModal({
 						title: "Library Repaired Successfully!",
 						name: libName,
-						detail: extractedCount + " file" + (extractedCount !== 1 ? "s" : "") + " re-extracted - Version " + (newest.version || '?'),
+						detail: extractedCount + " file" + (extractedCount !== 1 ? "s" : "") + " re-extracted — Version " + (newest.version || '?'),
 						statusHtml: sigResult.signed ? '<i class="fas fa-check mr-1"></i>Package signature: verified' : null,
 						statusClass: 'com-ok'
 					});
@@ -9944,7 +9844,7 @@
 
 		/**
 		 * Show or hide the COM registration warning in the unsigned library modal footer.
-		 * Unlike the old behaviour, export is NOT blocked - the warning is informational only.
+		 * Unlike the old behaviour, export is NOT blocked — the warning is informational only.
 		 */
 		function ulibUpdateComWarning() {
 			var $warning = $("#ulib-com-warning");
@@ -9959,7 +9859,7 @@
 		 * Scan the Library folder for .hsl and .smt files that are NOT part of a
 		 * system library or a signed/installed library. Groups files by library name
 		 * (derived from filename without extension) and stores them in unsigned_libs DB.
-		 * No hashing or integrity checking is performed - this is purely for convenience.
+		 * No hashing or integrity checking is performed — this is purely for convenience.
 		 */
 		function scanUnsignedLibraries(showVisualFeedback) {
 			var $status = $(".unsigned-scan-status");
@@ -10047,7 +9947,7 @@
 						// Derive library name from primary definition files (.hsl or .smt)
 						if (targetExts.indexOf(ext) !== -1) {
 							var libName = path.basename(entry, ext);
-							// Skip Enu/Deu/Jpn/etc. resource variants - they'll be grouped with the base
+							// Skip Enu/Deu/Jpn/etc. resource variants — they'll be grouped with the base
 							var enuMatch = libName.match(/^(.+?)(Enu|Deu|Jpn|Chs|Kor|Fra|Esp|Por)$/i);
 							var baseName = enuMatch ? enuMatch[1] : libName;
 
@@ -10197,7 +10097,7 @@
 			if (showVisualFeedback) {
 				$btn.prop("disabled", false);
 			}
-			}, 50); // end setTimeout - allows browser repaint so spinner is visible
+			}, 50); // end setTimeout — allows browser repaint so spinner is visible
 		}
 
 		/** Force nav bar rebuild to reflect unsigned group visibility changes */
@@ -10226,7 +10126,7 @@
 			var version = escapeHtml(uLib.version || "");
 			var author = escapeHtml(uLib.author || "");
 			var description = escapeHtml(uLib.description || "");
-			var tags = shared.filterReservedTags(shared.sanitizeTags(uLib.tags || [])).filtered;
+			var tags = (uLib.tags || []).map(function(t) { return escapeHtml(t); });
 			var fileCount = (uLib.library_files || []).length;
 
 			// Build icon
@@ -10238,7 +10138,12 @@
 				iconHtml = '<i class="far fa-times-circle fa-3x" style="color:#adb5bd;"></i>';
 			}
 
-			var tagsHtml = buildEditableTagsHtml(tags, 'unsigned', uLib._id, 'card');
+			var tagsHtml = "";
+			if (tags.length > 0) {
+				tags.forEach(function(t) {
+					tagsHtml += '<button type="button" class="imp-tag-badge mr-1 mb-1" data-tag="' + t + '"><i class="fas fa-tag mr-1"></i>' + t + '</button>';
+				});
+			}
 
 			var shortDesc = description;
 			if (shortDesc.length > 80) { shortDesc = shortDesc.substring(0, 80) + "..."; }
@@ -10306,7 +10211,7 @@
 			$("#ulib-version").val(uLib.version || "");
 			$("#ulib-venus-compat").val(uLib.venus_compatibility || "");
 			$("#ulib-description").val(uLib.description || "");
-			$("#ulib-tags").val(shared.filterReservedTags(shared.sanitizeTags(uLib.tags || [])).filtered.join(", "));
+			$("#ulib-tags").val((uLib.tags || []).join(", "));
 
 			// Initialize module-level state arrays from DB record
 			var libDir = uLib.lib_base_path || '';
@@ -10593,11 +10498,14 @@
 			}
 
 			var tagsRaw = $("#ulib-tags").val().trim();
-			var uTagFeedback = shared.sanitizeTagsWithFeedback(tagsRaw ? tagsRaw.split(",") : []);
-			var tags = uTagFeedback.tags;
-			var uTagMsgs = buildTagFeedbackMessages(uTagFeedback);
-			if (uTagMsgs.warning) showTagValidationWarningModal(uTagMsgs.warning);
-			if (uTagMsgs.error) showTagValidationErrorModal(uTagMsgs.error);
+			var tags = tagsRaw ? shared.sanitizeTags(tagsRaw.split(",")) : [];
+
+			// Filter reserved tags ("System" and "Hamilton" are not allowed)
+			var tagCheck = shared.filterReservedTags(tags);
+			if (tagCheck.removed.length > 0) {
+				showTagValidationErrorModal('The following tags are reserved and cannot be used: ' + tagCheck.removed.join(', ') + '\n\nThese tags have been automatically removed.');
+				tags = tagCheck.filtered;
+			}
 			$("#ulib-tags").val(tags.join(", "));
 
 			// Separate discovered files (relative to lib_base_path) from additional user-added files
@@ -10644,6 +10552,21 @@
 				impBuildLibraryCards(null, false, false, true);
 			} else if (activeGroup === 'gAll') {
 				impBuildLibraryCards();
+			}
+		});
+
+		// ---- Register unsigned library into Library Manager ----
+		$(document).on("click", "#ulib-register-btn", async function() {
+			var ulibId = $("#unsignedLibDetailModal").attr("data-ulib-id");
+			if (!ulibId) return;
+
+			// Save any pending metadata first
+			$("#ulib-save-btn").trigger("click");
+			await new Promise(function(r) { setTimeout(r, 300); });
+
+			var result = await registerUnsignedLibrary(ulibId);
+			if (result) {
+				$("#unsignedLibDetailModal").modal("hide");
 			}
 		});
 
@@ -10695,10 +10618,213 @@
 		});
 
 		/**
+		 * Register an unsigned library directly into Library Manager as a signed/installed library.
+		 * This creates a database record in installed_libs.json, computes integrity hashes,
+		 * extracts public functions and dependencies, assigns the library to a navigation group,
+		 * removes it from the unsigned list, and refreshes the UI.
+		 *
+		 * @param {string} ulibId - The _id of the unsigned library record
+		 * @param {Object} [opts] - Options
+		 * @param {boolean} [opts.silent] - If true, suppress the success modal (used when called from export flow)
+		 * @param {string} [opts.sourcePackage] - Source package filename (used when called from export flow)
+		 * @returns {Promise<boolean>} true if registration succeeded, false otherwise
+		 */
+		async function registerUnsignedLibrary(ulibId, opts) {
+			opts = opts || {};
+			try {
+				var uLib = db_unsigned_libs.unsigned_libs.findOne({"_id": ulibId});
+				if (!uLib) { alert("Unsigned library not found."); return false; }
+
+				var libName = uLib.library_name || "Unknown";
+				var libDir = uLib.lib_base_path || '';
+				var discoveredFiles = uLib.library_files || [];
+				var additionalFiles = uLib.additional_library_files || [];
+				var demoFiles = uLib.demo_method_files || [];
+				var comDlls = uLib.com_register_dlls || [];
+
+				// Build the list of library file basenames (same as what import uses)
+				var allLibPaths = discoveredFiles.map(function(f) { return path.join(libDir, f); });
+				additionalFiles.forEach(function(f) {
+					if (allLibPaths.indexOf(f) === -1) allLibPaths.push(f);
+				});
+
+				// Build basenames list for the DB record (matches import format)
+				var libFileBasenames = allLibPaths.map(function(f) { return path.basename(f); });
+
+				// Separate help files
+				var helpFiles = [];
+				allLibPaths.forEach(function(f) {
+					if (path.extname(f).toLowerCase() === '.chm') {
+						helpFiles.push(path.basename(f));
+					}
+				});
+
+				// Determine install paths (the library files are already in place on disk)
+				var libFolderRec = db_links.links.findOne({"_id":"lib-folder"});
+				var sysLibDir = (libFolderRec && libFolderRec.path) ? libFolderRec.path : 'C:\\Program Files (x86)\\HAMILTON\\Library';
+				var libDestDir = libDir || sysLibDir;
+
+				var methodFolderRec = db_links.links.findOne({"_id":"method-folder"});
+				var sysMethodDir = (methodFolderRec && methodFolderRec.path) ? methodFolderRec.path : 'C:\\Program Files (x86)\\HAMILTON\\Methods';
+				var demoDestDir = path.join(sysMethodDir, 'Library Demo Methods', libName);
+
+				// Check for existing installed lib with same name
+				var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
+				if (existing) {
+					db_installed_libs.installed_libs.remove({"_id": existing._id});
+				}
+
+				// Compute integrity hashes
+				var fileHashes = {};
+				try { fileHashes = computeLibraryHashes(libFileBasenames, libDestDir, comDlls); } catch(e) {}
+
+				// Build the installed library database record (same schema as import)
+				var dbRecord = {
+					library_name: libName,
+					author: uLib.author || "",
+					organization: uLib.organization || "",
+					installed_by: getWindowsUsername(),
+					version: uLib.version || "",
+					venus_compatibility: uLib.venus_compatibility || "",
+					description: uLib.description || "",
+					tags: uLib.tags || [],
+					created_date: uLib.scanned_date || new Date().toISOString(),
+					library_image: uLib.library_image || null,
+					library_image_base64: uLib.library_image_base64 || null,
+					library_image_mime: uLib.library_image_mime || null,
+					library_files: libFileBasenames,
+					demo_method_files: demoFiles.map(function(f) { return path.basename(f); }),
+					help_files: helpFiles,
+					com_register_dlls: comDlls,
+					com_warning: false,
+					lib_install_path: libDestDir,
+					demo_install_path: demoDestDir,
+					installed_date: new Date().toISOString(),
+					source_package: opts.sourcePackage || '(registered from unsigned)',
+					file_hashes: fileHashes,
+					public_functions: extractPublicFunctions(libFileBasenames, libDestDir),
+					required_dependencies: extractRequiredDependencies(libFileBasenames, libDestDir)
+				};
+				var saved = db_installed_libs.installed_libs.save(dbRecord);
+
+				// Add the new library to the appropriate group in the nav tree
+				var navtree = db_tree.tree.find();
+				var targetGroupId = null;
+
+				var savedAuthor = (uLib.author || '').trim();
+				if (isRestrictedAuthor(savedAuthor)) {
+					var hamiltonTreeEntry = null;
+					for (var ti = 0; ti < navtree.length; ti++) {
+						if (navtree[ti]["group-id"] === "gHamilton") {
+							hamiltonTreeEntry = navtree[ti];
+							break;
+						}
+					}
+					if (hamiltonTreeEntry) {
+						targetGroupId = "gHamilton";
+						var existingIds = hamiltonTreeEntry["method-ids"] || [];
+						existingIds.push(saved._id);
+						var treePath = path.join(USER_DATA_DIR, 'tree.json');
+						var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
+						for (var ui = 0; ui < treeData.length; ui++) {
+							if (treeData[ui]["group-id"] === "gHamilton") {
+								treeData[ui]["method-ids"] = existingIds;
+								break;
+							}
+						}
+						fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
+						db_tree = db.connect(USER_DATA_DIR, ['tree']);
+					} else {
+						var treePath2 = path.join(USER_DATA_DIR, 'tree.json');
+						var treeData2 = JSON.parse(fs.readFileSync(treePath2, 'utf8'));
+						treeData2.push({
+							"group-id": "gHamilton",
+							"method-ids": [saved._id],
+							"locked": true
+						});
+						fs.writeFileSync(treePath2, JSON.stringify(treeData2), 'utf8');
+						db_tree = db.connect(USER_DATA_DIR, ['tree']);
+						targetGroupId = "gHamilton";
+					}
+				} else {
+					for (var ti = 0; ti < navtree.length; ti++) {
+						var gEntry = getGroupById(navtree[ti]["group-id"]);
+						if (gEntry && !gEntry["default"]) {
+							targetGroupId = navtree[ti]["group-id"];
+							var existingIds = navtree[ti]["method-ids"] || [];
+							existingIds.push(saved._id);
+							db_tree.tree.update({"group-id": targetGroupId}, {"method-ids": existingIds}, {multi: false, upsert: false});
+							break;
+						}
+					}
+				}
+				if (!targetGroupId) {
+					var newGroup = db_groups.groups.save({
+						"name": "Libraries",
+						"icon-class": "fa-book",
+						"default": false,
+						"navbar": "left",
+						"favorite": true
+					});
+					db_tree.tree.save({
+						"group-id": newGroup._id,
+						"method-ids": [saved._id],
+						"locked": false
+					});
+				}
+
+				// Remove from unsigned libs
+				db_unsigned_libs.unsigned_libs.remove({"_id": ulibId});
+
+				// Update unsigned status display
+				var remaining = (db_unsigned_libs.unsigned_libs.find() || []).length;
+				$(".unsigned-scan-status").text(remaining + " unsigned librar" + (remaining === 1 ? "y" : "ies") + " tracked");
+
+				// Audit trail
+				try {
+					appendAuditTrailEntry(buildAuditTrailEntry('library_registered', {
+						library_name: libName,
+						version: uLib.version || '',
+						author: uLib.author || '',
+						organization: uLib.organization || '',
+						lib_install_path: libDestDir,
+						source: 'unsigned_library',
+						library_files: libFileBasenames.length,
+						demo_files: demoFiles.length
+					}));
+				} catch(_) { /* non-critical */ }
+
+				// Refresh UI
+				impBuildLibraryCards();
+				invalidateNavBar();
+
+				if (!opts.silent) {
+					showGenericSuccessModal({
+						title: "Library Registered!",
+						name: libName,
+						detail: libFileBasenames.length + " file" + (libFileBasenames.length !== 1 ? "s" : "") + " registered" + (demoFiles.length > 0 ? " (incl. " + demoFiles.length + " demo)" : ""),
+						paths: [
+							{ label: "Library Path", value: libDestDir }
+						],
+						statusHtml: '<i class="fas fa-check-circle mr-1"></i>Library is now signed and tracked by Library Manager',
+						statusClass: 'com-ok'
+					});
+				}
+
+				return true;
+			} catch(e) {
+				alert("Error registering unsigned library:\n" + e.message);
+				return false;
+			}
+		}
+
+		/**
 		 * Export an unsigned library as a .hxlibpkg package.
 		 * The package will be signed for integrity but the source was unsigned.
+		 * After successful export, the library is automatically registered into
+		 * Library Manager as a signed/installed library.
 		 */
-		function exportUnsignedLibrary(ulibId, savePath) {
+		async function exportUnsignedLibrary(ulibId, savePath) {
 			try {
 				var uLib = db_unsigned_libs.unsigned_libs.findOne({"_id": ulibId});
 				if (!uLib) { alert("Unsigned library not found."); return; }
@@ -10826,13 +10952,30 @@
 					}));
 				} catch(_) { /* non-critical */ }
 
+				// Auto-register the library into Library Manager (signed/installed)
+				var regSuccess = await registerUnsignedLibrary(ulibId, {
+					silent: true,
+					sourcePackage: path.basename(savePath)
+				});
+
+				var statusHtml = '';
+				var statusClass = 'com-ok';
+				if (regSuccess) {
+					statusHtml = '<i class="fas fa-check-circle mr-1"></i>Library has been automatically registered in Library Manager';
+				} else {
+					statusHtml = '<i class="fas fa-exclamation-triangle mr-1"></i>Package exported but automatic registration failed. You can import the package manually.';
+					statusClass = 'com-warning';
+				}
+
 				showGenericSuccessModal({
-					title: "Unsigned Library Exported!",
+					title: regSuccess ? "Library Exported & Registered!" : "Package Exported",
 					name: libName,
 					detail: totalFiles + " file" + (totalFiles !== 1 ? "s" : "") + " packaged" + (demoFiles.length > 0 ? " (incl. " + demoFiles.length + " demo)" : ""),
 					paths: [
 						{ label: "Saved To", value: savePath }
-					]
+					],
+					statusHtml: statusHtml,
+					statusClass: statusClass
 				});
 
 				$("#unsignedLibDetailModal").modal("hide");

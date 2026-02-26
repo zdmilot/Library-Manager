@@ -24,7 +24,7 @@
 <ol>
   <li>Open <b>Settings</b> (gear icon in the navigation bar)</li>
   <li>Locate the <b>Unsigned Libraries</b> section</li>
-  <li>Check the <b>Include existing unsigned packages</b> checkbox</li>
+  <li>Check the <b>Include existing unsigned libraries on the front page</b> checkbox</li>
   <li>Click the <b>Scan Now</b> button to perform the initial scan</li>
 </ol>
 
@@ -36,8 +36,8 @@
 <h2>Scanning</h2>
 <p>When you click <b>Scan Now</b>, the application performs the following steps:</p>
 <ol>
-  <li><b>Reads the Library folder</b> - recursively scans the directory configured via the Library Path setting (default: <code>C:\Program Files (x86)\HAMILTON\Library</code>). Certain directories are excluded from scanning: <code>VenusLibraryManager</code>, <code>LibraryPackages</code>, <code>.VenusLibraryManager</code>, and <code>LibraryIntegrityAudit</code>. Temporary files whose names begin with <code>~</code> (tilde) or <code>.</code> (dot) are also ignored, as are any directories whose names begin with <code>.</code> (dot). Dot-prefixed files and folders are commonly created as temporary or hidden artifacts by VENUS, text editors, and other tools and should never appear as libraries.</li>
-  <li><b>Identifies primary files</b> - discovers all <code>.hsl</code> and <code>.smt</code> files.</li>
+  <li><b>Reads the Library folder</b> — recursively scans the directory configured via the Library Path setting (default: <code>C:\Program Files (x86)\HAMILTON\Library</code>). Files and directories that match the exclusion rules described below are skipped (see <a href="#excluded-files">Excluded Files and Directories</a>).</li>
+  <li><b>Identifies primary files</b> — discovers all <code>.hsl</code> and <code>.smt</code> files.</li>
   <li><b>Excludes claimed files</b> - filters out any file that is already tracked by a system library (from <code>system_libraries.json</code>) or an installed user library (from <code>installed_libs.json</code>).</li>
   <li><b>Groups by library name</b> - derives a library name from the filename (without extension). Language-variant suffixes (e.g., <code>Enu</code>, <code>Deu</code>, <code>Jpn</code>) are folded into the base library name.</li>
   <li><b>Discovers related files</b> - for each library name, gathers associated files with related extensions: <code>.hs_</code>, <code>.sub</code>, <code>.bmp</code>, <code>.ico</code>, <code>.chm</code>, <code>.stp</code>, <code>.res</code>, <code>.fdb</code>, <code>.sii</code>, <code>.dec</code>, <code>.dll</code>.</li>
@@ -45,6 +45,37 @@
   <li><b>Preserves metadata</b> - if the library was discovered by a previous scan and the user has edited metadata (author, version, description, etc.), those edits are preserved across rescans.</li>
   <li><b>Saves results</b> - all discovered unsigned libraries are stored in <code>unsigned_libs.json</code> in the user data directory.</li>
 </ol>
+
+<h3 id="excluded-files">Excluded Files and Directories</h3>
+<p>The scanner applies several exclusion rules to avoid picking up temporary files, hidden artifacts, and internal application directories. The following items are <b>always skipped</b> and will never appear as unsigned libraries in the Library Manager:</p>
+
+<table>
+<thead><tr><th>Rule</th><th>Applies To</th><th>Examples</th><th>Reason</th></tr></thead>
+<tbody>
+<tr>
+  <td>Name starts with <code>.</code> (dot)</td>
+  <td>Files <b>and</b> directories</td>
+  <td><code>.MyLibrary.hsl</code>, <code>.tmp</code>, <code>.backup/</code></td>
+  <td>Dot-prefixed entries are temporary or hidden artifacts created by VENUS, text editors, version control systems, and other tools. They are not real libraries and should never be visible to users.</td>
+</tr>
+<tr>
+  <td>Name starts with <code>~</code> (tilde)</td>
+  <td>Files only</td>
+  <td><code>~MyLibrary.hsl</code>, <code>~$tempfile.smt</code></td>
+  <td>Tilde-prefixed files are temporary lock/swap files created by editors and VENUS during saves.</td>
+</tr>
+<tr>
+  <td>Reserved directory names</td>
+  <td>Directories only</td>
+  <td><code>VenusLibraryManager</code>, <code>LibraryPackages</code>, <code>.VenusLibraryManager</code>, <code>LibraryIntegrityAudit</code></td>
+  <td>Internal directories used by the Library Manager application itself. Scanning these would produce false positives.</td>
+</tr>
+</tbody>
+</table>
+
+<div class="note">
+<p><b>Note:</b> These exclusion rules are applied during the recursive directory scan. If a directory is excluded, none of its contents — including any subdirectories — are scanned. For example, a folder named <code>.archive</code> containing valid <code>.hsl</code> files will be entirely ignored.</p>
+</div>
 
 <h3>Visual Feedback</h3>
 <p>While a scan is in progress, a spinning circle indicator appears next to the Scan Now button to show that work is being done. When the scan completes successfully, the spinner is replaced by a green checkmark icon confirming completion. A status message also shows how many unsigned libraries were found (e.g., <i>"12 unsigned libraries found"</i>). If the scan fails, both the spinner and checkmark are hidden and an error message is displayed instead.</p>
@@ -84,9 +115,21 @@
 <tr><td><b>Version</b></td><td>Version string (e.g., <code>1.0.0</code>)</td></tr>
 <tr><td><b>VENUS Compatibility</b></td><td>Minimum VENUS version required</td></tr>
 <tr><td><b>Description</b></td><td>Free-text description of the library</td></tr>
-<tr><td><b>Tags</b></td><td>Comma-separated keywords for search and filtering. The keywords <code>System</code> and <code>Hamilton</code> are <b>reserved</b> and cannot be used (case-insensitive). If entered, they are automatically removed and an error message is displayed.</td></tr>
+<tr><td><b>Tags</b></td><td>Comma-separated keywords for search and filtering. Tags are normalized to lowercase, spaces are removed, and invalid characters are stripped. Reserved/system words are blocked (see Tag Rules below).</td></tr>
 </tbody>
 </table>
+
+<h3>Tag Rules (Limits and Exceptions)</h3>
+<ul>
+  <li><b>Allowed characters:</b> <code>a-z</code>, <code>0-9</code>, and <code>-</code>.</li>
+  <li><b>Normalization:</b> Tags are lowercased, repeated hyphens are collapsed, and leading/trailing hyphens are removed.</li>
+  <li><b>Length:</b> Minimum 2 characters, maximum 24 characters.</li>
+  <li><b>Count:</b> Up to 12 tags per library.</li>
+  <li><b>Numeric-only tags:</b> Blocked.</li>
+  <li><b>Underscore exception:</b> Underscores are blocked except for the explicit allowed tag <code>ml_star</code>.</li>
+  <li><b>Restricted/reserved words:</b> Tags containing any reserved word are blocked. Reserved words include <code>system</code>, <code>hamilton</code>, <code>read-only</code>, <code>stared</code>, <code>starred</code>, <code>signed</code>, <code>unsigned</code>, <code>registered</code>, and <code>unregistered</code>.</li>
+</ul>
+<p>If a tag is adjusted or blocked, the UI provides immediate feedback so users can correct input before saving/exporting.</p>
 
 <h3>Library Icon / Image</h3>
 <p>The <b>Library Icon / Image</b> card lets users assign a custom icon or image to the unsigned library. Supported formats include <code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.bmp</code>, <code>.ico</code>, <code>.gif</code>, and <code>.svg</code>. If no image is selected, the auto-detected <code>.bmp</code> file (if any) is used. A 72×72 pixel preview is displayed alongside <b>Choose Image...</b> and <b>Remove</b> buttons. The chosen image is also shown in the modal header next to the library name. When saved, the image data (<code>library_image</code>, <code>library_image_base64</code>, <code>library_image_mime</code>) is persisted to the database and included in exported packages.</p>
@@ -121,10 +164,41 @@
 <ul>
   <li><b>Save</b> - persists any metadata edits to the database. A visual confirmation (<i>"Saved!"</i>) is shown briefly.</li>
   <li><b>Remove</b> - removes the library from the unsigned libraries list (with confirmation). The actual files on disk are <b>not</b> modified or deleted.</li>
-  <li><b>Export as Package</b> - saves the library as a signed <code>.hxlibpkg</code> package (see below).</li>
+  <li><b>Register to Library Manager</b> - registers the library directly into Library Manager as a signed, tracked library <b>without</b> needing to export and re-import a package. See <a href="#registering-libraries">Registering Libraries</a> below.</li>
+  <li><b>Export .hxlibpkg</b> - saves the library as a signed <code>.hxlibpkg</code> package <b>and</b> automatically registers it into Library Manager in one step. See <a href="#exporting-as-a-package">Exporting as a Package</a> below.</li>
 </ul>
 
-<h2>Exporting as a Package</h2>
+<h2 id="registering-libraries">Registering Libraries</h2>
+<p>The <b>Register to Library Manager</b> button allows you to bring an unsigned library under full Library Manager tracking <b>in a single click</b>, without needing to export a <code>.hxlibpkg</code> package file first. This is the fastest way to convert an unmanaged library into a signed, managed library.</p>
+
+<h3>What Registration Does</h3>
+<ol>
+  <li>Any pending metadata edits (author, version, description, tags, etc.) are automatically saved</li>
+  <li>An <code>installed_libs.json</code> database record is created with the same schema used by the standard import flow (library name, author, version, file list, install path, etc.)</li>
+  <li>Integrity hashes are computed for all qualifying library files (<code>.hsl</code>, <code>.hs_</code>, <code>.sub</code>, and COM DLLs) using the same <code>computeLibraryHashes()</code> function used during import</li>
+  <li>Public functions are extracted from <code>.hsl</code> files for display in the library detail modal</li>
+  <li>Required dependencies (<code>#include</code> directives) are parsed and resolved</li>
+  <li>The library is assigned to the appropriate navigation group:
+    <ul>
+      <li>If the author is <i>Hamilton</i>, the library is added to the Hamilton group</li>
+      <li>Otherwise, it is added to the first available custom group, or a new "Libraries" group is created if none exists</li>
+    </ul>
+  </li>
+  <li>The library is removed from the unsigned libraries list</li>
+  <li>An audit trail entry is recorded with event type <code>library_registered</code></li>
+  <li>The navigation bar and library cards are refreshed</li>
+  <li>A success modal is displayed confirming registration</li>
+</ol>
+
+<div class="note">
+<p><b>Note:</b> Registration does <b>not</b> move or copy any files on disk. The library files remain in their current location. Library Manager simply creates a tracking record that references the existing files. This means the library will no longer appear in the Unsigned group and will instead appear as a regular managed library card in its assigned group.</p>
+</div>
+
+<div class="note">
+<p><b>Tip:</b> If you need a distributable <code>.hxlibpkg</code> package file (for sharing with colleagues or backing up), use the <b>Export .hxlibpkg</b> button instead. It performs the same registration automatically after creating the package file.</p>
+</div>
+
+<h2 id="exporting-as-a-package">Exporting as a Package</h2>
 <p>The Export function converts an unsigned library into a proper <code>.hxlibpkg</code> package. This is useful for:</p>
 <ul>
   <li>Distributing a library to colleagues who use Venus Library Manager</li>
@@ -143,9 +217,10 @@
   <li>If a <code>.bmp</code> icon exists, it is included in the <code>icon/</code> directory</li>
   <li>The package is signed using <code>signPackageZip()</code> (HMAC-SHA256 integrity signature)</li>
   <li>An audit trail entry is recorded with source type <code>"unsigned_library"</code>, including library and demo file counts</li>
+  <li><b>The library is automatically registered into Library Manager</b> as a signed/installed library (identical to clicking "Register to Library Manager" - see <a href="#registering-libraries">Registering Libraries</a> above). The source package field in the database record is set to the exported package filename.</li>
 </ol>
 
-<p>The resulting <code>.hxlibpkg</code> can then be imported normally through the application or shared with other users.</p>
+<p>After a successful export and registration, a <b>"Library Exported &amp; Registered!"</b> success modal is displayed. The modal includes a green status line confirming the library is now tracked by Library Manager. If the export succeeds but registration fails for any reason, the package is still saved and a warning is shown - you can then import the package manually.</p>
 
 <div class="note">
 <p><b>Tip:</b> Fill in the Author, Version, and Description fields before exporting. These fields become part of the package manifest and are displayed when the package is imported on another system.</p>
@@ -217,10 +292,10 @@
   <li><b>No hashing or integrity checking</b> - unsigned libraries are not hashed or validated. This feature is for convenience only.</li>
   <li><b>No automatic file watching</b> - files placed in the Library folder between scans are not detected in real-time. However, the <b>Scan for new unsigned libraries each launch</b> option can be enabled to automatically re-scan at startup, or you can click Scan Now at any time.</li>
   <li><b>Flat grouping</b> - all unsigned libraries are placed in the single Unsigned group. They cannot be moved to custom user groups.</li>
-  <li><b>No version history</b> - unsigned libraries are not cached in the package store and do not support version rollback.</li>
+  <li><b>No version history</b> - unsigned libraries are not cached in the package store and do not support version rollback. However, once registered or exported as a package, the library gains full version management capabilities.</li>
   <li><b>Metadata is user-supplied</b> - unlike installed libraries, metadata fields (author, version, etc.) start blank and must be filled in manually.</li>
-  <li><b>File removal is soft</b> - removing an unsigned library from the list only deletes the database record. The actual files on disk remain untouched. The library will reappear on the next scan unless the files are manually deleted or claimed by a proper import.</li>
-  <li><b>Dot-prefixed files and folders are excluded</b> - any file or directory whose name starts with <code>.</code> (e.g., <code>.MyLibrary.hsl</code>, <code>.tmp</code>) is treated as a hidden or temporary artifact and is completely excluded from unsigned library scanning. These files will never appear in the Library Manager.</li>
+  <li><b>File removal is soft</b> - removing an unsigned library from the list only deletes the database record. The actual files on disk remain untouched. The library will reappear on the next scan unless the files are manually deleted, claimed by a proper import, or <b>registered using the "Register to Library Manager" button</b>.</li>
+  <li><b>Dot-prefixed files and folders are excluded</b> — any file or directory whose name starts with <code>.</code> (e.g., <code>.MyLibrary.hsl</code>, <code>.backup/</code>) is treated as a hidden or temporary artifact and is completely excluded from scanning. The same applies to tilde-prefixed files. See <a href="#excluded-files">Excluded Files and Directories</a> for the full list of exclusion rules.</li>
 </ul>
 
 <h2>Related Topics</h2>

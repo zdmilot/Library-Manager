@@ -110,10 +110,18 @@
 <div class="warning">
 <p><b>Reserved Tags:</b> The following tag keywords are reserved for internal system use and <b>cannot</b> be used in the <code>tags</code> array (comparison is <b>case-insensitive</b>):</p>
 <ul>
-  <li><code>System</code> - Reserved for system library backups and internal classification.</li>
-  <li><code>Hamilton</code> - Reserved for Hamilton-authored first-party libraries.</li>
+  <li><code>system</code></li>
+  <li><code>hamilton</code></li>
+  <li><code>read-only</code></li>
+  <li><code>stared</code></li>
+  <li><code>starred</code></li>
+  <li><code>signed</code></li>
+  <li><code>unsigned</code></li>
+  <li><code>registered</code></li>
+  <li><code>unregistered</code></li>
 </ul>
-<p><b>GUI behavior:</b> If a user enters a reserved tag in the Library Packager or the Unsigned Library editor, an error popup is displayed and the reserved tag is automatically removed from the tag list.</p>
+<p><b>Important:</b> Reserved words are blocked even when they appear as part of a longer tag (substring match).</p>
+<p><b>GUI behavior:</b> If a user enters a restricted tag in the Library Packager or the Unsigned Library editor, an error is shown and the tag is blocked.</p>
 <p><b>CLI behavior:</b> If the <code>tags</code> array in a package spec file contains a reserved keyword, the <code>create-package</code> command will exit with a validation error.</p>
 </div>
 

@@ -1917,12 +1917,16 @@ body {
 
 /* ---- Library Search Bar (dark blue bar) ---- */
 .imp-search-bar {
+	width: 220px;
 	max-width: 220px;
-	min-width: 140px;
-	flex-shrink: 1;
+	min-width: 220px;
+	flex: 0 0 220px;
 }
 
 .imp-search-bar .input-group {
+	display: flex;
+	align-items: center;
+	flex-wrap: nowrap;
 	border-radius: 16px;
 	overflow: hidden;
 	box-shadow: none;
@@ -1934,6 +1938,8 @@ body {
 }
 
 .imp-search-icon {
+	display: inline-flex;
+	align-items: center;
 	background: rgba(255,255,255,0.12);
 	border: 1px solid rgba(255,255,255,0.15);
 	border-right: none;
@@ -1941,15 +1947,37 @@ body {
 	font-size: 0.78rem;
 	padding: 2px 8px 2px 12px;
 	border-radius: 16px 0 0 16px !important;
+	min-height: 27px;
 }
 
-.imp-search-input {
+.imp-search-flow {
+	display: flex;
+	align-items: center;
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
 	background: rgba(255,255,255,0.12);
 	border: 1px solid rgba(255,255,255,0.15);
 	border-left: none;
+	padding: 0 4px;
+	min-height: 27px;
+}
+
+.imp-search-flow::-webkit-scrollbar {
+	display: none;
+}
+
+.imp-search-input {
+	flex: 0 0 auto;
+	min-width: 4ch;
+	width: 4ch;
+	background: transparent;
+	border: none;
 	color: white;
 	font-size: 0.82rem !important;
-	padding: 3px 8px !important;
+	padding: 3px 4px !important;
 	height: auto !important;
 }
 
@@ -1960,12 +1988,94 @@ body {
 
 .imp-search-input:focus {
 	box-shadow: none;
-	border-color: rgba(255,255,255,0.25);
-	background: rgba(255,255,255,0.18);
+	border-color: transparent;
+	background: transparent;
 	color: white;
 }
 
+.imp-search-chip-wrap {
+	display: inline-flex;
+	align-items: center;
+	flex-wrap: nowrap;
+	flex: 0 0 auto;
+	min-width: 0;
+	gap: 6px;
+	padding: 0 1px;
+	max-width: none;
+	overflow: visible;
+	background: transparent;
+	border: none;
+}
+
+.imp-search-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	padding: 0 2px;
+	font-size: 0.76rem;
+	line-height: 1.2;
+	color: #f0f6fb;
+	white-space: nowrap;
+}
+
+.imp-search-inline-text {
+	white-space: pre;
+	font-size: 0.82rem;
+	color: white;
+}
+
+.imp-search-chip-remove {
+	border: none;
+	background: transparent;
+	color: #d7e7f3;
+	padding: 0;
+	line-height: 1;
+	cursor: pointer;
+	font-size: 0.66rem;
+	opacity: 0.85;
+}
+
+.imp-search-chip-remove:hover {
+	color: #ffffff;
+	opacity: 1;
+}
+
+.imp-search-chip-label {
+	cursor: text;
+}
+
+.imp-search-chip-input {
+	display: none;
+	width: 72px;
+	background: transparent;
+	border: none;
+	border-bottom: 1px dashed rgba(255,255,255,0.45);
+	border-radius: 0;
+	color: #f0f6fb;
+	font-size: 0.76rem;
+	line-height: 1.2;
+	padding: 0 1px;
+	outline: none;
+}
+
+.imp-search-chip-wrap::-webkit-scrollbar {
+	display: none;
+}
+
+.imp-search-chip.editing .imp-search-chip-label {
+	display: none;
+}
+
+.imp-search-chip.editing .imp-search-chip-input {
+	display: inline-block;
+}
+
 .imp-search-clear {
+	display: inline-flex;
+	align-items: center;
 	background: rgba(255,255,255,0.12);
 	border: 1px solid rgba(255,255,255,0.15);
 	border-left: none;
@@ -1973,6 +2083,13 @@ body {
 	font-size: 0.7rem;
 	padding: 2px 10px 2px 4px;
 	border-radius: 0 16px 16px 0 !important;
+	min-height: 27px;
+}
+
+.imp-search-clear-wrap {
+	flex: 0 0 auto;
+	position: relative;
+	z-index: 1;
 }
 
 .imp-search-clear:hover {

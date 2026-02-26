@@ -223,13 +223,16 @@
 <h2>settings Collection</h2>
 <p>Stores application preferences. Always a single record with <code>_id</code> of <code>"0"</code>.</p>
 
+<p><b>Storage note:</b> Settings are intentionally stored in the application-local <code>db/settings.json</code> file (program directory), not in the user data directory. This keeps small, non-personally-identifiable toggle preferences local to the app install.</p>
+
 <div class="code"><pre>{
   "_id": "0",
   "recent-max": "20",
   "chk_confirmBeforeInstall": true,
-  "chk_overwriteWithoutAsking": false,
   "chk_autoAddToGroup": true,
-  "userDataPath": "C:\\Program Files (x86)\\Hamilton\\Library\\.VenusLibraryManager",
+  "chk_requireActionComment": false,
+  "chk_requireActionSignature": false,
+  "userDataPath": "C:\\Program Files (x86)\\Hamilton\\Library\\VenusLibraryManager",
   "windowMaximized": true
 }</pre></div>
 
@@ -238,8 +241,9 @@
 <tbody>
 <tr><td><code>recent-max</code></td><td>string (number)</td><td>Maximum number of items in the Recent group</td></tr>
 <tr><td><code>chk_confirmBeforeInstall</code></td><td>boolean</td><td>Prompt for confirmation before importing</td></tr>
-<tr><td><code>chk_overwriteWithoutAsking</code></td><td>boolean</td><td>Skip overwrite confirmation for existing libraries</td></tr>
 <tr><td><code>chk_autoAddToGroup</code></td><td>boolean</td><td>Automatically assign imported libraries to a user-created group</td></tr>
+<tr><td><code>chk_requireActionComment</code></td><td>boolean</td><td>Require audit comment fields for destructive/potentially destructive GUI actions</td></tr>
+<tr><td><code>chk_requireActionSignature</code></td><td>boolean</td><td>Require operator signature fields for destructive/potentially destructive GUI actions</td></tr>
 <tr><td><code>chk_includeUnsignedLibs</code></td><td>boolean</td><td>Enable unsigned library scanning and display (see <a href="UnsignedLibraries.html">Unsigned Libraries</a>)</td></tr>
 <tr><td><code>chk_scanUnsignedOnLaunch</code></td><td>boolean</td><td>Automatically scan for new unsigned libraries each time the application launches</td></tr>
 <tr><td><code>userDataPath</code></td><td>string</td><td>User data directory (where the user's copy of the database is stored)</td></tr>
