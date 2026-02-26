@@ -1981,6 +1981,17 @@
 		}
 
 		$(document).on("input", "#imp-search-input", function() {
+			// Prevent space immediately after a bare # (no tag text yet).
+			// Only strip "# " when the # has no adjacent tag characters,
+			// so "#mytag " still commits the tag via consumeCompletedTagTokens.
+			var $inp = $(this);
+			var v = $inp.val() || '';
+			var fixed = v.replace(/(^|[\s])# /g, '$1#');
+			if (fixed !== v) {
+				var pos = this.selectionStart - (v.length - fixed.length);
+				$inp.val(fixed);
+				this.selectionStart = this.selectionEnd = Math.max(pos, 0);
+			}
 			updateSearchInputWidth();
 			scrollSearchFlowToEnd();
 			refreshLibrarySearchFromInput();
