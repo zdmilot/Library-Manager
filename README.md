@@ -178,12 +178,12 @@ The application defines six built-in groups that are **hardcoded** in both `main
 
 | ID | Name | Icon | Side | Purpose |
 |----|------|------|------|---------|
-| `gAll` | All | `fa-th` | left | Shows all installed (non-deleted) libraries |
-| `gRecent` | Recent | `fa-clock` | left | Recently imported libraries |
+| `gAll` | All | `fa-home` | left | Shows all installed (non-deleted) libraries |
+| `gRecent` | Recent | `fa-history` | left | Recently imported libraries |
 | `gHamilton` | Hamilton | `fa-check-circle` (solid) | left | Protected Hamilton-authored libraries |
-| `gFolders` | Import | `fa-file-import` | right | Import workflow tab |
-| `gEditors` | Export | `fa-file-export` | right | Export workflow tab |
-| `gHistory` | History | `fa-history` | right | Action history |
+| `gFolders` | Import | `fa-download` | right | Import workflow tab |
+| `gEditors` | Export | `fa-upload` | right | Export workflow tab |
+| `gHistory` | History | `fa-list` | right | Action history |
 
 User-created groups are stored in `groups.json` with `"default": false` and auto-generated `_id` values.
 

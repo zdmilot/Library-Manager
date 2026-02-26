@@ -15,35 +15,10 @@
 
 var fs = require('fs');
 var path = require('path');
+var shared = require('../../lib/shared');
 
-/**
- * Parse Hamilton's $$valid$$/$$checksum$$ metadata footer from an HSL file.
- */
-function parseHslMetadataFooter(filePath) {
-	try {
-		if (!fs.existsSync(filePath)) return null;
-		var text = fs.readFileSync(filePath, 'utf8');
-		var lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-		for (var i = lines.length - 1; i >= Math.max(0, lines.length - 5); i--) {
-			var line = lines[i].trim();
-			if (line === '') continue;
-			var m = line.match(/\$\$author=(.+?)\$\$valid=(\d)\$\$time=(.+?)\$\$checksum=([a-f0-9]+)\$\$length=(\d+)\$\$/);
-			if (m) {
-				return {
-					author:   m[1],
-					valid:    parseInt(m[2], 10),
-					time:     m[3],
-					checksum: m[4],
-					length:   parseInt(m[5], 10)
-				};
-			}
-			break;
-		}
-		return null;
-	} catch(e) {
-		return null;
-	}
-}
+/** Parse Hamilton's metadata footer — delegated to shared module */
+var parseHslMetadataFooter = shared.parseHslMetadataFooter;
 
 /**
  * Verify integrity of a single system library against its baseline.

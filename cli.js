@@ -28,38 +28,25 @@ const path = require('path');
 const os   = require('os');
 const AdmZip = require('adm-zip');
 const crypto = require('crypto');
+const shared = require('./lib/shared');
 
-/**
- * Sanitize a ZIP entry filename to prevent path traversal.
- * Returns null if the resolved path escapes the target directory.
- */
-function safeZipExtractPath(baseDir, fname) {
-    var normalized = fname.replace(/\\/g, '/');
-    if (normalized.indexOf('..') !== -1) return null;
-    var resolved = path.resolve(baseDir, fname);
-    var base = path.resolve(baseDir) + path.sep;
-    if (!resolved.startsWith(base) && resolved !== path.resolve(baseDir)) return null;
-    return resolved;
-}
+// Re-export shared helpers so the rest of the file can use short names
+const safeZipExtractPath     = shared.safeZipExtractPath;
+const isValidLibraryName     = shared.isValidLibraryName;
+const escapeHtml             = shared.escapeHtml;
+const computeZipEntryHashes  = shared.computeZipEntryHashes;
+const signPackageZip         = shared.signPackageZip;
+const verifyPackageSignature = shared.verifyPackageSignature;
+const parseHslMetadataFooter = shared.parseHslMetadataFooter;
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const MIME_MAP = {
-    '.png':  'image/png',
-    '.jpg':  'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.bmp':  'image/bmp',
-    '.gif':  'image/gif',
-    '.ico':  'image/x-icon',
-    '.svg':  'image/svg+xml'
-};
+const MIME_MAP = shared.IMAGE_MIME_MAP;
 
-const HASH_EXTENSIONS = ['.hsl', '.hs_', '.sub'];
-
-// Extensions that carry Hamilton's metadata footer ($$author=...$$valid=...$$checksum=...$$)
-const HSL_METADATA_EXTS = ['.hsl', '.hs_', '.smt'];
+const HASH_EXTENSIONS  = shared.HASH_EXTENSIONS;
+const HSL_METADATA_EXTS = shared.HSL_METADATA_EXTS;
 
 const DEFAULT_LIB_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Library';
 const DEFAULT_MET_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Methods';
@@ -261,6 +248,17 @@ function appendAuditTrailEntry(userDataDir, entry) {
             }
         }
         trail.push(entry);
+
+        // Rotate audit trail when it exceeds 10,000 entries to prevent unbounded growth
+        var MAX_AUDIT_ENTRIES = 10000;
+        if (trail.length > MAX_AUDIT_ENTRIES) {
+            var archivePath = filePath.replace(/\.json$/, '_' + new Date().toISOString().replace(/[:.]/g, '-') + '.json');
+            try {
+                fs.writeFileSync(archivePath, JSON.stringify(trail.slice(0, trail.length - MAX_AUDIT_ENTRIES), null, 2), 'utf8');
+            } catch (_) { /* rotation archive is best-effort */ }
+            trail = trail.slice(trail.length - MAX_AUDIT_ENTRIES);
+        }
+
         fs.writeFileSync(filePath, JSON.stringify(trail, null, 2), 'utf8');
     } catch (e) {
         process.stderr.write('  Warning: could not write audit trail entry: ' + e.message + '\n');
@@ -365,6 +363,20 @@ function ensureUserDataDir(dirPath) {
 }
 
 /**
+ * Warn if a path points to a system-critical directory.
+ */
+function warnIfSystemPath(dirPath, label) {
+    const resolved = path.resolve(dirPath).toLowerCase();
+    const dangerous = ['c:\\windows', 'c:\\program files\\windows', 'c:\\system'];
+    for (const prefix of dangerous) {
+        if (resolved.startsWith(prefix)) {
+            process.stderr.write(`  WARNING: ${label} points to a system-critical location: ${dirPath}\n`);
+            return;
+        }
+    }
+}
+
+/**
  * Get library/methods root install paths from DB settings (or overrides).
  */
 function getInstallPaths(db, libDirOverride, metDirOverride) {
@@ -373,6 +385,7 @@ function getInstallPaths(db, libDirOverride, metDirOverride) {
 
     if (libDirOverride) {
         libBasePath = libDirOverride;
+        warnIfSystemPath(libBasePath, '--lib-dir');
     } else {
         try {
             const rec = db.links.findOne({ _id: 'lib-folder' });
@@ -382,6 +395,7 @@ function getInstallPaths(db, libDirOverride, metDirOverride) {
 
     if (metDirOverride) {
         metBasePath = metDirOverride;
+        warnIfSystemPath(metBasePath, '--met-dir');
     } else {
         try {
             const rec = db.links.findOne({ _id: 'met-folder' });
@@ -396,14 +410,8 @@ function getInstallPaths(db, libDirOverride, metDirOverride) {
 // Integrity hashing
 // ---------------------------------------------------------------------------
 
-function hashFile(filePath) {
-    try {
-        const data = fs.readFileSync(filePath);
-        return crypto.createHash('sha256').update(data).digest('hex');
-    } catch (_) {
-        return null;
-    }
-}
+// Use shared computeFileHash which handles HSL last-line stripping
+const hashFile = shared.computeFileHash;
 
 /**
  * Parse the Hamilton HSL metadata footer from the last non-empty line of a file.
@@ -416,169 +424,23 @@ function hashFile(filePath) {
  * @param {string} filePath - full path to the file
  * @returns {Object|null} { author, valid, time, checksum, length, raw } or null
  */
-function parseHslMetadataFooter(filePath) {
-    try {
-        if (!fs.existsSync(filePath)) return null;
-        const text = fs.readFileSync(filePath, 'utf8');
-        const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-        for (let i = lines.length - 1; i >= Math.max(0, lines.length - 5); i--) {
-            const line = lines[i].trim();
-            if (line === '') continue;
-            const m = line.match(/\$\$author=(.+?)\$\$valid=(\d)\$\$time=(.+?)\$\$checksum=([a-f0-9]+)\$\$length=(\d+)\$\$/);
-            if (m) {
-                return {
-                    author:   m[1],
-                    valid:    parseInt(m[2], 10),
-                    time:     m[3],
-                    checksum: m[4],
-                    length:   parseInt(m[5], 10),
-                    raw:      line
-                };
-            }
-            break;
-        }
-        return null;
-    } catch (_) {
-        return null;
-    }
-}
+// parseHslMetadataFooter is imported from shared module above
 
 
 
-function computeLibraryHashes(libraryFiles, libBasePath, comDlls) {
-    const hashes = {};
-    libraryFiles.forEach(function (fname) {
-        const ext      = path.extname(fname).toLowerCase();
-        const isDll    = comDlls.indexOf(fname) !== -1;
-        const tracked  = HASH_EXTENSIONS.indexOf(ext) !== -1 || isDll;
-        if (tracked) {
-            const h = hashFile(path.join(libBasePath, fname));
-            if (h) hashes[fname] = h;
-        }
-    });
-    return hashes;
-}
+// computeLibraryHashes is imported from shared module
+const computeLibraryHashes = shared.computeLibraryHashes;
 
 // ---------------------------------------------------------------------------
 // Package signing — HMAC-SHA256 integrity signatures for .hxlibpkg files
 // ---------------------------------------------------------------------------
 
-const PKG_SIGNING_KEY = 'VenusLibMgr::PackageIntegrity::a7e3f9d1c6b2';
+const PKG_SIGNING_KEY = shared.PKG_SIGNING_KEY;
 
-/**
- * Compute SHA-256 hashes of all entries in an AdmZip instance (excluding signature.json).
- * Returns a sorted object of { entryName: sha256hex }.
- */
-function computeZipEntryHashes(zip) {
-    const hashes = {};
-    zip.getEntries().forEach(function (entry) {
-        if (entry.isDirectory) return;
-        if (entry.entryName === 'signature.json') return;
-        const hash = crypto.createHash('sha256').update(entry.getData()).digest('hex');
-        hashes[entry.entryName] = hash;
-    });
-    // Return sorted by key for deterministic ordering
-    const sorted = {};
-    Object.keys(hashes).sort().forEach(function (k) { sorted[k] = hashes[k]; });
-    return sorted;
-}
+// computeZipEntryHashes, signPackageZip, verifyPackageSignature are
+// imported from the shared module above.
 
-/**
- * Sign a package ZIP by computing HMAC-SHA256 over all file hashes and embedding
- * a signature.json entry. Must be called AFTER all other entries have been added,
- * and BEFORE writing the ZIP to disk.
- *
- * @param {AdmZip} zip - The AdmZip instance to sign (modified in place)
- * @returns {Object} The signature object that was embedded
- */
-function signPackageZip(zip) {
-    const fileHashes = computeZipEntryHashes(zip);
-    const payload = JSON.stringify(fileHashes);
-    const hmac = crypto.createHmac('sha256', PKG_SIGNING_KEY).update(payload).digest('hex');
-
-    const signature = {
-        format_version: '1.0',
-        algorithm:      'HMAC-SHA256',
-        signed_date:    new Date().toISOString(),
-        file_hashes:    fileHashes,
-        hmac:           hmac
-    };
-
-    // Remove any existing signature.json before adding
-    try { zip.deleteFile('signature.json'); } catch (_) {}
-    zip.addFile('signature.json', Buffer.from(JSON.stringify(signature, null, 2), 'utf8'));
-    return signature;
-}
-
-/**
- * Verify the integrity signature of a package ZIP.
- *
- * @param {AdmZip} zip - The AdmZip instance to verify
- * @returns {Object} { valid: boolean, signed: boolean, errors: string[], warnings: string[] }
- *   signed=false means no signature.json was found (legacy/unsigned package)
- *   valid=true means all checks passed (or package is unsigned and valid is vacuously true)
- */
-function verifyPackageSignature(zip) {
-    const result = { valid: true, signed: false, errors: [], warnings: [] };
-
-    const sigEntry = zip.getEntry('signature.json');
-    if (!sigEntry) {
-        result.signed = false;
-        result.warnings.push('Package is unsigned (no signature.json). Integrity cannot be verified.');
-        return result;
-    }
-
-    result.signed = true;
-    let sig;
-    try {
-        sig = JSON.parse(zip.readAsText(sigEntry));
-    } catch (e) {
-        result.valid = false;
-        result.errors.push('signature.json is malformed: ' + e.message);
-        return result;
-    }
-
-    if (!sig.file_hashes || !sig.hmac) {
-        result.valid = false;
-        result.errors.push('signature.json is missing required fields (file_hashes or hmac).');
-        return result;
-    }
-
-    // Recompute HMAC over stored file_hashes
-    const storedPayload = JSON.stringify(sig.file_hashes);
-    const expectedHmac  = crypto.createHmac('sha256', PKG_SIGNING_KEY).update(storedPayload).digest('hex');
-    if (sig.hmac !== expectedHmac) {
-        result.valid = false;
-        result.errors.push('HMAC mismatch — signature.json has been tampered with.');
-        return result;
-    }
-
-    // Verify each file hash against actual ZIP content
-    const actualHashes = computeZipEntryHashes(zip);
-    const sigFiles = Object.keys(sig.file_hashes);
-    const actualFiles = Object.keys(actualHashes);
-
-    // Check for files in signature but missing from ZIP
-    sigFiles.forEach(function (f) {
-        if (!actualHashes[f]) {
-            result.valid = false;
-            result.errors.push('File listed in signature but missing from package: ' + f);
-        } else if (actualHashes[f] !== sig.file_hashes[f]) {
-            result.valid = false;
-            result.errors.push('File hash mismatch (corrupted or modified): ' + f);
-        }
-    });
-
-    // Check for files in ZIP but not in signature
-    actualFiles.forEach(function (f) {
-        if (!sig.file_hashes[f]) {
-            result.valid = false;
-            result.errors.push('File present in package but not in signature (injected): ' + f);
-        }
-    });
-
-    return result;
-}
+// verifyPackageSignature — see shared module import at top of file
 
 // ---------------------------------------------------------------------------
 // HSL function parser — extracts public function signatures from .hsl files
@@ -1149,7 +1011,7 @@ function buildCachedPackageName(libName, version) {
  */
 function cachePackage(pkgBuffer, libName, version, args) {
     const storeRoot = getPackageStoreDir(args);
-    const safeName  = (libName || 'Unknown').replace(/[<>:"\/|?*]/g, '_');
+    const safeName  = (libName || 'Unknown').replace(/[<>:"\/\\|?*]/g, '_');
     const libDir    = path.join(storeRoot, safeName);
 
     if (!fs.existsSync(libDir)) {
@@ -1168,7 +1030,7 @@ function cachePackage(pkgBuffer, libName, version, args) {
  */
 function listCachedVersions(libName, args) {
     const storeRoot = getPackageStoreDir(args);
-    const safeName  = (libName || 'Unknown').replace(/[<>:"\/|?*]/g, '_');
+    const safeName  = (libName || 'Unknown').replace(/[<>:"\/\\|?*]/g, '_');
     const libDir    = path.join(storeRoot, safeName);
 
     if (!fs.existsSync(libDir)) return [];
@@ -1316,8 +1178,13 @@ function cmdImportLib(args) {
 
     const libName = manifest.library_name || 'Unknown';
 
+    // ---- Library name validation (matches GUI behaviour) ----
+    if (!isValidLibraryName(libName)) {
+        die('Invalid library name: "' + libName + '". Library names cannot contain path separators, \'..\', trailing dots/spaces, or reserved characters.');
+    }
+
     // ---- Restricted author check ----
-    // If the package claims \"Hamilton\" as author but is NOT a known system library,
+    // If the package claims "Hamilton" as author but is NOT a known system library,
     // require --author-password for authorization
     const importAuthor = (manifest.author || '').trim();
     if (isRestrictedAuthor(importAuthor) && !isSystemLibraryByName(libName)) {
@@ -1424,6 +1291,11 @@ function cmdImportArchive(args) {
 
             const manifest = JSON.parse(innerZip.readAsText(me));
             const libName  = manifest.library_name || 'Unknown';
+
+            // ---- Library name validation (matches GUI behaviour) ----
+            if (!isValidLibraryName(libName)) {
+                throw new Error('Invalid library name: "' + libName + '"');
+            }
 
             // Verify inner package signature
             const sigResult = verifyPackageSignature(innerZip);

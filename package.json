@@ -13,7 +13,9 @@
   "scripts": {
     "cli": "node cli.js",
     "list-libs": "node cli.js list-libs",
-    "help": "node cli.js help"
+    "help": "node cli.js help",
+    "test": "node test/test_shared.js",
+    "lint": "node --check cli.js lib/shared.js"
   },
   "chromium-args": "--disable-logging --enable-logging=stderr --log-level=3 --disable-crash-reporter",
   "window": {

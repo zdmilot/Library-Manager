@@ -6,6 +6,19 @@
 		var path = require('path');
 		var spawn = require('child_process').spawn; 
 
+		// ---------------------------------------------------------------------------
+		// Global error boundary — catch unhandled errors to prevent silent failures
+		// ---------------------------------------------------------------------------
+		window.onerror = function(message, source, lineno, colno, error) {
+			console.error('Unhandled error:', message, 'at', source, ':', lineno);
+			try { _isImporting = false; } catch(_) {}
+			return false; // allow default browser error handling to continue
+		};
+		window.addEventListener('unhandledrejection', function(event) {
+			console.error('Unhandled promise rejection:', event.reason);
+			try { _isImporting = false; } catch(_) {}
+		});
+
 		/// Default VENUS executables. 
         var HxRun = "HxRun.exe";
 		var HxMethodEditor = "HxMetEd.exe";
@@ -24,6 +37,7 @@
 		const sizeOf = require('image-size');
 		const os = require("os");
 		const crypto = require('crypto');
+		const shared = require('../../lib/shared');
 
 		/** Shared MIME type lookup for image file extensions */
 		var IMAGE_MIME_MAP = {
@@ -34,48 +48,14 @@
 			'.bmp':'image/bmp', '.gif':'image/gif', '.ico':'image/x-icon', '.svg':'image/svg+xml'
 		};
 
-		/**
-		 * Sanitize a ZIP entry filename to prevent path traversal.
-		 * Returns null if the resolved path escapes the target directory.
-		 */
-		function safeZipExtractPath(baseDir, fname) {
-			// Reject entries with '..' path components
-			var normalized = fname.replace(/\\/g, '/');
-			if (normalized.indexOf('..') !== -1) return null;
-			var resolved = path.resolve(baseDir, fname);
-			// Ensure resolved path starts with the target directory
-			var base = path.resolve(baseDir) + path.sep;
-			if (!resolved.startsWith(base) && resolved !== path.resolve(baseDir)) return null;
-			return resolved;
-		}
+		/** Sanitize a ZIP entry filename — delegated to shared module */
+		var safeZipExtractPath = shared.safeZipExtractPath;
 
-		/**
-		 * Escape a string for safe insertion into HTML.
-		 * Prevents XSS when inserting user/package-supplied text into the DOM.
-		 */
-		function escapeHtml(str) {
-			if (typeof str !== 'string') return '';
-			return str
-				.replace(/&/g, '&amp;')
-				.replace(/</g, '&lt;')
-				.replace(/>/g, '&gt;')
-				.replace(/"/g, '&quot;')
-				.replace(/'/g, '&#39;');
-		}
+		/** Escape HTML — delegated to shared module */
+		var escapeHtml = shared.escapeHtml;
 
-		/**
-		 * Validate that a library name is safe for use in filesystem paths.
-		 * Rejects names containing path separators, '..' traversal, or invalid characters.
-		 * @param {string} name
-		 * @returns {boolean} true if safe
-		 */
-		function isValidLibraryName(name) {
-			if (!name || typeof name !== 'string') return false;
-			if (/[\\\/]|\.\./.test(name)) return false;
-			if (/[<>:"|?*]/.test(name)) return false;
-			if (name.trim().length === 0) return false;
-			return true;
-		}
+		/** Validate library name — delegated to shared module */
+		var isValidLibraryName = shared.isValidLibraryName;
 
 		/**
 		 * Get the current Windows username via WScript.Network COM object.
@@ -375,13 +355,7 @@
 			return html;
 		}
 
-		/**
-		 * Simple HTML escaper for display strings.
-		 */
-		function escapeHtml(str) {
-			if (!str) return '';
-			return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-		}
+		// escapeHtml is imported from shared module above
 
 		/**
 		 * Render a single event row.
@@ -4506,6 +4480,12 @@
 					return;
 				}
 
+				// Validate the DLL path to prevent command injection via crafted manifest
+				if (/[&|><`%\r\n]/.test(dllPath) || /'/.test(dllPath)) {
+					resolve({success: false, error: "DLL path contains unsafe characters: " + path.basename(dllPath)});
+					return;
+				}
+
 				var os = require('os');
 				var tmpDir = os.tmpdir();
 				var stamp = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
@@ -5014,81 +4994,10 @@
 			return result;
 		}
 
-		// ---- Library integrity hashing ----
-		/**
-		 * Computes SHA-256 hash of a file.
-		 * For .hsl, .hs_, .sub files: hashes ALL BUT THE LAST LINE.
-		 * For .dll files: hashes the entire file.
-		 * @param {string} filePath - Full path to the file
-		 * @returns {string|null} hex hash string or null if file not found
-		 */
-		function computeFileHash(filePath) {
-			try {
-				if (!fs.existsSync(filePath)) return null;
-				var ext = path.extname(filePath).toLowerCase();
-				var hash = crypto.createHash('sha256');
-
-				if (ext === '.hsl' || ext === '.hs_' || ext === '.sub') {
-					// Hash all but the last line
-					var content = fs.readFileSync(filePath, 'utf8');
-					var lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-					// Remove last line (may contain timestamp or checksum that changes)
-					if (lines.length > 1) {
-						lines.pop();
-					}
-					hash.update(lines.join('\n'), 'utf8');
-				} else {
-					// Hash entire file (for .dll and others)
-					var buf = fs.readFileSync(filePath);
-					hash.update(buf);
-				}
-				return hash.digest('hex');
-			} catch(e) {
-				console.error('Hash error for ' + filePath + ': ' + e.message);
-				return null;
-			}
-		}
-
-		/**
-		 * Extensions that carry Hamilton's metadata footer ($$author=...$$valid=...$$checksum=...$$).
-		 */
-		var HSL_METADATA_EXTS = ['.hsl', '.hs_', '.smt'];
-
-		/**
-		 * Parse the Hamilton HSL metadata footer from the last non-empty line of a file.
-		 * The footer format: // $$author=NAME$$valid=0|1$$time=TIMESTAMP$$checksum=HEX$$length=NNN$$
-		 *
-		 * @param {string} filePath - full path to the file
-		 * @returns {Object|null} { author, valid, time, checksum, length, raw } or null if no footer
-		 */
-		function parseHslMetadataFooter(filePath) {
-			try {
-				if (!fs.existsSync(filePath)) return null;
-				var text = fs.readFileSync(filePath, 'utf8');
-				var lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-				// Walk backwards to find the footer line
-				for (var i = lines.length - 1; i >= Math.max(0, lines.length - 5); i--) {
-					var line = lines[i].trim();
-					if (line === '') continue;
-					var m = line.match(/\$\$author=(.+?)\$\$valid=(\d)\$\$time=(.+?)\$\$checksum=([a-f0-9]+)\$\$length=(\d+)\$\$/);
-					if (m) {
-						return {
-							author:   m[1],
-							valid:    parseInt(m[2], 10),
-							time:     m[3],
-							checksum: m[4],
-							length:   parseInt(m[5], 10),
-							raw:      line
-						};
-					}
-					break; // first non-empty line wasn't a footer
-				}
-				return null;
-			} catch(e) {
-				console.error('Footer parse error for ' + filePath + ': ' + e.message);
-				return null;
-			}
-		}
+		// ---- Library integrity hashing (delegated to shared module) ----
+		var computeFileHash        = shared.computeFileHash;
+		var HSL_METADATA_EXTS      = shared.HSL_METADATA_EXTS;
+		var parseHslMetadataFooter = shared.parseHslMetadataFooter;
 
 		/**
 		 * Verifies the integrity of a system library by checking Hamilton's
@@ -5150,143 +5059,12 @@
 			return result;
 		}
 
-		/**
-		 * Computes hashes for all library files (.hsl, .hs_, .sub) and registered .dll files.
-		 * @param {Array<string>} libraryFiles - filenames array
-		 * @param {string} libBasePath - base directory for library files
-		 * @param {Array<string>} comDlls - COM registered DLL filenames
-		 * @returns {Object} map of filename -> sha256 hex hash
-		 */
-		function computeLibraryHashes(libraryFiles, libBasePath, comDlls) {
-			var hashes = {};
-			var hashableExts = ['.hsl', '.hs_', '.sub'];
-			(libraryFiles || []).forEach(function(f) {
-				var ext = path.extname(f).toLowerCase();
-				var isDll = (comDlls || []).indexOf(f) !== -1;
-				if (hashableExts.indexOf(ext) !== -1 || isDll) {
-					var fullPath = path.join(libBasePath, f);
-					var h = computeFileHash(fullPath);
-					if (h) hashes[f] = h;
-				}
-			});
-			return hashes;
-		}
-
-		// ---------------------------------------------------------------------------
-		// Package signing — HMAC-SHA256 integrity signatures for .hxlibpkg files
-		// ---------------------------------------------------------------------------
-		// NOTE: This key is embedded in the client-side source and provides tamper-
-		// *detection* only ("did the package change since it was built?"), NOT
-		// cryptographic authenticity.  Anyone with access to this source can
-		// forge a valid signature.  For stronger guarantees, move signing to a
-		// server-side service or use asymmetric (public/private) key signing.
-		var PKG_SIGNING_KEY = 'VenusLibMgr::PackageIntegrity::a7e3f9d1c6b2';
-
-		/**
-		 * Compute SHA-256 hashes of all entries in an AdmZip instance (excluding signature.json).
-		 * Returns a sorted object of { entryName: sha256hex }.
-		 */
-		function computeZipEntryHashes(zip) {
-			var hashes = {};
-			zip.getEntries().forEach(function(entry) {
-				if (entry.isDirectory) return;
-				if (entry.entryName === 'signature.json') return;
-				var hash = crypto.createHash('sha256').update(entry.getData()).digest('hex');
-				hashes[entry.entryName] = hash;
-			});
-			var sorted = {};
-			Object.keys(hashes).sort().forEach(function(k) { sorted[k] = hashes[k]; });
-			return sorted;
-		}
-
-		/**
-		 * Sign a package ZIP by computing HMAC-SHA256 over all file hashes and embedding
-		 * a signature.json entry. Call AFTER all entries are added and BEFORE writing.
-		 * @param {AdmZip} zip - The AdmZip instance to sign (modified in place)
-		 * @returns {Object} The signature object that was embedded
-		 */
-		function signPackageZip(zip) {
-			var fileHashes = computeZipEntryHashes(zip);
-			var payload = JSON.stringify(fileHashes);
-			var hmac = crypto.createHmac('sha256', PKG_SIGNING_KEY).update(payload).digest('hex');
-
-			var signature = {
-				format_version: '1.0',
-				algorithm:      'HMAC-SHA256',
-				signed_date:    new Date().toISOString(),
-				file_hashes:    fileHashes,
-				hmac:           hmac
-			};
-
-			try { zip.deleteFile('signature.json'); } catch(e) {}
-			zip.addFile('signature.json', Buffer.from(JSON.stringify(signature, null, 2), 'utf8'));
-			return signature;
-		}
-
-		/**
-		 * Verify the integrity signature of a package ZIP.
-		 * @param {AdmZip} zip - The AdmZip instance to verify
-		 * @returns {Object} { valid: boolean, signed: boolean, errors: string[], warnings: string[] }
-		 */
-		function verifyPackageSignature(zip) {
-			var result = { valid: true, signed: false, errors: [], warnings: [] };
-
-			var sigEntry = zip.getEntry('signature.json');
-			if (!sigEntry) {
-				result.signed = false;
-				result.warnings.push('Package is unsigned (no signature.json). Integrity cannot be verified.');
-				return result;
-			}
-
-			result.signed = true;
-			var sig;
-			try {
-				sig = JSON.parse(zip.readAsText(sigEntry));
-			} catch(e) {
-				result.valid = false;
-				result.errors.push('signature.json is malformed: ' + e.message);
-				return result;
-			}
-
-			if (!sig.file_hashes || !sig.hmac) {
-				result.valid = false;
-				result.errors.push('signature.json is missing required fields (file_hashes or hmac).');
-				return result;
-			}
-
-			// Recompute HMAC over stored file_hashes
-			var storedPayload = JSON.stringify(sig.file_hashes);
-			var expectedHmac  = crypto.createHmac('sha256', PKG_SIGNING_KEY).update(storedPayload).digest('hex');
-			if (sig.hmac !== expectedHmac) {
-				result.valid = false;
-				result.errors.push('HMAC mismatch \u2014 signature.json has been tampered with.');
-				return result;
-			}
-
-			// Verify each file hash against actual ZIP content
-			var actualHashes = computeZipEntryHashes(zip);
-			var sigFiles = Object.keys(sig.file_hashes);
-			var actualFiles = Object.keys(actualHashes);
-
-			sigFiles.forEach(function(f) {
-				if (!actualHashes[f]) {
-					result.valid = false;
-					result.errors.push('File listed in signature but missing from package: ' + f);
-				} else if (actualHashes[f] !== sig.file_hashes[f]) {
-					result.valid = false;
-					result.errors.push('File hash mismatch (corrupted or modified): ' + f);
-				}
-			});
-
-			actualFiles.forEach(function(f) {
-				if (!sig.file_hashes[f]) {
-					result.valid = false;
-					result.errors.push('File present in package but not in signature (injected): ' + f);
-				}
-			});
-
-			return result;
-		}
+		// ---- Package signing & hashing (delegated to shared module) ----
+		var computeLibraryHashes  = shared.computeLibraryHashes;
+		var PKG_SIGNING_KEY       = shared.PKG_SIGNING_KEY;
+		var computeZipEntryHashes = shared.computeZipEntryHashes;
+		var signPackageZip        = shared.signPackageZip;
+		var verifyPackageSignature = shared.verifyPackageSignature;
 
 		/**
 		 * Verifies the integrity of installed library files against stored hashes.
@@ -5817,7 +5595,7 @@
 				libFiles.forEach(function(f) {
 					var fullPath = libBasePath ? path.join(libBasePath, f) : f;
 					$libFiles.append(
-						'<div class="pkg-file-item pkg-file-link" data-filepath="' + fullPath.replace(/"/g, '&quot;') + '" title="Open: ' + fullPath.replace(/"/g, '&quot;') + '"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + f + '</span></div>'
+						'<div class="pkg-file-item pkg-file-link" data-filepath="' + escapeHtml(fullPath) + '" title="Open: ' + escapeHtml(fullPath) + '"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + escapeHtml(f) + '</span></div>'
 					);
 				});
 			}
@@ -5833,7 +5611,7 @@
 				demoFiles.forEach(function(f) {
 					var fullPath = demoBasePath ? path.join(demoBasePath, f) : f;
 					$demoFiles.append(
-						'<div class="pkg-file-item pkg-file-link" data-filepath="' + fullPath.replace(/"/g, '&quot;') + '" title="Open: ' + fullPath.replace(/"/g, '&quot;') + '"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + f + '</span></div>'
+						'<div class="pkg-file-item pkg-file-link" data-filepath="' + escapeHtml(fullPath) + '" title="Open: ' + escapeHtml(fullPath) + '"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + escapeHtml(f) + '</span></div>'
 					);
 				});
 			}
@@ -5847,7 +5625,7 @@
 				helpFiles.forEach(function(f) {
 					var fullPath = libBasePath ? path.join(libBasePath, f) : f;
 					$helpFiles.append(
-						'<div class="pkg-file-item pkg-file-link imp-help-file-open" data-filepath="' + fullPath.replace(/"/g, '&quot;') + '" title="Open help: ' + fullPath.replace(/"/g, '&quot;') + '" style="cursor:pointer;"><i class="fas fa-question-circle pkg-file-icon" style="color:var(--medium);"></i><span class="pkg-file-name">' + f + '</span><span class="badge badge-info ml-2" style="font-size:0.7rem;">Open</span></div>'
+						'<div class="pkg-file-item pkg-file-link imp-help-file-open" data-filepath="' + escapeHtml(fullPath) + '" title="Open help: ' + escapeHtml(fullPath) + '" style="cursor:pointer;"><i class="fas fa-question-circle pkg-file-icon" style="color:var(--medium);"></i><span class="pkg-file-name">' + escapeHtml(f) + '</span><span class="badge badge-info ml-2" style="font-size:0.7rem;">Open</span></div>'
 					);
 				});
 			} else {
@@ -7799,6 +7577,7 @@
 				var manifestEntry = zip.getEntry("manifest.json");
 				if (!manifestEntry) {
 					alert("Invalid package: manifest.json not found.");
+					_isImporting = false;
 					return;
 				}
 				var manifestJson = zip.readAsText(manifestEntry);
@@ -7810,7 +7589,7 @@
 					var sigMsg = "WARNING: Package signature verification FAILED!\n\n";
 					sigResult.errors.forEach(function(e) { sigMsg += "  \u274C " + e + "\n"; });
 					sigMsg += "\nThis package may be corrupted or tampered with.\nDo you want to continue anyway?";
-					if (!confirm(sigMsg)) return;
+					if (!confirm(sigMsg)) { _isImporting = false; return; }
 				}
 
 				// ---- Restricted author check on import ----
@@ -7826,6 +7605,7 @@
 						var pwOk = await promptAuthorPassword();
 						if (!pwOk) {
 							alert('Import cancelled. The package author "Hamilton" requires authorization for non-system libraries.');
+							_isImporting = false;
 							return;
 						}
 					}
@@ -7926,7 +7706,7 @@
 						var isCom = comDlls.indexOf(f) !== -1;
 						var comBadge = isCom ? '<span class="badge badge-info ml-2" title="This DLL will be registered as a COM object using RegAsm.exe /codebase. Administrator rights are required."><i class="fas fa-cog mr-1"></i>COM</span>' : '';
 						$libFilesList.append(
-							'<div class="pkg-file-item"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + f + '</span>' + comBadge + '</div>'
+							'<div class="pkg-file-item"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + escapeHtml(f) + '</span>' + comBadge + '</div>'
 						);
 					});
 				}
@@ -7947,7 +7727,7 @@
 				} else {
 					demoFiles.forEach(function(f) {
 						$demoFilesList.append(
-							'<div class="pkg-file-item"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + f + '</span></div>'
+							'<div class="pkg-file-item"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + escapeHtml(f) + '</span></div>'
 						);
 					});
 				}
@@ -7958,7 +7738,7 @@
 				if (helpFiles.length > 0) {
 					helpFiles.forEach(function(f) {
 						$helpFilesList.append(
-							'<div class="pkg-file-item"><i class="fas fa-question-circle pkg-file-icon" style="color:var(--medium);"></i><span class="pkg-file-name">' + f + '</span></div>'
+							'<div class="pkg-file-item"><i class="fas fa-question-circle pkg-file-icon" style="color:var(--medium);"></i><span class="pkg-file-name">' + escapeHtml(f) + '</span></div>'
 						);
 					});
 					$modal.find(".imp-preview-help-section").removeClass("d-none");
@@ -7976,7 +7756,7 @@
 					} else if (sigResult.signed && !sigResult.valid) {
 						var errHtml = '<div class="text-danger"><i class="fas fa-exclamation-triangle mr-2"></i><strong>Signature verification FAILED</strong></div>';
 						sigResult.errors.forEach(function(e) {
-							errHtml += '<div class="text-danger text-sm ml-4">&bull; ' + e + '</div>';
+							errHtml += '<div class="text-danger text-sm ml-4">&bull; ' + escapeHtml(e) + '</div>';
 						});
 						$sigStatus.html(errHtml);
 						$modal.find(".imp-preview-signature-section").removeClass("d-none");
@@ -8013,10 +7793,16 @@
 
 			} catch(e) {
 				alert("Error reading package:\n" + e.message);
-			} finally {
 				_isImporting = false;
 			}
+			// NOTE: _isImporting stays true while the preview modal is open.
+			// It is reset by the confirm handler or the modal dismiss handler below.
 		}
+
+		// ---- Reset _isImporting when preview modal is dismissed without confirming ----
+		$(document).on("hidden.bs.modal", "#importPreviewModal", function() {
+			_isImporting = false;
+		});
 
 		// ---- Confirm install from preview modal ----
 		$(document).on("click", "#imp-preview-confirm", async function() {
@@ -8320,7 +8106,7 @@
 						.html('<i class="fas fa-exclamation-triangle mr-1"></i>COM registration failed. The library card has been marked with a warning.');
 				} else if (comDlls.length > 0) {
 					$comStatus.removeClass("d-none").addClass("com-ok")
-						.html('<i class="fas fa-check mr-1"></i>COM DLLs registered: ' + comDlls.join(", "));
+						.html('<i class="fas fa-check mr-1"></i>COM DLLs registered: ' + escapeHtml(comDlls.join(", ")));
 				}
 
 				$sm.modal("show");
