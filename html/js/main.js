@@ -3131,6 +3131,11 @@
 			}
 		});
 
+		//Settings > Display — Show GitHub repository links
+		$(document).on("click", "#chk_showGitHubLinks", function(){
+			saveSetting($(this).attr("id"), $(this).prop("checked"));
+		});
+
 		//Settings > Unsigned Libraries checkbox
 		$(document).on("click", "#chk_includeUnsignedLibs", function(){
 			var checked = $(this).prop("checked");
@@ -4732,6 +4737,9 @@
 
 			//setting - Display: hide system libraries
 			$("#chk_hideSystemLibraries").prop("checked", !!settings["chk_hideSystemLibraries"]);
+
+			//setting - Display: show GitHub repository links (default on)
+			$("#chk_showGitHubLinks").prop("checked", settings["chk_showGitHubLinks"] !== false);
 
 			//setting - Unsigned libraries
 			var unsignedEnabled = !!settings["chk_includeUnsignedLibs"];
@@ -7151,8 +7159,8 @@
 				$("#libDetailModal .lib-detail-desc-section").addClass("d-none");
 			}
 
-			// GitHub URL
-			if (lib.github_url) {
+			// GitHub URL (respect display setting)
+			if (lib.github_url && getSettingValue("chk_showGitHubLinks") !== false) {
 				$("#libDetailModal .lib-detail-github-link").attr("href", lib.github_url).text(lib.github_url);
 				$("#libDetailModal .lib-detail-github-section").removeClass("d-none");
 			} else {
@@ -9361,8 +9369,8 @@
 					$modal.find(".imp-preview-desc-section").addClass("d-none");
 				}
 
-				// GitHub URL
-				if (manifest.github_url) {
+				// GitHub URL (respect display setting)
+				if (manifest.github_url && getSettingValue("chk_showGitHubLinks") !== false) {
 					$modal.find(".imp-preview-github-link").attr("href", manifest.github_url).text(manifest.github_url);
 					$modal.find(".imp-preview-github-section").removeClass("d-none");
 				} else {

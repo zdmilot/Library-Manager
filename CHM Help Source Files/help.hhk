@@ -86,6 +86,14 @@
 		<param name="Local" value="GitHubRepository.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="chk_showGitHubLinks">
+		<param name="Local" value="GitHubRepository.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="GitHub display setting">
+		<param name="Local" value="GitHubRepository.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="data model">
 		<param name="Local" value="DataModel.html">
 		</OBJECT>

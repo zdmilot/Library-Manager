@@ -33,7 +33,7 @@
   <li><b>Packaging:</b> When a <code>.hxlibpkg</code> file is built, the URL is written into the <code>manifest.json</code> inside the package ZIP as the <code>github_url</code> field. If the field is empty, it is omitted from the manifest entirely.</li>
   <li><b>Importing:</b> All import code paths (GUI single-file import, GUI archive import, and CLI <code>import-lib</code> / <code>import-archive</code>) copy <code>manifest.github_url</code> into the installed library database record.</li>
   <li><b>Exporting:</b> When a library is re-exported (GUI or CLI <code>export-lib</code> / <code>export-archive</code>), the stored <code>github_url</code> is written back into the new manifest so it round-trips through export/import cycles.</li>
-  <li><b>Viewing:</b> The detail modal checks the <code>github_url</code> property of the database record. If present, the GitHub section is shown with a clickable link; if absent or empty, the section remains hidden (<code>d-none</code>).</li>
+  <li><b>Viewing:</b> The detail modal checks the <code>github_url</code> property of the database record <em>and</em> the <code>chk_showGitHubLinks</code> display setting. If present and the setting is enabled, the GitHub section is shown with a clickable link; otherwise, the section remains hidden (<code>d-none</code>).</li>
 </ol>
 
 <h2>Validation Rules</h2>
@@ -145,6 +145,12 @@ actions     support</pre></div>
 
 <h3>Library Detail Modal</h3>
 <p>After importing a package that contains a <code>github_url</code>, opening <b>View More Details</b> shows a <em>GitHub</em> section below the description with the URL rendered as a clickable hyperlink. Libraries without a <code>github_url</code> do not display this section at all.</p>
+
+<h3>Display Setting &mdash; Regulated Environments</h3>
+<p>In regulated or locked-down environments, administrators may want to prevent external links from appearing in library detail views. The <b>Settings &gt; Display</b> section provides a checkbox:</p>
+<blockquote><b>Show GitHub repository links in library details</b></blockquote>
+<p>When <b>unchecked</b>, the GitHub section is hidden from both the <em>Library Detail Modal</em> and the <em>Import Preview Modal</em>, regardless of whether a <code>github_url</code> value exists in the library record. The underlying data is preserved &mdash; only the display is suppressed. Re-enabling the checkbox immediately restores GitHub link visibility.</p>
+<p>This setting is stored as <code>chk_showGitHubLinks</code> in the settings database. It defaults to <code>true</code> (enabled). See <a href="DataModel.html">Data Model</a> for details.</p>
 
 </div>
 <div class="footer">
