@@ -305,11 +305,16 @@ div.image-placeholder {
 
 img.doc-screenshot {
 	max-width: 100%;
+	width: auto;
 	height: auto;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	margin: 10px 0;
-	box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+	max-height: 600px;
+	object-fit: contain;
+	border: 2px solid #b0b8c1;
+	border-radius: 6px;
+	margin: 14px auto;
+	padding: 4px;
+	background-color: #f8f9fa;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 	display: block;
 }
 
