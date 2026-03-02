@@ -401,6 +401,7 @@ img.doc-diagram {
 	z-index: 10001;
 	text-align: center;
 	padding: 30px 0;
+	overflow: hidden;
 }
 
 #lightbox-img {
@@ -408,7 +409,7 @@ img.doc-diagram {
 	background: #fff;
 	padding: 4px;
 	margin: 0 auto;
-	cursor: default;
+	cursor: pointer;
 	max-width: 90%;
 }
 

@@ -1,9 +1,12 @@
 /**
  * Click-to-enlarge lightbox for CHM Help images.
  * IE-compatible: no flex, no fixed, no rgba, no transitions.
+ * Click image once to enlarge; click enlarged image to toggle
+ * between fit-to-window and full-size (native resolution).
  */
 (function () {
     var isOpen = false;
+    var isZoomed = false;
 
     // Dark semi-transparent backdrop (separate element so opacity filter
     // does not affect children)
@@ -22,7 +25,6 @@
 
     var hint = document.createElement('div');
     hint.id = 'lightbox-hint';
-    hint.innerHTML = 'Click anywhere or press <b>Esc</b> to close';
 
     content.appendChild(bigImg);
     content.appendChild(caption);
@@ -30,6 +32,9 @@
 
     document.body.appendChild(overlay);
     document.body.appendChild(content);
+
+    var HINT_FIT  = 'Click image for full size &nbsp;|&nbsp; Click outside or press <b>Esc</b> to close';
+    var HINT_ZOOM = 'Click image to fit window &nbsp;|&nbsp; Click outside or press <b>Esc</b> to close';
 
     function getPageHeight() {
         var b = document.body;
@@ -43,6 +48,24 @@
 
     function getScrollTop() {
         return document.documentElement.scrollTop || document.body.scrollTop || 0;
+    }
+
+    function setFitMode() {
+        isZoomed = false;
+        bigImg.style.maxWidth = '90%';
+        bigImg.style.cursor = 'pointer';
+        bigImg.title = 'Click for full size';
+        content.style.overflow = 'hidden';
+        hint.innerHTML = HINT_FIT;
+    }
+
+    function setZoomMode() {
+        isZoomed = true;
+        bigImg.style.maxWidth = 'none';
+        bigImg.style.cursor = 'pointer';
+        bigImg.title = 'Click to fit window';
+        content.style.overflow = 'auto';
+        hint.innerHTML = HINT_ZOOM;
     }
 
     function openLightbox(src, alt) {
@@ -62,23 +85,33 @@
         bigImg.src = src;
         bigImg.alt = alt || '';
         caption.innerHTML = alt || '';
+        setFitMode();
         isOpen = true;
     }
 
     function closeLightbox() {
         overlay.style.display = 'none';
         content.style.display = 'none';
+        content.style.overflow = 'hidden';
         bigImg.src = '';
         isOpen = false;
+        isZoomed = false;
     }
 
     // Close on backdrop click
     overlay.onclick = function () { closeLightbox(); };
     // Close on content area click (but not on the image itself)
     content.onclick = function () { closeLightbox(); };
+
+    // Toggle zoom on image click
     bigImg.onclick = function () {
-        // Stop image click from closing — let user right-click/save
         if (window.event) { window.event.cancelBubble = true; }
+        if (isZoomed) {
+            setFitMode();
+        } else {
+            setZoomMode();
+        }
+        return false;
     };
 
     // Close on Esc
