@@ -96,7 +96,7 @@
                          &#9474;
                          &#9660;
 &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; External Systems &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
-&#9474; &#8226; VENUS Library Folder     &#8226; RegAsm.exe (COM)         &#9474;
+&#9474; &#8226; VENUS Library Folder     &#8226; 32-bit RegAsm.exe (COM)  &#9474;
 &#9474; &#8226; VENUS Methods Folder     &#8226; Windows Registry         &#9474;
 &#9474; &#8226; File System              &#8226; whoami /groups (auth)     &#9474;
 &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
@@ -435,8 +435,8 @@ Installed Libraries &#9472;1:N&#9472; Audit Trail (each action generates events)
 <tr><td class="step-label">Create directories</td><td>Library: <code>HAMILTON\Library\LibName\</code> &mdash; Demo: <code>HAMILTON\Methods\Library Demo Methods\LibName\</code></td></tr>
 <tr><td class="step-label">Extract ZIP entries</td><td><code>library/*</code> &rarr; lib dir, <code>demo_methods/*</code> &rarr; demo dir, <code>help_files/*</code> &rarr; lib dir. Skip manifest.json, signature.json, icon/</td></tr>
 <tr class="decision"><td class="step-label">COM DLLs declared?</td><td>
-  <b>Yes (GUI) &rarr;</b> UAC-elevated <code>RegAsm.exe</code> via PowerShell Start-Process<br/>
-  <b>No or CLI &rarr;</b> Skip COM registration
+  <b>Yes (GUI) &rarr;</b> UAC-elevated <b>32-bit</b> <code>RegAsm.exe</code> from <code>C:\Windows\Microsoft.NET\Framework\</code> via PowerShell Start-Process. <b>Never uses Framework64</b> &mdash; VENUS is a 32-bit (x86) application.<br/>
+  <b>No or CLI &rarr;</b> Skip COM registration (CLI users must run the 32-bit <code>RegAsm.exe /codebase</code> manually)
 </td></tr>
 </table>
 
@@ -616,8 +616,8 @@ Installed Libraries &#9472;1:N&#9472; Audit Trail (each action generates events)
 <table class="phase-table">
 <tr><th colspan="2">Phase 3: File Cleanup</th></tr>
 <tr class="decision"><td class="step-label">COM DLLs registered? (GUI only)</td><td>
-  <b>Yes &rarr;</b> Deregister COM DLLs via UAC-elevated <code>RegAsm /unregister</code><br/>
-  <b>No or CLI &rarr;</b> Skip
+  <b>Yes &rarr;</b> Deregister COM DLLs via UAC-elevated <b>32-bit</b> <code>RegAsm /unregister</code> from <code>C:\Windows\Microsoft.NET\Framework\</code><br/>
+  <b>No or CLI &rarr;</b> Skip (CLI users must run the 32-bit <code>RegAsm.exe /unregister</code> manually)
 </td></tr>
 <tr class="decision"><td class="step-label">--keep-files flag?</td><td>
   <b>No (default) &rarr;</b> Delete library files from disk, delete demo method files, remove empty directories<br/>

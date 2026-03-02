@@ -39,7 +39,7 @@
     You can manually override the detected name, though a warning is shown to confirm the override.
   </li>
   <li><b>Select Library Image</b> (optional): Choose an icon or image file (<code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.bmp</code>, <code>.ico</code>, <code>.gif</code>, <code>.svg</code>). If no image is selected, the packager looks for a <code>.bmp</code> file among your library files whose name <b>exactly</b> matches the library name (e.g., <code>MyLibrary.bmp</code> for a library named <code>MyLibrary</code>). Partial matches like <code>MyLibrary.extra.bmp</code> are not considered.</li>
-  <li><b>Mark COM DLLs</b> (optional): If your library includes <code>.dll</code> files that need COM registration, select them individually from the payload list to mark them for COM registration.</li>
+  <li><b>Mark COM DLLs</b> (optional): If your library includes <code>.dll</code> files that need COM registration, select them individually from the payload list to mark them for COM registration. During import, the GUI will register these DLLs using the <b>32-bit</b> <code>RegAsm.exe /codebase</code> with UAC elevation. <b>Note:</b> Hamilton VENUS is a 32-bit application &mdash; only the 32-bit .NET Framework <code>RegAsm.exe</code> is used. See <a href="ImportingLibraries.html">COM DLL Registration</a> for details on the 32-bit requirement.</li>
   <li><b>Build the Package:</b> Choose a save location and build the <code>.hxlibpkg</code> file.</li>
 </ol>
 <img src="images/packager-filled.png" alt="Packager with filled metadata and file list" class="doc-screenshot">

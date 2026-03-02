@@ -104,7 +104,7 @@
   <td><code>com_register_dlls</code></td>
   <td>string[]</td>
   <td>pattern: <code>\.dll$</code></td>
-  <td>Basenames of DLL files requiring COM registration via <code>RegAsm.exe /codebase</code>. Must match entries in <code>library_files</code>.</td>
+  <td>Basenames of DLL files requiring 32-bit COM registration via <code>RegAsm.exe /codebase</code>. Must match entries in <code>library_files</code>. <b>Important:</b> VENUS is a 32-bit application &mdash; only the 32-bit <code>RegAsm.exe</code> from <code>C:\Windows\Microsoft.NET\Framework\</code> must be used (never <code>Framework64</code>). See <a href="ImportingLibraries.html">COM DLL Registration</a>.</td>
 </tr>
 </tbody>
 </table>
