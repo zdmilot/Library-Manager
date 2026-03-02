@@ -71,10 +71,10 @@
   <td>Tilde-prefixed files are temporary lock/swap files created by editors and VENUS during saves.</td>
 </tr>
 <tr>
-  <td>Reserved directory names</td>
+  <td>Legacy reserved directory names</td>
   <td>Directories only</td>
   <td><code>LibraryManagerForVenus6</code>, <code>LibraryPackages</code>, <code>.LibraryManagerForVenus6</code>, <code>LibraryIntegrityAudit</code></td>
-  <td>Internal directories used by the Library Manager application itself. Scanning these would produce false positives.</td>
+  <td>Legacy directories from older versions of Library Manager that may still exist in the VENUS Library folder. Excluded to prevent false positives. (Current versions store all application data in the <code>local/</code> directory within the app&rsquo;s own install folder, not in the VENUS Library directory.)</td>
 </tr>
 </tbody>
 </table>

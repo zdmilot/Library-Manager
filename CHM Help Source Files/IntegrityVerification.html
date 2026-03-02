@@ -175,8 +175,8 @@
       <li>If the library has a <code>.bmp</code> file, it is embedded in the manifest as a Base64-encoded library image.</li>
     </ul>
   </li>
-  <li>The backup package is stored in the same <b>LibraryPackages</b> directory used by all imported user packages, organised by library name:
-    <img src="images/diagram-syslib-backup-path.png" alt="System library backup package stored in LibraryPackages directory" class="doc-diagram">
+  <li>The backup package is stored in the same <b>local/packages/</b> directory used by all imported user packages, organised by library name:
+    <img src="images/diagram-syslib-backup-path.png" alt="System library backup package stored in local/packages/ directory" class="doc-diagram">
   </li>
   <li>After all libraries are processed, the setting <code>sysLibBackupComplete</code> is set to <code>true</code> so the backup does not run again on subsequent launches.</li>
   <li>Progress and any errors are logged to the developer console.</li>
@@ -298,8 +298,8 @@
 <h2>Package Store</h2>
 <!-- ================================================================== -->
 
-<p>The package store is the central repository for cached and backup <code>.hxlibpkg</code> files. It serves both <a href="VersionRollback.html">version rollback</a> and the repair functionality. The default location is:</p>
-<div class="code"><pre>C:\Program Files (x86)\HAMILTON\Library\LibraryPackages</pre></div>
+<p>The package store is the central repository for cached and backup <code>.hxlibpkg</code> files. It serves both <a href="VersionRollback.html">version rollback</a> and the repair functionality. It is located within the application&rsquo;s install directory at:</p>
+<div class="code"><pre>C:\Program Files (x86)\Library Manager for Venus 6\local\packages\</pre></div>
 
 <h3>How Packages Enter the Store</h3>
 <table>
@@ -364,8 +364,8 @@
   <li><b>Investigate TAMPERED results:</b> Any file flagged as modified may indicate unauthorized changes to validated system libraries. Determine whether the change was intentional before proceeding.</li>
   <li><b>Monitor user library integrity:</b> Use the GUI integrity indicators on library cards to catch unexpected file modifications before running methods.</li>
   <li><b>Validate received packages:</b> Use <code>verify-package</code> to validate <code>.hxlibpkg</code> files received from external sources before importing.</li>
-  <li><b>Avoid deleting package store:</b> The <code>LibraryPackages</code> directory is your recovery source. Deleting its contents removes the ability to repair or roll back libraries.</li>
-  <li><b>First-run backup:</b> The first launch automatically backs up all system libraries. Ensure the application has write access to the <code>LibraryPackages</code> directory on first run.</li>
+  <li><b>Avoid deleting package store:</b> The <code>local/packages/</code> directory is your recovery source. Deleting its contents removes the ability to repair or roll back libraries.</li>
+  <li><b>First-run backup:</b> The first launch automatically backs up all system libraries. Ensure the application has write access to the <code>local/packages/</code> directory on first run.</li>
   <li><b>Repair from the detail modal:</b> For quick single-library fixes, open the library card and use the <b>Repair from Backup</b> button in the File Integrity section.</li>
   <li><b>Batch repair:</b> For comprehensive recovery, use the Verify &amp; Repair tool from the overflow menu to scan everything and repair all issues at once.</li>
 </ul>

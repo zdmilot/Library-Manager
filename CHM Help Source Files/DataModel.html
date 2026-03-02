@@ -12,9 +12,9 @@
 <h2>Overview</h2>
 <p>Library Manager for Venus 6 uses <b>diskdb</b>, a lightweight JSON-backed database, to persist all application state. The database resides in the <code>db/</code> directory within the application folder. Each collection is stored as a separate <code>.json</code> file.</p>
 
-<img src="images/diagram-data-model-folders.png" alt="Database directory structure: db/ (read-only) and local/ (user data) folders with JSON collections and LibraryPackages cache" class="doc-diagram">
+<img src="images/diagram-data-model-folders.png" alt="Database directory structure: db/ (read-only) and local/ (user data) folders with JSON collections and packages/ cache" class="doc-diagram">
 
-<p>The <code>db/</code> directory ships with the application and contains read-only reference data. The <b>user data directory</b> (by default <code>C:\Program Files (x86)\HAMILTON\Library\LibraryManagerForVenus6</code>) stores all user-specific working data including installed library records, group assignments, the audit trail, and cached packages. This separation ensures the application remains portable while user data is kept in a consistent, configurable location.</p>
+<p>The <code>db/</code> directory ships with the application and contains read-only reference data. The <b>local data directory</b> (<code>local/</code> within the application&rsquo;s own install folder) stores all mutable working data including installed library records, group assignments, the audit trail, and cached packages. This separation ensures that all data resides within the application directory and is globally accessible to every user account on the PC.</p>
 
 <h2>Collections</h2>
 <table>
@@ -227,7 +227,7 @@
 <h2>settings Collection</h2>
 <p>Stores application preferences. Always a single record with <code>_id</code> of <code>"0"</code>.</p>
 
-<p><b>Storage note:</b> Settings are intentionally stored in the application-local <code>db/settings.json</code> file (program directory), not in the user data directory. This keeps small, non-personally-identifiable toggle preferences local to the app install.</p>
+<p><b>Storage note:</b> Settings are stored in <code>local/settings.json</code> within the application&rsquo;s install directory. The <code>db/settings.json</code> file in the program directory serves as a read-only default template that is copied to <code>local/</code> on first run.</p>
 
 <div class="code"><pre>{
   "_id": "0",
@@ -237,7 +237,6 @@
   "chk_requireActionComment": false,
   "chk_requireActionSignature": false,
   "chk_showGitHubLinks": true,
-  "userDataPath": "C:\\Program Files (x86)\\Hamilton\\Library\\LibraryManagerForVenus6",
   "windowMaximized": true
 }</pre></div>
 
@@ -253,7 +252,7 @@
 <tr><td><code>chk_requireActionSignature</code></td><td>boolean</td><td>Require operator signature fields for destructive/potentially destructive GUI actions</td></tr>
 <tr><td><code>chk_includeUnsignedLibs</code></td><td>boolean</td><td>Enable unsigned library scanning and display (see <a href="UnsignedLibraries.html">Unsigned Libraries</a>)</td></tr>
 <tr><td><code>chk_scanUnsignedOnLaunch</code></td><td>boolean</td><td>Automatically scan for new unsigned libraries each time the application launches</td></tr>
-<tr><td><code>userDataPath</code></td><td>string</td><td>User data directory (where the user's copy of the database is stored)</td></tr>
+<tr><td><code>userDataPath</code></td><td>string</td><td>Legacy field (no longer used). All mutable data is now stored in the <code>local/</code> directory within the application install folder.</td></tr>
 <tr><td><code>windowMaximized</code></td><td>boolean</td><td>Whether the main window should start maximized</td></tr>
 <tr><td><code>starred_libs</code></td><td>string[]</td><td>Array of library <code>_id</code> values that the user has starred (favorited)</td></tr>
 <tr><td><code>chk_settingHistoryCleanup</code></td><td>boolean</td><td>Enable automatic VENUS run log cleanup at startup</td></tr>
@@ -265,14 +264,16 @@
 </tbody>
 </table>
 
-<h2>User Data Directory</h2>
-<p>The application database in the <code>db/</code> folder serves as the <b>default template</b>. On first run or when importing, the user's working database is stored at the configured <code>userDataPath</code>:</p>
-<div class="code"><pre>C:\Program Files (x86)\Hamilton\Library\LibraryManagerForVenus6\</pre></div>
-<p>This directory mirrors the <code>db/</code> structure and contains the live, mutable copy of the database that reflects the current installation state. It also contains:</p>
+<h2>Local Data Directory</h2>
+<p>All mutable application data is stored in the <code>local/</code> directory within the application&rsquo;s install folder:</p>
+<div class="code"><pre>C:\Program Files (x86)\Library Manager for Venus 6\local\</pre></div>
+<p>This directory contains the live, mutable copy of the database that reflects the current installation state. It also contains:</p>
 <ul>
   <li><code>audit_trail.json</code> - A persistent audit trail recording all library lifecycle events (package creation, import, delete, rollback) with environmental context such as the Windows username, Windows OS version, VENUS version, and hostname. See <a href="LibraryAuditLog.html">Library Audit Log</a> for details.</li>
-  <li><code>system_library_metadata.json</code> - VENUS install metadata for system libraries (populated on first launch)</li>
+  <li><code>packages/</code> - Cached <code>.hxlibpkg</code> package backups organized by library name, used for version rollback and integrity repair</li>
+  <li><code>exports/</code> - Default output directory for exported packages and archives</li>
 </ul>
+<p>No data is stored in <code>ProgramData</code>, <code>AppData</code>, the VENUS <code>HAMILTON\Library</code> directory, or any per-user directory. The VENUS Library directory (<code>C:\Program Files (x86)\HAMILTON\Library</code>) is used <b>only</b> for storing unpacked library files (HSL, DLL, etc.) and their associated resources.</p>
 
 <h2>Related</h2>
 <ul>

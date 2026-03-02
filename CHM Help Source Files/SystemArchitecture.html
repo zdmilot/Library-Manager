@@ -400,7 +400,7 @@
 
 <table class="phase-table">
 <tr><th colspan="2">Phase 7: Post-Install</th></tr>
-<tr><td class="step-label">Cache package</td><td>Copy .hxlibpkg to <code>local/LibraryPackages/LibName/</code> for rollback and repair</td></tr>
+<tr><td class="step-label">Cache package</td><td>Copy .hxlibpkg to <code>local/packages/LibName/</code> for rollback and repair</td></tr>
 <tr><td class="step-label">Audit trail</td><td>Append event: <code>library_imported</code> with all library details</td></tr>
 </table>
 
@@ -562,14 +562,14 @@
 <h2>9. Version Rollback Flow</h2>
 <!-- ================================================================== -->
 
-<p>Every imported package is cached in <code>local/LibraryPackages/LibName/</code>. Users can restore any previously installed version from this cache.</p>
+<p>Every imported package is cached in <code>local/packages/LibName/</code>. Users can restore any previously installed version from this cache.</p>
 
 <div class="flow-start">User initiates rollback (GUI or CLI rollback-lib)</div>
 <p class="flow-arrow">&#9660;</p>
 
 <table class="phase-table">
 <tr><th colspan="2">Phase 1: Version Selection</th></tr>
-<tr><td class="step-label">List cached packages</td><td>Scan <code>local/LibraryPackages/LibName/</code> for all cached .hxlibpkg files</td></tr>
+<tr><td class="step-label">List cached packages</td><td>Scan <code>local/packages/LibName/</code> for all cached .hxlibpkg files</td></tr>
 <tr><td class="step-label">Parse each cached package</td><td>Read manifest for version and author; get file stat for cache date and size</td></tr>
 <tr><td class="step-label">Sort by cache date</td><td>Newest first</td></tr>
 <tr class="decision"><td class="step-label">Version selection method?</td><td>
