@@ -135,8 +135,7 @@ dd {
 img {
 	border: none;
 	margin: 10px;
-	max-width: 75vw;
-	max-height: 75vh;
+	max-width: 100%;
 	height: auto;
 	box-sizing: border-box;
 }
@@ -195,6 +194,8 @@ div.header li.right {
 
 div.main {
 	padding: 0 20px 20px 20px;
+	overflow: hidden;
+	word-wrap: break-word;
 }
 
 div.footer {
@@ -308,10 +309,9 @@ div.image-placeholder {
 }
 
 img.doc-screenshot {
-	max-width: 75vw;
+	max-width: 100%;
 	width: auto;
 	height: auto;
-	max-height: 75vh;
 	object-fit: contain;
 	border: 2px solid #b0b8c1;
 	border-radius: 6px;
@@ -323,10 +323,9 @@ img.doc-screenshot {
 }
 
 img.doc-diagram {
-	max-width: 75vw;
+	max-width: 100%;
 	width: auto;
 	height: auto;
-	max-height: 75vh;
 	object-fit: contain;
 	border: 2px solid #c5ccd3;
 	border-radius: 6px;
