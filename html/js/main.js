@@ -1,5 +1,5 @@
 ﻿
-		// main.js v1.0 
+		// main.js v1.4.8 
 
 		var gui = require('nw.gui');
 		var win = gui.Window.get();

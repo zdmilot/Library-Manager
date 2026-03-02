@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Library Manager for Venus 6 CLI  v1.0
+ * Library Manager for Venus 6 CLI  v1.4.8
  * Command-line interface for managing Hamilton VENUS libraries.
  *
  * Usage:
@@ -2276,7 +2276,7 @@ function cmdRollbackLib(args) {
 // ===========================================================================
 function printHelp() {
     console.log(`
-Library Manager for Venus 6 CLI  v1.0
+Library Manager for Venus 6 CLI  v1.4.8
 Hamilton VENUS Library Package Management
 
 USAGE
