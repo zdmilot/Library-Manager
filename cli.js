@@ -984,7 +984,7 @@ function ensureOutDir(filePath) {
 
 /**
  * Resolve the package store root directory.
- * Uses --store-dir override if provided, otherwise the default under HAMILTON\Library.
+ * Uses --store-dir override if provided, otherwise the default under local/packages.
  */
 function getPackageStoreDir(args) {
     if (args && args['store-dir']) return path.resolve(args['store-dir']);
@@ -2313,7 +2313,7 @@ GLOBAL OPTIONS
   --db-path <dir>    Path to user data directory (default: from settings.json
                      or <Hamilton Library>\\LibraryManagerForVenus6)
   --store-dir <dir>  Override package store location
-                     (default: C:\\Program Files (x86)\\HAMILTON\\Library\\LibraryPackages)
+                     (default: <app_root>\\local\\packages)
 
 ──────────────────────────────────────────────────────────────────────────────
 list-libs
@@ -2339,6 +2339,8 @@ import-lib
   --force                       Overwrite without error if already installed
   --no-group                    Skip auto-assigning to a library group
   --no-cache                    Skip caching the package in the store
+  --author-password <pw>        Authorize importing packages with restricted
+                                author name "Hamilton"
 
   Examples:
     node cli.js import-lib --file MyLib.hxlibpkg
@@ -2356,6 +2358,8 @@ import-archive
   --force                       Overwrite without error if already installed
   --no-group                    Skip auto-assigning to library groups
   --no-cache                    Skip caching packages in the store
+  --author-password <pw>        Authorize importing packages with restricted
+                                author name "Hamilton"
 
   Examples:
     node cli.js import-archive --file bundle.hxlibarch
@@ -2412,6 +2416,7 @@ create-package
 
   --spec   <path>    [required]  Path to JSON spec file (see cli-schema.json)
   --output <path>    [required]  Output .hxlibpkg file path
+  --author-password <pw>        Required when author is "Hamilton"
 
   The spec file describes all metadata and which files to bundle.
   See cli-schema.json for the full JSON Schema definition.

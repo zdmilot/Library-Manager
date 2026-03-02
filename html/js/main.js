@@ -31,7 +31,6 @@
 		//Default VENUS folders.
 		var HxFolder_LogFiles = "C:\\Program Files (x86)\\HAMILTON\\LogFiles";
 		var HxFolder_Methods = "C:\\Program Files (x86)\\HAMILTON\\Methods";
-		var HxFolder_Bin = "C:\\Program Files (x86)\\HAMILTON\\Bin";
 
 		const fs = require('fs');
 		// image-size removed — no longer used
@@ -6883,7 +6882,6 @@
 
 		// ---- Library integrity hashing (delegated to shared module) ----
 		var computeFileHash        = shared.computeFileHash;
-		var HSL_METADATA_EXTS      = shared.HSL_METADATA_EXTS;
 		var parseHslMetadataFooter = shared.parseHslMetadataFooter;
 
 		/**
@@ -6948,8 +6946,6 @@
 
 		// ---- Package signing & hashing (delegated to shared module) ----
 		var computeLibraryHashes  = shared.computeLibraryHashes;
-		var PKG_SIGNING_KEY       = shared.PKG_SIGNING_KEY;
-		var computeZipEntryHashes = shared.computeZipEntryHashes;
 		var signPackageZip        = shared.signPackageZip;
 		var verifyPackageSignature = shared.verifyPackageSignature;
 

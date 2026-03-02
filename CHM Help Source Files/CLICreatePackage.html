@@ -21,6 +21,7 @@
 <tbody>
 <tr><td><code>--spec &lt;path&gt;</code></td><td><span class="badge badge-required">Required</span></td><td>Path to the JSON specification file (see <a href="PackageSpecSchema.html">Package Spec JSON Schema</a>)</td></tr>
 <tr><td><code>--output &lt;path&gt;</code></td><td><span class="badge badge-required">Required</span></td><td>Output <code>.hxlibpkg</code> file path</td></tr>
+<tr><td><code>--author-password &lt;pw&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Required when author is "Hamilton". Authorizes use of the restricted author name.</td></tr>
 </tbody>
 </table>
 
@@ -33,6 +34,8 @@
 <tbody>
 <tr><td><code>author</code></td><td>string</td><td>Library author name</td></tr>
 <tr><td><code>version</code></td><td>string</td><td>Library version string (e.g., <code>"1.0.0"</code>)</td></tr>
+<tr><td><code>venus_compatibility</code></td><td>string</td><td>VENUS version compatibility</td></tr>
+<tr><td><code>description</code></td><td>string</td><td>Human-readable description</td></tr>
 <tr><td><code>library_files</code></td><td>string[]</td><td>Paths to library payload files (at least one required)</td></tr>
 </tbody>
 </table>
@@ -43,8 +46,6 @@
 <tbody>
 <tr><td><code>library_name</code></td><td>string</td><td>Override library name. Auto-detected from <code>.hsl</code>/<code>.hs_</code>/<code>.smt</code> if omitted</td></tr>
 <tr><td><code>organization</code></td><td>string</td><td>Author's organization</td></tr>
-<tr><td><code>venus_compatibility</code></td><td>string</td><td>VENUS version compatibility</td></tr>
-<tr><td><code>description</code></td><td>string</td><td>Human-readable description</td></tr>
 <tr><td><code>tags</code></td><td>string[]</td><td>Searchable keyword tags. The values <code>"System"</code> and <code>"Hamilton"</code> are <b>reserved</b> and will cause the command to fail with an error (case-insensitive).</td></tr>
 <tr><td><code>library_image</code></td><td>string</td><td>Path to icon/image file. Falls back to matching <code>.bmp</code> if omitted</td></tr>
 <tr><td><code>demo_method_files</code></td><td>string[]</td><td>Paths to demo/example method files</td></tr>

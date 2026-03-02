@@ -277,7 +277,7 @@
 <tr><th colspan="2">Phase 2: Validation</th></tr>
 <tr><td class="step-label">Validate required fields</td><td>author, version, description, venus_compatibility must be present; at least 1 library file required</td></tr>
 <tr class="decision"><td class="step-label">Author = "Hamilton"?</td><td>
-  <b>Yes &rarr;</b> Require author password (PBKDF2-HMAC-SHA512, 100K iterations). Invalid password aborts.<br/>
+  <b>Yes &rarr;</b> Require author password. Invalid password aborts.<br/>
   <b>No &rarr;</b> Continue
 </td></tr>
 <tr><td class="step-label">Sanitize &amp; validate tags</td><td>Remove reserved words, enforce length limits, deduplicate</td></tr>
@@ -355,7 +355,7 @@
 <tr><th colspan="2">Phase 3: Validation</th></tr>
 <tr><td class="step-label">Validate library name</td><td><code>isValidLibraryName()</code> &mdash; no path separators, no traversal, no reserved names</td></tr>
 <tr class="decision"><td class="step-label">Author = "Hamilton"?</td><td>
-  <b>Yes (and not a system library) &rarr;</b> Require <code>--author-password</code> or GUI password prompt (PBKDF2-HMAC-SHA512)<br/>
+  <b>Yes (and not a system library) &rarr;</b> Require <code>--author-password</code> or GUI password prompt<br/>
   <b>No &rarr;</b> Continue
 </td></tr>
 <tr class="decision"><td class="step-label">Library already installed?</td><td>
@@ -729,7 +729,7 @@
 <h3>Restricted Author Protection</h3>
 <p>Packages claiming author = &ldquo;Hamilton&rdquo; (case-insensitive) require additional authentication to prevent unauthorized Hamilton-branded packages.</p>
 
-<img src="images/diagram-restricted-author.png" alt="Restricted author protection flow: Hamilton author check, system library bypass, PBKDF2 password verification" class="doc-diagram">
+<img src="images/diagram-restricted-author.png" alt="Restricted author protection flow: Hamilton author check, system library bypass, password verification" class="doc-diagram">
 
 <!-- ================================================================== -->
 <a name="sec13"></a>

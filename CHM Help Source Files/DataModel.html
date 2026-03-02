@@ -156,18 +156,18 @@
 <p>Defines the navigation groups (tabs) shown in the GUI. The application uses a <b>two-tier group architecture</b>:</p>
 
 <h3>Default Groups (Hardcoded)</h3>
-<p>Six built-in groups are defined in a <code>DEFAULT_GROUPS</code> map in the application source code. These are <b>never stored</b> in <code>groups.json</code> - they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the JSON file to prevent duplicates.</p>
+<p>Seven built-in groups are defined in a <code>DEFAULT_GROUPS</code> map in the application source code. These are <b>never stored</b> in <code>groups.json</code> - they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the JSON file to prevent duplicates.</p>
 
 <table>
 <thead><tr><th>ID</th><th>Name</th><th>Icon</th><th>Side</th><th>Purpose</th></tr></thead>
 <tbody>
-<tr><td><code>gAll</code></td><td>All</td><td><code>fa-th</code></td><td>left</td><td>Shows all installed libraries</td></tr>
-<tr><td><code>gRecent</code></td><td>Recent</td><td><code>fa-clock</code></td><td>left</td><td>Recently accessed libraries</td></tr>
+<tr><td><code>gAll</code></td><td>All</td><td><code>fa-home</code></td><td>left</td><td>Shows all installed libraries</td></tr>
+<tr><td><code>gRecent</code></td><td>Recent</td><td><code>fa-history</code></td><td>left</td><td>Recently accessed libraries</td></tr>
 <tr><td><code>gStarred</code></td><td>Starred</td><td><code>fa-star</code></td><td>left</td><td>Libraries starred (favorited) by the user</td></tr>
 <tr><td><code>gHamilton</code></td><td>Hamilton</td><td><code>fa-check-circle</code> (solid)</td><td>left</td><td>Protected Hamilton-authored libraries</td></tr>
-<tr><td><code>gFolders</code></td><td>Import</td><td><code>fa-file-import</code></td><td>right</td><td>Import workflow tab</td></tr>
-<tr><td><code>gEditors</code></td><td>Export</td><td><code>fa-file-export</code></td><td>right</td><td>Export workflow tab</td></tr>
-<tr><td><code>gHistory</code></td><td>History</td><td><code>fa-history</code></td><td>right</td><td>Action history</td></tr>
+<tr><td><code>gFolders</code></td><td>Import</td><td><code>fa-download</code></td><td>right</td><td>Import workflow tab</td></tr>
+<tr><td><code>gEditors</code></td><td>Export</td><td><code>fa-upload</code></td><td>right</td><td>Export workflow tab</td></tr>
+<tr><td><code>gHistory</code></td><td>History</td><td><code>fa-list</code></td><td>right</td><td>Action history</td></tr>
 </tbody>
 </table>
 
@@ -179,7 +179,7 @@
 <div class="code"><pre>{
   "_id": "gAll",
   "name": "All",
-  "icon-class": "fa-th",
+  "icon-class": "fa-home",
   "default": true,
   "navbar": "left",
   "favorite": true
