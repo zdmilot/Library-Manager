@@ -1127,7 +1127,7 @@ function cmdListLibs(args) {
         console.log(`  Lib path:    ${lib.lib_install_path  || '-'}`);
         console.log(`  Demo path:   ${lib.demo_install_path || '-'}`);
         console.log(`  Installed:   ${lib.installed_date    || '-'}`);
-        console.log(`  Installed By:${lib.installed_by       || '-'}`);
+        console.log(`  Installed By: ${lib.installed_by      || '-'}`);
         if ((lib.com_register_dlls || []).length > 0)
             console.log(`  COM DLLs:    ${lib.com_register_dlls.join(', ')}`);
         const pubFns = lib.public_functions || [];

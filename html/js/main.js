@@ -34,7 +34,7 @@
 		var HxFolder_Bin = "C:\\Program Files (x86)\\HAMILTON\\Bin";
 
 		const fs = require('fs');
-		const sizeOf = require('image-size');
+		// image-size removed — no longer used
 		const os = require("os");
 		const crypto = require('crypto');
 		const shared = require('../lib/shared');
@@ -7178,7 +7178,7 @@
 			if (lib.github_url && getSettingValue("chk_showGitHubLinks") !== false) {
 				var ghValidation = shared.validateGitHubRepoUrl(lib.github_url);
 				if (ghValidation.valid) {
-					$("#libDetailModal .lib-detail-github-link").attr("href", ghValidation.url).text(ghValidation.url);
+					$("#libDetailModal .lib-detail-github-link").attr("href", lib.github_url).text(lib.github_url);
 					$("#libDetailModal .lib-detail-github-section").removeClass("d-none");
 				} else {
 					$("#libDetailModal .lib-detail-github-section").addClass("d-none");
@@ -8063,7 +8063,7 @@
 				});
 				var listHtml = '<i class="fas fa-info-circle mr-1" style="color:var(--medium)"></i>' +
 					allDepLibIds.length + ' dependenc' + (allDepLibIds.length !== 1 ? 'ies' : 'y') + ' found: ' +
-					depNames.map(function(n) { return '<b>' + n.replace(/</g,'&lt;') + '</b>'; }).join(', ');
+					depNames.map(function(n) { return '<b>' + escapeHtml(n) + '</b>'; }).join(', ');
 				depList.html(listHtml);
 				depSummary.removeClass('d-none');
 				$depsOption.removeClass('export-choice-disabled').css({ opacity: '', cursor: 'pointer', pointerEvents: '' });
@@ -8426,11 +8426,11 @@
 				var depLibs = exportedLibs.filter(function(l) { return !l.isRoot; });
 
 				var archListHtml = '<div style="text-align:left;">';
-				archListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-book text-success mr-1"></i><b>' + (rootLib ? rootLib.name.replace(/</g,'&lt;') : '') + '</b> <span class="text-muted" style="font-size:0.8rem;">(root library)</span></div>';
+				archListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-book text-success mr-1"></i><b>' + (rootLib ? escapeHtml(rootLib.name) : '') + '</b> <span class="text-muted" style="font-size:0.8rem;">(root library)</span></div>';
 				if (depLibs.length > 0) {
 					archListHtml += '<div class="text-muted text-sm mb-1" style="margin-left:1.25rem;">Dependencies:</div>';
 					depLibs.forEach(function(l) {
-						archListHtml += '<div style="margin-bottom:4px; margin-left:1.25rem;"><i class="fas fa-check text-success mr-1"></i>' + l.name.replace(/</g,'&lt;') + ' <span class="text-muted" style="font-size:0.8rem;">(' + l.libFiles + ' lib, ' + l.demoFiles + ' demo)</span></div>';
+						archListHtml += '<div style="margin-bottom:4px; margin-left:1.25rem;"><i class="fas fa-check text-success mr-1"></i>' + escapeHtml(l.name) + ' <span class="text-muted" style="font-size:0.8rem;">(' + l.libFiles + ' lib, ' + l.demoFiles + ' demo)</span></div>';
 					});
 				}
 				archListHtml += '</div>';
@@ -8759,7 +8759,7 @@
 
 				var archListHtml = '<div style="text-align:left;">';
 				exportedLibs.forEach(function(l) {
-					archListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-check text-success mr-1"></i>' + l.name.replace(/</g,'&lt;') + ' <span class="text-muted" style="font-size:0.8rem;">(' + l.libFiles + ' lib, ' + l.demoFiles + ' demo)</span></div>';
+					archListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-check text-success mr-1"></i>' + escapeHtml(l.name) + ' <span class="text-muted" style="font-size:0.8rem;">(' + l.libFiles + ' lib, ' + l.demoFiles + ' demo)</span></div>';
 				});
 				archListHtml += '</div>';
 
@@ -9087,12 +9087,12 @@
 				var archImpListHtml = '<div style="text-align:left;">';
 				if (results.success.length > 0) {
 					results.success.forEach(function(n) {
-						archImpListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-check text-success mr-1"></i>' + n.replace(/</g,'&lt;') + '</div>';
+						archImpListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-check text-success mr-1"></i>' + escapeHtml(n) + '</div>';
 					});
 				}
 				if (results.failed.length > 0) {
 					results.failed.forEach(function(n) {
-						archImpListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-times text-danger mr-1"></i>' + n.replace(/</g,'&lt;') + '</div>';
+						archImpListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-times text-danger mr-1"></i>' + escapeHtml(n) + '</div>';
 					});
 				}
 				archImpListHtml += '</div>';
@@ -9561,7 +9561,7 @@
 				if (manifest.github_url && getSettingValue("chk_showGitHubLinks") !== false) {
 					var ghCheck = shared.validateGitHubRepoUrl(manifest.github_url);
 					if (ghCheck.valid) {
-						$modal.find(".imp-preview-github-link").attr("href", ghCheck.url).text(ghCheck.url);
+						$modal.find(".imp-preview-github-link").attr("href", manifest.github_url).text(manifest.github_url);
 						$modal.find(".imp-preview-github-section").removeClass("d-none");
 					} else {
 						$modal.find(".imp-preview-github-section").addClass("d-none");
@@ -9859,11 +9859,12 @@
 
 				// Save to DB
 				// Compute integrity hashes for installed files
-				var fileHashes = computeLibraryHashes(
+				var fileHashes = {};
+				try { fileHashes = computeLibraryHashes(
 					libFiles,
 					libDestDir,
 					comDlls
-				);
+				); } catch(e) {}
 
 				var dbRecord = {
 					library_name: manifest.library_name || "",
@@ -10752,7 +10753,8 @@
 				// Recompute hashes
 				var libFiles = lib.library_files || [];
 				var comDlls = lib.com_register_dlls || [];
-				var fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls);
+				var fileHashes = {};
+				try { fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls); } catch(e) {}
 
 				// Update DB record with fresh hashes
 				db_installed_libs.installed_libs.update({ _id: lib._id }, {

@@ -128,7 +128,7 @@
 <p>See <a href="IntegrityVerification.html">Integrity Verification</a> for details on the inner <code>signature.json</code> mechanism and <a href="PackageFormats.html">Package Formats</a> for the internal ZIP structure.</p>
 
 <!-- ================================================================== -->
-<h2>Nested Containers in Archives</h2>
+<h2 id="nested">Nested Containers in Archives</h2>
 <!-- ================================================================== -->
 
 <p>A <code>.hxlibarch</code> archive file is itself a binary container. Inside its descrambled ZIP payload, each inner <code>.hxlibpkg</code> entry is <b>also a full binary container</b> - not a raw ZIP. This means every level has its own container header, HMAC, and scrambled payload:</p>
