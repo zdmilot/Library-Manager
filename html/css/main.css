@@ -2392,6 +2392,207 @@ body {
 	letter-spacing: 0.4px;
 }
 
+/* ================================================================
+   DARK MODE / NIGHT MODE
+   ================================================================
+   Applied when <body> has the class "dark-mode".
+   Overrides CSS custom properties and key element backgrounds/colors.
+   ================================================================ */
+
+body.dark-mode {
+	--body-background: #1a1a2e;
+	--method-background: #16213e;
+	--dark1: #0f0f23;
+	--medium: #4a6fa5;
+	--medium2: #1a3a5c;
+	--solid-button-background: #3a7bd5;
+	--solid-button-over: #2e6bc4;
+	--navbar-font: #8899aa;
+	--navbar-font-over: #e0e6ed;
+}
+
+body.dark-mode .btn-outlined {
+	background-color: #16213e;
+	border-color: #3a7bd5;
+	color: #c8d6e5;
+}
+body.dark-mode .btn-outlined:hover {
+	background-color: rgba(58,123,213,0.15);
+}
+
+/* Cards and panels */
+body.dark-mode .card,
+body.dark-mode .method-card,
+body.dark-mode .lib-card {
+	background-color: #16213e;
+	border-color: #2a3a5c;
+	color: #c8d6e5;
+}
+
+/* Modal styling */
+body.dark-mode .modal-content,
+body.dark-mode .detail-modal-content {
+	background-color: #1a1a2e;
+	color: #c8d6e5;
+	border-color: #2a3a5c;
+}
+body.dark-mode .modal-header,
+body.dark-mode .detail-modal-header {
+	border-bottom-color: #2a3a5c;
+}
+body.dark-mode .modal-footer,
+body.dark-mode .detail-modal-footer {
+	border-top-color: #2a3a5c;
+}
+
+/* Form controls */
+body.dark-mode .form-control,
+body.dark-mode input[type="text"],
+body.dark-mode textarea,
+body.dark-mode select {
+	background-color: #0f0f23;
+	color: #c8d6e5;
+	border-color: #2a3a5c;
+}
+body.dark-mode .form-control:focus {
+	background-color: #16213e;
+	color: #e0e6ed;
+	border-color: #3a7bd5;
+}
+
+/* Text colors */
+body.dark-mode .text-muted {
+	color: #7a8ba0 !important;
+}
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3,
+body.dark-mode h4, body.dark-mode h5, body.dark-mode h6 {
+	color: #e0e6ed;
+}
+body.dark-mode label,
+body.dark-mode .custom-control-label {
+	color: #c8d6e5;
+}
+
+/* Tables */
+body.dark-mode table,
+body.dark-mode .table {
+	color: #c8d6e5;
+}
+body.dark-mode .table thead th {
+	border-bottom-color: #2a3a5c;
+	color: #8899aa;
+}
+body.dark-mode .table td,
+body.dark-mode .table th {
+	border-top-color: #2a3a5c;
+}
+body.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+	background-color: rgba(255,255,255,0.03);
+}
+
+/* Dropdown menus (non-navbar) */
+body.dark-mode .dropdown-menu:not(.btn-overflow-menu .dropdown-menu) {
+	background-color: #16213e;
+	border-color: #2a3a5c;
+}
+body.dark-mode .dropdown-item {
+	color: #c8d6e5;
+}
+body.dark-mode .dropdown-item:hover {
+	background-color: rgba(58,123,213,0.15);
+	color: #e0e6ed;
+}
+body.dark-mode .dropdown-navitem-clearbg {
+	color: #c8d6e5 !important;
+}
+
+/* Settings sections */
+body.dark-mode .settings-section {
+	border-bottom-color: #2a3a5c;
+}
+
+/* Links sidebar */
+body.dark-mode .links-container {
+	background-color: #0f0f23;
+}
+
+/* Close button */
+body.dark-mode .close {
+	color: #8899aa;
+	text-shadow: none;
+}
+body.dark-mode .close:hover {
+	color: #c8d6e5;
+}
+
+/* Scrollbar */
+body.dark-mode ::-webkit-scrollbar {
+	width: 8px;
+}
+body.dark-mode ::-webkit-scrollbar-track {
+	background: #0f0f23;
+}
+body.dark-mode ::-webkit-scrollbar-thumb {
+	background: #2a3a5c;
+	border-radius: 4px;
+}
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+	background: #3a4a6c;
+}
+
+/* Alert boxes */
+body.dark-mode .alert-info {
+	background-color: rgba(58,123,213,0.12);
+	border-color: #2a3a5c;
+	color: #8abaef;
+}
+body.dark-mode .alert-warning {
+	background-color: rgba(255,190,6,0.12);
+	border-color: #5c4a1a;
+	color: #f0c850;
+}
+body.dark-mode .alert-danger {
+	background-color: rgba(187,0,0,0.12);
+	border-color: #5c1a1a;
+	color: #ef6b6b;
+}
+
+/* Badge overrides */
+body.dark-mode .badge-secondary {
+	background-color: #2a3a5c;
+	color: #c8d6e5;
+}
+
+/* Pre/code blocks */
+body.dark-mode pre,
+body.dark-mode code {
+	background-color: #0f0f23;
+	color: #8abaef;
+}
+
+/* Custom checkbox */
+body.dark-mode .custom-control-input:checked ~ .custom-control-label::before {
+	background-color: #3a7bd5;
+	border-color: #3a7bd5;
+}
+
+/* Dark mode toggle button styling */
+.btn-dark-mode-toggle {
+	cursor: pointer;
+}
+.btn-dark-mode-toggle .fa-moon {
+	display: inline;
+}
+.btn-dark-mode-toggle .fa-sun {
+	display: none;
+}
+body.dark-mode .btn-dark-mode-toggle .fa-moon {
+	display: none;
+}
+body.dark-mode .btn-dark-mode-toggle .fa-sun {
+	display: inline;
+}
+
 
 
 

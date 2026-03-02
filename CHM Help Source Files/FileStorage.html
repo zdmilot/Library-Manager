@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Storage &amp; Data Management</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">File Storage &amp; Data Management</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; File Storage &amp; Data Management</div>
+
+<h2>Overview</h2>
+<p>Library Manager for Venus 6 stores all persistent application data in a single <code>local/</code> directory within the application&rsquo;s own install folder under <code>Program Files (x86)</code>. This design ensures that all settings, library registries, audit trails, package backups, and exports are globally accessible to every user account on the PC &mdash; which is essential because VENUS libraries must span the entire workstation and are not per-user resources.</p>
+
+<p><b>No data is stored in ProgramData, AppData, or any per-user directory.</b> All data resides within the application&rsquo;s install directory, making it straightforward to locate, back up, and manage.</p>
+
+<h2>Installation Directory</h2>
+<p>The application is installed to:</p>
+<pre>C:\Program Files (x86)\Library Manager for Venus 6\</pre>
+<p>This uses the 32-bit Program Files directory (<code>x86</code>) because the application is built on a 32-bit architecture (NW.js ia32). The installer configures folder permissions so that all local users have read and write access to the <code>local/</code> subdirectory.</p>
+
+<h2>Local Data Directory</h2>
+<p>All mutable application data is stored under:</p>
+<pre>C:\Program Files (x86)\Library Manager for Venus 6\local\</pre>
+
+<h3>Directory Structure</h3>
+<table>
+<thead><tr><th>Path</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>local/settings.json</code></td><td>JSON file</td><td>Global application settings (singleton record with <code>_id: "0"</code>). Stores all checkbox preferences, recent-max count, dark mode preference, regulated environment state, and feature flags.</td></tr>
+<tr><td><code>local/installed_libs.json</code></td><td>JSON file</td><td>Registry of all installed <code>.hxlibpkg</code> libraries with metadata (name, version, author, install date, file hashes).</td></tr>
+<tr><td><code>local/groups.json</code></td><td>JSON file</td><td>User-created custom library groups (name, icon, color).</td></tr>
+<tr><td><code>local/tree.json</code></td><td>JSON file</td><td>Group-to-library membership tree. Maps which libraries belong to which groups.</td></tr>
+<tr><td><code>local/links.json</code></td><td>JSON file</td><td>VENUS tool shortcuts and folder path references (Method Editor, Labware Editor, Library folder path, etc.).</td></tr>
+<tr><td><code>local/unsigned_libs.json</code></td><td>JSON file</td><td>Registry of unsigned HSL files discovered during scans of the VENUS Library folder.</td></tr>
+<tr><td><code>local/publisher_registry.json</code></td><td>JSON file</td><td>Autocomplete data for publisher/author names and tags across all libraries.</td></tr>
+<tr><td><code>local/audit_trail.json</code></td><td>JSON file</td><td>Append-only audit log recording all lifecycle events (imports, deletes, rollbacks, package creations, integrity checks) with timestamps, usernames, and environmental context.</td></tr>
+<tr><td><code>local/packages/</code></td><td>Directory</td><td>Cached <code>.hxlibpkg</code> package backups organized by library name. Used for version rollback and integrity repair. Each library has its own subdirectory containing timestamped package files.</td></tr>
+<tr><td><code>local/exports/</code></td><td>Directory</td><td>Default output directory for exported packages and archives.</td></tr>
+</tbody>
+</table>
+
+<h3>Package Backup Structure</h3>
+<p>The <code>local/packages/</code> directory organizes cached packages by library name:</p>
+<pre>local/packages/
+  MyLibrary/
+    MyLibrary_v1.0.0_20260215-093012.hxlibpkg
+    MyLibrary_v1.1.0_20260301-141530.hxlibpkg
+  AnotherLib/
+    AnotherLib_v2.0.0_20260220-110045.hxlibpkg</pre>
+<p>Every time a library is imported (or a system library is backed up on first run), a copy of the <code>.hxlibpkg</code> file is stored here. This enables:</p>
+<ul>
+  <li><b>Version rollback</b> &mdash; revert to any previously installed version</li>
+  <li><b>Integrity repair</b> &mdash; restore corrupted library files from the cached package</li>
+  <li><b>Audit trail</b> &mdash; every version that was ever installed is retained as evidence</li>
+</ul>
+
+<h2>Settings Persistence</h2>
+<p>All application settings are stored in <code>local/settings.json</code> as a single JSON record. Settings are globally applied &mdash; any change made by one user is immediately visible to all other users on the same PC. Key settings include:</p>
+
+<table>
+<thead><tr><th>Setting Key</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>chk_confirmBeforeInstall</code></td><td>boolean</td><td>Show preview and confirmation before installing a library</td></tr>
+<tr><td><code>chk_autoAddToGroup</code></td><td>boolean</td><td>Automatically add newly imported libraries to a group</td></tr>
+<tr><td><code>chk_regulatedEnvironment</code></td><td>boolean</td><td>Enable <a href="RegulatedEnvironment.html">regulated environment mode</a> (Windows group-based access control)</td></tr>
+<tr><td><code>chk_requireActionComment</code></td><td>boolean</td><td>Require comment for destructive actions</td></tr>
+<tr><td><code>chk_requireActionSignature</code></td><td>boolean</td><td>Require user signature for destructive actions</td></tr>
+<tr><td><code>chk_darkMode</code></td><td>boolean</td><td>Enable night mode (dark theme) &mdash; retained between sessions</td></tr>
+<tr><td><code>chk_hideSystemLibraries</code></td><td>boolean</td><td>Hide system libraries on the front page</td></tr>
+<tr><td><code>chk_showGitHubLinks</code></td><td>boolean</td><td>Show GitHub repository links in library details</td></tr>
+<tr><td><code>chk_includeUnsignedLibs</code></td><td>boolean</td><td>Include unsigned libraries on the front page</td></tr>
+<tr><td><code>recent-max</code></td><td>string</td><td>Maximum number of recently imported libraries to display</td></tr>
+<tr><td><code>starred_libs</code></td><td>array</td><td>List of starred/favorited library IDs</td></tr>
+</tbody>
+</table>
+
+<h2>Night Mode (Dark Theme)</h2>
+<p>Library Manager for Venus 6 supports a night mode (dark theme) that can be toggled in two ways:</p>
+<ul>
+  <li><b>Overflow menu</b> &mdash; click the three-dot menu (<i class="fas fa-ellipsis-v"></i>) and select <b>Night Mode</b> / <b>Day Mode</b></li>
+  <li><b>Settings dialog</b> &mdash; check or uncheck <b>Enable night mode (dark theme)</b> under the Display section</li>
+</ul>
+<p>The dark mode preference is stored in <code>local/settings.json</code> as <code>chk_darkMode</code> and is persisted between application sessions. Because settings are global, the theme preference applies to all users on the PC.</p>
+
+<h2>Migration from Previous Versions</h2>
+<p>When upgrading from an earlier version of Library Manager for Venus 6, the application automatically migrates data from legacy storage locations:</p>
+
+<table>
+<thead><tr><th>Legacy Location</th><th>Version</th><th>Migration Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;app&gt;/db/</code></td><td>Pre-1.3</td><td>Settings and library data are merged into <code>local/</code></td></tr>
+<tr><td><code>HAMILTON\Library\LibraryManagerForVenus6\</code></td><td>1.2&ndash;1.3</td><td>Library registry, groups, tree, links, and audit trail are copied to <code>local/</code></td></tr>
+<tr><td><code>HAMILTON\Library\.LibraryManagerForVenus6\</code></td><td>1.0&ndash;1.1</td><td>Same as above (hidden folder variant)</td></tr>
+<tr><td><code>HAMILTON\Library\LibraryPackages\</code></td><td>1.2&ndash;1.3</td><td>Cached package backups are copied to <code>local/packages/</code></td></tr>
+</tbody>
+</table>
+
+<p>Migration is non-destructive &mdash; data is only copied if the destination file is empty or contains default seed data. Original files in legacy locations are not deleted.</p>
+
+<h2>Backup Recommendations</h2>
+<ul>
+  <li><b>Back up the entire <code>local/</code> directory</b> regularly. It contains all application state and is the single source of truth.</li>
+  <li>The <code>local/packages/</code> subdirectory can become large over time as package versions accumulate. Consider archiving or removing old versions periodically if disk space is a concern.</li>
+  <li>The <code>local/audit_trail.json</code> file grows indefinitely as an append-only log. It can be safely archived and truncated if needed, though this will clear the History view.</li>
+</ul>
+
+<h2>Folder Permissions</h2>
+<p>The <code>local/</code> directory must be writable by all users who run the application. The installer grants full control to the <code>Users</code> group on this directory. If you encounter permission errors, verify that the folder ACLs allow read/write access for the relevant user accounts or groups.</p>
+
+<h2>Related Topics</h2>
+<ul>
+  <li><a href="SystemArchitecture.html">System Architecture</a></li>
+  <li><a href="RegulatedEnvironment.html">Regulated Environment Mode</a></li>
+  <li><a href="LibraryAuditLog.html">Library Audit Log</a></li>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a></li>
+  <li><a href="VersionRollback.html">Version Rollback</a></li>
+</ul>
+
+</div>
+<script src="help.js"></script>
+</body>
+</html>

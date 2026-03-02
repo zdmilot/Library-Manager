@@ -58,7 +58,9 @@ const DEFAULT_LIB_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Library';
 const DEFAULT_MET_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Methods';
 
 // Package store - persists all imported .hxlibpkg files for repair & rollback
-const PACKAGE_STORE_DIR = path.join(DEFAULT_LIB_PATH, 'LibraryPackages');
+// Now stored under local/packages/ within the app directory
+const LOCAL_DATA_DIR = path.join(__dirname, 'local');
+const PACKAGE_STORE_DIR = path.join(LOCAL_DATA_DIR, 'packages');
 
 // ---------------------------------------------------------------------------
 // Default Groups (hardcoded - never stored in external JSON)
@@ -294,15 +296,16 @@ function buildAuditTrailEntry(eventType, details) {
 // Database helpers
 // ---------------------------------------------------------------------------
 
-/** Default user data directory (outside the app) */
-const DEFAULT_USER_DATA_PATH = path.join(DEFAULT_LIB_PATH, 'LibraryManagerForVenus6');
+/** Local data directory (inside the app's own folder) */
+const DEFAULT_USER_DATA_PATH = LOCAL_DATA_DIR;
 
 /**
- * Connect diskdb to the settings DB (always in app's db/ folder).
+ * Connect diskdb to the settings DB (now in local/ directory).
  */
 function connectSettingsDB() {
     const diskdb = require('diskdb');
-    return diskdb.connect(path.join(__dirname, 'db'), ['settings']);
+    ensureLocalDataDir(LOCAL_DATA_DIR);
+    return diskdb.connect(LOCAL_DATA_DIR, ['settings']);
 }
 
 /**
@@ -324,8 +327,8 @@ function connectDB(dbDir) {
 }
 
 /**
- * Resolve the user data directory from CLI args or settings.
- * Priority: --db-path flag > userDataPath in settings.json > default
+ * Resolve the data directory from CLI args or local/ default.
+ * Priority: --db-path flag > local/ directory
  * Also ensures the directory exists with seed files.
  */
 function resolveDBPath(args) {
@@ -333,28 +336,28 @@ function resolveDBPath(args) {
     if (args['db-path']) {
         dbPath = path.resolve(args['db-path']);
     } else {
-        // Check settings.json for configured userDataPath
-        try {
-            const settingsDb = connectSettingsDB();
-            const settings = settingsDb.settings.find();
-            if (settings && settings.length > 0 && settings[0].userDataPath) {
-                dbPath = settings[0].userDataPath;
-            }
-        } catch(_) {}
-        if (!dbPath) dbPath = DEFAULT_USER_DATA_PATH;
+        dbPath = LOCAL_DATA_DIR;
     }
-    ensureUserDataDir(dbPath);
+    ensureLocalDataDir(dbPath);
     return dbPath;
 }
 
 /**
- * Ensure user data directory exists and has seed files.
+ * Ensure local data directory exists with seed files and subdirectories.
  */
-function ensureUserDataDir(dirPath) {
+function ensureLocalDataDir(dirPath) {
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
     }
+    // Ensure subdirectories
+    ['packages', 'exports'].forEach(function(sub) {
+        const subPath = path.join(dirPath, sub);
+        if (!fs.existsSync(subPath)) {
+            fs.mkdirSync(subPath, { recursive: true });
+        }
+    });
     const seeds = {
+        'settings.json': '[{"_id":"0"}]',
         'installed_libs.json': '[]',
         'groups.json': '[]',
         'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gHamilton","method-ids":[],"locked":true}]',

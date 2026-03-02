@@ -70,6 +70,193 @@
 			}
 		}
 
+		// ---- Windows Security Group Detection & Regulated Environment Access Control ----
+		// Detects the current user's Windows group membership via `whoami /groups`.
+		// Used to enforce access control on protected library management actions
+		// (import, delete, rollback) when regulated environment mode is enabled.
+		//
+		// Precedence (allow overrides deny):
+		//   1. User is in Lab Method Programmer OR Lab Service => ALLOWED
+		//   2. User is in Lab Operator, Lab Operator 2, or Lab Remote Service => DENIED
+		//   3. User is not in any Hamilton group:
+		//      - Regulated mode ON  => DENIED  (strict default deny)
+		//      - Regulated mode OFF => ALLOWED (compatibility default allow)
+
+		var ALLOW_GROUPS = ['lab method programmer', 'lab service'];
+		var DENY_GROUPS  = ['lab operator', 'lab operator 2', 'lab remote service'];
+
+		/**
+		 * Check if the current user is a Windows Administrator.
+		 * Administrators are on the "super whitelist" and receive full access
+		 * to all library management actions and settings.
+		 * @returns {boolean}
+		 */
+		function isWindowsAdmin() {
+			var groups = getWindowsGroups();
+			for (var i = 0; i < groups.length; i++) {
+				if (groups[i] === 'administrators' ||
+				    groups[i].indexOf('builtin\\administrators') !== -1 ||
+				    groups[i].indexOf('\\administrators') !== -1) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/** Cached group membership result and timestamp */
+		var _cachedGroups = null;
+		var _cachedGroupsTime = 0;
+		var GROUP_CACHE_TTL_MS = 15000; // 15 second cache
+
+		/**
+		 * Get the current user's Windows security groups.
+		 * Uses `whoami /groups /fo csv /nh` and caches for 15 seconds.
+		 * @returns {string[]} Array of lowercase group names
+		 */
+		function getWindowsGroups() {
+			var now = Date.now();
+			if (_cachedGroups && (now - _cachedGroupsTime) < GROUP_CACHE_TTL_MS) {
+				return _cachedGroups;
+			}
+			try {
+				var groupExecSync = require('child_process').execSync;
+				var raw = groupExecSync('whoami /groups /fo csv /nh', { encoding: 'utf8', timeout: 10000 });
+				var groups = [];
+				var lines = raw.split('\n');
+				for (var i = 0; i < lines.length; i++) {
+					var line = lines[i].trim();
+					if (!line) continue;
+					// CSV format: "GROUP_NAME","Type","SID","Attributes"
+					var match = line.match(/^"([^"]+)"/);
+					if (match) {
+						var fullGroupName = match[1].toLowerCase();
+						// Extract just the group name after the domain backslash
+						var parts = fullGroupName.split('\\');
+						var shortName = parts[parts.length - 1];
+						groups.push(shortName);
+						// Also keep full qualified name for matching
+						if (parts.length > 1) groups.push(fullGroupName);
+					}
+				}
+				_cachedGroups = groups;
+				_cachedGroupsTime = now;
+				return groups;
+			} catch(e) {
+				console.warn('Could not query Windows groups: ' + e.message);
+				_cachedGroups = [];
+				_cachedGroupsTime = now;
+				return [];
+			}
+		}
+
+		/**
+		 * Check if the current user is in any of the given group names.
+		 * @param {string[]} targetGroups - lowercase group names to check
+		 * @returns {boolean}
+		 */
+		function isInAnyGroup(targetGroups) {
+			var userGroups = getWindowsGroups();
+			for (var i = 0; i < targetGroups.length; i++) {
+				for (var j = 0; j < userGroups.length; j++) {
+					if (userGroups[j] === targetGroups[i] || userGroups[j].indexOf(targetGroups[i]) !== -1) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * Check if the current user is allowed to perform a protected library
+		 * management action (import, delete, rollback).
+		 *
+		 * When regulated environment mode is OFF (default):
+		 *   Users not in any Hamilton group are ALLOWED (compatibility mode).
+		 *
+		 * When regulated environment mode is ON:
+		 *   Users not in any Hamilton group are DENIED (strict default deny).
+		 *
+		 * In both modes, allow groups override deny groups.
+		 *
+		 * @returns {{ allowed: boolean, reason: string }}
+		 */
+		function canManageLibraries() {
+			// Step 0: Administrators are on the super whitelist - always allowed
+			if (isWindowsAdmin()) {
+				return { allowed: true, reason: 'Windows Administrator (super whitelist)' };
+			}
+
+			// Step 1: Check allow groups (highest privilege wins)
+			if (isInAnyGroup(ALLOW_GROUPS)) {
+				return { allowed: true, reason: 'Member of authorized group' };
+			}
+
+			// Step 2: Check deny groups
+			if (isInAnyGroup(DENY_GROUPS)) {
+				return { allowed: false, reason: 'Your user group does not have permission to manage libraries.\n\nAuthorized groups: Lab Method Programmer, Lab Service.\nYour group assignment restricts this action.' };
+			}
+
+			// Step 3: Not in any Hamilton group - check regulated mode
+			var regulatedMode = false;
+			try {
+				var s = db_settings.settings.findOne({"_id":"0"});
+				regulatedMode = !!(s && s.chk_regulatedEnvironment);
+			} catch(e) {}
+
+			if (regulatedMode) {
+				return { allowed: false, reason: 'Regulated environment mode is enabled.\n\nOnly users assigned to authorized groups (Lab Method Programmer, Lab Service) can manage libraries.\nContact your system administrator for access.' };
+			}
+
+			// Compatibility mode - allow by default
+			return { allowed: true, reason: 'Compatibility mode (no group restriction)' };
+		}
+
+		/**
+		 * Check if the current user is allowed to change the regulated environment setting.
+		 * Administrators and members of authorized groups (Lab Method Programmer, Lab Service)
+		 * can toggle this setting. In unregulated mode, any user can change all other settings,
+		 * but only authorized group members or admins can toggle regulated mode ON, preventing
+		 * false/accidental enabling of this mode.
+		 * @returns {boolean}
+		 */
+		function canToggleRegulatedMode() {
+			return isWindowsAdmin() || isInAnyGroup(ALLOW_GROUPS);
+		}
+
+		/**
+		 * Check if the current user can change general settings (non-regulated-mode settings).
+		 * In unregulated mode: any user can change all settings except toggling regulated mode on.
+		 * In regulated mode: only authorized groups or admins can change settings.
+		 * Administrators always have full settings access (super whitelist).
+		 * @returns {boolean}
+		 */
+		function canChangeSettings() {
+			if (isWindowsAdmin()) return true;
+			var regulatedMode = false;
+			try {
+				var s = db_settings.settings.findOne({"_id":"0"});
+				regulatedMode = !!(s && s.chk_regulatedEnvironment);
+			} catch(e) {}
+			if (!regulatedMode) return true; // Unregulated: any user can change settings
+			return isInAnyGroup(ALLOW_GROUPS); // Regulated: only authorized groups
+		}
+
+		/**
+		 * Show the Access Denied modal with the given reason.
+		 * @param {string} actionName - e.g. "Import", "Delete", "Rollback"
+		 * @param {string} reason - explanation text
+		 */
+		function showAccessDeniedModal(actionName, reason) {
+			var $modal = $("#accessDeniedModal");
+			$modal.find(".access-denied-action").text(actionName);
+			$modal.find(".access-denied-reason").text(reason);
+			$modal.find(".access-denied-user").text(getWindowsUsername());
+			var groups = getWindowsGroups();
+			var displayGroups = groups.length > 0 ? groups.filter(function(g) { return g.indexOf('\\') === -1; }).join(', ') : '(none detected)';
+			$modal.find(".access-denied-groups").text(displayGroups);
+			$modal.modal("show");
+		}
+
 		/**
 		 * Query the Windows registry for Hamilton VENUS install date and version.
 		 * Returns { version: string|null, installDate: string|null (ISO 8601 UTC) }
@@ -214,7 +401,7 @@
 		function appendAuditTrailEntry(entry) {
 			try {
 				// USER_DATA_DIR may not be defined yet at call time; use lazy resolution
-				var dir = (typeof USER_DATA_DIR !== 'undefined') ? USER_DATA_DIR : resolveUserDataPath();
+				var dir = (typeof LOCAL_DATA_DIR !== 'undefined') ? LOCAL_DATA_DIR : USER_DATA_DIR;
 				var filePath = path.join(dir, 'audit_trail.json');
 				var trail = [];
 				if (fs.existsSync(filePath)) {
@@ -304,7 +491,7 @@
 		 */
 		function loadAuditTrail() {
 			try {
-				var dir = (typeof USER_DATA_DIR !== 'undefined') ? USER_DATA_DIR : resolveUserDataPath();
+				var dir = (typeof LOCAL_DATA_DIR !== 'undefined') ? LOCAL_DATA_DIR : USER_DATA_DIR;
 				var fp  = path.join(dir, 'audit_trail.json');
 				if (!fs.existsSync(fp)) return [];
 				var raw = JSON.parse(fs.readFileSync(fp, 'utf8'));
@@ -587,33 +774,51 @@
 			try { return db_groups.groups.findOne({"_id": id}); } catch(e) { return null; }
 		}
 
-		// ---- Settings DB (always in app's db/ folder - portable) ----
-		var db_settings = db.connect('db', ['settings']);
+		// ================================================================
+		// LOCAL DATA DIRECTORY
+		// ================================================================
+		// All persistent application data lives under a single "local/" directory
+		// inside the application's own Program Files (x86) install folder.
+		// This directory is globally accessible to all Windows users on the PC —
+		// no per-user AppData, ProgramData, or roaming profiles are used.
+		//
+		// Directory layout:
+		//   <app_root>/local/
+		//     settings.json        – application settings (singleton record)
+		//     installed_libs.json  – installed library registry
+		//     groups.json          – custom user groups
+		//     tree.json            – group→library membership tree
+		//     links.json           – VENUS tool shortcuts & folder paths
+		//     unsigned_libs.json   – scanned unsigned libraries
+		//     publisher_registry.json – publisher/tag autocomplete data
+		//     audit_trail.json     – append-only event audit log
+		//     packages/            – cached .hxlibpkg backups for rollback & repair
+		//     exports/             – default export output directory
+		// ================================================================
 
-		// ---- User Data Path ----
-		// User data (installed libs, groups, tree, links) is stored OUTSIDE the app
-		// in a configurable folder so the app stays portable and lightweight.
-		var DEFAULT_USER_DATA_PATH = path.join("C:\\Program Files (x86)\\HAMILTON\\Library", "LibraryManagerForVenus6");
+		/** Resolve the local data directory path (always under the app root) */
+		var LOCAL_DATA_DIR = (function() {
+			// nw.__dirname gives the NW.js app root; fallback to __dirname for CLI
+			var appRoot = (typeof nw !== 'undefined' && nw.__dirname) ? nw.__dirname : __dirname;
+			return path.join(appRoot, 'local');
+		})();
 
-		function resolveUserDataPath() {
-			var settings = db_settings.settings.find();
-			if (settings && settings.length > 0 && settings[0]["userDataPath"]) {
-				var saved = settings[0]["userDataPath"];
-				// Migrate old hidden dot-folder path to visible name
-				if (saved.indexOf('.LibraryManagerForVenus6') !== -1) {
-					saved = saved.replace('.LibraryManagerForVenus6', 'LibraryManagerForVenus6');
-				}
-				return saved;
-			}
-			return DEFAULT_USER_DATA_PATH;
-		}
-
-		function ensureUserDataDir(dirPath) {
+		/** Ensure the local data directory and all subdirectories exist with seed files */
+		function ensureLocalDataDir(dirPath) {
 			if (!fs.existsSync(dirPath)) {
 				fs.mkdirSync(dirPath, { recursive: true });
 			}
+			// Ensure subdirectories
+			var subDirs = ['packages', 'exports'];
+			subDirs.forEach(function(sub) {
+				var subPath = path.join(dirPath, sub);
+				if (!fs.existsSync(subPath)) {
+					fs.mkdirSync(subPath, { recursive: true });
+				}
+			});
 			// Seed empty collections if they don't exist
 			var seedFiles = {
+				'settings.json': '[{"_id":"0"}]',
 				'installed_libs.json': '[]',
 				'publisher_registry.json': '{"publishers":[],"tags":[],"maxPublisherSpaces":0}',
 				'groups.json': '[]',
@@ -628,94 +833,109 @@
 			}
 		}
 
-		/**
-		 * Migrate old db/ user data files to the new user data directory.
-		 * Only migrates if old files exist and new files are empty/default.
-		 */
-		function migrateOldDbData(userDataDir) {
-			var filesToMigrate = ['installed_libs.json', 'groups.json', 'tree.json', 'links.json'];
-			filesToMigrate.forEach(function(fname) {
-				var oldPath = path.join('db', fname);
-				var newPath = path.join(userDataDir, fname);
-				try {
-					if (!fs.existsSync(oldPath)) return;
-					var oldData = fs.readFileSync(oldPath, 'utf8').trim();
-					if (!oldData || oldData === '[]') return; // nothing to migrate
-					var oldArr = JSON.parse(oldData);
-					if (!Array.isArray(oldArr) || oldArr.length === 0) return;
+		// Initialize local data directory
+		ensureLocalDataDir(LOCAL_DATA_DIR);
 
-					// Only migrate if the new file is empty/default (not yet customized)
-					var newData = fs.readFileSync(newPath, 'utf8').trim();
-					var newArr = JSON.parse(newData);
+		// ---- Settings DB (now in local/ directory) ----
+		var db_settings = db.connect(LOCAL_DATA_DIR, ['settings']);
 
-					// For installed_libs, only migrate if new is empty
-					if (fname === 'installed_libs.json') {
-						if (newArr.length === 0) {
-							fs.writeFileSync(newPath, oldData, 'utf8');
-							console.log('Migrated ' + fname + ' to user data directory (' + oldArr.length + ' records)');
-						}
-					}
-					// For groups, migrate if new has only default groups
-					else if (fname === 'groups.json') {
-						var hasCustom = newArr.some(function(g) { return !g["default"]; });
-						if (!hasCustom && oldArr.some(function(g) { return !g["default"]; })) {
-							fs.writeFileSync(newPath, oldData, 'utf8');
-							console.log('Migrated ' + fname + ' to user data directory');
-						}
-					}
-					// For tree and links, migrate if old has more data
-					else {
-						if (oldArr.length > newArr.length) {
-							fs.writeFileSync(newPath, oldData, 'utf8');
-							console.log('Migrated ' + fname + ' to user data directory');
-						}
-					}
-				} catch(e) {
-					console.warn('Migration warning for ' + fname + ': ' + e.message);
-				}
-			});
-		}
-
-		// Resolve user data path, ensure directory exists, migrate old data
-		var USER_DATA_DIR = resolveUserDataPath();
-		ensureUserDataDir(USER_DATA_DIR);
-
-		// Migrate from old hidden .LibraryManagerForVenus6 folder if it exists
-		var OLD_HIDDEN_DIR = path.join("C:\\Program Files (x86)\\HAMILTON\\Library", ".LibraryManagerForVenus6");
-		if (fs.existsSync(OLD_HIDDEN_DIR) && OLD_HIDDEN_DIR !== USER_DATA_DIR) {
-			try {
-				var oldFiles = ['installed_libs.json', 'groups.json', 'tree.json', 'links.json'];
-				oldFiles.forEach(function(fname) {
-					var src = path.join(OLD_HIDDEN_DIR, fname);
-					var dst = path.join(USER_DATA_DIR, fname);
-					if (fs.existsSync(src)) {
+		// ---- Legacy Migration ----
+		// Migrate data from old locations to the new local/ directory:
+		//   1. Old app-root db/ folder (pre-restructure)
+		//   2. Old HAMILTON\Library\LibraryManagerForVenus6 folder
+		//   3. Old HAMILTON\Library\.LibraryManagerForVenus6 hidden folder
+		(function migrateToLocalDir() {
+			var oldLocations = [
+				path.join('db'),
+				path.join("C:\\Program Files (x86)\\HAMILTON\\Library", "LibraryManagerForVenus6"),
+				path.join("C:\\Program Files (x86)\\HAMILTON\\Library", ".LibraryManagerForVenus6")
+			];
+			var filesToMigrate = ['installed_libs.json', 'groups.json', 'tree.json', 'links.json', 'settings.json', 'audit_trail.json', 'publisher_registry.json'];
+			oldLocations.forEach(function(oldDir) {
+				if (!fs.existsSync(oldDir) || oldDir === LOCAL_DATA_DIR) return;
+				filesToMigrate.forEach(function(fname) {
+					try {
+						var src = path.join(oldDir, fname);
+						var dst = path.join(LOCAL_DATA_DIR, fname);
+						if (!fs.existsSync(src)) return;
 						var srcData = fs.readFileSync(src, 'utf8').trim();
+						if (!srcData || srcData === '[]' || srcData === '{}') return;
+						// For settings.json, merge keys into existing record rather than overwrite
+						if (fname === 'settings.json') {
+							try {
+								var srcArr = JSON.parse(srcData);
+								var srcSettings = Array.isArray(srcArr) && srcArr.length > 0 ? srcArr[0] : null;
+								if (!srcSettings) return;
+								var dstArr = JSON.parse(fs.readFileSync(dst, 'utf8'));
+								var dstSettings = Array.isArray(dstArr) && dstArr.length > 0 ? dstArr[0] : {"_id":"0"};
+								var merged = false;
+								for (var key in srcSettings) {
+									if (key !== '_id' && !(key in dstSettings)) {
+										dstSettings[key] = srcSettings[key];
+										merged = true;
+									}
+								}
+								if (merged) {
+									fs.writeFileSync(dst, JSON.stringify([dstSettings], null, 2), 'utf8');
+									console.log('Merged settings from ' + oldDir);
+								}
+							} catch(_) {}
+							return;
+						}
+						// For array-based files, only migrate if destination is empty/default
 						var dstData = fs.readFileSync(dst, 'utf8').trim();
-						// Only copy if destination is still default/empty seed data
-						if (dstData === '[]' || JSON.parse(dstData).length === 0) {
-							if (srcData !== '[]' && JSON.parse(srcData).length > 0) {
+						if (dstData === '[]' || (dstData.startsWith('[') && JSON.parse(dstData).length === 0)) {
+							var srcParsed = JSON.parse(srcData);
+							if (Array.isArray(srcParsed) && srcParsed.length > 0) {
 								fs.writeFileSync(dst, srcData, 'utf8');
-								console.log('Migrated ' + fname + ' from .LibraryManagerForVenus6');
+								console.log('Migrated ' + fname + ' from ' + oldDir + ' (' + srcParsed.length + ' records)');
 							}
 						}
+					} catch(e) {
+						console.warn('Migration warning for ' + fname + ' from ' + oldDir + ': ' + e.message);
 					}
 				});
-			} catch(e) {
-				console.warn('Warning migrating from .LibraryManagerForVenus6: ' + e.message);
+			});
+			// Migrate old LibraryPackages from HAMILTON\Library to local/packages/
+			var oldPkgStore = path.join("C:\\Program Files (x86)\\HAMILTON\\Library", "LibraryPackages");
+			var newPkgStore = path.join(LOCAL_DATA_DIR, 'packages');
+			if (fs.existsSync(oldPkgStore) && oldPkgStore !== newPkgStore) {
+				try {
+					var libDirs = fs.readdirSync(oldPkgStore);
+					libDirs.forEach(function(libDir) {
+						var srcLib = path.join(oldPkgStore, libDir);
+						if (!fs.statSync(srcLib).isDirectory()) return;
+						var dstLib = path.join(newPkgStore, libDir);
+						if (!fs.existsSync(dstLib)) fs.mkdirSync(dstLib, { recursive: true });
+						fs.readdirSync(srcLib).forEach(function(pkgFile) {
+							var srcPkg = path.join(srcLib, pkgFile);
+							var dstPkg = path.join(dstLib, pkgFile);
+							if (!fs.existsSync(dstPkg) && pkgFile.toLowerCase().endsWith('.hxlibpkg')) {
+								fs.copyFileSync(srcPkg, dstPkg);
+								console.log('Migrated package: ' + libDir + '/' + pkgFile);
+							}
+						});
+					});
+				} catch(e) {
+					console.warn('Package store migration warning: ' + e.message);
+				}
 			}
-		}
+		})();
 
-		migrateOldDbData(USER_DATA_DIR);
+		// Re-connect settings DB after migration (picks up any merged keys)
+		db_settings = db.connect(LOCAL_DATA_DIR, ['settings']);
 
-		// Connect user data databases to the external directory
-		var db_links = db.connect(USER_DATA_DIR, ['links']);
-		var db_groups = db.connect(USER_DATA_DIR, ['groups']);
-		var db_tree = db.connect(USER_DATA_DIR, ['tree']); // contains the tree of group ids and method ids
-		var db_installed_libs = db.connect(USER_DATA_DIR, ['installed_libs']); // tracks installed .hxlibpkg libraries
-		var db_unsigned_libs = db.connect(USER_DATA_DIR, ['unsigned_libs']); // tracks scanned unsigned libraries
+		// Set USER_DATA_DIR to LOCAL_DATA_DIR for backward compatibility with existing code
+		var USER_DATA_DIR = LOCAL_DATA_DIR;
 
-		console.log('App settings: db/');
-		console.log('User data:    ' + USER_DATA_DIR);
+		// Connect data databases to the local/ directory
+		var db_links = db.connect(LOCAL_DATA_DIR, ['links']);
+		var db_groups = db.connect(LOCAL_DATA_DIR, ['groups']);
+		var db_tree = db.connect(LOCAL_DATA_DIR, ['tree']); // contains the tree of group ids and method ids
+		var db_installed_libs = db.connect(LOCAL_DATA_DIR, ['installed_libs']); // tracks installed .hxlibpkg libraries
+		var db_unsigned_libs = db.connect(LOCAL_DATA_DIR, ['unsigned_libs']); // tracks scanned unsigned libraries
+
+		console.log('Local data:   ' + LOCAL_DATA_DIR);
 
 		// ---- Publisher & Tag Registry ----
 		// Stored in USER_DATA_DIR/publisher_registry.json.
@@ -1086,10 +1306,9 @@
 		rebuildPublisherRegistry();
 
 		// ---- Package Store - cache .hxlibpkg files for repair & version rollback ----
+		// Stored under local/packages/<LibraryName>/ within the app directory
 		function getPackageStoreDir() {
-			var libFolderRec = db_links.links.findOne({"_id":"lib-folder"});
-			var libPath = (libFolderRec && libFolderRec.path) ? libFolderRec.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
-			return path.join(libPath, "LibraryPackages");
+			return path.join(LOCAL_DATA_DIR, 'packages');
 		}
 
 		/**
@@ -3136,8 +3355,58 @@
 			saveSetting($(this).attr("id"), $(this).prop("checked"));
 		});
 
+		//Settings > Regulated Environment toggle
+		$(document).on("click", "#chk_regulatedEnvironment", function(e){
+			if (!canToggleRegulatedMode()) {
+				e.preventDefault();
+				$(this).prop("checked", !$(this).prop("checked")); // revert
+				showAccessDeniedModal("Change Regulated Environment Setting",
+					"Only users in authorized groups (Administrators, Lab Method Programmer, Lab Service) can enable or disable regulated environment mode.");
+				return;
+			}
+			var checked = $(this).prop("checked");
+			var confirmMsg = checked
+				? 'Enable regulated environment mode?\n\nWhen enabled, only users in authorized Windows groups (Lab Method Programmer, Lab Service) or Administrators will be able to import, delete, or roll back libraries.\n\nUsers not assigned to any recognized group will be denied access.\n\nNote: Unsigned library scanning will be disabled automatically, as all packages must be signed in regulated mode.'
+				: 'Disable regulated environment mode?\n\nAll users will be able to manage libraries regardless of group membership (except explicitly denied groups).';
+			if (!confirm(confirmMsg)) {
+				$(this).prop("checked", !checked);
+				return;
+			}
+			saveSetting("chk_regulatedEnvironment", checked);
+			console.log('Regulated environment mode ' + (checked ? 'ENABLED' : 'DISABLED') + ' by ' + getWindowsUsername());
+			// When enabling regulated mode, force-disable unsigned libraries
+			if (checked) {
+				$("#chk_includeUnsignedLibs").prop("checked", false).prop("disabled", true);
+				saveSetting("chk_includeUnsignedLibs", false);
+				$("#btn-scan-unsigned-libs").prop("disabled", true);
+				$("#chk_scanUnsignedOnLaunch").prop("checked", false).prop("disabled", true);
+				saveSetting("chk_scanUnsignedOnLaunch", false);
+				$(".unsigned-scan-status").text("");
+				$(".unsigned-scan-spinner").hide();
+				$(".unsigned-scan-done").hide();
+				$(".unsigned-regulated-status").html('<i class="fas fa-lock mr-1 text-warning"></i>Unsigned libraries cannot be enabled in regulated environment mode. All packages must be signed.');
+				invalidateNavBar();
+				console.log('Unsigned libraries disabled: regulated mode requires all packages to be signed.');
+			} else {
+				$("#chk_includeUnsignedLibs").prop("disabled", false);
+				$(".unsigned-regulated-status").html('');
+			}
+		});
+
 		//Settings > Unsigned Libraries checkbox
-		$(document).on("click", "#chk_includeUnsignedLibs", function(){
+		$(document).on("click", "#chk_includeUnsignedLibs", function(e){
+			// In regulated mode, unsigned files cannot be enabled
+			var regulatedMode = false;
+			try {
+				var s = db_settings.settings.findOne({"_id":"0"});
+				regulatedMode = !!(s && s.chk_regulatedEnvironment);
+			} catch(ex) {}
+			if (regulatedMode) {
+				e.preventDefault();
+				$(this).prop("checked", false);
+				alert('Unsigned libraries cannot be enabled in regulated environment mode.\n\nAll packages must be signed when regulated environment mode is active. Disable regulated environment mode first to enable unsigned library scanning.');
+				return;
+			}
 			var checked = $(this).prop("checked");
 			saveSetting("chk_includeUnsignedLibs", checked);
 			$("#btn-scan-unsigned-libs").prop("disabled", !checked);
@@ -3184,58 +3453,42 @@
 			saveSetting("recent-max",txt);
 		});
 
-		// Settings > Data Location - browse and apply
-		$(document).on("click", ".btn-browseDataPath", function() {
-			// Use a hidden nwdirectory input to pick a folder
-			var $picker = $("#input-dataPathBrowse");
-			if ($picker.length === 0) {
-				$picker = $('<input type="file" id="input-dataPathBrowse" nwdirectory style="display:none">');
-				$("body").append($picker);
+		// Settings > Data Location is now read-only (fixed in local/ directory)
+		// Open the local data folder in Windows Explorer on click
+		$(document).on("click", ".btn-openLocalDataDir", function() {
+			try {
+				require('child_process').exec('explorer "' + LOCAL_DATA_DIR + '"');
+			} catch(e) {
+				console.warn('Could not open local data directory: ' + e.message);
 			}
-			$picker.val('');
-			$picker.off('change').on('change', function() {
-				var chosen = $(this).val();
-				if (chosen) {
-					$(".txt-userDataPath").val(chosen);
-				}
-			});
-			$picker.trigger('click');
 		});
 
-		$(document).on("click", ".btn-applyDataPath", function() {
-			var newPath = $(".txt-userDataPath").val().trim();
-			if (!newPath) return;
-			if (newPath === USER_DATA_DIR) return; // no change
-
-			// Save the new path to settings
-			saveSetting("userDataPath", newPath);
-
-			// Ensure the new directory exists and has seed files
-			try {
-				ensureUserDataDir(newPath);
-				// Offer to copy existing data to the new location
-				var shouldCopy = confirm("Data location changed to:\n" + newPath +
-					"\n\nDo you want to copy your existing data to the new location?\n" +
-					"(Installed libraries, groups, and links will be copied.)");
-				if (shouldCopy) {
-					var filesToCopy = ['installed_libs.json', 'groups.json', 'tree.json', 'links.json'];
-					filesToCopy.forEach(function(fname) {
-						var src = path.join(USER_DATA_DIR, fname);
-						var dst = path.join(newPath, fname);
-						try {
-							if (fs.existsSync(src)) {
-								fs.copyFileSync(src, dst);
-								console.log('Copied ' + fname + ' to new data location');
-							}
-						} catch(e) {
-							console.warn('Could not copy ' + fname + ': ' + e.message);
-						}
-					});
-				}
-				alert("Data location updated. Please restart the application for changes to take full effect.");
-			} catch(e) {
-				alert("Error setting up new data location: " + e.message);
+		// ---- Dark Mode / Night Mode ----
+		/** Apply or remove dark mode from the document body */
+		function applyDarkMode(enabled) {
+			if (enabled) {
+				$("body").addClass("dark-mode");
+				$(".dark-mode-label").text("Day Mode");
+			} else {
+				$("body").removeClass("dark-mode");
+				$(".dark-mode-label").text("Night Mode");
 			}
+		}
+
+		// Overflow menu toggle (moon/sun icon)
+		$(document).on("click", ".btn-dark-mode-toggle", function(e) {
+			e.preventDefault();
+			var isNowDark = !$("body").hasClass("dark-mode");
+			applyDarkMode(isNowDark);
+			$("#chk_darkMode").prop("checked", isNowDark);
+			saveSetting("chk_darkMode", isNowDark);
+		});
+
+		// Settings checkbox toggle
+		$(document).on("change", "#chk_darkMode", function() {
+			var isNowDark = $(this).is(":checked");
+			applyDarkMode(isNowDark);
+			saveSetting("chk_darkMode", isNowDark);
 		});
 
 		$(document).on("click", ".btn-clearRecentList", function () {
@@ -4742,11 +4995,27 @@
 			$("#chk_showGitHubLinks").prop("checked", settings["chk_showGitHubLinks"] !== false);
 
 			//setting - Unsigned libraries
+			var regulatedMode = !!settings["chk_regulatedEnvironment"];
 			var unsignedEnabled = !!settings["chk_includeUnsignedLibs"];
+			// In regulated mode, unsigned files cannot be enabled - all packages must be signed
+			if (regulatedMode && unsignedEnabled) {
+				unsignedEnabled = false;
+				saveSetting("chk_includeUnsignedLibs", false);
+				saveSetting("chk_scanUnsignedOnLaunch", false);
+				console.log('Unsigned libraries disabled automatically: regulated environment mode requires all packages to be signed.');
+			}
 			$("#chk_includeUnsignedLibs").prop("checked", unsignedEnabled);
 			$("#btn-scan-unsigned-libs").prop("disabled", !unsignedEnabled);
-			$("#chk_scanUnsignedOnLaunch").prop("disabled", !unsignedEnabled);
-			$("#chk_scanUnsignedOnLaunch").prop("checked", !!settings["chk_scanUnsignedOnLaunch"]);
+			$("#chk_scanUnsignedOnLaunch").prop("disabled", !unsignedEnabled || regulatedMode);
+			$("#chk_scanUnsignedOnLaunch").prop("checked", !!settings["chk_scanUnsignedOnLaunch"] && !regulatedMode);
+			// In regulated mode, disable the unsigned toggle entirely
+			if (regulatedMode) {
+				$("#chk_includeUnsignedLibs").prop("disabled", true);
+				$(".unsigned-regulated-status").html('<i class="fas fa-lock mr-1 text-warning"></i>Unsigned libraries cannot be enabled in regulated environment mode. All packages must be signed.');
+			} else {
+				$("#chk_includeUnsignedLibs").prop("disabled", false);
+				$(".unsigned-regulated-status").html('');
+			}
 			if (unsignedEnabled) {
 				var ulibCount = (db_unsigned_libs.unsigned_libs.find() || []).length;
 				if (ulibCount > 0) {
@@ -4758,8 +5027,35 @@
 				}
 			}
 
-			//setting - Data Location
-			$(".txt-userDataPath").val(USER_DATA_DIR);
+			//setting - Regulated Environment
+			var regulatedEnabled = regulatedMode;
+			$("#chk_regulatedEnvironment").prop("checked", regulatedEnabled);
+			// Only authorized group members or administrators can toggle this setting
+			var canToggle = canToggleRegulatedMode();
+			var userIsAdmin = isWindowsAdmin();
+			$("#chk_regulatedEnvironment").prop("disabled", !canToggle);
+			if (!canToggle) {
+				$(".regulated-env-status").html('<i class="fas fa-lock mr-1"></i>Only authorized users (Administrators, Lab Method Programmer, Lab Service) can change this setting.');
+			} else if (userIsAdmin && !isInAnyGroup(ALLOW_GROUPS)) {
+				$(".regulated-env-status").html('<i class="fas fa-unlock mr-1"></i>You have access as a Windows Administrator (super whitelist).');
+			} else {
+				$(".regulated-env-status").html('<i class="fas fa-unlock mr-1"></i>You are authorized to change this setting.');
+			}
+
+			// Show unlock icons on settings sections for admin users
+			if (userIsAdmin) {
+				$(".settings-admin-badge").show();
+			} else {
+				$(".settings-admin-badge").hide();
+			}
+
+			//setting - Data Location (read-only, always local/)
+			$(".txt-localDataPath").val(LOCAL_DATA_DIR);
+
+			//setting - Dark Mode / Night Mode (persisted between sessions)
+			var darkEnabled = !!settings["chk_darkMode"];
+			$("#chk_darkMode").prop("checked", darkEnabled);
+			applyDarkMode(darkEnabled);
 
 			//reset nav bar and hide overflowing nav bar items
 			fitNavBarItems();
@@ -7458,6 +7754,14 @@
 		// ---- Rollback to a cached package version from detail modal ----
 		$(document).on("click", ".lib-detail-rollback-btn", async function(e) {
 			e.preventDefault();
+
+			// ---- Access control check ----
+			var accessCheck = canManageLibraries();
+			if (!accessCheck.allowed) {
+				showAccessDeniedModal('Rollback Library', accessCheck.reason);
+				return;
+			}
+
 			var fullPath = $(this).attr("data-fullpath");
 			var version  = $(this).attr("data-version");
 			var libName  = $(this).attr("data-libname");
@@ -8792,6 +9096,13 @@
 
 		// Import archive: extract each .hxlibpkg and install sequentially
 		function impArchImportArchive(archivePath) {
+			// ---- Access control check ----
+			var accessCheck = canManageLibraries();
+			if (!accessCheck.allowed) {
+				showAccessDeniedModal('Import Archive', accessCheck.reason);
+				return;
+			}
+
 			if (_isImporting) {
 				alert("An import is already in progress. Please wait for it to complete.");
 				return;
@@ -9273,6 +9584,14 @@
 		// ---- Delete library from detail modal ----
 		$(document).on("click", ".lib-detail-delete-btn", async function(e) {
 			e.preventDefault();
+
+			// ---- Access control check ----
+			var accessCheck = canManageLibraries();
+			if (!accessCheck.allowed) {
+				showAccessDeniedModal('Delete Library', accessCheck.reason);
+				return;
+			}
+
 			var libId = $("#libDetailModal").attr("data-lib-id");
 			if (!libId) return;
 			// Block delete for system libraries
@@ -9448,6 +9767,13 @@
 
 		// ---- Load, preview, confirm and install package ----
 		async function impLoadAndInstall(filePath) {
+			// ---- Access control check ----
+			var accessCheck = canManageLibraries();
+			if (!accessCheck.allowed) {
+				showAccessDeniedModal('Import Library', accessCheck.reason);
+				return;
+			}
+
 			if (_isImporting) {
 				alert("An import is already in progress. Please wait for it to complete.");
 				return;

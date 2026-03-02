@@ -69,7 +69,7 @@
 <tr><td><b>GUI</b></td><td>NW.js (Chromium + Node.js)</td><td>html/index.html, html/js/main.js</td><td>Desktop UI for all library operations: import, export, create, delete, rollback, search, group management, settings, event history</td></tr>
 <tr><td><b>CLI</b></td><td>Node.js + yargs</td><td>cli.js</td><td>12 scriptable commands for headless/CI operation: list-libs, import-lib, import-archive, export-lib, export-archive, delete-lib, create-package, list-versions, rollback-lib, generate-syslib-hashes, verify-syslib-hashes, verify-package</td></tr>
 <tr><td><b>Shared Core</b></td><td>Node.js module</td><td>lib/shared.js</td><td>All cryptographic, validation, container, and authorization logic shared between GUI and CLI</td></tr>
-<tr><td><b>Data Layer</b></td><td>diskdb (JSON files)</td><td>db/*.json, local/*.json</td><td>Persistent state: settings, installed libraries, groups, tree, audit trail, package cache, publisher registry, system library definitions</td></tr>
+<tr><td><b>Data Layer</b></td><td>diskdb (JSON files)</td><td>local/*.json, db/*.json</td><td>Persistent state: all mutable data in <code>local/</code> (settings, installed libraries, groups, tree, audit trail, package cache, publisher registry). Read-only reference data in <code>db/</code> (system library definitions, hashes).</td></tr>
 <tr><td><b>Integrity Worker</b></td><td>Node.js child process</td><td>html/js/syscheck-worker.js</td><td>Background startup task: file integrity checks, missing package detection, backup prompts. Reports results to GUI via IPC.</td></tr>
 </tbody>
 </table>
@@ -79,9 +79,9 @@
 <h2>2. Data Model &amp; Storage</h2>
 <!-- ================================================================== -->
 
-<p>All persistent data is stored as JSON files managed by <b>diskdb</b>. The database is split into two directories: <code>db/</code> contains shipped default/reference data, and <code>local/</code> contains per-machine state that changes during operation. See <a href="DataModel.html">Data Model</a> for the full specification.</p>
+<p>All persistent data is stored as JSON files managed by <b>diskdb</b>. The database is split into two directories: <code>db/</code> contains shipped read-only reference data (system library definitions, integrity hashes), and <code>local/</code> contains all mutable per-machine state that changes during operation. The <code>local/</code> directory resides within the application&rsquo;s own <code>Program Files (x86)</code> install folder and is globally accessible to all Windows users on the PC. No data is stored in ProgramData, AppData, or any per-user directory. See <a href="FileStorage.html">File Storage &amp; Data Management</a> for the complete directory layout and <a href="DataModel.html">Data Model</a> for the full specification.</p>
 
-<h3>Settings (db/settings.json)</h3>
+<h3>Settings (local/settings.json)</h3>
 <table class="entity-table">
 <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -92,9 +92,10 @@
 <tr><td><code>chk_hideSystemLibraries</code></td><td>boolean</td><td>Hide system libraries from the default library view</td></tr>
 <tr><td><code>chk_includeUnsignedLibs</code></td><td>boolean</td><td>Include unsigned libraries in library listing</td></tr>
 <tr><td><code>chk_showGitHubLinks</code></td><td>boolean</td><td>Display GitHub repository links on library cards</td></tr>
-<tr><td><code>chk_requireActionComment</code></td><td>boolean</td><td>Part 11: require comment for every action</td></tr>
-<tr><td><code>chk_requireActionSignature</code></td><td>boolean</td><td>Part 11: require signature for every action</td></tr>
-<tr><td><code>chk_part11StrictLibraryAuth</code></td><td>boolean</td><td>Regulated mode: strict deny-by-default authorization</td></tr>
+<tr><td><code>chk_requireActionComment</code></td><td>boolean</td><td>Regulated environment: require comment for every action</td></tr>
+<tr><td><code>chk_requireActionSignature</code></td><td>boolean</td><td>Regulated environment: require signature for every action</td></tr>
+<tr><td><code>chk_regulatedEnvironment</code></td><td>boolean</td><td>Regulated environment mode: enable Windows group-based access control</td></tr>
+<tr><td><code>chk_darkMode</code></td><td>boolean</td><td>Night mode (dark theme): retained between sessions</td></tr>
 <tr><td><code>starred_libs</code></td><td>array</td><td>List of starred/favorited library IDs</td></tr>
 </tbody>
 </table>
@@ -198,7 +199,7 @@
 </tbody>
 </table>
 
-<h3>Links (db/links.json)</h3>
+<h3>Links (local/links.json)</h3>
 <table class="entity-table">
 <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
@@ -697,23 +698,33 @@
 <h2>12. Authorization &amp; Access Control</h2>
 <!-- ================================================================== -->
 
-<p>The system implements two authorization mechanisms: Windows security group-based access control for protected actions, and password-based protection for restricted author names.</p>
+<p>The system implements two authorization mechanisms: Windows security group-based access control for protected actions (regulated environment mode), and password-based protection for restricted author names. Windows Administrators are on a <b>super whitelist</b> and always have full access.</p>
+
+<h3>Regulated Environment Mode</h3>
+<p>A toggle in <b>Settings &rarr; Regulated Environment</b> controls whether Windows group-based access enforcement is active. When enabled, protected actions (import, delete, rollback) require that the current Windows user belong to an authorized security group or be a Windows Administrator. When disabled, all users can perform these actions without group checks.</p>
+
+<p>Only users who are themselves authorized (i.e., members of an allow-listed group or Windows Administrators) may toggle this setting on or off. In an unregulated installation, any user can change all other settings freely, but only authorized users can enable regulated mode &mdash; preventing accidental or false activation. A confirmation dialog is shown before the change is applied.</p>
 
 <h3>Role-Based Access (Windows Groups)</h3>
-<p>Protected actions (import, delete, rollback) require Windows group membership verification. The system detects group membership via <code>whoami /groups /fo csv /nh</code> (cached for 15 seconds).</p>
+<p>When regulated environment mode is enabled, the system detects group membership via <code>whoami /groups /fo csv /nh</code> (cached for 15 seconds) and applies the following rules:</p>
 
 <table>
 <thead><tr><th>Check</th><th>Groups</th><th>Result</th></tr></thead>
 <tbody>
+<tr><td><b>Super whitelist</b></td><td>Administrators (BUILTIN\Administrators)</td><td style="background-color:#e8f5e9;"><b>ALLOWED</b> (highest priority)</td></tr>
 <tr><td><b>Allow list</b></td><td>Lab Method Programmer, Lab Service</td><td style="background-color:#e8f5e9;"><b>ALLOWED</b></td></tr>
 <tr><td><b>Deny list</b></td><td>Lab Operator, Lab Operator 2, Lab Remote Service</td><td style="background-color:#fce4ec;"><b>DENIED</b></td></tr>
-<tr><td><b>Not in any list + strict mode ON</b></td><td>(any other groups)</td><td style="background-color:#fce4ec;"><b>DENIED</b> (strict_default_deny)</td></tr>
-<tr><td><b>Not in any list + strict mode OFF</b></td><td>(any other groups)</td><td style="background-color:#e8f5e9;"><b>ALLOWED</b> (compat_default_allow)</td></tr>
+<tr><td><b>Not in any list (regulated mode ON)</b></td><td>(any other groups)</td><td style="background-color:#fce4ec;"><b>DENIED</b> (default deny)</td></tr>
+<tr><td><b>Regulated mode OFF</b></td><td>(all users)</td><td style="background-color:#e8f5e9;"><b>ALLOWED</b> (no enforcement)</td></tr>
 </tbody>
 </table>
 
+<p>When a user is denied access, a modal dialog is displayed showing the action attempted, the reason for denial, the current Windows username, and the detected Windows group memberships.</p>
+
+<p><b>Note:</b> When regulated mode is enabled, unsigned library scanning is automatically disabled and cannot be re-enabled. All packages must be signed in regulated mode.</p>
+
 <h3>Authorization Decision Flow</h3>
-<img src="images/diagram-auth-decision-flow.png" alt="Authorization decision flow: check ALLOW groups, DENY groups, then strict mode fallback" class="doc-diagram">
+<img src="images/diagram-auth-decision-flow.png" alt="Authorization decision flow: check regulated mode, then ALLOW groups, DENY groups, then default deny" class="doc-diagram">
 
 <h3>Restricted Author Protection</h3>
 <p>Packages claiming author = &ldquo;Hamilton&rdquo; (case-insensitive) require additional authentication to prevent unauthorized Hamilton-branded packages.</p>
@@ -765,7 +776,7 @@
 <tr><td><b>Export Choice</b></td><td>Export format selection</td><td>Single .hxlibpkg or with-dependencies .hxlibarch</td></tr>
 <tr><td><b>Archive Export</b></td><td>Multi-library export</td><td>Multi-select checkboxes, Select All toggle</td></tr>
 <tr><td><b>Verify &amp; Repair</b></td><td>Integrity management</td><td>Per-library integrity status, repair from cache</td></tr>
-<tr><td><b>Settings</b></td><td>Application configuration</td><td>Part 11 compliance toggles, data directory config, feature flags</td></tr>
+<tr><td><b>Settings</b></td><td>Application configuration</td><td>Regulated environment toggles, data directory config, feature flags</td></tr>
 </tbody>
 </table>
 

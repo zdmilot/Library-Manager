@@ -21,7 +21,7 @@
 </ul>
 
 <h2>Enabling the Feature</h2>
-<p>Unsigned library scanning is disabled by default. To enable it:</p>
+<p>Unsigned library scanning is <b>disabled by default</b> in all installations. To enable it:</p>
 <ol>
   <li>Open <b>Settings</b> (gear icon in the navigation bar)</li>
   <li>Locate the <b>Unsigned Libraries</b> section</li>
@@ -30,6 +30,10 @@
 </ol>
 
 <p>The setting is persisted in <code>settings.json</code> under the key <code>chk_includeUnsignedLibs</code>. The Scan Now button is disabled when the checkbox is unchecked.</p>
+
+<div class="note">
+<p><b>Regulated Environment Restriction:</b> When <a href="RegulatedEnvironment.html">regulated environment mode</a> is enabled, unsigned library scanning <b>cannot be enabled</b>. The checkbox is disabled and a warning message is displayed: <i>&ldquo;Unsigned libraries cannot be enabled in regulated environment mode. All packages must be signed.&rdquo;</i> This is because regulated environments require all packages to be signed &mdash; allowing unsigned library scanning would undermine that requirement. Disable regulated mode first to enable unsigned library scanning.</p>
+</div>
 
 <h3>Scan on Launch</h3>
 <p>Below the Scan Now button, a <b>Scan for new unsigned libraries each launch</b> checkbox is available. When enabled, the application automatically performs an unsigned library scan every time it starts, so newly added files are detected without requiring a manual scan. This setting is persisted under the key <code>chk_scanUnsignedOnLaunch</code> and is only available when the main unsigned libraries checkbox is enabled.</p>

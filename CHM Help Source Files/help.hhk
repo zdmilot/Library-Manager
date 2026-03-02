@@ -611,23 +611,59 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="regulated environment">
-		<param name="Local" value="VENUSIntegration.html">
+		<param name="Local" value="RegulatedEnvironment.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="user authorization">
-		<param name="Local" value="VENUSIntegration.html">
+		<param name="Local" value="RegulatedEnvironment.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Windows security groups">
-		<param name="Local" value="VENUSIntegration.html">
+		<param name="Local" value="RegulatedEnvironment.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="21 CFR Part 11">
-		<param name="Local" value="VENUSIntegration.html">
+		<param name="Name" value="regulated environment mode">
+		<param name="Local" value="RegulatedEnvironment.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Lab Method Programmer">
-		<param name="Local" value="VENUSIntegration.html">
+		<param name="Local" value="RegulatedEnvironment.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="access denied">
+		<param name="Local" value="RegulatedEnvironment.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="file storage">
+		<param name="Local" value="FileStorage.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="local data directory">
+		<param name="Local" value="FileStorage.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="data location">
+		<param name="Local" value="FileStorage.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="package backup">
+		<param name="Local" value="FileStorage.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="night mode">
+		<param name="Local" value="FileStorage.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="dark mode">
+		<param name="Local" value="FileStorage.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="settings">
+		<param name="Local" value="FileStorage.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="migration">
+		<param name="Local" value="FileStorage.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="author password">
