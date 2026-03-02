@@ -30,7 +30,6 @@ SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64
-ArchitecturesInstallMode=x64
 MinVersion=10.0
 LicenseFile=
 ; Show the "Ready to Install" summary page
@@ -375,10 +374,7 @@ Source: "local\publisher_registry.json"; DestDir: "{app}\local"; Flags: ignoreve
 Source: "local\tree.json"; DestDir: "{app}\local"; Flags: ignoreversion
 Source: "local\unsigned_libs.json"; DestDir: "{app}\local"; Flags: ignoreversion
 ; local\settings.json is written by the [Code] section post-install
-
-; Local export/package directories (create empty)
-Source: "local\exports\*"; DestDir: "{app}\local\exports"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: DirExists(ExpandConstant('{src}\local\exports'))
-Source: "local\packages\*"; DestDir: "{app}\local\packages"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: DirExists(ExpandConstant('{src}\local\packages'))
+; local\exports and local\packages are empty directories created by [Dirs] section
 
 ; Help file
 Source: "Library Manager for Venus 6.chm"; DestDir: "{app}"; Flags: ignoreversion
