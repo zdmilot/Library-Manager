@@ -115,6 +115,17 @@
 <p><b>Default setting:</b> Unsigned library scanning is <b>off by default</b> in all installations. It must be explicitly enabled in Settings. This ensures that newly deployed instruments do not automatically surface unmanaged files.</p>
 </div>
 
+<h2>GitHub Links in Regulated Mode</h2>
+<p>When regulated environment mode is enabled, the <b>Show GitHub repository links</b> setting is <b>automatically disabled</b> and <b>cannot be re-enabled</b>. External links to source code repositories are not permitted in a regulated environment. This prevents users from navigating to external websites from within the application.</p>
+
+<p>Specifically, when regulated mode is turned on:</p>
+<ul>
+  <li>The <b>Show GitHub repository links in library details</b> checkbox is unchecked and disabled</li>
+  <li>A warning message is displayed: <i>&ldquo;GitHub links cannot be enabled in regulated environment mode.&rdquo;</i></li>
+  <li>GitHub repository URLs are hidden in library detail modals and import previews, even if the package contains a repository URL</li>
+</ul>
+<p>Disabling regulated mode restores the ability to toggle GitHub links on.</p>
+
 <h2>Settings Access by Mode</h2>
 <p>The table below summarizes which users can change settings in each mode:</p>
 
@@ -124,6 +135,7 @@
 <tr><td>Installation, Display, Recent, Dark Mode</td><td>Any user</td><td>Authorized groups or Administrators only</td></tr>
 <tr><td>Audit Trail Enforcement</td><td>Any user</td><td>Authorized groups or Administrators only</td></tr>
 <tr><td>Unsigned Libraries toggle</td><td>Any user</td><td><b>Blocked entirely</b> &mdash; cannot be enabled</td></tr>
+<tr><td>GitHub Repository Links</td><td>Any user</td><td><b>Blocked entirely</b> &mdash; cannot be enabled</td></tr>
 <tr><td>Regulated Environment toggle</td><td>Authorized groups or Administrators only</td><td>Authorized groups or Administrators only</td></tr>
 </tbody>
 </table>
