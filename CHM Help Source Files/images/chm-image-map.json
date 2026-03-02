@@ -79,7 +79,7 @@
     "image": "import-success-modal.png",
     "file": "ImportingLibraries.html"
   },
-  "PLACE IMAGE OF THE VENUS LIBRARY MANAGER MAIN WINDOW HERE": {
+  "PLACE IMAGE OF THE LIBRARY MANAGER FOR VENUS 6 MAIN WINDOW HERE": {
     "image": "main-window.png",
     "file": "index.html"
   },
@@ -91,7 +91,7 @@
     "image": "group-drag-drop.png",
     "file": "LibraryGrouping.html"
   },
-  "PLACE IMAGE OF VENUS LIBRARY MANAGER MAIN WINDOW HERE": {
+  "PLACE IMAGE OF LIBRARY MANAGER FOR VENUS 6 MAIN WINDOW HERE": {
     "image": "main-window.png",
     "file": "Overview.html"
   },

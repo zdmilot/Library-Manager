@@ -1,4 +1,4 @@
-<html>
+﻿<html>
 <head>
     <title>Creating Packages</title>
     <link rel="stylesheet" type="text/css" href="help.css">
@@ -6,10 +6,10 @@
 <body>
 <div class="header">Creating Packages</div>
 <div class="main">
-<div class="breadcrumb"><a href="Overview.html">Venus Library Manager</a> &raquo; Creating Packages</div>
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; Creating Packages</div>
 
 <h2>Overview</h2>
-<p>Venus Library Manager provides two ways to create a <code>.hxlibpkg</code> package from raw library source files: the GUI Library Packager and the CLI <code>create-package</code> command. Both produce identical output - a <code>.hxlibpkg</code> file in the <a href="BinaryContainerFormat.html">binary container format</a>, ready for distribution and import. The internal ZIP archive is automatically signed with an HMAC-SHA256 integrity signature (see <a href="IntegrityVerification.html">Integrity Verification</a>), and the entire file is wrapped in a tamper-resistant binary container with its own HMAC-SHA256 digest.</p>
+<p>Library Manager for Venus 6 provides two ways to create a <code>.hxlibpkg</code> package from raw library source files: the GUI Library Packager and the CLI <code>create-package</code> command. Both produce identical output - a <code>.hxlibpkg</code> file in the <a href="BinaryContainerFormat.html">binary container format</a>, ready for distribution and import. The internal ZIP archive is automatically signed with an HMAC-SHA256 integrity signature (see <a href="IntegrityVerification.html">Integrity Verification</a>), and the entire file is wrapped in a tamper-resistant binary container with its own HMAC-SHA256 digest.</p>
 
 <h2>GUI Library Packager</h2>
 <img src="images/packager-main.png" alt="Library Packager main view" class="doc-screenshot">
@@ -126,7 +126,7 @@
 <p>Every package build is automatically recorded in the persistent <b>audit trail</b> (<code>audit_trail.json</code>). The entry captures the Windows username of the packager, the Windows OS version, the installed VENUS version, the computer hostname, and the package metadata (library name, version, author). This enables full traceability of who created each package and on which system. See <a href="LibraryAuditLog.html">Library Audit Log</a> for details.</p>
 </div>
 <div class="footer">
-<p>Venus Library Manager Help</p>
+<p>Library Manager for Venus 6 Help</p>
 </div>
 </body>
 </html>

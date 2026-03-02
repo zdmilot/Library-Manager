@@ -1,6 +1,6 @@
-# Venus Library Manager
+# Library Manager for Venus 6
 
-Venus Library Manager is a desktop tool (NW.js + Node.js) for managing Hamilton VENUS libraries and related assets.
+Library Manager for Venus 6 is a desktop tool (NW.js + Node.js) for managing Hamilton VENUS libraries and related assets.
 It supports full package lifecycle workflows for `.hxlibpkg` and `.hxlibarch` files, including package creation, import, export, archive bundling, integrity checks, COM registration workflows, grouping, and visualization of installed libraries.
 
 ---
@@ -221,7 +221,7 @@ The **Hamilton** group (`gHamilton`) is a special protected group that ships wit
 
 ## 12) Help and UX support
 
-- Opens local compiled help file (`Venus Library Manager.chm`) from overflow menu.
+- Opens local compiled help file (`Library Manager for Venus 6.chm`) from overflow menu.
 - Includes video modal infrastructure for in-app help/tutorial playback.
 - Responsive UI behavior for window resize + nav overflow handling.
 
@@ -251,7 +251,7 @@ The **Hamilton** group (`gHamilton`) is a special protected group that ships wit
 
 ## 15) Visual identity and static assets
 
-Venus Library Manager uses a consistent visual branding system across packages and archives. All visual assets are pre-rendered and stored in the `assets/` directory to avoid runtime conversion overhead.
+Library Manager for Venus 6 uses a consistent visual branding system across packages and archives. All visual assets are pre-rendered and stored in the `assets/` directory to avoid runtime conversion overhead.
 
 ### Assets folder (`assets/`)
 
@@ -291,14 +291,14 @@ Multi-library archive files (`.hxlibarch`) embed a distinctive **purple archive 
 
 ## Command Line Interface (CLI)
 
-Venus Library Manager ships a full-featured command-line tool (`cli.js`) that mirrors the GUI workflows, enabling scripted automation, CI/CD integration, and headless testing.
+Library Manager for Venus 6 ships a full-featured command-line tool (`cli.js`) that mirrors the GUI workflows, enabling scripted automation, CI/CD integration, and headless testing.
 
 ### Prerequisites
 
 Node.js must be installed independently of NW.js (or use the NW.js `nw` binary from the project directory). All Node.js dependencies (`adm-zip`, `diskdb`) are satisfied by the project's existing `node_modules`.
 
 ```
-cd "Venus Library Manager"
+cd "Library Manager"
 node cli.js help
 ```
 

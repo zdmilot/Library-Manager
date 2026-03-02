@@ -1731,7 +1731,7 @@
 		$(document).on("click", ".overflow-help", function () {
 			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
 			$(".btn-overflow-toggle").attr("aria-expanded", "false");
-			var chmPath = path.join(path.dirname(process.execPath), 'Venus Library Manager.chm');
+			var chmPath = path.join(path.dirname(process.execPath), 'Library Manager for Venus 6.chm');
 			if (fs.existsSync(chmPath)) {
 				nw.Shell.openItem(chmPath);
 			} else {

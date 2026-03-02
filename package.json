@@ -1,7 +1,7 @@
 {
   "name": "VenusLibraryManager",
   "main": "html/index.html",
-  "description": "Venus Library Manager",
+  "description": "Library Manager for Venus 6",
   "version": "1.0.0",
   "keywords": [
     "VENUS",
@@ -23,7 +23,7 @@
   },
   "chromium-args": "--disable-logging --enable-logging=stderr --log-level=3 --disable-crash-reporter",
   "window": {
-    "title": "Venus Library Manager",
+    "title": "Library Manager for Venus 6",
     "icon": "/VenusLibraryManager.png",
     "show": false,
     "toolbar": true,
