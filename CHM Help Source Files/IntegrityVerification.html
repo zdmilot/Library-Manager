@@ -176,7 +176,7 @@
     </ul>
   </li>
   <li>The backup package is stored in the same <b>LibraryPackages</b> directory used by all imported user packages, organised by library name:
-    <img src="images/diagram-syslib-backup-path.svg" alt="System library backup package stored in LibraryPackages directory" class="doc-diagram">
+    <img src="images/diagram-syslib-backup-path.png" alt="System library backup package stored in LibraryPackages directory" class="doc-diagram">
   </li>
   <li>After all libraries are processed, the setting <code>sysLibBackupComplete</code> is set to <code>true</code> so the backup does not run again on subsequent launches.</li>
   <li>Progress and any errors are logged to the developer console.</li>
@@ -313,7 +313,7 @@
 
 <h3>Storage Organization</h3>
 <p>Packages are organized into subdirectories by library name:</p>
-<img src="images/diagram-package-store-org.svg" alt="Package store layout with system library backups and user library cached versions" class="doc-diagram">
+<img src="images/diagram-package-store-org.png" alt="Package store layout with system library backups and user library cached versions" class="doc-diagram">
 <p>Filename format: <code>&lt;LibraryName&gt;_v&lt;Version&gt;_&lt;YYYYMMDD-HHmmss&gt;.hxlibpkg</code></p>
 <p>When multiple versions exist, the newest (by file modification time) is used for repair. All versions are available for <a href="VersionRollback.html">version rollback</a>.</p>
 
@@ -339,10 +339,10 @@
 <p>The following diagram shows how integrity protection works across the full lifecycle of a library:</p>
 
 <h3>User-Installed Library</h3>
-<img src="images/diagram-user-lib-lifecycle.svg" alt="End-to-end integrity lifecycle for user-installed libraries: Package Creation, Import, Ongoing Use, and Repair phases" class="doc-diagram">
+<img src="images/diagram-user-lib-lifecycle.png" alt="End-to-end integrity lifecycle for user-installed libraries: Package Creation, Import, Ongoing Use, and Repair phases" class="doc-diagram">
 
 <h3>System Library</h3>
-<img src="images/diagram-system-lib-lifecycle.svg" alt="End-to-end integrity lifecycle for system libraries: First Run backup, Ongoing Use footer monitoring, and Repair phases" class="doc-diagram">
+<img src="images/diagram-system-lib-lifecycle.png" alt="End-to-end integrity lifecycle for system libraries: First Run backup, Ongoing Use footer monitoring, and Repair phases" class="doc-diagram">
 
 <!-- ================================================================== -->
 <h2>CLI Commands</h2>

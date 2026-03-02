@@ -20,7 +20,7 @@
 <p>A <code>.hxlibpkg</code> file is a <a href="BinaryContainerFormat.html">binary container</a> that encapsulates one complete library: its source files, demo methods, icon, and all metadata needed to install and manage the library. The container's internal ZIP archive has the following structure:</p>
 
 <h3>Internal ZIP Structure</h3>
-<img src="images/diagram-hxlibpkg-structure.svg" alt="Internal ZIP structure of a .hxlibpkg package: manifest.json, signature.json, library/, demo_methods/, and icon/ directories" class="doc-diagram">
+<img src="images/diagram-hxlibpkg-structure.png" alt="Internal ZIP structure of a .hxlibpkg package: manifest.json, signature.json, library/, demo_methods/, and icon/ directories" class="doc-diagram">
 
 <h3>Manifest (<code>manifest.json</code>)</h3>
 <p>Every <code>.hxlibpkg</code> must contain a <code>manifest.json</code> at the archive root. This file holds all metadata and the file inventory. Missing or invalid manifests cause the import to fail with an error.</p>
@@ -109,7 +109,7 @@
 <p>A <code>.hxlibarch</code> file is a <a href="BinaryContainerFormat.html">binary container</a> whose internal ZIP contains multiple <code>.hxlibpkg</code> entries plus an archive-level manifest. Each inner <code>.hxlibpkg</code> entry is itself a full binary container (not a raw ZIP), providing consistent integrity verification at every level. See <a href="BinaryContainerFormat.html#nested">Nested Containers in Archives</a> for the nesting structure.</p>
 
 <h3>Internal ZIP Structure</h3>
-<img src="images/diagram-hxlibarch-structure.svg" alt="Internal ZIP structure of a .hxlibarch archive: archive_manifest.json and multiple .hxlibpkg binary containers" class="doc-diagram">
+<img src="images/diagram-hxlibarch-structure.png" alt="Internal ZIP structure of a .hxlibarch archive: archive_manifest.json and multiple .hxlibpkg binary containers" class="doc-diagram">
 
 <h3>Archive Manifest (<code>archive_manifest.json</code>)</h3>
 <table>

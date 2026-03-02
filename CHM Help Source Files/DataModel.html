@@ -12,7 +12,7 @@
 <h2>Overview</h2>
 <p>Library Manager for Venus 6 uses <b>diskdb</b>, a lightweight JSON-backed database, to persist all application state. The database resides in the <code>db/</code> directory within the application folder. Each collection is stored as a separate <code>.json</code> file.</p>
 
-<img src="images/diagram-data-model-folders.svg" alt="Database directory structure: db/ (read-only) and local/ (user data) folders with JSON collections and LibraryPackages cache" class="doc-diagram">
+<img src="images/diagram-data-model-folders.png" alt="Database directory structure: db/ (read-only) and local/ (user data) folders with JSON collections and LibraryPackages cache" class="doc-diagram">
 
 <p>The <code>db/</code> directory ships with the application and contains read-only reference data. The <b>user data directory</b> (by default <code>C:\Program Files (x86)\HAMILTON\Library\LibraryManagerForVenus6</code>) stores all user-specific working data including installed library records, group assignments, the audit trail, and cached packages. This separation ensures the application remains portable while user data is kept in a consistent, configurable location.</p>
 

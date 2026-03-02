@@ -60,7 +60,7 @@
 
 <p>The system is organized into four layers: User Interfaces, Shared Core, Data Layer, and External Systems. Both the GUI and CLI depend on a shared module (<code>lib/shared.js</code>) that implements all container, signing, validation, and authorization logic.</p>
 
-<img src="images/diagram-high-level-architecture.svg" alt="High-level system architecture: User Interfaces (GUI and CLI), Shared Core (lib/shared.js), Data Layer (diskdb), and External Systems" class="doc-diagram">
+<img src="images/diagram-high-level-architecture.png" alt="High-level system architecture: User Interfaces (GUI and CLI), Shared Core (lib/shared.js), Data Layer (diskdb), and External Systems" class="doc-diagram">
 
 <h3>Component Summary</h3>
 <table>
@@ -208,7 +208,7 @@
 </table>
 
 <h3>Entity Relationships</h3>
-<img src="images/diagram-entity-relationships.svg" alt="Entity relationships: Groups 1:N Tree, Installed Libraries N:M Tree, Installed Libraries 1:N Audit Trail" class="doc-diagram">
+<img src="images/diagram-entity-relationships.png" alt="Entity relationships: Groups 1:N Tree, Installed Libraries N:M Tree, Installed Libraries 1:N Audit Trail" class="doc-diagram">
 
 <!-- ================================================================== -->
 <a name="sec3"></a>
@@ -218,7 +218,7 @@
 <p>All <code>.hxlibpkg</code> and <code>.hxlibarch</code> files use a custom binary container. See <a href="BinaryContainerFormat.html">Binary Container Format</a> for the full specification. Below is a summary of the container structure and the pack/unpack processes.</p>
 
 <h3>Container Layout (48-byte header + payload)</h3>
-<img src="images/diagram-sysarch-container-layout.svg" alt="48-byte binary container header (Magic, Flags, Payload Length, HMAC-SHA256) followed by XOR-scrambled ZIP payload" class="doc-diagram">
+<img src="images/diagram-sysarch-container-layout.png" alt="48-byte binary container header (Magic, Flags, Payload Length, HMAC-SHA256) followed by XOR-scrambled ZIP payload" class="doc-diagram">
 
 <table>
 <thead><tr><th>Field</th><th>Size</th><th>Description</th></tr></thead>
@@ -453,7 +453,7 @@
 <h3>Archive Nesting Structure</h3>
 <p>Archives use double-nested binary containers. The outer container holds an archive ZIP which itself contains individually-wrapped .hxlibpkg files:</p>
 
-<img src="images/diagram-archive-nesting.svg" alt="Archive nesting structure: .hxlibarch outer container with HXLARC header containing multiple .hxlibpkg inner containers" class="doc-diagram">
+<img src="images/diagram-archive-nesting.png" alt="Archive nesting structure: .hxlibarch outer container with HXLARC header containing multiple .hxlibpkg inner containers" class="doc-diagram">
 
 <!-- ================================================================== -->
 <a name="sec7"></a>
@@ -713,12 +713,12 @@
 </table>
 
 <h3>Authorization Decision Flow</h3>
-<img src="images/diagram-auth-decision-flow.svg" alt="Authorization decision flow: check ALLOW groups, DENY groups, then strict mode fallback" class="doc-diagram">
+<img src="images/diagram-auth-decision-flow.png" alt="Authorization decision flow: check ALLOW groups, DENY groups, then strict mode fallback" class="doc-diagram">
 
 <h3>Restricted Author Protection</h3>
 <p>Packages claiming author = &ldquo;Hamilton&rdquo; (case-insensitive) require additional authentication to prevent unauthorized Hamilton-branded packages.</p>
 
-<img src="images/diagram-restricted-author.svg" alt="Restricted author protection flow: Hamilton author check, system library bypass, PBKDF2 password verification" class="doc-diagram">
+<img src="images/diagram-restricted-author.png" alt="Restricted author protection flow: Hamilton author check, system library bypass, PBKDF2 password verification" class="doc-diagram">
 
 <!-- ================================================================== -->
 <a name="sec13"></a>
@@ -770,7 +770,7 @@
 </table>
 
 <h3>GUI Component Layout</h3>
-<img src="images/diagram-gui-component-layout.svg" alt="GUI component layout: Title Bar, Navigation Bar with tabs, Search Bar, and Library Card Grid" class="doc-diagram">
+<img src="images/diagram-gui-component-layout.png" alt="GUI component layout: Title Bar, Navigation Bar with tabs, Search Bar, and Library Card Grid" class="doc-diagram">
 
 <!-- ================================================================== -->
 <a name="sec14"></a>
@@ -803,7 +803,7 @@
 </div>
 
 <h3>CLI Processing Pipeline</h3>
-<img src="images/diagram-cli-processing-pipeline.svg" alt="CLI processing pipeline: yargs parsing, auth check, database load, path resolution, command execution, audit trail, output" class="doc-diagram">
+<img src="images/diagram-cli-processing-pipeline.png" alt="CLI processing pipeline: yargs parsing, auth check, database load, path resolution, command execution, audit trail, output" class="doc-diagram">
 
 </div>
 <div class="footer">
