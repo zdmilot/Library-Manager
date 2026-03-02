@@ -318,6 +318,21 @@ img.doc-screenshot {
 	display: block;
 }
 
+img.doc-diagram {
+	max-width: 100%;
+	width: auto;
+	height: auto;
+	max-height: 500px;
+	object-fit: contain;
+	border: 2px solid #c5ccd3;
+	border-radius: 6px;
+	margin: 14px auto;
+	padding: 8px 12px;
+	background-color: #ffffff;
+	box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+	display: block;
+}
+
 div.breadcrumb {
 	font-size: 12px;
 	color: #888;

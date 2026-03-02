@@ -1,4 +1,4 @@
-﻿<html>
+<html>
 <head>
     <title>Integrity Verification</title>
     <link rel="stylesheet" type="text/css" href="help.css">
@@ -12,11 +12,11 @@
 <p>Venus Library Manager provides a multi-layered integrity system to detect when library files have been modified, tampered with, or deleted. The system uses four complementary mechanisms depending on the context:</p>
 <ol>
   <li><b>Binary container HMAC</b> - cryptographic whole-file integrity check on every <code>.hxlibpkg</code> and <code>.hxlibarch</code> file (see <a href="BinaryContainerFormat.html">Binary Container Format</a>)</li>
-  <li><b>HMAC-SHA256 package signing</b> - per-file integrity signature (<code>signature.json</code>) inside each package’s internal ZIP</li>
+  <li><b>HMAC-SHA256 package signing</b> - per-file integrity signature (<code>signature.json</code>) inside each package's internal ZIP</li>
   <li><b>SHA-256 file hashing</b> - tracks individual files in user-installed libraries after import</li>
-  <li><b>Hamilton metadata footer verification</b> - checks Hamilton’s built-in <code>$$valid$$</code> / <code>$$checksum$$</code> fields in system library HSL files</li>
+  <li><b>Hamilton metadata footer verification</b> - checks Hamilton's built-in <code>$$valid$$</code> / <code>$$checksum$$</code> fields in system library HSL files</li>
 </ol>
-<p>Together, these mechanisms ensure that package files cannot be casually opened or modified, that packages are intact before import, that library files remain unchanged from the time they were installed, and that system libraries match Hamilton’s original release state.</p>
+<p>Together, these mechanisms ensure that package files cannot be casually opened or modified, that packages are intact before import, that library files remain unchanged from the time they were installed, and that system libraries match Hamilton's original release state.</p>
 
 <!-- ================================================================== -->
 <h2>User-Installed Libraries (SHA-256 File Hashing)</h2>
@@ -96,7 +96,7 @@
 <tbody>
 <tr><td>File no longer exists on disk</td><td>File missing</td><td style="color:#d9534f;">Error</td></tr>
 <tr><td>Footer removed entirely (baseline had <code>valid=1</code>)</td><td>Metadata footer removed</td><td style="color:#d9534f;">Error</td></tr>
-<tr><td>Footer removed (baseline had <code>valid≠1</code>)</td><td>Metadata footer removed</td><td style="color:#f0ad4e;">Warning</td></tr>
+<tr><td>Footer removed (baseline had <code>valid!=1</code>)</td><td>Metadata footer removed</td><td style="color:#f0ad4e;">Warning</td></tr>
 <tr><td><code>valid</code> changed from <code>1</code> to <code>0</code></td><td>Valid flag changed - file was re-saved or unlocked</td><td style="color:#d9534f;">Error</td></tr>
 <tr><td><code>checksum</code> differs from baseline</td><td>Checksum changed - file content was modified</td><td style="color:#d9534f;">Error</td></tr>
 <tr><td>All fields match baseline</td><td>OK</td><td style="color:#5cb85c;">Pass</td></tr>
@@ -114,7 +114,7 @@
 <h2>Package Signing (HMAC-SHA256)</h2>
 <!-- ================================================================== -->
 
-<p>In addition to file-level integrity checking after installation, Venus Library Manager embeds a cryptographic signature in every <code>.hxlibpkg</code> package at creation time. This <b>inner package signing</b> provides per-file integrity verification within the package’s internal ZIP archive, complementing the <a href="BinaryContainerFormat.html">binary container HMAC</a> that protects the file as a whole.</p>
+<p>In addition to file-level integrity checking after installation, Venus Library Manager embeds a cryptographic signature in every <code>.hxlibpkg</code> package at creation time. This <b>inner package signing</b> provides per-file integrity verification within the package's internal ZIP archive, complementing the <a href="BinaryContainerFormat.html">binary container HMAC</a> that protects the file as a whole.</p>
 
 <h3>How Package Signing Works</h3>
 <ol>
@@ -175,9 +175,7 @@
     </ul>
   </li>
   <li>The backup package is stored in the same <b>LibraryPackages</b> directory used by all imported user packages, organised by library name:
-    <div class="code"><pre>C:\Program Files (x86)\HAMILTON\Library\LibraryPackages\
-  └── HSLBarcodeReader\
-      └── HSLBarcodeReader_vsystem_20260224-103000.hxlibpkg</pre></div>
+    <img src="images/diagram-syslib-backup-path.svg" alt="System library backup package stored in LibraryPackages directory" class="doc-diagram">
   </li>
   <li>After all libraries are processed, the setting <code>sysLibBackupComplete</code> is set to <code>true</code> so the backup does not run again on subsequent launches.</li>
   <li>Progress and any errors are logged to the developer console.</li>
@@ -214,9 +212,9 @@
   <li>The package's <code>manifest.json</code> is read and validated.</li>
   <li>Files are extracted from the ZIP back to their original locations, overwriting the modified or corrupted files on disk:
     <ul>
-      <li><code>library/*</code> entries → the library's install directory</li>
-      <li><code>help_files/*</code> entries → the library's install directory (system libraries) or library directory (user libraries)</li>
-      <li><code>demo_methods/*</code> entries → the demo methods directory (user libraries only; system libraries have no demo methods)</li>
+      <li><code>library/*</code> entries -> the library's install directory</li>
+      <li><code>help_files/*</code> entries -> the library's install directory (system libraries) or library directory (user libraries)</li>
+      <li><code>demo_methods/*</code> entries -> the demo methods directory (user libraries only; system libraries have no demo methods)</li>
     </ul>
   </li>
   <li>The UI is refreshed to reflect the restored state.</li>
@@ -240,14 +238,14 @@
 <p>Open any library (user or system) by clicking its card. If the <b>File Integrity</b> section shows errors and a backup package exists in the package store, a <b>Repair from Backup</b> button appears below the error list. Clicking it prompts for confirmation, then restores the files. The detail modal automatically refreshes after repair.</p>
 
 <h4>2. Verify &amp; Repair Tool</h4>
-<p>Open the overflow menu (<b>⋮</b> button in the top-right toolbar) and select <b>Verify &amp; Repair</b>. This opens a modal that scans <b>all</b> libraries - both system and user-installed - and displays their integrity status in a single list. See the <a href="#verify-repair-tool">Verify &amp; Repair Tool</a> section below for details.</p>
+<p>Open the overflow menu (<b>...</b> button in the top-right toolbar) and select <b>Verify &amp; Repair</b>. This opens a modal that scans <b>all</b> libraries - both system and user-installed - and displays their integrity status in a single list. See the <a href="#verify-repair-tool">Verify &amp; Repair Tool</a> section below for details.</p>
 
 <!-- ================================================================== -->
 <a name="verify-repair-tool"></a>
 <h2>Verify &amp; Repair Tool</h2>
 <!-- ================================================================== -->
 
-<p>The Verify &amp; Repair tool provides a comprehensive integrity scan and one-click repair across all libraries. Access it from the overflow menu (<b>⋮</b>) &rarr; <b>Verify &amp; Repair</b>.</p>
+<p>The Verify &amp; Repair tool provides a comprehensive integrity scan and one-click repair across all libraries. Access it from the overflow menu (<b>...</b>) &rarr; <b>Verify &amp; Repair</b>.</p>
 
 <h3>What the Tool Shows</h3>
 <p>When opened, the tool scans every library and displays results in two sections:</p>
@@ -290,8 +288,8 @@
 
 <h3>Summary Bar</h3>
 <p>The footer of the modal shows a summary line, for example:</p>
-<div class="code"><pre>42 libraries • 2 failed • 1 warning</pre></div>
-<p>If everything passes: <code>42 libraries • all OK</code></p>
+<div class="code"><pre>42 libraries * 2 failed * 1 warning</pre></div>
+<p>If everything passes: <code>42 libraries * all OK</code></p>
 <img src="images/VerifyAndRepair.png" alt="Verify and Repair modal with library status list" class="doc-screenshot">
 <p>When issues are detected, libraries with warnings or failures are highlighted with their status and specific error details:</p>
 <img src="images/VerifyAndRepairWithWarning.png" alt="Verify and Repair modal showing warnings" class="doc-screenshot">
@@ -314,14 +312,7 @@
 
 <h3>Storage Organization</h3>
 <p>Packages are organized into subdirectories by library name:</p>
-<div class="code"><pre>LibraryPackages/
-  ├── HSLBarcodeReader/
-  │   └── HSLBarcodeReader_vsystem_20260224-103000.hxlibpkg
-  ├── HSLArrLib/
-  │   └── HSLArrLib_vsystem_20260224-103001.hxlibpkg
-  └── MyCustomLib/
-      ├── MyCustomLib_v1.0.0_20260215-141500.hxlibpkg
-      └── MyCustomLib_v2.0.0_20260220-091500.hxlibpkg</pre></div>
+<img src="images/diagram-package-store-org.svg" alt="Package store layout with system library backups and user library cached versions" class="doc-diagram">
 <p>Filename format: <code>&lt;LibraryName&gt;_v&lt;Version&gt;_&lt;YYYYMMDD-HHmmss&gt;.hxlibpkg</code></p>
 <p>When multiple versions exist, the newest (by file modification time) is used for repair. All versions are available for <a href="VersionRollback.html">version rollback</a>.</p>
 
@@ -347,27 +338,10 @@
 <p>The following diagram shows how integrity protection works across the full lifecycle of a library:</p>
 
 <h3>User-Installed Library</h3>
-<div class="code"><pre>  Package Creation             Import                  Ongoing Use              Repair
-  ─────────────────           ──────                  ───────────              ──────
-  1. ZIP created with         1. Container HMAC       1. SHA-256 hashes       1. Cached pkg found
-     library + demo files        verified (whole-file)   recomputed on view   2. Container HMAC
-  2. SHA-256 computed for     2. Inner signature.json 2. Compared to stored      verified
-     each ZIP entry              verified (per-file)     baseline             3. Inner signature
-  3. HMAC-SHA256 signed       3. Files extracted      3. Errors/warnings        verified
-  4. signature.json added     4. SHA-256 hashes          shown on card/modal  4. Files re-extracted
-  5. ZIP wrapped in binary       computed &amp; stored                            5. Hashes recomputed
-     container (XOR +         5. Container cached in                             &amp; stored
-     container HMAC)             package store</pre></div>
+<img src="images/diagram-user-lib-lifecycle.svg" alt="End-to-end integrity lifecycle for user-installed libraries: Package Creation, Import, Ongoing Use, and Repair phases" class="doc-diagram">
 
 <h3>System Library</h3>
-<div class="code"><pre>  First Run                     Ongoing Use                Repair
-  ─────────                     ───────────                ──────
-  1. Each system library        1. Hamilton footer read    1. Backup pkg found
-     packaged into .hxlibpkg   2. Compared to baseline    2. Signature verified
-  2. Package signed (HMAC)      3. Errors/warnings shown   3. Files re-extracted
-  3. Stored in package store       on card/modal              to Library dir
-  4. sysLibBackupComplete                                  4. Footer re-verified
-     flag set in settings                                     on next view</pre></div>
+<img src="images/diagram-system-lib-lifecycle.svg" alt="End-to-end integrity lifecycle for system libraries: First Run backup, Ongoing Use footer monitoring, and Repair phases" class="doc-diagram">
 
 <!-- ================================================================== -->
 <h2>CLI Commands</h2>

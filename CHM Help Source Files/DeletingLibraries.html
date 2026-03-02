@@ -39,9 +39,11 @@
 <p>The delete process performs these steps in order:</p>
 
 <h3>1. COM Deregistration (GUI only)</h3>
-<p>If the library has registered COM DLLs, the GUI optionally performs deregistration via <code>RegAsm.exe /unregister</code> before removing files. If deregistration fails, you can choose to continue or cancel the deletion.</p>
+<p>If the library has registered COM DLLs, the GUI optionally performs deregistration via the <b>32-bit</b> <code>RegAsm.exe /unregister</code> before removing files. The GUI automatically selects the correct 32-bit <code>RegAsm.exe</code> from <code>C:\Windows\Microsoft.NET\Framework\</code>. If deregistration fails, you can choose to continue or cancel the deletion.</p>
 <div class="note">
-<p><b>Note:</b> The CLI does <b>not</b> automatically deregister COM DLLs. You must run <code>RegAsm.exe /unregister &lt;dll&gt;</code> manually with administrator privileges.</p>
+<p><b>Note:</b> The CLI does <b>not</b> automatically deregister COM DLLs. You must run the <b>32-bit</b> <code>RegAsm.exe</code> manually with administrator privileges:</p>
+<div class="code"><pre>C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister &lt;dll&gt;</pre></div>
+<p>Do <b>NOT</b> use <code>Framework64</code> &mdash; Hamilton VENUS is a 32-bit application. See <a href="ImportingLibraries.html">Importing Libraries &gt; COM DLL Registration</a> for details.</p>
 </div>
 
 <h3>2. File Removal</h3>

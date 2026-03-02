@@ -5975,7 +5975,15 @@
 		 * Returns the full path to RegAsm.exe or null if not found.
 		 */
 		function findRegAsmPath() {
-			// Always use the 32-bit (x86) .NET Framework - Hamilton VENUS is a 32-bit application
+			// ─── CRITICAL: Always use the 32-bit (x86) .NET Framework ───────────────
+			// Hamilton VENUS 6 is a 32-bit (x86) application.  COM DLLs MUST be
+			// registered with the 32-bit RegAsm.exe from
+			//   C:\Windows\Microsoft.NET\Framework\   (32-bit)
+			// and NEVER from
+			//   C:\Windows\Microsoft.NET\Framework64\  (64-bit)
+			// Using the 64-bit RegAsm registers COM objects in the 64-bit registry
+			// hive, which is invisible to 32-bit VENUS and will cause runtime errors.
+			// ─────────────────────────────────────────────────────────────────────────
 			var frameworkDir = "C:\\Windows\\Microsoft.NET\\Framework\\";
 			if (!fs.existsSync(frameworkDir)) return null;
 
@@ -5986,7 +5994,14 @@
 
 			for (var i = 0; i < dirs.length; i++) {
 				var regasm = path.join(frameworkDir, dirs[i], "RegAsm.exe");
-				if (fs.existsSync(regasm)) return regasm;
+				if (fs.existsSync(regasm)) {
+					// Defensive: reject if the resolved path somehow contains Framework64
+					if (/Framework64/i.test(regasm)) {
+						console.error('[COM] BLOCKED: Resolved RegAsm path is 64-bit (' + regasm + '). VENUS requires 32-bit.');
+						continue;
+					}
+					return regasm;
+				}
 			}
 			return null;
 		}
@@ -6003,7 +6018,7 @@
 			return new Promise(function(resolve) {
 				var regasm = findRegAsmPath();
 				if (!regasm) {
-					resolve({success: false, error: "RegAsm.exe not found in .NET Framework directory."});
+					resolve({success: false, error: "32-bit RegAsm.exe not found in C:\\Windows\\Microsoft.NET\\Framework\\.\nEnsure .NET Framework (x86) is installed. Do NOT use Framework64."});
 					return;
 				}
 
@@ -7724,7 +7739,7 @@
 				} catch(_) { /* non-critical */ }
 
 				if (comDlls.length > 0) {
-					alert('NOTE: This library has COM DLLs that may need re-registration:\n\n' + comDlls.join(', ') + '\n\nUse RegAsm.exe /codebase manually or re-import via the GUI for automatic COM registration.');
+					alert('NOTE: This library has COM DLLs that may need re-registration:\n\n' + comDlls.join(', ') + '\n\nRe-import via the GUI for automatic 32-bit COM registration, or run the 32-bit RegAsm manually:\n  C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>\n\nIMPORTANT: Do NOT use Framework64 — VENUS is a 32-bit application.');
 				}
 
 			} catch(e) {

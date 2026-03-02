@@ -1,0 +1,17 @@
+graph LR
+    classDef header fill:#2c5f8a,color:#fff,stroke:#1a3d5c,font-weight:bold
+    classDef field fill:#f5f5f5,color:#333,stroke:#999
+
+    subgraph HEADER ["Container Header (48 bytes)"]
+        direction LR
+        MAGIC["Magic<br/>8 bytes<br/><small>Format identifier</small>"]:::header
+        FLAGS["Flags<br/>4 bytes<br/><small>Reserved (0x00000000)</small>"]:::field
+        LEN["Payload Length<br/>4 bytes<br/><small>uint32 LE</small>"]:::field
+        HMAC["HMAC-SHA256<br/>32 bytes<br/><small>Digest of scrambled payload</small>"]:::header
+    end
+
+    MAGIC --- FLAGS --- LEN --- HMAC
+
+    HMAC --> PAYLOAD["XOR-Scrambled<br/>ZIP Payload<br/><small>PayloadLen bytes</small>"]
+
+    style PAYLOAD fill:#2c8a3f,color:#fff,stroke:#1a5c25

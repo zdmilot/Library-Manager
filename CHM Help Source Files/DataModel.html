@@ -11,23 +11,7 @@
 <h2>Overview</h2>
 <p>Venus Library Manager uses <b>diskdb</b>, a lightweight JSON-backed database, to persist all application state. The database resides in the <code>db/</code> directory within the application folder. Each collection is stored as a separate <code>.json</code> file.</p>
 
-<div class="code"><pre>db/
-├── settings.json            (Application settings)
-├── system_libraries.json    (Hamilton system library definitions)
-└── system_library_hashes.json (Integrity baseline for system libraries)
-
-local/  (User Data Directory)
-├── installed_libs.json      (Installed library records)
-├── groups.json              (Custom navigation groups)
-├── tree.json                (Group ↔ library assignments)
-├── unsigned_libs.json       (Auto-detected unsigned libraries)
-├── audit_trail.json         (Event history)
-├── publisher_registry.json  (Known authors and tags)
-└── LibraryPackages/         (Cached .hxlibpkg files for rollback &amp; repair)
-    ├── MyLibrary/
-    │   └── MyLibrary_v1.0.0_20260115-103000.hxlibpkg
-    └── AnotherLib/
-        └── AnotherLib_v2.1.0_20260220-091500.hxlibpkg</pre></div>
+<img src="images/diagram-data-model-folders.svg" alt="Database directory structure: db/ (read-only) and local/ (user data) folders with JSON collections and LibraryPackages cache" class="doc-diagram">
 
 <p>The <code>db/</code> directory ships with the application and contains read-only reference data. The <b>user data directory</b> (by default <code>C:\Program Files (x86)\HAMILTON\Library\VenusLibraryManager</code>) stores all user-specific working data including installed library records, group assignments, the audit trail, and cached packages. This separation ensures the application remains portable while user data is kept in a consistent, configurable location.</p>
 
@@ -81,7 +65,7 @@ local/  (User Data Directory)
 <tr><td><code>demo_install_path</code></td><td>string</td><td>Full path where demo methods are installed</td></tr>
 <tr><td><code>installed_date</code></td><td>string (ISO 8601)</td><td>When the library was imported</td></tr>
 <tr><td><code>source_package</code></td><td>string</td><td>Filename of the source <code>.hxlibpkg</code></td></tr>
-<tr><td><code>file_hashes</code></td><td>object</td><td>Map of filename → SHA-256 hash for integrity-tracked files</td></tr>
+<tr><td><code>file_hashes</code></td><td>object</td><td>Map of filename -> SHA-256 hash for integrity-tracked files</td></tr>
 <tr><td><code>public_functions</code></td><td>object[]</td><td>Parsed public function signatures from <code>.hsl</code> files (see below)</td></tr>
 <tr><td><code>deleted</code></td><td>boolean</td><td>Soft-delete flag. <code>true</code> means the library has been deleted</td></tr>
 <tr><td><code>deleted_date</code></td><td>string (ISO 8601)</td><td>When the library was soft-deleted</td></tr>

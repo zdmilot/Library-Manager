@@ -20,9 +20,25 @@
 
 <h3>COM DLLs not registered after CLI import</h3>
 <p><b>Cause:</b> COM registration is only performed automatically by the GUI. The CLI extracts files but cannot run <code>RegAsm.exe</code>.</p>
-<p><b>Solution:</b> Register manually from an elevated command prompt:</p>
-<div class="code"><pre>RegAsm.exe /codebase "C:\Program Files (x86)\HAMILTON\Library\MyLib\MyComHelper.dll"</pre></div>
-<p>Or import the same package using the GUI, which handles registration automatically.</p>
+<p><b>Solution:</b> Register manually from an elevated command prompt using the <b>32-bit</b> <code>RegAsm.exe</code>:</p>
+<div class="code"><pre>C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /codebase "C:\Program Files (x86)\HAMILTON\Library\MyLib\MyComHelper.dll"</pre></div>
+<div class="warning">
+<p><b>Critical:</b> You <b>must</b> use the 32-bit <code>RegAsm.exe</code> from <code>C:\Windows\Microsoft.NET\Framework\</code> (without "64"). Do <b>NOT</b> use the 64-bit version from <code>C:\Windows\Microsoft.NET\Framework64\</code>. Hamilton VENUS is a 32-bit application and cannot see COM objects registered in the 64-bit registry hive. Using the wrong version will cause "Class not registered" errors at runtime even though the registration command appeared to succeed.</p>
+</div>
+<p>Or import the same package using the GUI, which automatically selects the correct 32-bit <code>RegAsm.exe</code>.</p>
+
+<h3>COM registration succeeded but VENUS says "Class not registered"</h3>
+<p><b>Cause:</b> The DLL was registered using the <b>64-bit</b> <code>RegAsm.exe</code> (from <code>C:\Windows\Microsoft.NET\Framework64\</code>). The 64-bit version writes COM entries to the 64-bit registry hive, which is invisible to 32-bit applications like Hamilton VENUS.</p>
+<p><b>Solution:</b></p>
+<ol>
+  <li>First, unregister the incorrectly registered DLL using the 64-bit RegAsm:
+    <div class="code"><pre>C:\Windows\Microsoft.NET\Framework64\v4.0.30319\RegAsm.exe /unregister "path\to\MyComHelper.dll"</pre></div>
+  </li>
+  <li>Then re-register using the <b>32-bit</b> RegAsm:
+    <div class="code"><pre>C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /codebase "path\to\MyComHelper.dll"</pre></div>
+  </li>
+</ol>
+<p>Note the path difference: <code>Framework\</code> (32-bit, correct) vs. <code>Framework64\</code> (64-bit, wrong for VENUS).</p>
 
 <h3>"System library - cannot delete" error</h3>
 <p><b>Cause:</b> The library is a Hamilton built-in system library. These are protected from deletion to prevent breaking the VENUS installation.</p>

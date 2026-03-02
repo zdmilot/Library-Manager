@@ -1,0 +1,11 @@
+flowchart TD
+    classDef layer fill:#2c5f8a,color:#fff,stroke:#1a3d5c,font-weight:bold
+    classDef transform fill:#f0e6ff,color:#5f2c8a,stroke:#8a6bbf
+
+    L1["Layer 1: Binary Container<br/><small>Header (48 bytes) + XOR-scrambled payload</small>"]:::layer
+    T1["↓ descramble + HMAC verify"]:::transform
+    L2["Layer 2: ZIP Archive<br/><small>Standard ZIP with manifest, signature, and payload entries</small>"]:::layer
+    T2["↓ extract entries"]:::transform
+    L3["Layer 3: Package Contents<br/><small>manifest.json, signature.json, library/, demo_methods/, icon/</small>"]:::layer
+
+    L1 --> T1 --> L2 --> T2 --> L3

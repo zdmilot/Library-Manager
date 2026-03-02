@@ -1,0 +1,43 @@
+flowchart LR
+    classDef phase fill:#2c5f8a,color:#fff,stroke:#1a3d5c,font-weight:bold
+    classDef step fill:#f5f5f5,color:#333,stroke:#999
+
+    subgraph CREATE ["📦 Package Creation"]
+        direction TB
+        C1["1. ZIP created with<br/>library + demo files"]:::step
+        C2["2. SHA-256 computed for<br/>each ZIP entry"]:::step
+        C3["3. HMAC-SHA256 signed"]:::step
+        C4["4. signature.json added"]:::step
+        C5["5. ZIP wrapped in binary<br/>container (XOR + HMAC)"]:::step
+        C1 --> C2 --> C3 --> C4 --> C5
+    end
+
+    subgraph IMPORT ["📥 Import"]
+        direction TB
+        I1["1. Container HMAC<br/>verified (whole-file)"]:::step
+        I2["2. Inner signature.json<br/>verified (per-file)"]:::step
+        I3["3. Files extracted"]:::step
+        I4["4. SHA-256 hashes<br/>computed & stored"]:::step
+        I5["5. Container cached in<br/>package store"]:::step
+        I1 --> I2 --> I3 --> I4 --> I5
+    end
+
+    subgraph USE ["🔍 Ongoing Use"]
+        direction TB
+        U1["1. SHA-256 hashes<br/>recomputed on view"]:::step
+        U2["2. Compared to stored<br/>baseline"]:::step
+        U3["3. Errors/warnings<br/>shown on card/modal"]:::step
+        U1 --> U2 --> U3
+    end
+
+    subgraph REPAIR ["🔧 Repair"]
+        direction TB
+        R1["1. Cached pkg found"]:::step
+        R2["2. Container HMAC<br/>verified"]:::step
+        R3["3. Inner signature<br/>verified"]:::step
+        R4["4. Files re-extracted"]:::step
+        R5["5. Hashes recomputed<br/>& stored"]:::step
+        R1 --> R2 --> R3 --> R4 --> R5
+    end
+
+    CREATE --> IMPORT --> USE --> REPAIR

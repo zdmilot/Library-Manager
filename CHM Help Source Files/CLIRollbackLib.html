@@ -54,7 +54,9 @@
 
 <h2>COM DLL Note</h2>
 <div class="tip">
-<b>Note:</b> If the rolled-back version contains DLLs that require COM registration (<code>com_register_dlls</code> in the manifest), the CLI will print a reminder. COM registration is only performed automatically by the GUI; via the CLI you must run <code>RegAsm.exe /codebase</code> manually.
+<b>Note:</b> If the rolled-back version contains DLLs that require COM registration (<code>com_register_dlls</code> in the manifest), the CLI will print a reminder. COM registration is only performed automatically by the GUI (using the 32-bit <code>RegAsm.exe</code>); via the CLI you must run the <b>32-bit</b> <code>RegAsm.exe /codebase</code> manually:
+<div class="code"><pre>C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /codebase &lt;dll&gt;</pre></div>
+Do <b>NOT</b> use <code>Framework64</code> &mdash; VENUS is 32-bit. See <a href="ImportingLibraries.html">COM DLL Registration</a> for details.
 </div>
 
 <h2>Examples</h2>

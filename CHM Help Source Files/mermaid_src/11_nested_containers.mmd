@@ -1,0 +1,35 @@
+graph TD
+    classDef outer fill:#5f2c8a,color:#fff,stroke:#3d1a5c,font-weight:bold
+    classDef inner fill:#2c5f8a,color:#fff,stroke:#1a3d5c,font-weight:bold
+    classDef meta fill:#f0e6ff,color:#5f2c8a,stroke:#8a6bbf
+    classDef file fill:#f5f5f5,color:#333,stroke:#999
+    classDef scramble fill:#e8f4e8,color:#2c6b2c,stroke:#5cb85c
+
+    ARC["📦 MyBundle.hxlibarch (binary container)"]:::outer
+    ARC_HEADER["Header: HXLARC magic<br/>+ HMAC covering outer payload"]:::outer
+    ARC_PAYLOAD["Scrambled payload →<br/>descrambles to ZIP containing:"]:::scramble
+
+    AM["📄 archive_manifest.json"]:::meta
+
+    LIBA["📦 LibraryA.hxlibpkg (binary container)"]:::inner
+    LIBA_HEADER["Header: HXLPKG magic<br/>+ HMAC covering inner payload"]:::inner
+    LIBA_PAYLOAD["Scrambled payload →<br/>descrambles to ZIP containing:"]:::scramble
+    LIBA_MAN["📄 manifest.json"]:::file
+    LIBA_SIG["📄 signature.json"]:::file
+    LIBA_LIB["📁 library/ ..."]:::file
+
+    LIBB["📦 LibraryB.hxlibpkg<br/><small>(same structure)</small>"]:::inner
+    LIBC["📦 LibraryC.hxlibpkg<br/><small>(same structure)</small>"]:::inner
+
+    ARC --> ARC_HEADER
+    ARC --> ARC_PAYLOAD
+    ARC_PAYLOAD --> AM
+    ARC_PAYLOAD --> LIBA
+    ARC_PAYLOAD --> LIBB
+    ARC_PAYLOAD --> LIBC
+
+    LIBA --> LIBA_HEADER
+    LIBA --> LIBA_PAYLOAD
+    LIBA_PAYLOAD --> LIBA_MAN
+    LIBA_PAYLOAD --> LIBA_SIG
+    LIBA_PAYLOAD --> LIBA_LIB

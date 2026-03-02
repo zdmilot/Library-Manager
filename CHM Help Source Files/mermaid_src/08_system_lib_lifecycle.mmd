@@ -1,0 +1,31 @@
+flowchart LR
+    classDef phase fill:#5f2c8a,color:#fff,stroke:#3d1a5c,font-weight:bold
+    classDef step fill:#f5f5f5,color:#333,stroke:#999
+
+    subgraph FIRST ["🚀 First Run"]
+        direction TB
+        F1["1. Each system library<br/>packaged into .hxlibpkg"]:::step
+        F2["2. Package signed<br/>(HMAC)"]:::step
+        F3["3. Stored in<br/>package store"]:::step
+        F4["4. sysLibBackupComplete<br/>flag set in settings"]:::step
+        F1 --> F2 --> F3 --> F4
+    end
+
+    subgraph USE ["🔍 Ongoing Use"]
+        direction TB
+        U1["1. Hamilton footer read"]:::step
+        U2["2. Compared to baseline"]:::step
+        U3["3. Errors/warnings shown<br/>on card/modal"]:::step
+        U1 --> U2 --> U3
+    end
+
+    subgraph REPAIR ["🔧 Repair"]
+        direction TB
+        R1["1. Backup pkg found"]:::step
+        R2["2. Signature verified"]:::step
+        R3["3. Files re-extracted<br/>to Library dir"]:::step
+        R4["4. Footer re-verified<br/>on next view"]:::step
+        R1 --> R2 --> R3 --> R4
+    end
+
+    FIRST --> USE --> REPAIR

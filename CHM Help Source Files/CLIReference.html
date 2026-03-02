@@ -72,7 +72,11 @@ node cli.js &lt;command&gt; [options]</pre></div>
 
 <h2>COM DLL Registration Note</h2>
 <div class="warning">
-<p><b>Important:</b> COM DLL registration is <b>not</b> performed by the CLI. The CLI records COM DLL intent in the database. Run <code>RegAsm.exe /codebase &lt;dll&gt;</code> with administrator rights manually after importing a package that requires COM registration. To deregister, use <code>RegAsm.exe /unregister &lt;dll&gt;</code>.</p>
+<p><b>Important &mdash; 32-bit RegAsm Only:</b> COM DLL registration is <b>not</b> performed by the CLI. The CLI records COM DLL intent in the database. You must register COM DLLs manually using the <b>32-bit</b> <code>RegAsm.exe</code> with administrator rights:</p>
+<div class="code"><pre>C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /codebase &lt;dll&gt;</pre></div>
+<p>To deregister:</p>
+<div class="code"><pre>C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister &lt;dll&gt;</pre></div>
+<p><b>Do NOT use <code>Framework64</code>.</b> Hamilton VENUS is a 32-bit (x86) application. COM objects registered with the 64-bit <code>RegAsm.exe</code> are placed in the 64-bit registry hive and are invisible to VENUS, causing "Class not registered" errors at runtime.</p>
 </div>
 
 <h2>Automated Testing / CI Usage</h2>

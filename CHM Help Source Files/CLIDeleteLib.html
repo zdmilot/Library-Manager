@@ -61,7 +61,9 @@ node cli.js delete-lib --name "MyLibrary" --yes --keep-files
 node cli.js delete-lib --id a1b2c3d4 --yes</pre></div>
 
 <div class="warning">
-<p><b>Warning:</b> COM DLLs are <b>not</b> automatically deregistered by the CLI. If the library had COM-registered DLLs, run <code>RegAsm.exe /unregister &lt;dll&gt;</code> with elevated privileges manually.</p>
+<p><b>Warning:</b> COM DLLs are <b>not</b> automatically deregistered by the CLI. If the library had COM-registered DLLs, run the <b>32-bit</b> <code>RegAsm.exe</code> with elevated privileges manually:</p>
+<div class="code"><pre>C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister &lt;dll&gt;</pre></div>
+<p>Do <b>NOT</b> use <code>Framework64</code> &mdash; VENUS is a 32-bit application. See <a href="ImportingLibraries.html">COM DLL Registration</a> for details.</p>
 </div>
 
 <h2>Related</h2>

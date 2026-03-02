@@ -1255,7 +1255,9 @@ function cmdImportLib(args) {
     const comDlls = manifest.com_register_dlls || [];
     if (comDlls.length > 0) {
         console.log(`\n  NOTE: COM registration required for: ${comDlls.join(', ')}`);
-        console.log(`  Use the GUI import or run RegAsm.exe /codebase manually.`);
+        console.log(`  Use the GUI import or run the 32-bit RegAsm manually:`);
+        console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>`);
+        console.log(`  IMPORTANT: Do NOT use Framework64 — VENUS is a 32-bit application.`);
     }
 }
 
@@ -1703,7 +1705,9 @@ function cmdDeleteLib(args) {
     const comDlls = lib.com_register_dlls || [];
     if (comDlls.length > 0) {
         console.log(`\n  NOTE: COM DLLs were NOT automatically deregistered: ${comDlls.join(', ')}`);
-        console.log(`  Run  RegAsm.exe /unregister <dll>  with elevated privileges if needed.`);
+        console.log(`  Run the 32-bit RegAsm with elevated privileges if needed:`);
+        console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /unregister <dll>`);
+        console.log(`  IMPORTANT: Do NOT use Framework64 — VENUS is a 32-bit application.`);
     }
 }
 
@@ -2271,7 +2275,9 @@ function cmdRollbackLib(args) {
     const comDlls = manifest.com_register_dlls || [];
     if (comDlls.length > 0) {
         console.log(`\n  NOTE: COM registration required for: ${comDlls.join(', ')}`);
-        console.log(`  Use the GUI import or run RegAsm.exe /codebase manually.`);
+        console.log(`  Use the GUI import or run the 32-bit RegAsm manually:`);
+        console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>`);
+        console.log(`  IMPORTANT: Do NOT use Framework64 — VENUS is a 32-bit application.`);
     }
 }
 
@@ -2388,7 +2394,9 @@ delete-lib
   --hard                         Hard-delete DB record (removes history)
   --keep-files                   Remove from DB only; leave disk files intact
 
-  NOTE: COM DLL deregistration must be done manually via RegAsm.exe.
+  NOTE: COM DLL deregistration must be done manually via the 32-bit RegAsm.exe.
+        Use: C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister <dll>
+        Do NOT use Framework64 — VENUS is a 32-bit application.
 
   Examples:
     node cli.js delete-lib --name "MyLibrary" --yes

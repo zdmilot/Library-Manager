@@ -1,0 +1,24 @@
+graph TD
+    classDef folder fill:#2c5f8a,color:#fff,stroke:#1a3d5c,font-weight:bold
+    classDef syspkg fill:#fff3cd,color:#856404,stroke:#ffc107
+    classDef userpkg fill:#e8f4e8,color:#2c6b2c,stroke:#5cb85c
+
+    ROOT["📁 LibraryPackages/"]:::folder
+
+    BC["📁 HSLBarcodeReader/"]:::folder
+    BCF["📦 HSLBarcodeReader_vsystem_20260224-103000.hxlibpkg"]:::syspkg
+
+    AL["📁 HSLArrLib/"]:::folder
+    ALF["📦 HSLArrLib_vsystem_20260224-103001.hxlibpkg"]:::syspkg
+
+    MC["📁 MyCustomLib/"]:::folder
+    MC1["📦 MyCustomLib_v1.0.0_20260215-141500.hxlibpkg"]:::userpkg
+    MC2["📦 MyCustomLib_v2.0.0_20260220-091500.hxlibpkg"]:::userpkg
+
+    ROOT --> BC
+    ROOT --> AL
+    ROOT --> MC
+    BC --> BCF
+    AL --> ALF
+    MC --> MC1
+    MC --> MC2

@@ -1,4 +1,4 @@
-﻿<html>
+<html>
 <head>
     <title>Binary Container Format</title>
     <link rel="stylesheet" type="text/css" href="help.css">
@@ -27,27 +27,12 @@
 
 <p>Every container file consists of a fixed-size 48-byte binary header followed by a variable-length scrambled payload:</p>
 
-<div class="code"><pre>Offset   Size     Field              Description
-──────   ────     ─────              ───────────
-0        8 bytes  Magic              Format identifier (see below)
-8        4 bytes  Flags              Reserved for future use (currently 0x00000000)
-12       4 bytes  Payload Length     Little-endian uint32: byte length of the scrambled payload
-16       32 bytes HMAC-SHA256        Cryptographic digest of the scrambled payload</pre></div>
+<img src="images/diagram-container-header.svg" alt="48-byte binary container header layout: Magic (8B), Flags (4B), Payload Length (4B), HMAC-SHA256 (32B)" class="doc-diagram">
 
 <p>Immediately following the 48-byte header is the <b>scrambled payload</b> - the XOR-scrambled ZIP archive data. The total file size is always <code>48 + payload_length</code> bytes.</p>
 
 <h3>Visual Layout</h3>
-<div class="code"><pre>┌──────────────────────────────── Container File ────────────────────────────────┐
-│                                                                                │
-│  ┌─── Header (48 bytes) ──────────────────────────────────────────────────┐    │
-│  │  [Magic 8B] [Flags 4B] [PayloadLen 4B] [HMAC-SHA256 32B]             │    │
-│  └────────────────────────────────────────────────────────────────────────┘    │
-│                                                                                │
-│  ┌─── Scrambled Payload (PayloadLen bytes) ───────────────────────────────┐    │
-│  │  XOR-scrambled ZIP data (not readable by standard tools)              │    │
-│  └────────────────────────────────────────────────────────────────────────┘    │
-│                                                                                │
-└────────────────────────────────────────────────────────────────────────────────┘</pre></div>
+<img src="images/diagram-container-layout.svg" alt="Visual layout of a binary container file: header block with subfields followed by XOR-scrambled payload block" class="doc-diagram">
 
 <!-- ================================================================== -->
 <h2>Magic Bytes</h2>
@@ -148,20 +133,7 @@
 
 <p>A <code>.hxlibarch</code> archive file is itself a binary container. Inside its descrambled ZIP payload, each inner <code>.hxlibpkg</code> entry is <b>also a full binary container</b> - not a raw ZIP. This means every level has its own container header, HMAC, and scrambled payload:</p>
 
-<div class="code"><pre>MyBundle.hxlibarch (binary container)
-  ├── Header: HXLARC magic + HMAC covering outer payload
-  └── Scrambled payload → descrambles to ZIP containing:
-      ├── archive_manifest.json
-      ├── LibraryA.hxlibpkg (binary container)
-      │   ├── Header: HXLPKG magic + HMAC covering inner payload
-      │   └── Scrambled payload → descrambles to ZIP containing:
-      │       ├── manifest.json
-      │       ├── signature.json
-      │       └── library/ ...
-      ├── LibraryB.hxlibpkg (binary container)
-      │   └── ... (same structure)
-      └── LibraryC.hxlibpkg (binary container)
-          └── ... (same structure)</pre></div>
+<img src="images/diagram-nested-containers.svg" alt="Nested container structure: .hxlibarch containing multiple .hxlibpkg binary containers, each with their own header, HMAC, and ZIP payload" class="doc-diagram">
 
 <p>During archive import, the outer container is first validated and descrambled, then each inner <code>.hxlibpkg</code> entry is individually validated and descrambled before its contents are installed. This provides consistent integrity verification at every level of nesting.</p>
 
@@ -232,12 +204,7 @@
 
 <p>The binary container is the outermost layer of every package and archive file. Inside the container is a standard ZIP archive that contains the structured package contents described in <a href="PackageFormats.html">Package Formats</a>:</p>
 
-<div class="code"><pre>Layer 1:  Binary Container  (this page)
-            ↓ descramble + HMAC verify
-Layer 2:  ZIP Archive       (see Package Formats)
-            ↓ extract entries
-Layer 3:  Package Contents  (manifest.json, signature.json, library/, demo_methods/, icon/)
-</pre></div>
+<img src="images/diagram-relationship-layers.svg" alt="Three abstraction layers: Binary Container → ZIP Archive → Package Contents" class="doc-diagram">
 
 <h2>Related Topics</h2>
 <ul>

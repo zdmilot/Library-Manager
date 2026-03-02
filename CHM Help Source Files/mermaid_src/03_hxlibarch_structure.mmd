@@ -1,0 +1,15 @@
+graph TD
+    classDef container fill:#5f2c8a,color:#fff,stroke:#3d1a5c,font-weight:bold
+    classDef meta fill:#f0e6ff,color:#5f2c8a,stroke:#8a6bbf
+    classDef pkg fill:#e8f4e8,color:#2c6b2c,stroke:#5cb85c
+
+    ARC["📦 bundle.hxlibarch<br/><i>binary container → internal ZIP</i>"]:::container
+    AM["📄 archive_manifest.json<br/><small>Archive-level metadata</small>"]:::meta
+    PA["📦 LibraryA.hxlibpkg<br/><small>Binary container for LibraryA</small>"]:::pkg
+    PB["📦 LibraryB.hxlibpkg<br/><small>Binary container for LibraryB</small>"]:::pkg
+    PC["📦 LibraryC.hxlibpkg<br/><small>Binary container for LibraryC</small>"]:::pkg
+
+    ARC --> AM
+    ARC --> PA
+    ARC --> PB
+    ARC --> PC

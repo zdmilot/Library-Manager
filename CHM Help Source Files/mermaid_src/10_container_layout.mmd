@@ -1,0 +1,25 @@
+block-beta
+    columns 1
+    block:CONTAINER["Container File"]:1
+        columns 1
+        block:HEADERBLOCK["Header (48 bytes)"]:1
+            columns 4
+            MAGIC["Magic\n8B"]:1
+            FLAGS["Flags\n4B"]:1
+            LEN["PayloadLen\n4B"]:1
+            HMAC["HMAC-SHA256\n32B"]:1
+        end
+        block:PAYLOAD["Scrambled Payload (PayloadLen bytes)"]:1
+            columns 1
+            DATA["XOR-scrambled ZIP data\n(not readable by standard tools)"]
+        end
+    end
+
+    style CONTAINER fill:#f8f9fa,stroke:#333,color:#333
+    style HEADERBLOCK fill:#d4e6f1,stroke:#2c5f8a,color:#2c5f8a
+    style MAGIC fill:#2c5f8a,color:#fff
+    style FLAGS fill:#85929e,color:#fff
+    style LEN fill:#85929e,color:#fff
+    style HMAC fill:#8a2c2c,color:#fff
+    style PAYLOAD fill:#e8f8e8,stroke:#2c8a3f,color:#2c8a3f
+    style DATA fill:#2c8a3f,color:#fff

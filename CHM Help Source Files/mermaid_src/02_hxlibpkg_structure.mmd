@@ -1,0 +1,41 @@
+graph TD
+    classDef container fill:#2c5f8a,color:#fff,stroke:#1a3d5c,font-weight:bold
+    classDef meta fill:#f0e6ff,color:#5f2c8a,stroke:#8a6bbf
+    classDef dir fill:#e8f0e8,color:#2c5f2c,stroke:#5c8a5c,font-weight:bold
+    classDef file fill:#f5f5f5,color:#333,stroke:#999
+
+    PKG["📦 MyLibrary.hxlibpkg<br/><i>binary container → internal ZIP</i>"]:::container
+
+    MANIFEST["📄 manifest.json<br/><small>Required: library metadata</small>"]:::meta
+    SIGNATURE["📄 signature.json<br/><small>Automatic: HMAC-SHA256 integrity signature</small>"]:::meta
+
+    LIB["📁 library/<br/><small>Library payload files</small>"]:::dir
+    L1["MyLibrary.hsl"]:::file
+    L2["MyLibrary.hs_"]:::file
+    L3["MyLibrary.stp"]:::file
+    L4["MyLibrary.bmp"]:::file
+    L5["MyLibrary.chm"]:::file
+
+    DEMO["📁 demo_methods/<br/><small>Optional: demo/example methods</small>"]:::dir
+    D1["Demo_MyLibrary.hsl"]:::file
+    D2["Demo_MyLibrary.lay"]:::file
+
+    ICON["📁 icon/<br/><small>Optional: library icon image</small>"]:::dir
+    I1["MyLibrary.png"]:::file
+
+    PKG --> MANIFEST
+    PKG --> SIGNATURE
+    PKG --> LIB
+    PKG --> DEMO
+    PKG --> ICON
+
+    LIB --> L1
+    LIB --> L2
+    LIB --> L3
+    LIB --> L4
+    LIB --> L5
+
+    DEMO --> D1
+    DEMO --> D2
+
+    ICON --> I1
