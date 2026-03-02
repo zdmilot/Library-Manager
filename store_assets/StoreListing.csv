@@ -1,0 +1,95 @@
+Field,Type,English
+ProductName,Text,Library Manager for Venus 6
+Description,Text,"Library Manager for Venus 6 is a powerful desktop application for managing, versioning, importing, exporting, and packaging Hamilton VENUS liquid handling libraries.
+
+Designed for laboratory automation professionals, it provides a complete solution for organizing HSL libraries used with Hamilton VENUS 6 software. Whether you work in a regulated GxP environment or an open research lab, Library Manager adapts to your workflow.
+
+Key capabilities include:
+
+• Import and export Hamilton VENUS HSL libraries with full version tracking
+• Create and verify signed library packages (.hxlibpkg) for secure distribution
+• Bundle multiple libraries into archive files (.hxlibarch) for bulk deployment
+• Maintain a complete audit trail with automatic version history and rollback support
+• Organize libraries into custom groups with drag-and-drop sorting
+• Search and filter libraries by name, author, organization, or version
+• Regulated Environment Mode enforces organization-level restrictions, password-protected settings, and integrity verification via SHA-256 hashing
+• Full command-line interface (CLI) for scripting and CI/CD pipeline integration
+• Dark mode support for comfortable extended use
+• Built-in CHM help documentation
+
+Library Manager for Venus 6 runs as a native Windows desktop application built on NW.js. It requires no internet connection and stores all data locally on your machine.
+
+This tool is ideal for:
+- Lab automation engineers managing Hamilton VENUS method libraries
+- Quality teams enforcing library integrity in regulated environments
+- System integrators packaging and distributing libraries across instruments
+
+Version 1.4.8 includes security improvements, regulated mode enhancements, and numerous bug fixes."
+WhatsNew,Text,"Version 1.4.8 — Security and stability improvements: enhanced password hashing for regulated mode, fixed organization enforcement bypass, improved system library integrity verification, and over 10 bug fixes across import/export and CLI operations."
+ProductFeatures1,Text,Import and export Hamilton VENUS HSL libraries with version tracking
+ProductFeatures2,Text,Create signed library packages (.hxlibpkg) for secure distribution
+ProductFeatures3,Text,Bundle libraries into archive files (.hxlibarch) for bulk deployment
+ProductFeatures4,Text,Full version history with one-click rollback to any previous version
+ProductFeatures5,Text,Regulated Environment Mode with organization-level access controls
+ProductFeatures6,Text,SHA-256 integrity verification for system library protection
+ProductFeatures7,Text,Password-protected settings in regulated environments
+ProductFeatures8,Text,Custom library groups with drag-and-drop organization
+ProductFeatures9,Text,Powerful search and filtering by name author or organization
+ProductFeatures10,Text,Complete command-line interface (CLI) for automation and scripting
+ProductFeatures11,Text,Dark mode for comfortable extended use
+ProductFeatures12,Text,Works fully offline — no internet connection required
+ProductFeatures13,Text,Complete audit trail for every library change
+ProductFeatures14,Text,Built-in CHM help documentation
+ProductFeatures15,Text,Binary container format for efficient library packaging
+ProductFeatures16,Text,
+ProductFeatures17,Text,
+ProductFeatures18,Text,
+ProductFeatures19,Text,
+ProductFeatures20,Text,
+ShortDescription,Text,"Manage, version, import, export, and package Hamilton VENUS 6 liquid handling libraries. Supports regulated environments, signed packages, version rollback, and CLI automation."
+SearchTerms1,Text,Hamilton VENUS
+SearchTerms2,Text,library manager
+SearchTerms3,Text,lab automation
+SearchTerms4,Text,liquid handling
+SearchTerms5,Text,HSL library
+SearchTerms6,Text,laboratory
+SearchTerms7,Text,regulated environment
+Applicable license terms,Text,https://github.com/zdmilot/Library-Manager-for-Venus-6/blob/main/LICENSE
+Copyright,Text,Copyright (c) 2026 Zachary Milot. All rights reserved.
+DevelopedBy,Text,Zachary Milot
+RequirementsMinimum1,Text,Windows 10 (x64) or later
+RequirementsMinimum2,Text,200 MB available disk space
+RequirementsMinimum3,Text,4 GB RAM
+RequirementsMinimum4,Text,1280 x 800 display resolution
+RequirementsMinimum5,Text,
+RequirementsMinimum6,Text,
+RequirementsMinimum7,Text,
+RequirementsMinimum8,Text,
+RequirementsMinimum9,Text,
+RequirementsMinimum10,Text,
+RequirementsMinimum11,Text,
+RequirementsRecommended1,Text,Windows 10/11 (x64)
+RequirementsRecommended2,Text,500 MB available disk space
+RequirementsRecommended3,Text,8 GB RAM
+RequirementsRecommended4,Text,1920 x 1080 display resolution
+RequirementsRecommended5,Text,Hamilton VENUS 6 software installed
+RequirementsRecommended6,Text,
+RequirementsRecommended7,Text,
+RequirementsRecommended8,Text,
+RequirementsRecommended9,Text,
+RequirementsRecommended10,Text,
+RequirementsRecommended11,Text,
+StoreLogos1,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,StoreLogo_300x300.png
+StoreLogos2,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,
+Screenshots1,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,Screenshot1_MainWindow.png
+Screenshots2,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,Screenshot2_LibraryView.png
+Screenshots3,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,Screenshot3_SplashScreen.png
+Screenshots4,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,Screenshot4_LibraryDetail.png
+Screenshots5,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,Screenshot5_ImportPreview.png
+Screenshots6,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,Screenshot6_Settings.png
+Screenshots7,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,Screenshot7_Packager.png
+Screenshots8,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,
+Screenshots9,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,
+Screenshots10,Provide the file name only if it is in the same folder. Provide relative path to image starting with the subfolder name otherwise,
+HeroArts,Text,HeroArt_1920x1080.png
+Trailers,Text,
