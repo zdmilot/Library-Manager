@@ -135,8 +135,8 @@ dd {
 img {
 	border: none;
 	margin: 10px;
-	max-width: 100%;
-	max-height: 95vh;
+	max-width: 75vw;
+	max-height: 75vh;
 	height: auto;
 	box-sizing: border-box;
 }
@@ -308,10 +308,10 @@ div.image-placeholder {
 }
 
 img.doc-screenshot {
-	max-width: 100%;
+	max-width: 75vw;
 	width: auto;
 	height: auto;
-	max-height: 600px;
+	max-height: 75vh;
 	object-fit: contain;
 	border: 2px solid #b0b8c1;
 	border-radius: 6px;
@@ -323,10 +323,10 @@ img.doc-screenshot {
 }
 
 img.doc-diagram {
-	max-width: 100%;
+	max-width: 75vw;
 	width: auto;
 	height: auto;
-	max-height: 500px;
+	max-height: 75vh;
 	object-fit: contain;
 	border: 2px solid #c5ccd3;
 	border-radius: 6px;
