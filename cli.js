@@ -232,8 +232,8 @@ function getVENUSVersion() {
  */
 function appendAuditTrailEntry(userDataDir, entry) {
     try {
-        var filePath = path.join(userDataDir, 'audit_trail.json');
-        var trail = [];
+        const filePath = path.join(userDataDir, 'audit_trail.json');
+        let trail = [];
         if (fs.existsSync(filePath)) {
             try {
                 trail = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -245,9 +245,9 @@ function appendAuditTrailEntry(userDataDir, entry) {
         trail.push(entry);
 
         // Rotate audit trail when it exceeds 10,000 entries to prevent unbounded growth
-        var MAX_AUDIT_ENTRIES = 10000;
+        const MAX_AUDIT_ENTRIES = 10000;
         if (trail.length > MAX_AUDIT_ENTRIES) {
-            var archivePath = filePath.replace(/\.json$/, '_' + new Date().toISOString().replace(/[:.]/g, '-') + '.json');
+            const archivePath = filePath.replace(/\.json$/, '_' + new Date().toISOString().replace(/[:.]/g, '-') + '.json');
             try {
                 fs.writeFileSync(archivePath, JSON.stringify(trail.slice(0, trail.length - MAX_AUDIT_ENTRIES), null, 2), 'utf8');
             } catch (_) { /* rotation archive is best-effort */ }
@@ -326,7 +326,7 @@ function ensureLocalDataDir(dirPath) {
         'settings.json': '[{"_id":"0"}]',
         'installed_libs.json': '[]',
         'groups.json': '[]',
-        'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gOEM","method-ids":[],"locked":true}]',
+        'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gStarred","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gOEM","method-ids":[],"locked":true}]',
         'links.json': '[]'
     };
     for (const [fname, content] of Object.entries(seeds)) {
@@ -419,268 +419,14 @@ const computeLibraryHashes = shared.computeLibraryHashes;
  * Strip string literals and comments from HSL source so that keyword searches
  * (namespace, function) are not confused by content inside strings / comments.
  */
-function sanitizeHslForParsing(text) {
-    const chars = text.split('');
-    let i = 0;
-    while (i < chars.length) {
-        const ch = chars[i];
-        const next = (i + 1 < chars.length) ? chars[i + 1] : '';
-
-        // String literal
-        if (ch === '"') {
-            chars[i] = ' ';
-            let j = i + 1;
-            while (j < chars.length) {
-                const c = chars[j];
-                if (c === '\\' && j + 1 < chars.length) {
-                    chars[j] = ' '; chars[j + 1] = ' '; j += 2; continue;
-                }
-                chars[j] = (c === '\n' || c === '\r') ? c : ' ';
-                if (c === '"') { j++; break; }
-                j++;
-            }
-            i = j; continue;
-        }
-        // Line comment
-        if (ch === '/' && next === '/') {
-            chars[i] = ' '; chars[i + 1] = ' '; i += 2;
-            while (i < chars.length && chars[i] !== '\n') { chars[i] = ' '; i++; }
-            continue;
-        }
-        // Block comment
-        if (ch === '/' && next === '*') {
-            chars[i] = ' '; chars[i + 1] = ' '; i += 2;
-            while (i < chars.length) {
-                if (chars[i] === '*' && i + 1 < chars.length && chars[i + 1] === '/') {
-                    chars[i] = ' '; chars[i + 1] = ' '; i += 2; break;
-                }
-                chars[i] = (chars[i] === '\n' || chars[i] === '\r') ? chars[i] : ' ';
-                i++;
-            }
-            continue;
-        }
-        i++;
-    }
-    return chars.join('');
-}
-
-/**
- * Split a comma-separated parameter list respecting nested parentheses.
- */
-function splitHslArgs(paramList) {
-    const parts = [];
-    let current = '';
-    let depth = 0;
-    for (let ci = 0; ci < paramList.length; ci++) {
-        const c = paramList[ci];
-        if (c === '(') { depth++; current += c; continue; }
-        if (c === ')') { depth = Math.max(0, depth - 1); current += c; continue; }
-        if (c === ',' && depth === 0) { parts.push(current.trim()); current = ''; continue; }
-        current += c;
-    }
-    if (current.trim().length > 0) parts.push(current.trim());
-    return parts;
-}
-
-/**
- * Parse a single HSL parameter string like "variable& name[]" into a descriptor.
- */
-function parseHslParameter(param) {
-    const trimmed = param.trim();
-    const rawNoDefault = trimmed.indexOf('=') !== -1 ? trimmed.slice(0, trimmed.indexOf('=')).trim() : trimmed;
-    const isArray = /\[\]\s*$/.test(rawNoDefault);
-    const noArray = rawNoDefault.replace(/\[\]\s*$/, '').trim();
-    const nameMatch = /([A-Za-z_]\w*)\s*$/.exec(noArray);
-    const nameText = nameMatch ? nameMatch[1] : noArray;
-    let beforeName = nameMatch ? noArray.slice(0, nameMatch.index).trim() : '';
-    const isByRef = beforeName.indexOf('&') !== -1;
-    beforeName = beforeName.replace(/&/g, '').trim();
-    return {
-        type: beforeName || 'variable',
-        name: nameText,
-        byRef: isByRef,
-        array: isArray
-    };
-}
-
-/**
- * Extract the doc-comment block immediately above a function definition.
- */
-function extractHslDocComment(originalLines, functionStartLine) {
-    let i = functionStartLine - 1;
-    while (i >= 0 && originalLines[i].trim() === '') i--;
-    if (i < 0) return '';
-
-    const line = originalLines[i].trim();
-    // Single-line comment block
-    if (line.indexOf('//') === 0) {
-        const buf = [];
-        while (i >= 0 && originalLines[i].trim().indexOf('//') === 0) {
-            buf.push(originalLines[i].trim().replace(/^\/\/\s?/, ''));
-            i--;
-        }
-        buf.reverse();
-        return buf.join('\n').trim();
-    }
-    // Block comment
-    if (line.indexOf('*/') !== -1) {
-        const buf = [];
-        while (i >= 0) {
-            buf.push(originalLines[i]);
-            if (originalLines[i].indexOf('/*') !== -1) break;
-            i--;
-        }
-        buf.reverse();
-        return buf.join('\n')
-            .replace(/^\s*\/\*+/, '')
-            .replace(/\*+\/\s*$/, '')
-            .split(/\r?\n/)
-            .map(function(s) { return s.replace(/^\s*\*\s?/, ''); })
-            .join('\n')
-            .trim();
-    }
-    return '';
-}
-
-/**
- * Parse all public functions from an HSL source string.
- * Returns an array of { name, qualifiedName, params, returnType, doc, isPrivate }.
- * params is an array of { type, name, byRef, array }.
- */
-function parseHslFunctions(text, fileName) {
-    const sanitized = sanitizeHslForParsing(text);
-    const originalLines = text.split(/\r?\n/);
-    const cleanLines = sanitized.split(/\r?\n/);
-    const functions = [];
-
-    const namespaceStack = [];
-    let braceDepth = 0;
-    let pendingNamespace = null;
-
-    let collectingFunction = false;
-    let functionStartLine = -1;
-    let functionHeaderParts = [];
-
-    for (let lineIndex = 0; lineIndex < cleanLines.length; lineIndex++) {
-        const cleanLine = cleanLines[lineIndex];
-        const originalLine = originalLines[lineIndex] || '';
-
-        if (!collectingFunction) {
-            const nsMatch = /^\s*(?:(?:private|public|static|global|const|synchronized)\s+)*namespace\s+([A-Za-z_]\w*)\b/.exec(cleanLine);
-            if (nsMatch) {
-                pendingNamespace = nsMatch[1];
-            }
-            if (/^\s*(?:(?:private|public|static|global|const|synchronized)\s+)*function\b/.test(cleanLine)) {
-                collectingFunction = true;
-                functionStartLine = lineIndex;
-                functionHeaderParts = [originalLine];
-            }
-        } else {
-            functionHeaderParts.push(originalLine);
-        }
-
-        if (collectingFunction) {
-            const joinedClean = sanitizeHslForParsing(functionHeaderParts.join('\n'));
-            const openCount  = (joinedClean.match(/\(/g) || []).length;
-            const closeCount = (joinedClean.match(/\)/g) || []).length;
-            const parenDelta = openCount - closeCount;
-            const hasTerminator = /[;{]/.test(joinedClean);
-            if (parenDelta <= 0 && hasTerminator) {
-                const joinedOriginal = functionHeaderParts.join('\n');
-                const fnMatch = /^\s*((?:(?:private|public|static|global|const|synchronized)\s+)*)function\s+([A-Za-z_]\w*)\s*\(([\s\S]*?)\)\s*([A-Za-z_]\w*)\s*(?:;|\{)/m.exec(joinedOriginal);
-                if (fnMatch) {
-                    const modifiers = fnMatch[1] || '';
-                    const name = fnMatch[2];
-                    const paramsRaw = fnMatch[3] || '';
-                    const returnType = fnMatch[4] || 'variable';
-                    const isPrivate = /\bprivate\b/.test(modifiers);
-
-                    const params = splitHslArgs(paramsRaw)
-                        .filter(function(p) { return p.length > 0; })
-                        .map(parseHslParameter);
-
-                    const nsPrefix = namespaceStack.map(function(n) { return n.name; }).join('::');
-                    const qualifiedName = nsPrefix.length > 0 ? nsPrefix + '::' + name : name;
-                    const doc = extractHslDocComment(originalLines, functionStartLine);
-
-                    functions.push({
-                        name:          name,
-                        qualifiedName: qualifiedName,
-                        params:        params,
-                        returnType:    returnType,
-                        doc:           doc,
-                        isPrivate:     isPrivate,
-                        file:          fileName || ''
-                    });
-                }
-                collectingFunction = false;
-                functionStartLine = -1;
-                functionHeaderParts = [];
-            }
-        }
-
-        // Track brace depth for namespace scoping
-        for (let ci = 0; ci < cleanLine.length; ci++) {
-            const ch = cleanLine[ci];
-            if (ch === '{') {
-                braceDepth++;
-                if (pendingNamespace) {
-                    namespaceStack.push({ name: pendingNamespace, depth: braceDepth });
-                    pendingNamespace = null;
-                }
-            } else if (ch === '}') {
-                while (namespaceStack.length > 0 && namespaceStack[namespaceStack.length - 1].depth >= braceDepth) {
-                    namespaceStack.pop();
-                }
-                braceDepth = Math.max(0, braceDepth - 1);
-            }
-        }
-    }
-    return functions;
-}
-
-/**
- * Extract public functions from all .hsl files in the given directory.
- * Returns an array of function descriptors suitable for storing in the DB.
- */
-function extractPublicFunctions(libFiles, libBasePath) {
-    const allFunctions = [];
-    libFiles.forEach(function(fname) {
-        const ext = path.extname(fname).toLowerCase();
-        if (ext !== '.hsl') return;
-        const fullPath = path.join(libBasePath, fname);
-        try {
-            const text = fs.readFileSync(fullPath, 'utf8');
-            const fns = parseHslFunctions(text, fname);
-            fns.forEach(function(fn) {
-                if (!fn.isPrivate) {
-                    allFunctions.push({
-                        name:          fn.name,
-                        qualifiedName: fn.qualifiedName,
-                        params:        fn.params,
-                        returnType:    fn.returnType,
-                        doc:           fn.doc,
-                        file:          fn.file
-                    });
-                }
-            });
-        } catch (_) { /* skip unreadable files */ }
-    });
-    return allFunctions;
-}
-
-/**
- * Extract #include directives from HSL source text.
- */
-function extractHslIncludes(text) {
-    const includes = [];
-    const pattern = /^\s*#include\s+"([^"]+)"/gm;
-    let m;
-    while ((m = pattern.exec(text)) !== null) {
-        includes.push(m[1].trim());
-    }
-    return includes;
-}
+// HSL parser functions - delegated to shared.js
+const sanitizeHslForParsing = shared.sanitizeHslForParsing;
+const splitHslArgs          = shared.splitHslArgs;
+const parseHslParameter     = shared.parseHslParameter;
+const extractHslDocComment  = shared.extractHslDocComment;
+const parseHslFunctions     = shared.parseHslFunctions;
+const extractPublicFunctions = shared.extractPublicFunctions;
+const extractHslIncludes    = shared.extractHslIncludes;
 
 /**
  * Extract required dependencies from a library's .hsl files.
@@ -1022,23 +768,23 @@ function listCachedVersions(libName, args) {
     const entries = files.map(function (f) {
         const fullPath = path.join(libDir, f);
         // Try to read manifest for accurate version info
-        var version = '?';
-        var createdDate = '';
-        var author = '';
+        let version = '?';
+        let createdDate = '';
+        let author = '';
         try {
-            var rawBuf = fs.readFileSync(fullPath);
-            var zipBuf = unpackContainer(rawBuf, CONTAINER_MAGIC_PKG);
-            var zip = new AdmZip(zipBuf);
-            var me  = zip.getEntry('manifest.json');
+            const rawBuf = fs.readFileSync(fullPath);
+            const zipBuf = unpackContainer(rawBuf, CONTAINER_MAGIC_PKG);
+            const zip = new AdmZip(zipBuf);
+            const me  = zip.getEntry('manifest.json');
             if (me) {
-                var m = JSON.parse(zip.readAsText(me));
+                const m = JSON.parse(zip.readAsText(me));
                 version     = m.version      || '?';
                 createdDate = m.created_date  || '';
                 author      = m.author        || '';
             }
         } catch (_) {}
 
-        var stat = fs.statSync(fullPath);
+        const stat = fs.statSync(fullPath);
         return {
             file:       f,
             version:    version,
@@ -1134,8 +880,8 @@ function cmdImportLib(args) {
 
     let zip, manifest;
     try {
-        var rawPkgBuf = fs.readFileSync(filePath);
-        var zipBuf = unpackContainer(rawPkgBuf, CONTAINER_MAGIC_PKG);
+        const rawPkgBuf = fs.readFileSync(filePath);
+        const zipBuf = unpackContainer(rawPkgBuf, CONTAINER_MAGIC_PKG);
         zip = new AdmZip(zipBuf);
         const me = zip.getEntry('manifest.json');
         if (!me) die('Invalid package: manifest.json not found');
@@ -1162,15 +908,15 @@ function cmdImportLib(args) {
     }
 
     // ---- Version compatibility warnings ----
-    var pkgAppVersion = manifest.app_version || '';
-    var pkgFormatVersion = manifest.format_version || '1.0';
-    var currentAppVersion = shared.getAppVersion();
+    const pkgAppVersion = manifest.app_version || '';
+    const pkgFormatVersion = manifest.format_version || '1.0';
+    const currentAppVersion = shared.getAppVersion();
     if (pkgAppVersion && currentAppVersion && pkgAppVersion !== currentAppVersion) {
         console.log('  NOTE: Package was created with Library Manager v' + pkgAppVersion +
             ' (you are running v' + currentAppVersion + ').');
         // Simple semver major comparison
-        var pkgMajor = parseInt(pkgAppVersion.split('.')[0], 10) || 0;
-        var curMajor = parseInt(currentAppVersion.split('.')[0], 10) || 0;
+        const pkgMajor = parseInt(pkgAppVersion.split('.')[0], 10) || 0;
+        const curMajor = parseInt(currentAppVersion.split('.')[0], 10) || 0;
         if (pkgMajor > curMajor) {
             console.log('  WARNING: Package is from a NEWER major version. Some fields or features may not be recognized.');
         } else if (pkgMajor < curMajor) {
@@ -1280,8 +1026,8 @@ function cmdImportArchive(args) {
 
     let archiveZip;
     try {
-        var rawArchBuf = fs.readFileSync(filePath);
-        var outerZipBuf = unpackContainer(rawArchBuf, CONTAINER_MAGIC_ARC);
+        const rawArchBuf = fs.readFileSync(filePath);
+        const outerZipBuf = unpackContainer(rawArchBuf, CONTAINER_MAGIC_ARC);
         archiveZip = new AdmZip(outerZipBuf);
     } catch (e) {
         die('Failed to open archive: ' + e.message);
@@ -1800,7 +1546,7 @@ function cmdCreatePackage(args) {
     // ---- Sanitize & validate tags ----
     if (spec.tags && Array.isArray(spec.tags)) {
         spec.tags = shared.sanitizeTags(spec.tags);
-        var tagCheck = shared.filterReservedTags(spec.tags);
+        const tagCheck = shared.filterReservedTags(spec.tags);
         if (tagCheck.removed.length > 0) {
             die('Tags contain reserved keywords that cannot be used: ' + tagCheck.removed.join(', ') +
                 '\nThe reserved tag keywords are: ' + shared.RESERVED_TAGS.join(', '));
@@ -1909,7 +1655,7 @@ function cmdCreatePackage(args) {
     };
 
     // Preserve any extra user-supplied spec fields for forward compatibility
-    var knownSpecKeys = ['library_name','author','organization','version','venus_compatibility',
+    const knownSpecKeys = ['library_name','author','organization','version','venus_compatibility',
         'description','github_url','tags','library_image','library_files','demo_method_files',
         'help_files','com_register_dlls','$schema','_comment_paths','_comment'];
     Object.keys(spec).forEach(function(k) {
@@ -2305,14 +2051,38 @@ function cmdRollbackLib(args) {
 
     let zip, manifest;
     try {
-        var rawCacheBuf = fs.readFileSync(target.fullPath);
-        var cacheBuf = unpackContainer(rawCacheBuf, CONTAINER_MAGIC_PKG);
+        const rawCacheBuf = fs.readFileSync(target.fullPath);
+        const cacheBuf = unpackContainer(rawCacheBuf, CONTAINER_MAGIC_PKG);
         zip = new AdmZip(cacheBuf);
         const me = zip.getEntry('manifest.json');
         if (!me) die('Cached package is corrupt: manifest.json not found');
         manifest = JSON.parse(zip.readAsText(me));
     } catch (e) {
         die('Failed to read cached package: ' + e.message);
+    }
+
+    // ---- Library name validation ----
+    const rollbackLibName = manifest.library_name || libName;
+    if (!isValidLibraryName(rollbackLibName)) {
+        die('Invalid library name in cached package: "' + rollbackLibName + '". Package may be corrupt.');
+    }
+
+    // ---- Signature verification ----
+    const sigResult = verifyPackageSignature(zip);
+    if (sigResult.signed && !sigResult.valid) {
+        die('Cached package signature verification FAILED:\n  ' + sigResult.errors.join('\n  ') + '\nRollback aborted.');
+    }
+
+    // ---- Restricted author check ----
+    const rollbackAuthor = (manifest.author || '').trim();
+    const rollbackOrg = (manifest.organization || '').trim();
+    if ((isRestrictedAuthor(rollbackAuthor) || isRestrictedAuthor(rollbackOrg)) && !isSystemLibraryByName(rollbackLibName)) {
+        if (!args['author-password']) {
+            die('Cached package uses a restricted OEM author/organization name. Use --author-password <password> to authorize.');
+        }
+        if (!validateAuthorPassword(args['author-password'])) {
+            die('Incorrect author password. Rollback of packages with restricted OEM names requires valid authorization.');
+        }
     }
 
     const libDestDir  = path.join(libBasePath, libName);
@@ -2517,8 +2287,12 @@ rollback-lib
   --lib-dir <path>                 Override library install root
   --met-dir <path>                 Override methods (demo) install root
   --no-group                       Skip auto-assigning to a library group
+  --author-password <pw>           Required when rolling back a restricted-author package
 
   If neither --version nor --index is given, available versions are listed.
+  The cached package signature is verified before installation.
+  If the package was published by a restricted author (e.g. Hamilton),
+  you must supply --author-password to authorise the rollback.
 
   Examples:
     node cli.js rollback-lib --name "MyLibrary" --version "1.0.0"

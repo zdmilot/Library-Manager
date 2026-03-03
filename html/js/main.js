@@ -831,7 +831,7 @@
 				'installed_libs.json': '[]',
 				'publisher_registry.json': '{"publishers":[],"tags":[],"maxPublisherSpaces":0}',
 				'groups.json': '[]',
-				'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gOEM","method-ids":[],"locked":true}]',
+				'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gStarred","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gOEM","method-ids":[],"locked":true}]',
 				'links.json': '[{"_id":"method-editor","name":"Method Editor","description":"","icon-customImage":"HxMet.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxMetEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lc-editor","name":"Liquid Class Editor","description":"","icon-customImage":"HxLiq.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxCoreLiquidEditor.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lbw-editor","name":"Labware Editor","description":"","icon-customImage":"HxLbw.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxLabwrEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"hsl-editor","name":"HSL Editor","description":"","icon-customImage":"HxHSL.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxHSLMetEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"sysCfg-editor","name":"System Configuration Editor","description":"","icon-customImage":"HxCfg.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\Hamilton.HxConfigEditor.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"run-control","group-id":"gEditors","name":"Run Control","description":"","icon-customImage":"HxRun.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxRun.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"ham-version","group-id":"gEditors","name":"Hamilton Version","description":"","icon-customImage":"HxVer.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxVersion.exe","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"bin-folder","name":"Bin","description":"VENUS software executables and dlls","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"cfg-folder","name":"Config","description":"VENUS software configuration files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Config","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lbw-folder","name":"Labware","description":"VENUS software labware definitions for carriers, racks, tubes and consumables","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Labware","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lib-folder","name":"Library","description":"VENUS software library files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Library","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"log-folder","name":"LogFiles","description":"Run traces and STAR communication logs","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Logfiles","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"met-folder","name":"Methods","description":"Method files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Methods","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0}]'
 			};
 			for (var fname in seedFiles) {
@@ -1269,6 +1269,37 @@
 
 		// Re-export from shared for local use
 		var isRestrictedAuthor = shared.isRestrictedAuthor;
+
+		/**
+		 * Add a library ID to the gOEM tree group entry. Creates the entry if missing.
+		 * Uses raw file I/O to safely update tree.json (diskdb update may replace entire record).
+		 * @param {string} libId - The library _id to add to the OEM group
+		 * @returns {string} "gOEM" for use as targetGroupId
+		 */
+		function addToOemTreeGroup(libId) {
+			var treePath = path.join(USER_DATA_DIR, 'tree.json');
+			var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
+			var found = false;
+			for (var i = 0; i < treeData.length; i++) {
+				if (treeData[i]["group-id"] === "gOEM") {
+					var ids = (treeData[i]["method-ids"] || []).slice();
+					ids.push(libId);
+					treeData[i]["method-ids"] = ids;
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				treeData.push({
+					"group-id": "gOEM",
+					"method-ids": [libId],
+					"locked": true
+				});
+			}
+			fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
+			db_tree = db.connect(USER_DATA_DIR, ['tree']);
+			return "gOEM";
+		}
 
 		/**
 		 * Validate the password for using a restricted author name.
@@ -6676,223 +6707,14 @@
 		var imp_zipData = null;
 		var imp_filePath = null;
 
-		// ---- HSL function parser - extracts public function signatures ----
-		// Ported from the VS Code HSL IntelliSense extension.
-
-		/**
-		 * Strip string literals and comments from HSL source so that keyword
-		 * searches (namespace, function) are not confused by content inside strings/comments.
-		 */
-		function sanitizeHslForParsing(text) {
-			var chars = text.split('');
-			var i = 0;
-			while (i < chars.length) {
-				var ch = chars[i];
-				var next = (i + 1 < chars.length) ? chars[i + 1] : '';
-
-				if (ch === '"') {
-					chars[i] = ' ';
-					var j = i + 1;
-					while (j < chars.length) {
-						var c = chars[j];
-						if (c === '\\' && j + 1 < chars.length) { chars[j] = ' '; chars[j + 1] = ' '; j += 2; continue; }
-						chars[j] = (c === '\n' || c === '\r') ? c : ' ';
-						if (c === '"') { j++; break; }
-						j++;
-					}
-					i = j; continue;
-				}
-				if (ch === '/' && next === '/') {
-					chars[i] = ' '; chars[i + 1] = ' '; i += 2;
-					while (i < chars.length && chars[i] !== '\n') { chars[i] = ' '; i++; }
-					continue;
-				}
-				if (ch === '/' && next === '*') {
-					chars[i] = ' '; chars[i + 1] = ' '; i += 2;
-					while (i < chars.length) {
-						if (chars[i] === '*' && i + 1 < chars.length && chars[i + 1] === '/') { chars[i] = ' '; chars[i + 1] = ' '; i += 2; break; }
-						chars[i] = (chars[i] === '\n' || chars[i] === '\r') ? chars[i] : ' ';
-						i++;
-					}
-					continue;
-				}
-				i++;
-			}
-			return chars.join('');
-		}
-
-		function splitHslArgs(paramList) {
-			var parts = [];
-			var current = '';
-			var depth = 0;
-			for (var ci = 0; ci < paramList.length; ci++) {
-				var c = paramList[ci];
-				if (c === '(') { depth++; current += c; continue; }
-				if (c === ')') { depth = Math.max(0, depth - 1); current += c; continue; }
-				if (c === ',' && depth === 0) { parts.push(current.trim()); current = ''; continue; }
-				current += c;
-			}
-			if (current.trim().length > 0) parts.push(current.trim());
-			return parts;
-		}
-
-		function parseHslParameter(param) {
-			var trimmed = param.trim();
-			var rawNoDefault = trimmed.indexOf('=') !== -1 ? trimmed.slice(0, trimmed.indexOf('=')).trim() : trimmed;
-			var isArray = /\[\]\s*$/.test(rawNoDefault);
-			var noArray = rawNoDefault.replace(/\[\]\s*$/, '').trim();
-			var nameMatch = /([A-Za-z_]\w*)\s*$/.exec(noArray);
-			var nameText = nameMatch ? nameMatch[1] : noArray;
-			var beforeName = nameMatch ? noArray.slice(0, nameMatch.index).trim() : '';
-			var isByRef = beforeName.indexOf('&') !== -1;
-			beforeName = beforeName.replace(/&/g, '').trim();
-			return { type: beforeName || 'variable', name: nameText, byRef: isByRef, array: isArray };
-		}
-
-		function extractHslDocComment(originalLines, functionStartLine) {
-			var i = functionStartLine - 1;
-			while (i >= 0 && originalLines[i].trim() === '') i--;
-			if (i < 0) return '';
-			var line = originalLines[i].trim();
-			if (line.indexOf('//') === 0) {
-				var buf = [];
-				while (i >= 0 && originalLines[i].trim().indexOf('//') === 0) {
-					buf.push(originalLines[i].trim().replace(/^\/\/\s?/, ''));
-					i--;
-				}
-				buf.reverse();
-				return buf.join('\n').trim();
-			}
-			if (line.indexOf('*/') !== -1) {
-				var buf = [];
-				while (i >= 0) {
-					buf.push(originalLines[i]);
-					if (originalLines[i].indexOf('/*') !== -1) break;
-					i--;
-				}
-				buf.reverse();
-				return buf.join('\n').replace(/^\s*\/\*+/, '').replace(/\*+\/\s*$/, '')
-					.split(/\r?\n/).map(function(s) { return s.replace(/^\s*\*\s?/, ''); }).join('\n').trim();
-			}
-			return '';
-		}
-
-		/**
-		 * Parse all functions from an HSL source string.
-		 * Returns array of { name, qualifiedName, params, returnType, doc, isPrivate, file }.
-		 */
-		function parseHslFunctions(text, fileName) {
-			var sanitized = sanitizeHslForParsing(text);
-			var originalLines = text.split(/\r?\n/);
-			var cleanLines = sanitized.split(/\r?\n/);
-			var functions = [];
-			var namespaceStack = [];
-			var braceDepth = 0;
-			var pendingNamespace = null;
-			var collectingFunction = false;
-			var functionStartLine = -1;
-			var functionHeaderParts = [];
-
-			for (var lineIndex = 0; lineIndex < cleanLines.length; lineIndex++) {
-				var cleanLine = cleanLines[lineIndex];
-				var originalLine = originalLines[lineIndex] || '';
-
-				if (!collectingFunction) {
-					var nsMatch = /^\s*(?:(?:private|public|static|global|const|synchronized)\s+)*namespace\s+([A-Za-z_]\w*)\b/.exec(cleanLine);
-					if (nsMatch) pendingNamespace = nsMatch[1];
-					if (/^\s*(?:(?:private|public|static|global|const|synchronized)\s+)*function\b/.test(cleanLine)) {
-						collectingFunction = true;
-						functionStartLine = lineIndex;
-						functionHeaderParts = [originalLine];
-					}
-				} else {
-					functionHeaderParts.push(originalLine);
-				}
-
-				if (collectingFunction) {
-					var joinedClean = sanitizeHslForParsing(functionHeaderParts.join('\n'));
-					var openCount = (joinedClean.match(/\(/g) || []).length;
-					var closeCount = (joinedClean.match(/\)/g) || []).length;
-					if (openCount - closeCount <= 0 && /[;{]/.test(joinedClean)) {
-						var joinedOriginal = functionHeaderParts.join('\n');
-						var fnMatch = /^\s*((?:(?:private|public|static|global|const|synchronized)\s+)*)function\s+([A-Za-z_]\w*)\s*\(([\s\S]*?)\)\s*([A-Za-z_]\w*)\s*(?:;|\{)/m.exec(joinedOriginal);
-						if (fnMatch) {
-							var modifiers = fnMatch[1] || '';
-							var name = fnMatch[2];
-							var paramsRaw = fnMatch[3] || '';
-							var returnType = fnMatch[4] || 'variable';
-							var isPrivate = /\bprivate\b/.test(modifiers);
-							var params = splitHslArgs(paramsRaw).filter(function(p) { return p.length > 0; }).map(parseHslParameter);
-							var nsPrefix = namespaceStack.map(function(n) { return n.name; }).join('::');
-							var qualifiedName = nsPrefix.length > 0 ? nsPrefix + '::' + name : name;
-							var doc = extractHslDocComment(originalLines, functionStartLine);
-							functions.push({ name: name, qualifiedName: qualifiedName, params: params, returnType: returnType, doc: doc, isPrivate: isPrivate, file: fileName || '' });
-						}
-						collectingFunction = false;
-						functionStartLine = -1;
-						functionHeaderParts = [];
-					}
-				}
-
-				for (var ci = 0; ci < cleanLine.length; ci++) {
-					var ch = cleanLine[ci];
-					if (ch === '{') {
-						braceDepth++;
-						if (pendingNamespace) { namespaceStack.push({ name: pendingNamespace, depth: braceDepth }); pendingNamespace = null; }
-					} else if (ch === '}') {
-						while (namespaceStack.length > 0 && namespaceStack[namespaceStack.length - 1].depth >= braceDepth) namespaceStack.pop();
-						braceDepth = Math.max(0, braceDepth - 1);
-					}
-				}
-			}
-			return functions;
-		}
-
-		/**
-		 * Extract public functions from all .hsl files in the given directory.
-		 * @param {Array<string>} libFiles - filenames array
-		 * @param {string} libBasePath - base directory for library files
-		 * @returns {Array} array of public function descriptors
-		 */
-		function extractPublicFunctions(libFiles, libBasePath) {
-			var allFunctions = [];
-			(libFiles || []).forEach(function(fname) {
-				var ext = path.extname(fname).toLowerCase();
-				if (ext !== '.hsl') return;
-				var fullPath = path.join(libBasePath, fname);
-				try {
-					var text = fs.readFileSync(fullPath, 'utf8');
-					var fns = parseHslFunctions(text, fname);
-					fns.forEach(function(fn) {
-						if (!fn.isPrivate) {
-							allFunctions.push({
-								name: fn.name, qualifiedName: fn.qualifiedName,
-								params: fn.params, returnType: fn.returnType,
-								doc: fn.doc, file: fn.file
-							});
-						}
-					});
-				} catch(e) { /* skip unreadable files */ }
-			});
-			return allFunctions;
-		}
-
-		// ---- Required dependency scanning ----
-		/**
-		 * Extract all #include directives from an HSL source string.
-		 * Returns array of raw include targets (the path inside the quotes).
-		 * @param {string} text - HSL source code
-		 * @returns {Array<string>} raw include target strings
-		 */
-		function extractHslIncludes(text) {
-			var includes = [];
-			var pattern = /^\s*#include\s+"([^"]+)"/gm;
-			var m;
-			while ((m = pattern.exec(text)) !== null) {
-				includes.push(m[1].trim());
-			}
-			return includes;
-		}
+		// ---- HSL function parser - delegated to shared.js ----
+		var sanitizeHslForParsing = shared.sanitizeHslForParsing;
+		var splitHslArgs          = shared.splitHslArgs;
+		var parseHslParameter     = shared.parseHslParameter;
+		var extractHslDocComment  = shared.extractHslDocComment;
+		var parseHslFunctions     = shared.parseHslFunctions;
+		var extractPublicFunctions = shared.extractPublicFunctions;
+		var extractHslIncludes    = shared.extractHslIncludes;
 
 		/**
 		 * Extract all required dependencies from a library's .hsl files.
@@ -8281,40 +8103,7 @@
 
 					if (isRestrictedAuthor(rollbackAuthor) || isRestrictedAuthor(rollbackOrg)) {
 						// Restricted OEM author: route to gOEM group
-						var oemTreeEntry = null;
-						for (var ti = 0; ti < navtree.length; ti++) {
-							if (navtree[ti]["group-id"] === "gOEM") {
-								oemTreeEntry = navtree[ti];
-								break;
-							}
-						}
-						if (oemTreeEntry) {
-							targetGroupId = "gOEM";
-							var existingIds = (oemTreeEntry["method-ids"] || []).slice();
-							existingIds.push(saved._id);
-							var treePath = path.join(USER_DATA_DIR, 'tree.json');
-							var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
-							for (var ui = 0; ui < treeData.length; ui++) {
-								if (treeData[ui]["group-id"] === "gOEM") {
-									treeData[ui]["method-ids"] = existingIds;
-									break;
-								}
-							}
-							fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
-							db_tree = db.connect(USER_DATA_DIR, ['tree']);
-						} else {
-							// OEM group tree entry missing; create it
-							var treePath2 = path.join(USER_DATA_DIR, 'tree.json');
-							var treeData2 = JSON.parse(fs.readFileSync(treePath2, 'utf8'));
-							treeData2.push({
-								"group-id": "gOEM",
-								"method-ids": [saved._id],
-								"locked": true
-							});
-							fs.writeFileSync(treePath2, JSON.stringify(treeData2), 'utf8');
-							db_tree = db.connect(USER_DATA_DIR, ['tree']);
-							targetGroupId = "gOEM";
-						}
+						targetGroupId = addToOemTreeGroup(saved._id);
 					} else {
 						// Non-restricted author: add to first custom group
 						for (var ti = 0; ti < navtree.length; ti++) {
@@ -9749,40 +9538,7 @@
 
 						if (isRestrictedAuthor(archImportAuthor) || isRestrictedAuthor(archImportOrg)) {
 							// Restricted OEM author: add to the OEM group
-							var oemTreeEntry = null;
-							for (var ti = 0; ti < navtree.length; ti++) {
-								if (navtree[ti]["group-id"] === "gOEM") {
-									oemTreeEntry = navtree[ti];
-									break;
-								}
-							}
-							if (oemTreeEntry) {
-								targetGroupId = "gOEM";
-								var existingIds = (oemTreeEntry["method-ids"] || []).slice();
-								existingIds.push(saved._id);
-								var treePath = path.join(USER_DATA_DIR, 'tree.json');
-								var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
-								for (var ui = 0; ui < treeData.length; ui++) {
-									if (treeData[ui]["group-id"] === "gOEM") {
-										treeData[ui]["method-ids"] = existingIds;
-										break;
-									}
-								}
-								fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
-								db_tree = db.connect(USER_DATA_DIR, ['tree']);
-							} else {
-								// OEM group tree entry missing; create it
-								var treePath2 = path.join(USER_DATA_DIR, 'tree.json');
-								var treeData2 = JSON.parse(fs.readFileSync(treePath2, 'utf8'));
-								treeData2.push({
-									"group-id": "gOEM",
-									"method-ids": [saved._id],
-									"locked": true
-								});
-								fs.writeFileSync(treePath2, JSON.stringify(treeData2), 'utf8');
-								db_tree = db.connect(USER_DATA_DIR, ['tree']);
-								targetGroupId = "gOEM";
-							}
+							targetGroupId = addToOemTreeGroup(saved._id);
 						} else {
 							// Non-restricted author: add to first custom group
 							for (var ti = 0; ti < navtree.length; ti++) {
@@ -10783,42 +10539,8 @@
 				var savedAuthor = (manifest.author || '').trim();
 				var savedOrg = (manifest.organization || '').trim();
 				if (isRestrictedAuthor(savedAuthor) || isRestrictedAuthor(savedOrg)) {
-					// Find or create the OEM group entry in the tree
-					var oemTreeEntry = null;
-					for (var ti = 0; ti < navtree.length; ti++) {
-						if (navtree[ti]["group-id"] === "gOEM") {
-							oemTreeEntry = navtree[ti];
-							break;
-						}
-					}
-					if (oemTreeEntry) {
-						targetGroupId = "gOEM";
-						var existingIds = (oemTreeEntry["method-ids"] || []).slice();
-						existingIds.push(saved._id);
-						// Use raw file I/O to safely update tree (diskdb update may replace entire record)
-						var treePath = path.join(USER_DATA_DIR, 'tree.json');
-						var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
-						for (var ui = 0; ui < treeData.length; ui++) {
-							if (treeData[ui]["group-id"] === "gOEM") {
-								treeData[ui]["method-ids"] = existingIds;
-								break;
-							}
-						}
-						fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
-						db_tree = db.connect(USER_DATA_DIR, ['tree']);
-					} else {
-						// OEM group is hardcoded; just create the tree entry
-						var treePath2 = path.join(USER_DATA_DIR, 'tree.json');
-						var treeData2 = JSON.parse(fs.readFileSync(treePath2, 'utf8'));
-						treeData2.push({
-							"group-id": "gOEM",
-							"method-ids": [saved._id],
-							"locked": true
-						});
-						fs.writeFileSync(treePath2, JSON.stringify(treeData2), 'utf8');
-						db_tree = db.connect(USER_DATA_DIR, ['tree']);
-						targetGroupId = "gOEM";
-					}
+					// Restricted OEM author: add to the OEM group
+					targetGroupId = addToOemTreeGroup(saved._id);
 				} else {
 					// Non-restricted author: add to first custom group
 					for (var ti = 0; ti < navtree.length; ti++) {
@@ -12706,39 +12428,7 @@
 				var savedAuthor = (uLib.author || '').trim();
 				var savedOrg = (uLib.organization || '').trim();
 				if (isRestrictedAuthor(savedAuthor) || isRestrictedAuthor(savedOrg)) {
-					var oemTreeEntry = null;
-					for (var ti = 0; ti < navtree.length; ti++) {
-						if (navtree[ti]["group-id"] === "gOEM") {
-							oemTreeEntry = navtree[ti];
-							break;
-						}
-					}
-					if (oemTreeEntry) {
-						targetGroupId = "gOEM";
-						var existingIds = (oemTreeEntry["method-ids"] || []).slice();
-						existingIds.push(saved._id);
-						var treePath = path.join(USER_DATA_DIR, 'tree.json');
-						var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
-						for (var ui = 0; ui < treeData.length; ui++) {
-							if (treeData[ui]["group-id"] === "gOEM") {
-								treeData[ui]["method-ids"] = existingIds;
-								break;
-							}
-						}
-						fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
-						db_tree = db.connect(USER_DATA_DIR, ['tree']);
-					} else {
-						var treePath2 = path.join(USER_DATA_DIR, 'tree.json');
-						var treeData2 = JSON.parse(fs.readFileSync(treePath2, 'utf8'));
-						treeData2.push({
-							"group-id": "gOEM",
-							"method-ids": [saved._id],
-							"locked": true
-						});
-						fs.writeFileSync(treePath2, JSON.stringify(treeData2), 'utf8');
-						db_tree = db.connect(USER_DATA_DIR, ['tree']);
-						targetGroupId = "gOEM";
-					}
+					targetGroupId = addToOemTreeGroup(saved._id);
 				} else {
 					for (var ti = 0; ti < navtree.length; ti++) {
 						var gEntry = getGroupById(navtree[ti]["group-id"]);

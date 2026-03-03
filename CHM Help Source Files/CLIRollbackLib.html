@@ -26,6 +26,7 @@
 <tr><td><code>--met-dir &lt;path&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Override methods installation directory</td></tr>
 <tr><td><code>--db-path &lt;path&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Override user data directory</td></tr>
 <tr><td><code>--no-group</code></td><td><span class="badge badge-optional">Optional</span></td><td>Do not automatically assign the library to a group</td></tr>
+<tr><td><code>--author-password &lt;pw&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Required when rolling back a package published by a restricted author (e.g.&nbsp;Hamilton). See <a href="RegulatedEnvironment.html">Regulated Environment</a>.</td></tr>
 </tbody>
 </table>
 
@@ -39,9 +40,11 @@
 
 <h2>Process Steps</h2>
 <ol>
+  <li>Validates the library name</li>
   <li>Looks up all cached packages for the given library name</li>
   <li>Selects the target version by <code>--version</code> or <code>--index</code></li>
-  <li>Opens the cached <code>.hxlibpkg</code> and reads its <code>manifest.json</code></li>
+  <li>Opens the cached <code>.hxlibpkg</code> and verifies its cryptographic signature</li>
+  <li>Reads the <code>manifest.json</code>; if the package author is restricted, requires <code>--author-password</code></li>
   <li>Runs the standard import flow (same as <a href="CLIImportLib.html"><code>import-lib</code></a>):
     <ul>
       <li>Extracts library files to <code>Library\&lt;LibName&gt;\</code></li>
@@ -87,10 +90,14 @@ Error: Specify which version to rollback to with --version &lt;ver&gt; or --inde
 <thead><tr><th>Condition</th><th>Result</th></tr></thead>
 <tbody>
 <tr><td><code>--name</code> omitted</td><td>Error: <code>--name is required</code></td></tr>
+<tr><td>Invalid library name</td><td>Error: <code>Invalid library name</code></td></tr>
 <tr><td>No cached packages found</td><td>Error: <code>No cached packages found for "&lt;name&gt;"</code></td></tr>
 <tr><td>Specified version not in cache</td><td>Error listing available versions</td></tr>
 <tr><td>Invalid index (out of range)</td><td>Error: <code>Invalid index &lt;n&gt;. Use list-versions to see available entries</code></td></tr>
 <tr><td>Cached package corrupt</td><td>Error: <code>Failed to read cached package</code></td></tr>
+<tr><td>Signature verification fails</td><td>Error: <code>Package signature verification failed</code></td></tr>
+<tr><td>Restricted author, no password</td><td>Error: <code>--author-password is required for packages from this author/organization</code></td></tr>
+<tr><td>Incorrect author password</td><td>Error: <code>Invalid author password</code></td></tr>
 </tbody>
 </table>
 
