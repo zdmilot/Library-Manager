@@ -730,6 +730,10 @@
 		<param name="Local" value="PackageFormats.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="signature_format_version">
+		<param name="Local" value="IntegrityVerification.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="windows_version">
 		<param name="Local" value="PackageFormats.html">
 		</OBJECT>

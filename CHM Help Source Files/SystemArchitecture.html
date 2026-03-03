@@ -309,7 +309,7 @@
 <tr><td class="step-label">2. Sort hashes</td><td>Sort file hash entries alphabetically by filename</td></tr>
 <tr><td class="step-label">3. Stringify</td><td><code>JSON.stringify(sortedHashes)</code> to create a deterministic payload</td></tr>
 <tr><td class="step-label">4. Compute HMAC</td><td>HMAC-SHA256 over the stringified hash payload using PKG_SIGNING_KEY</td></tr>
-<tr><td class="step-label">5. Embed signature</td><td>Add <code>signature.json</code> to ZIP: format_version, algorithm, signed_date, file_hashes, hmac</td></tr>
+<tr><td class="step-label">5. Embed signature</td><td>Add <code>signature.json</code> to ZIP: signature_format_version, algorithm, signed_date, file_hashes, hmac</td></tr>
 </table>
 
 <p class="flow-arrow">&#9660;</p>
@@ -617,7 +617,7 @@
 <tr><td class="step-label">2. Sort by filename</td><td>Alphabetical sort to ensure deterministic ordering</td></tr>
 <tr><td class="step-label">3. Stringify</td><td><code>JSON.stringify(sortedHashes)</code> creates the payload to be signed</td></tr>
 <tr><td class="step-label">4. Compute HMAC</td><td>HMAC-SHA256 over the stringified payload using <code>PKG_SIGNING_KEY</code></td></tr>
-<tr><td class="step-label">5. Embed signature</td><td>Add <code>signature.json</code> to ZIP containing: format_version, algorithm, signed_date, file_hashes, hmac</td></tr>
+<tr><td class="step-label">5. Embed signature</td><td>Add <code>signature.json</code> to ZIP containing: signature_format_version, algorithm, signed_date, file_hashes, hmac</td></tr>
 </table>
 
 <h3>Layer 2: Package Verification (at import time)</h3>

@@ -184,17 +184,6 @@ function getWindowsUsername() {
 }
 
 /**
- * Get a concise Windows version string (e.g. "Windows_NT 10.0.19045 x64").
- */
-function getWindowsVersion() {
-    try {
-        return os.type() + ' ' + os.release() + ' (' + os.arch() + ')';
-    } catch (_) {
-        return 'Unknown';
-    }
-}
-
-/**
  * Query the Windows registry for the Hamilton VENUS software version.
  * Returns the version string (e.g. "6.2.2.4006") or null.
  * Result is cached after the first call to avoid repeated registry queries.
@@ -283,7 +272,7 @@ function buildAuditTrailEntry(eventType, details) {
         event:            eventType,
         timestamp:        new Date().toISOString(),
         username:         getWindowsUsername(),
-        windows_version:  getWindowsVersion(),
+        windows_version:  shared.getWindowsVersion(),
         venus_version:    getVENUSVersion() || 'N/A',
         hostname:         os.hostname(),
         details:          details || {}
@@ -937,13 +926,8 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
     };
 
     // Preserve any unknown manifest fields for forward compatibility
-    var knownManifestKeys = ['format_version','library_name','author','organization','version',
-        'venus_compatibility','description','github_url','tags','created_date','library_image',
-        'library_image_base64','library_image_mime','library_files','demo_method_files',
-        'help_files','com_register_dlls','app_version','windows_version','venus_version',
-        'package_lineage','is_system_backup'];
     Object.keys(manifest).forEach(function(k) {
-        if (knownManifestKeys.indexOf(k) === -1 && !(k in dbRecord)) {
+        if (shared.KNOWN_MANIFEST_KEYS.indexOf(k) === -1 && !(k in dbRecord)) {
             dbRecord[k] = manifest[k];
         }
     });
@@ -1193,8 +1177,8 @@ function cmdImportLib(args) {
             console.log('  WARNING: Package is from an OLDER major version. Some fields may be missing.');
         }
     }
-    if (!pkgAppVersion && pkgFormatVersion === '1.0') {
-        console.log('  NOTE: Legacy v1.0 format package (no app version stamp). Lineage and extended metadata will not be available.');
+    if (!pkgAppVersion && pkgFormatVersion !== shared.FORMAT_VERSION) {
+        console.log('  NOTE: Legacy package (format_version ' + pkgFormatVersion + ', no app version stamp). Lineage and extended metadata will not be available.');
     }
 
     const libName = manifest.library_name || 'Unknown';
@@ -1457,26 +1441,18 @@ function cmdExportLib(args) {
         help_files:          helpFiles.slice(),
         com_register_dlls:   (lib.com_register_dlls   || []).slice(),
         app_version:         shared.getAppVersion(),
-        windows_version:     getWindowsVersion(),
-        venus_version:       getVENUSVersion() || '',
+        windows_version:     lib.windows_version      || shared.getWindowsVersion(),
+        venus_version:       lib.venus_version         || getVENUSVersion() || '',
         package_lineage:     (lib.package_lineage || []).concat([shared.buildLineageEvent('exported', {
             username:        getWindowsUsername(),
             hostname:        os.hostname(),
-            windowsVersion:  getWindowsVersion(),
             venusVersion:    getVENUSVersion() || ''
         })])
     };
 
     // Preserve any extra DB fields for forward compatibility
-    var knownLibKeys = ['_id','library_name','author','organization','version','venus_compatibility',
-        'description','github_url','tags','created_date','library_image','library_image_base64',
-        'library_image_mime','library_files','demo_method_files','help_files','com_register_dlls',
-        'com_warning','lib_install_path','demo_install_path','installed_date','installed_by',
-        'source_package','file_hashes','public_functions','required_dependencies','deleted',
-        'deleted_date','app_version','format_version','windows_version','venus_version',
-        'package_lineage','is_system_backup'];
     Object.keys(lib).forEach(function(k) {
-        if (knownLibKeys.indexOf(k) === -1 && !(k in manifest)) {
+        if (shared.KNOWN_LIB_DB_KEYS.indexOf(k) === -1 && !(k in manifest)) {
             manifest[k] = lib[k];
         }
     });
@@ -1582,26 +1558,18 @@ function cmdExportArchive(args) {
                 help_files:          helpFiles.slice(),
                 com_register_dlls:   comDlls.slice(),
                 app_version:         shared.getAppVersion(),
-                windows_version:     getWindowsVersion(),
-                venus_version:       getVENUSVersion() || '',
+                windows_version:     lib.windows_version      || shared.getWindowsVersion(),
+                venus_version:       lib.venus_version         || getVENUSVersion() || '',
                 package_lineage:     (lib.package_lineage || []).concat([shared.buildLineageEvent('exported', {
                     username:        getWindowsUsername(),
                     hostname:        os.hostname(),
-                    windowsVersion:  getWindowsVersion(),
                     venusVersion:    getVENUSVersion() || ''
                 })])
             };
 
             // Preserve extra DB fields for forward compatibility
-            var knownLibKeys = ['_id','library_name','author','organization','version','venus_compatibility',
-                'description','github_url','tags','created_date','library_image','library_image_base64',
-                'library_image_mime','library_files','demo_method_files','help_files','com_register_dlls',
-                'com_warning','lib_install_path','demo_install_path','installed_date','installed_by',
-                'source_package','file_hashes','public_functions','required_dependencies','deleted',
-                'deleted_date','app_version','format_version','windows_version','venus_version',
-                'package_lineage','is_system_backup'];
             Object.keys(lib).forEach(function(k) {
-                if (knownLibKeys.indexOf(k) === -1 && !(k in manifest)) {
+                if (shared.KNOWN_LIB_DB_KEYS.indexOf(k) === -1 && !(k in manifest)) {
                     manifest[k] = lib[k];
                 }
             });
@@ -1641,7 +1609,7 @@ function cmdExportArchive(args) {
         library_count:  exportedLibs.length,
         libraries:      exportedLibs.map(l => l.name),
         app_version:    shared.getAppVersion(),
-        windows_version: getWindowsVersion(),
+        windows_version: shared.getWindowsVersion(),
         venus_version:  getVENUSVersion() || ''
     };
     archiveZip.addFile(
@@ -1932,12 +1900,11 @@ function cmdCreatePackage(args) {
         help_files:          helpBasenames,
         com_register_dlls:   comDlls,
         app_version:         shared.getAppVersion(),
-        windows_version:     getWindowsVersion(),
+        windows_version:     shared.getWindowsVersion(),
         venus_version:       getVENUSVersion() || '',
         package_lineage:     [shared.buildLineageEvent('created', {
             username:        getWindowsUsername(),
             hostname:        os.hostname(),
-            windowsVersion:  getWindowsVersion(),
             venusVersion:    getVENUSVersion() || ''
         })]
     };

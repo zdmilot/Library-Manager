@@ -124,7 +124,7 @@
   <li>An HMAC-SHA256 is computed over the canonical JSON serialization of that map using a fixed application key.</li>
   <li>A <code>signature.json</code> file is added to the ZIP containing:
     <ul>
-      <li><code>format_version</code> - always <code>"1.0"</code></li>
+      <li><code>signature_format_version</code> - always <code>"1.0"</code></li>
       <li><code>algorithm</code> - always <code>"HMAC-SHA256"</code></li>
       <li><code>signed_date</code> - ISO 8601 timestamp</li>
       <li><code>file_hashes</code> - the per-entry SHA-256 hash map</li>

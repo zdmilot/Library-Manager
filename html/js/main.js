@@ -373,17 +373,6 @@
 		var _cachedVENUSVersion = '';
 
 		/**
-		 * Get a concise Windows version string (e.g. "Windows_NT 10.0.19045 (x64)").
-		 */
-		function getWindowsVersion() {
-			try {
-				return os.type() + ' ' + os.release() + ' (' + os.arch() + ')';
-			} catch(_) {
-				return 'Unknown';
-			}
-		}
-
-		/**
 		 * Append an entry to the audit trail JSON log stored in the user data directory.
 		 * The audit trail records packaging, import, and other lifecycle events with
 		 * environmental context (Windows version, VENUS version, username) for
@@ -436,7 +425,7 @@
 				event:            eventType,
 				timestamp:        new Date().toISOString(),
 				username:         getWindowsUsername(),
-				windows_version:  getWindowsVersion(),
+				windows_version:  shared.getWindowsVersion(),
 				venus_version:    _cachedVENUSVersion || 'N/A',
 				hostname:         os.hostname(),
 				details:          details || {}
@@ -1522,12 +1511,11 @@
 					com_register_dlls: [],
 					is_system_backup: true,
 					app_version: shared.getAppVersion(),
-					windows_version: getWindowsVersion(),
+					windows_version: shared.getWindowsVersion(),
 					venus_version: _cachedVENUSVersion || '',
 					package_lineage: [shared.buildLineageEvent('created', {
 						username: getWindowsUsername(),
 						hostname: os.hostname(),
-						windowsVersion: getWindowsVersion(),
 						venusVersion: _cachedVENUSVersion || ''
 					})]
 				};
@@ -6478,12 +6466,11 @@
 					demo_method_files: pkg_demoMethodFiles.map(function(f) { return path.basename(f); }),
 					com_register_dlls: pkg_comRegisterDlls.slice(),
 					app_version: shared.getAppVersion(),
-					windows_version: getWindowsVersion(),
+					windows_version: shared.getWindowsVersion(),
 					venus_version: _cachedVENUSVersion || '',
 					package_lineage: [shared.buildLineageEvent('created', {
 						username: getWindowsUsername(),
 						hostname: os.hostname(),
-						windowsVersion: getWindowsVersion(),
 						venusVersion: _cachedVENUSVersion || ''
 					})]
 				};
@@ -8251,7 +8238,7 @@
 					tags: manifest.tags || [],
 					created_date: manifest.created_date || "",
 					app_version: manifest.app_version || "",
-					format_version: manifest.format_version || "",
+					format_version: manifest.format_version || "1.0",
 					windows_version: manifest.windows_version || "",
 					venus_version: manifest.venus_version || "",
 					package_lineage: manifest.package_lineage || [],
@@ -8272,8 +8259,7 @@
 					required_dependencies: extractRequiredDependencies(libFiles, libDestDir)
 				};
 				// Forward-compat: preserve unknown manifest fields in DB record
-				var _knownManifestKeysRb = ['library_name','author','organization','version','venus_compatibility','description','github_url','tags','created_date','app_version','format_version','windows_version','venus_version','package_lineage','library_image','library_image_base64','library_image_mime','library_files','demo_method_files','help_files','com_register_dlls'];
-				Object.keys(manifest).forEach(function(mk) { if (_knownManifestKeysRb.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
+				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
 
 				// Update publisher registry
@@ -8821,26 +8807,18 @@
 					help_files: helpFiles.slice(),
 					com_register_dlls: comDlls.slice(),
 					app_version: shared.getAppVersion(),
-					windows_version: getWindowsVersion(),
-					venus_version: _cachedVENUSVersion || '',
+					windows_version: lib.windows_version || shared.getWindowsVersion(),
+					venus_version: lib.venus_version || _cachedVENUSVersion || '',
 					package_lineage: (lib.package_lineage || []).concat([shared.buildLineageEvent('exported', {
 						username: getWindowsUsername(),
 						hostname: os.hostname(),
-						windowsVersion: getWindowsVersion(),
 						venusVersion: _cachedVENUSVersion || ''
 					})])
 				};
 
 				// Preserve extra DB fields for forward compatibility
-				var _knownLibKeys = ['_id','library_name','author','organization','version','venus_compatibility',
-					'description','github_url','tags','created_date','library_image','library_image_base64',
-					'library_image_mime','library_files','demo_method_files','help_files','com_register_dlls',
-					'com_warning','lib_install_path','demo_install_path','installed_date','installed_by',
-					'source_package','file_hashes','public_functions','required_dependencies','deleted',
-					'deleted_date','app_version','format_version','windows_version','venus_version',
-					'package_lineage','is_system_backup'];
 				Object.keys(lib).forEach(function(k) {
-					if (_knownLibKeys.indexOf(k) === -1 && !(k in manifest)) {
+					if (shared.KNOWN_LIB_DB_KEYS.indexOf(k) === -1 && !(k in manifest)) {
 						manifest[k] = lib[k];
 					}
 				});
@@ -9002,26 +8980,18 @@
 						help_files: helpFiles.slice(),
 						com_register_dlls: comDlls.slice(),
 						app_version: shared.getAppVersion(),
-						windows_version: getWindowsVersion(),
-						venus_version: _cachedVENUSVersion || '',
+						windows_version: lib.windows_version || shared.getWindowsVersion(),
+						venus_version: lib.venus_version || _cachedVENUSVersion || '',
 						package_lineage: (lib.package_lineage || []).concat([shared.buildLineageEvent('exported', {
 							username: getWindowsUsername(),
 							hostname: os.hostname(),
-							windowsVersion: getWindowsVersion(),
 							venusVersion: _cachedVENUSVersion || ''
 						})])
 					};
 
 					// Preserve extra DB fields for forward compatibility
-					var _knownLibKeys2 = ['_id','library_name','author','organization','version','venus_compatibility',
-						'description','github_url','tags','created_date','library_image','library_image_base64',
-						'library_image_mime','library_files','demo_method_files','help_files','com_register_dlls',
-						'com_warning','lib_install_path','demo_install_path','installed_date','installed_by',
-						'source_package','file_hashes','public_functions','required_dependencies','deleted',
-						'deleted_date','app_version','format_version','windows_version','venus_version',
-						'package_lineage','is_system_backup'];
 					Object.keys(lib).forEach(function(k) {
-						if (_knownLibKeys2.indexOf(k) === -1 && !(k in manifest)) {
+						if (shared.KNOWN_LIB_DB_KEYS.indexOf(k) === -1 && !(k in manifest)) {
 							manifest[k] = lib[k];
 						}
 					});
@@ -9102,7 +9072,7 @@
 					archive_icon_base64: archiveIconBase64,
 					archive_icon_mime: archiveIconMime,
 					app_version: shared.getAppVersion(),
-					windows_version: getWindowsVersion(),
+					windows_version: shared.getWindowsVersion(),
 					venus_version: _cachedVENUSVersion || ''
 				};
 				archiveZip.addFile("archive_manifest.json", Buffer.from(JSON.stringify(archManifest, null, 2), "utf8"));
@@ -9357,26 +9327,18 @@
 						help_files: helpFiles.slice(),
 						com_register_dlls: comDlls.slice(),
 						app_version: shared.getAppVersion(),
-						windows_version: getWindowsVersion(),
-						venus_version: _cachedVENUSVersion || '',
+						windows_version: lib.windows_version || shared.getWindowsVersion(),
+						venus_version: lib.venus_version || _cachedVENUSVersion || '',
 						package_lineage: (lib.package_lineage || []).concat([shared.buildLineageEvent('exported', {
 							username: getWindowsUsername(),
 							hostname: os.hostname(),
-							windowsVersion: getWindowsVersion(),
 							venusVersion: _cachedVENUSVersion || ''
 						})])
 					};
 
 					// Preserve extra DB fields for forward compatibility
-					var _knownLibKeys3 = ['_id','library_name','author','organization','version','venus_compatibility',
-						'description','github_url','tags','created_date','library_image','library_image_base64',
-						'library_image_mime','library_files','demo_method_files','help_files','com_register_dlls',
-						'com_warning','lib_install_path','demo_install_path','installed_date','installed_by',
-						'source_package','file_hashes','public_functions','required_dependencies','deleted',
-						'deleted_date','app_version','format_version','windows_version','venus_version',
-						'package_lineage','is_system_backup'];
 					Object.keys(lib).forEach(function(k) {
-						if (_knownLibKeys3.indexOf(k) === -1 && !(k in manifest)) {
+						if (shared.KNOWN_LIB_DB_KEYS.indexOf(k) === -1 && !(k in manifest)) {
 							manifest[k] = lib[k];
 						}
 					});
@@ -9458,7 +9420,7 @@
 					archive_type: "hxlibarch",
 					created_date: new Date().toISOString(),
 					app_version: shared.getAppVersion(),
-					windows_version: getWindowsVersion(),
+					windows_version: shared.getWindowsVersion(),
 					venus_version: _cachedVENUSVersion || '',
 					library_count: exportedLibs.length,
 					libraries: exportedLibs.map(function(l) { return l.name; }),
@@ -9726,7 +9688,7 @@
 							tags: manifest.tags || [],
 							created_date: manifest.created_date || "",
 							app_version: manifest.app_version || "",
-							format_version: manifest.format_version || "",
+							format_version: manifest.format_version || "1.0",
 							windows_version: manifest.windows_version || "",
 							venus_version: manifest.venus_version || "",
 							package_lineage: manifest.package_lineage || [],
@@ -9747,8 +9709,7 @@
 							required_dependencies: extractRequiredDependencies(libFiles, libDestDir)
 						};
 						// Forward-compat: preserve unknown manifest fields in DB record
-						var _knownManifestKeysArch = ['library_name','author','organization','version','venus_compatibility','description','github_url','tags','created_date','app_version','format_version','windows_version','venus_version','package_lineage','library_image','library_image_base64','library_image_mime','library_files','demo_method_files','help_files','com_register_dlls'];
-						Object.keys(manifest).forEach(function(mk) { if (_knownManifestKeysArch.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
+						Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
 						var saved = db_installed_libs.installed_libs.save(dbRecord);
 
 						// Update publisher registry
@@ -10784,7 +10745,7 @@
 					tags: manifest.tags || [],
 					created_date: manifest.created_date || "",
 					app_version: manifest.app_version || "",
-					format_version: manifest.format_version || "",
+					format_version: manifest.format_version || "1.0",
 					windows_version: manifest.windows_version || "",
 					venus_version: manifest.venus_version || "",
 					package_lineage: manifest.package_lineage || [],
@@ -10805,8 +10766,7 @@
 					required_dependencies: extractRequiredDependencies(libFiles, libDestDir)
 				};
 				// Forward-compat: preserve unknown manifest fields in DB record
-				var _knownManifestKeysImp = ['library_name','author','organization','version','venus_compatibility','description','github_url','tags','created_date','app_version','format_version','windows_version','venus_version','package_lineage','library_image','library_image_base64','library_image_mime','library_files','demo_method_files','help_files','com_register_dlls'];
-				Object.keys(manifest).forEach(function(mk) { if (_knownManifestKeysImp.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
+				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
 
 				// Update publisher registry
@@ -12922,11 +12882,12 @@
 					tags: uLib.tags || [],
 					created_date: new Date().toISOString(),
 					app_version: shared.getAppVersion(),
-					windows_version: getWindowsVersion(),
+					windows_version: shared.getWindowsVersion(),
 					venus_version: _cachedVENUSVersion || '',
 					package_lineage: [shared.buildLineageEvent('created', {
-						venus_version: _cachedVENUSVersion || '',
-						windows_version: getWindowsVersion()
+						username: getWindowsUsername(),
+						hostname: os.hostname(),
+						venusVersion: _cachedVENUSVersion || ''
 					})],
 					library_image: uLib.library_image || null,
 					library_image_base64: uLib.library_image_base64 || null,
