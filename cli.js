@@ -118,72 +118,15 @@ function isSystemLibraryByName(libName) {
 // Restricted Author Protection
 // ---------------------------------------------------------------------------
 // ---- Restricted Author / Organization Protection ----
-// Password required to use any restricted OEM company name (case-insensitive,
-// whitespace-insensitive, character-insensitive substring match) as author or
-// organization on non-system packages.  This prevents spoofing and acts as an
-// additional signing mechanism for first-party / OEM libraries.
+// Uses the centralized keyword list and matching from shared.js.
 //
 // The password is stored as a SHA-256 hash to avoid exposing the plaintext
 // in source control.  Comparison uses crypto.timingSafeEqual to resist
 // timing side-channel analysis.
 const OEM_AUTHOR_PASSWORD_HASH = 'bbdc525497de1c19c57767e36b4f01dadcc05348664eea071ac984fd955bc207';
 
-/**
- * Restricted OEM keywords.  The input is normalized (lowercased, all
- * non-alphanumeric characters removed) and tested for whether it
- * **contains** any of these keywords anywhere in the string.
- * Example: "NotHamilton" is blocked because it contains "hamilton".
- */
-const RESTRICTED_AUTHOR_KEYWORDS = [
-    'hamilton',
-    'tecan',
-    'thermofisher', 'thermoscientific', 'fisherscientific',
-    'danaher',
-    'beckmancoulter',
-    'roche', 'rochediagnostics',
-    'siemens', 'healthineers',
-    'inheco',
-    'agilent',
-    'revvity', 'perkinelmer',
-    'biorad',
-    'qiagen',
-    'hudsonrobotics',
-    'sptlabtech',
-    'ttplabtech',
-    'swisslog',
-    'bectondickinson', 'bdbiosciences', 'bdkiestra',
-    'labvantage',
-    'labware',
-    'automata',
-    'opentrons',
-    'biosero',
-    'greenbuttongo',
-    'liconic','sony',
-    'azenta', 'brooksautomation',
-    'slas', 'societyforlaboratoryautomationandscreening',
-    'highresbio',
-    'moleculardevices', 'moldev',
-    'bmglabtech',
-    'aurorabiomed',
-    'abcontrols',
-    'biotek', 'bioteck'
-];
-
-/**
- * Check if an author/organization name is restricted.
- * Normalizes the input by lowercasing and stripping all non-alphanumeric
- * characters, then checks whether the result contains any restricted
- * OEM keyword as a substring.
- */
-function isRestrictedAuthor(author) {
-    if (!author) return false;
-    var normalized = author.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (!normalized) return false;
-    for (var i = 0; i < RESTRICTED_AUTHOR_KEYWORDS.length; i++) {
-        if (normalized.indexOf(RESTRICTED_AUTHOR_KEYWORDS[i]) !== -1) return true;
-    }
-    return false;
-}
+// Re-export from shared for local use
+const isRestrictedAuthor = shared.isRestrictedAuthor;
 
 /**
  * Validate CLI --author-password against the restricted author password.
