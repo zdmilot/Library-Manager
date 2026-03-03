@@ -58,19 +58,8 @@ const DEFAULT_LIB_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Library';
 const DEFAULT_MET_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Methods';
 
 // Package store - persists all imported .hxlibpkg files for repair & rollback
-// Stored under a writable per-user local data directory by default
-const APP_ROOT = __dirname;
-function resolveDefaultLocalDataDir() {
-    if (process.env.LMV6_DATA_DIR && process.env.LMV6_DATA_DIR.trim()) {
-        return path.resolve(process.env.LMV6_DATA_DIR.trim());
-    }
-    const profileRoot = process.env.LOCALAPPDATA || process.env.APPDATA;
-    if (profileRoot) {
-        return path.join(profileRoot, 'Library Manager for Venus 6', 'local');
-    }
-    return path.join(APP_ROOT, 'local');
-}
-const LOCAL_DATA_DIR = resolveDefaultLocalDataDir();
+// Now stored under local/packages/ within the app directory
+const LOCAL_DATA_DIR = path.join(__dirname, 'local');
 const PACKAGE_STORE_DIR = path.join(LOCAL_DATA_DIR, 'packages');
 
 // ---------------------------------------------------------------------------
@@ -330,7 +319,7 @@ function connectDB(dbDir) {
 
 /**
  * Resolve the data directory from CLI args or local/ default.
- * Priority: --db-path flag > per-user local data directory
+ * Priority: --db-path flag > local/ directory
  * Also ensures the directory exists with seed files.
  */
 function resolveDBPath(args) {
@@ -1988,7 +1977,7 @@ function cmdGenerateSyslibHashes(args) {
     });
 
     // Write the baseline file
-    const outputPath = args['output'] || path.join(LOCAL_DATA_DIR, 'system_library_hashes.json');
+    const outputPath = args['output'] || path.join(__dirname, 'db', 'system_library_hashes.json');
     ensureOutDir(outputPath);
     fs.writeFileSync(outputPath, JSON.stringify(baselineData, null, 2), 'utf8');
 
@@ -2010,15 +1999,8 @@ function cmdGenerateSyslibHashes(args) {
 // COMMAND: verify-syslib-hashes
 // ===========================================================================
 function cmdVerifySyslibHashes(args) {
-    // Load the baseline file — check user data dir first, then bundled db/
-    let hashFilePath;
-    if (args['hash-file']) {
-        hashFilePath = path.resolve(args['hash-file']);
-    } else {
-        const userCopy = path.join(LOCAL_DATA_DIR, 'system_library_hashes.json');
-        const bundledCopy = path.join(__dirname, 'db', 'system_library_hashes.json');
-        hashFilePath = fs.existsSync(userCopy) ? userCopy : bundledCopy;
-    }
+    // Load the baseline file
+    const hashFilePath = args['hash-file'] || path.join(__dirname, 'db', 'system_library_hashes.json');
     if (!fs.existsSync(hashFilePath)) {
         die('System library baseline file not found: ' + hashFilePath
           + '\nRun  generate-syslib-hashes  first to create it.');
@@ -2317,10 +2299,10 @@ COMMANDS
   help               Show this help text
 
 GLOBAL OPTIONS
-    --db-path <dir>    Path to user data directory (default:
-                                         %LOCALAPPDATA%\\Library Manager for Venus 6\\local)
+  --db-path <dir>    Path to user data directory (default: from settings.json
+                     or <Hamilton Library>\\LibraryManagerForVenus6)
   --store-dir <dir>  Override package store location
-                                         (default: <db-path>\\packages)
+                     (default: <app_root>\\local\\packages)
 
 ──────────────────────────────────────────────────────────────────────────────
 list-libs

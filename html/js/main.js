@@ -1775,10 +1775,11 @@
 					dismissSplashIfReady();
 				}, remaining);
 
-				// Restore maximized state from previous session
+				// Sync maximized state flag with persisted setting.
+				// The actual maximize is performed in index.html BEFORE
+				// win.show() so the window appears maximized instantly.
 				try {
 					if (getSettingValue('windowMaximized')) {
-						win.maximize();
 						_windowIsMaximized = true;
 					}
 				} catch(e) { console.log('Could not restore window state: ' + e); }

@@ -41,10 +41,44 @@
 		</div>
 	</div>
 	<script>
-		// Show the NW.js window only after the splash screen has painted
+		// Show the NW.js window only after the splash screen has painted.
+		// If the user's last session was maximized, maximize BEFORE showing
+		// so the window appears full-screen instantly (no resize flash).
 		requestAnimationFrame(function() {
 			requestAnimationFrame(function() {
-				try { require('nw.gui').Window.get().show(); } catch(e) {}
+				try {
+					var _win = require('nw.gui').Window.get();
+					// Read the persisted windowMaximized flag directly from the
+					// settings JSON so we can maximize before the window is visible.
+					try {
+						var _fs = require('fs');
+						var _path = require('path');
+						var _dataDir;
+						// Mirror the resolution logic from main.js
+						if (typeof process !== 'undefined' && process.env && process.env.LMV6_DATA_DIR && process.env.LMV6_DATA_DIR.trim()) {
+							_dataDir = require('path').resolve(process.env.LMV6_DATA_DIR.trim());
+						} else if (typeof nw !== 'undefined' && nw.App && typeof nw.App.dataPath === 'string' && nw.App.dataPath.trim()) {
+							_dataDir = _path.join(nw.App.dataPath, 'local');
+						} else {
+							var _profRoot = (typeof process !== 'undefined' && process.env)
+								? (process.env.LOCALAPPDATA || process.env.APPDATA || '') : '';
+							if (_profRoot) {
+								_dataDir = _path.join(_profRoot, 'Library Manager for Venus 6', 'local');
+							}
+						}
+						if (_dataDir) {
+							var _settingsPath = _path.join(_dataDir, 'settings.json');
+							if (_fs.existsSync(_settingsPath)) {
+								var _raw = _fs.readFileSync(_settingsPath, 'utf8');
+								var _settings = JSON.parse(_raw);
+								if (Array.isArray(_settings) && _settings.length && _settings[0].windowMaximized) {
+									_win.maximize();
+								}
+							}
+						}
+					} catch(_e) { /* settings read failed - show at default size */ }
+					_win.show();
+				} catch(e) {}
 			});
 		});
 	</script>
