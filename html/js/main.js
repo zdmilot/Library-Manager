@@ -7756,7 +7756,11 @@
 
 			// Install paths
 			$("#libDetailModal .lib-detail-lib-path").text("Library: " + (lib.lib_install_path || "\u2014"));
-			$("#libDetailModal .lib-detail-demo-path").text("Demo Methods: " + (lib.demo_install_path || "\u2014"));
+			if (lib.demo_install_path) {
+				$("#libDetailModal .lib-detail-demo-path").text("Demo Methods: " + lib.demo_install_path).show();
+			} else {
+				$("#libDetailModal .lib-detail-demo-path").text("").hide();
+			}
 
 			// Required dependencies section
 			var deps = extractRequiredDependencies(lib.library_files || [], lib.lib_install_path || '');
@@ -8349,7 +8353,7 @@
 
 			// Install paths
 			$("#libDetailModal .lib-detail-lib-path").text("Source: " + (sLib.source_root || "Library"));
-			$("#libDetailModal .lib-detail-demo-path").text("");
+			$("#libDetailModal .lib-detail-demo-path").text("").hide();
 
 			// Hide COM section
 			$("#libDetailModal .lib-detail-com-section").addClass("d-none");
