@@ -1754,6 +1754,8 @@
 
 				function dismissSplashIfReady() {
 					if (!_splashAnimDone || !_splashInitDone) return;
+					// Set window title bar to full name, taskbar to short name
+					win.title = 'Library Manager for Venus 6';
 					// Restore scrolling now that splash is leaving
 					document.documentElement.style.overflow = '';
 					document.body.style.overflow = '';
@@ -2042,14 +2044,20 @@
 			e.preventDefault();
 			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
 			$(".btn-overflow-toggle").attr("aria-expanded", "false");
-			// Populate version from package.json
+			// Populate version from NW.js manifest (most reliable), with filesystem fallback
+			var appVersion = '';
 			try {
-				var pkgPath = path.join(path.dirname(process.execPath), 'package.json');
-				var pkgData = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-				$(".about-version").text("Version " + pkgData.version);
+				if (typeof nw !== 'undefined' && nw.App && nw.App.manifest && nw.App.manifest.version) {
+					appVersion = nw.App.manifest.version;
+				} else {
+					var pkgPath = path.join(path.dirname(process.execPath), 'package.json');
+					var pkgData = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+					appVersion = pkgData.version || '';
+				}
 			} catch (ex) {
-				$(".about-version").text("");
+				appVersion = '';
 			}
+			$(".about-version").text(appVersion ? "Version " + appVersion : "");
 			$("#aboutModal").modal("show");
 		});
 
