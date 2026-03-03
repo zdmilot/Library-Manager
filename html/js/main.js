@@ -777,13 +777,12 @@
 		// ================================================================
 		// LOCAL DATA DIRECTORY
 		// ================================================================
-		// All persistent application data lives under a single "local/" directory
-		// inside the application's own Program Files (x86) install folder.
-		// This directory is globally accessible to all Windows users on the PC —
-		// no per-user AppData, ProgramData, or roaming profiles are used.
+		// All persistent application data lives under a single writable "local/"
+		// directory in the current user's profile (AppData), with legacy fallback
+		// to the app install folder if no profile path can be resolved.
 		//
 		// Directory layout:
-		//   <app_root>/local/
+		//   <user_profile_data>/Library Manager for Venus 6/local/
 		//     settings.json        – application settings (singleton record)
 		//     installed_libs.json  – installed library registry
 		//     groups.json          – custom user groups
@@ -796,12 +795,36 @@
 		//     exports/             – default export output directory
 		// ================================================================
 
-		/** Resolve the local data directory path (always under the app root) */
-		var LOCAL_DATA_DIR = (function() {
-			// nw.__dirname gives the NW.js app root; fallback to __dirname for CLI
-			var appRoot = (typeof nw !== 'undefined' && nw.__dirname) ? nw.__dirname : __dirname;
-			return path.join(appRoot, 'local');
-		})();
+		var APP_ROOT = (typeof nw !== 'undefined' && nw.__dirname) ? nw.__dirname : __dirname;
+
+		/** Resolve the local data directory path (prefer writable per-user location) */
+		function resolveDefaultLocalDataDir() {
+			try {
+				if (typeof process !== 'undefined' && process.env && process.env.LMV6_DATA_DIR && process.env.LMV6_DATA_DIR.trim()) {
+					return path.resolve(process.env.LMV6_DATA_DIR.trim());
+				}
+			} catch(_) {}
+
+			try {
+				if (typeof nw !== 'undefined' && nw.App && typeof nw.App.dataPath === 'string' && nw.App.dataPath.trim()) {
+					return path.join(nw.App.dataPath, 'local');
+				}
+			} catch(_) {}
+
+			try {
+				var profileRoot = (typeof process !== 'undefined' && process.env)
+					? (process.env.LOCALAPPDATA || process.env.APPDATA || '')
+					: '';
+				if (profileRoot) {
+					return path.join(profileRoot, 'Library Manager for Venus 6', 'local');
+				}
+			} catch(_) {}
+
+			return path.join(APP_ROOT, 'local');
+		}
+
+		var LOCAL_DATA_DIR = resolveDefaultLocalDataDir();
+		var LEGACY_APP_LOCAL_DIR = path.join(APP_ROOT, 'local');
 
 		/** Ensure the local data directory and all subdirectories exist with seed files */
 		function ensureLocalDataDir(dirPath) {
@@ -842,11 +865,13 @@
 		// ---- Legacy Migration ----
 		// Migrate data from old locations to the new local/ directory:
 		//   1. Old app-root db/ folder (pre-restructure)
-		//   2. Old HAMILTON\Library\LibraryManagerForVenus6 folder
-		//   3. Old HAMILTON\Library\.LibraryManagerForVenus6 hidden folder
+		//   2. Old app-root local/ folder (legacy install-folder storage)
+		//   3. Old HAMILTON\Library\LibraryManagerForVenus6 folder
+		//   4. Old HAMILTON\Library\.LibraryManagerForVenus6 hidden folder
 		(function migrateToLocalDir() {
 			var oldLocations = [
-				path.join('db'),
+				path.join(APP_ROOT, 'db'),
+				LEGACY_APP_LOCAL_DIR,
 				path.join("C:\\Program Files (x86)\\HAMILTON\\Library", "LibraryManagerForVenus6"),
 				path.join("C:\\Program Files (x86)\\HAMILTON\\Library", ".LibraryManagerForVenus6")
 			];

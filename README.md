@@ -310,7 +310,7 @@ node cli.js help
 
 | Flag | Description |
 |------|-------------|
-| `--db-path <dir>` | Override path to the `db/` directory (default: `<app-root>/db`). Useful for testing against a scratch database. |
+| `--db-path <dir>` | Override path to the local data directory (default: `%LOCALAPPDATA%\Library Manager for Venus 6\local`). Useful for testing against a scratch database. |
 
 ---
 

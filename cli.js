@@ -58,8 +58,19 @@ const DEFAULT_LIB_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Library';
 const DEFAULT_MET_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Methods';
 
 // Package store - persists all imported .hxlibpkg files for repair & rollback
-// Now stored under local/packages/ within the app directory
-const LOCAL_DATA_DIR = path.join(__dirname, 'local');
+// Stored under a writable per-user local data directory by default
+const APP_ROOT = __dirname;
+function resolveDefaultLocalDataDir() {
+    if (process.env.LMV6_DATA_DIR && process.env.LMV6_DATA_DIR.trim()) {
+        return path.resolve(process.env.LMV6_DATA_DIR.trim());
+    }
+    const profileRoot = process.env.LOCALAPPDATA || process.env.APPDATA;
+    if (profileRoot) {
+        return path.join(profileRoot, 'Library Manager for Venus 6', 'local');
+    }
+    return path.join(APP_ROOT, 'local');
+}
+const LOCAL_DATA_DIR = resolveDefaultLocalDataDir();
 const PACKAGE_STORE_DIR = path.join(LOCAL_DATA_DIR, 'packages');
 
 // ---------------------------------------------------------------------------
@@ -319,7 +330,7 @@ function connectDB(dbDir) {
 
 /**
  * Resolve the data directory from CLI args or local/ default.
- * Priority: --db-path flag > local/ directory
+ * Priority: --db-path flag > per-user local data directory
  * Also ensures the directory exists with seed files.
  */
 function resolveDBPath(args) {
@@ -2299,10 +2310,10 @@ COMMANDS
   help               Show this help text
 
 GLOBAL OPTIONS
-  --db-path <dir>    Path to user data directory (default: from settings.json
-                     or <Hamilton Library>\\LibraryManagerForVenus6)
+    --db-path <dir>    Path to user data directory (default:
+                                         %LOCALAPPDATA%\\Library Manager for Venus 6\\local)
   --store-dir <dir>  Override package store location
-                     (default: <app_root>\\local\\packages)
+                                         (default: <db-path>\\packages)
 
 ──────────────────────────────────────────────────────────────────────────────
 list-libs
