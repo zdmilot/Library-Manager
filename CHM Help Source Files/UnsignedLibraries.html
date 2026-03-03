@@ -117,8 +117,8 @@
 <thead><tr><th>Field</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td><b>Library Name</b></td><td>Display name (pre-filled from the filename, read-only display in the modal header)</td></tr>
-<tr><td><b>Author</b></td><td>Author name - blank by default, fill in before exporting. The name <i>Hamilton</i> is restricted and requires password authorization (same restriction as the package creator form).</td></tr>
-<tr><td><b>Organization</b></td><td>Author's organization. The name <i>Hamilton</i> is restricted (same as Author).</td></tr>
+<tr><td><b>Author</b></td><td>Author name - blank by default, fill in before exporting. Certain restricted OEM and laboratory automation company names require password authorization (same restriction as the package creator form).</td></tr>
+<tr><td><b>Organization</b></td><td>Author's organization. Restricted OEM and laboratory automation company names are blocked (same as Author).</td></tr>
 <tr><td><b>Version</b></td><td>Version string (e.g., <code>1.0.0</code>)</td></tr>
 <tr><td><b>VENUS Compatibility</b></td><td>Minimum VENUS version required</td></tr>
 <tr><td><b>Description</b></td><td>Free-text description of the library</td></tr>
@@ -188,7 +188,7 @@
   <li>Required dependencies (<code>#include</code> directives) are parsed and resolved</li>
   <li>The library is assigned to the appropriate navigation group:
     <ul>
-      <li>If the author is <i>Hamilton</i>, the library is added to the Hamilton group</li>
+      <li>If the author matches a restricted OEM company name, the library is added to the OEM group</li>
       <li>Otherwise, it is added to the first available custom group, or a new "Libraries" group is created if none exists</li>
     </ul>
   </li>

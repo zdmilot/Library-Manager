@@ -159,7 +159,7 @@
 <tr><td><code>default</code></td><td>boolean</td><td>Whether this is a built-in group</td></tr>
 <tr><td><code>navbar</code></td><td>string</td><td>"left" or "right" placement</td></tr>
 <tr><td><code>favorite</code></td><td>boolean</td><td>Favorited flag</td></tr>
-<tr><td><code>protected</code></td><td>boolean</td><td>Cannot be deleted (e.g., Hamilton group)</td></tr>
+<tr><td><code>protected</code></td><td>boolean</td><td>Cannot be deleted (e.g., OEM group)</td></tr>
 </tbody>
 </table>
 
@@ -275,7 +275,7 @@
 <table class="phase-table">
 <tr><th colspan="2">Phase 2: Validation</th></tr>
 <tr><td class="step-label">Validate required fields</td><td>author, version, description, venus_compatibility must be present; at least 1 library file required</td></tr>
-<tr class="decision"><td class="step-label">Author = "Hamilton"?</td><td>
+<tr class="decision"><td class="step-label">Restricted author name?</td><td>
   <b>Yes &rarr;</b> Require author password. Invalid password aborts.<br/>
   <b>No &rarr;</b> Continue
 </td></tr>
@@ -353,7 +353,7 @@
 <table class="phase-table">
 <tr><th colspan="2">Phase 3: Validation</th></tr>
 <tr><td class="step-label">Validate library name</td><td><code>isValidLibraryName()</code> &mdash; no path separators, no traversal, no reserved names</td></tr>
-<tr class="decision"><td class="step-label">Author = "Hamilton"?</td><td>
+<tr class="decision"><td class="step-label">Restricted author name?</td><td>
   <b>Yes (and not a system library) &rarr;</b> Require <code>--author-password</code> or GUI password prompt<br/>
   <b>No &rarr;</b> Continue
 </td></tr>
@@ -726,9 +726,9 @@
 <img src="images/diagram-auth-decision-flow.png" alt="Authorization decision flow: check regulated mode, then ALLOW groups, DENY groups, then default deny" class="doc-diagram">
 
 <h3>Restricted Author Protection</h3>
-<p>Packages claiming author = &ldquo;Hamilton&rdquo; (case-insensitive) require additional authentication to prevent unauthorized Hamilton-branded packages.</p>
+<p>Packages claiming a restricted OEM or laboratory automation company name as the author (case-insensitive) require additional authentication to prevent unauthorized branded packages.</p>
 
-<img src="images/diagram-restricted-author.png" alt="Restricted author protection flow: Hamilton author check, system library bypass, password verification" class="doc-diagram">
+<img src="images/diagram-restricted-author.png" alt="Restricted author protection flow: restricted author name check, system library bypass, password verification" class="doc-diagram">
 
 <!-- ================================================================== -->
 <a name="sec13"></a>
@@ -745,7 +745,7 @@
 <tr><td><b>Starred</b></td><td>Fixed</td><td>Card Grid</td><td>Libraries marked as favorites</td></tr>
 <tr><td><b>Recent</b></td><td>Fixed</td><td>Card Grid</td><td>Recently imported/updated libraries</td></tr>
 <tr><td><b>System</b></td><td>Fixed</td><td>Card Grid</td><td>Hamilton built-in system libraries (read-only)</td></tr>
-<tr><td><b>Hamilton</b></td><td>Protected Group</td><td>Card Grid</td><td>Hamilton-authored user libraries</td></tr>
+<tr><td><b>OEM</b></td><td>Protected Group</td><td>Card Grid</td><td>OEM-authored user libraries</td></tr>
 <tr><td><b>Unsigned</b></td><td>Fixed</td><td>Card Grid</td><td>Unmanaged HSL files discovered in VENUS Library folder</td></tr>
 <tr><td><b>Custom Groups</b></td><td>User-created</td><td>Card Grid</td><td>User-defined library groupings with custom names and icons</td></tr>
 <tr><td><b>Import</b></td><td>Fixed</td><td>Import View</td><td>Drop zone for .hxlibpkg files + browse file picker</td></tr>

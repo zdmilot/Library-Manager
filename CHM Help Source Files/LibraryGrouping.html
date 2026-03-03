@@ -41,12 +41,12 @@
 </ul>
 
 <h3>Password-Protected Author Name</h3>
-<p>The author name <b>"Hamilton"</b> is restricted to prevent unauthorized attribution of packages to Hamilton. This restriction is enforced in both the GUI and CLI:</p>
+<p>Certain <b>restricted OEM and laboratory automation company names</b> are blocked to prevent unauthorized attribution of packages. This restriction is enforced in both the GUI and CLI:</p>
 <ul>
-  <li><b>GUI:</b> When a user enters "Hamilton" (case-insensitive) as the author in the Library Packager, a password prompt modal (<code>#authorPasswordModal</code>) is displayed. The modal appears when the author field loses focus. The user must enter the correct password before the package can be built. If the password is incorrect or the modal is dismissed, the author field is cleared.</li>
-  <li><b>CLI:</b> When the spec file contains <code>"author": "Hamilton"</code>, the <code>--author-password</code> flag must be supplied on the command line. If the password is missing or incorrect, the CLI exits with an error.</li>
+  <li><b>GUI:</b> When a user enters a restricted company name (case-insensitive) as the author in the Library Packager, a password prompt modal (<code>#authorPasswordModal</code>) is displayed. The modal appears when the author field loses focus. The user must enter the correct password before the package can be built. If the password is incorrect or the modal is dismissed, the author field is cleared.</li>
+  <li><b>CLI:</b> When the spec file contains a restricted company name as the author, the <code>--author-password</code> flag must be supplied on the command line. If the password is missing or incorrect, the CLI exits with an error.</li>
 </ul>
-<img src="images/Restricted-Orgainization--Hamilton.png" alt="Restricted organization password prompt for Hamilton author name" class="doc-screenshot">
+<img src="images/Restricted-Orgainization--Hamilton.png" alt="Restricted organization password prompt for a restricted author name" class="doc-screenshot">
 
 <h3>Empty State</h3>
 <p>When no OEM-authored packages are installed, the OEM tab displays a dedicated placeholder message: <i>"No OEM packages installed yet. Import an OEM-authored library package to see it here."</i></p>

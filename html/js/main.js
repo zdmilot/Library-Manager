@@ -1292,23 +1292,74 @@
 			console.warn('Could not load system_library_hashes.json: ' + e.message);
 		}
 
-		// ---- Restricted Author Protection ----
-		// Password required to use "Hamilton" (case-insensitive) as author on non-system packages.
-		// This prevents spoofing and acts as an additional signing mechanism for first-party libraries.
+		// ---- Restricted Author / Organization Protection ----
+		// Password required to use any restricted OEM company name (case-insensitive,
+		// whitespace-insensitive, character-insensitive substring match) as author or
+		// organization on non-system packages.  This prevents spoofing and acts as an
+		// additional signing mechanism for first-party / OEM libraries.
 		//
 		// The password is stored as a SHA-256 hash to avoid exposing the plaintext
 		// in source control.  Comparison uses crypto.timingSafeEqual to resist
 		// timing side-channel analysis.
-		var HAMILTON_AUTHOR_PASSWORD_HASH = 'bbdc525497de1c19c57767e36b4f01dadcc05348664eea071ac984fd955bc207';
+		var OEM_AUTHOR_PASSWORD_HASH = 'bbdc525497de1c19c57767e36b4f01dadcc05348664eea071ac984fd955bc207';
 
 		/**
-		 * Check if an author name is restricted (i.e. "Hamilton" in any case).
+		 * Restricted OEM keywords.  The input is normalized (lowercased, all
+		 * non-alphanumeric characters removed) and tested for whether it
+		 * **contains** any of these keywords anywhere in the string.
+		 * Example: "NotHamilton" is blocked because it contains "hamilton".
+		 */
+		var RESTRICTED_AUTHOR_KEYWORDS = [
+			'hamilton',
+			'tecan',
+			'thermofisher', 'thermoscientific', 'fisherscientific',
+			'danaher',
+			'beckmancoulter',
+			'roche', 'rochediagnostics',
+			'siemens', 'healthineers',
+			'inheco',
+			'agilent',
+			'revvity', 'perkinelmer',
+			'biorad',
+			'qiagen',
+			'hudsonrobotics',
+			'sptlabtech',
+			'ttplabtech',
+			'swisslog',
+			'bectondickinson', 'bdbiosciences', 'bdkiestra',
+			'labvantage',
+			'labware',
+			'automata',
+			'opentrons',
+			'biosero',
+			'greenbuttongo',
+			'liconic',
+			'azenta', 'brooksautomation',
+			'slas', 'societyforlaboratoryautomationandscreening',
+			'highresbio',
+			'moleculardevices', 'moldev',
+			'bmglabtech',
+			'aurorabiomed',
+			'abcontrols',
+			'biotek', 'bioteck'
+		];
+
+		/**
+		 * Check if an author/organization name is restricted.
+		 * Normalizes the input by lowercasing and stripping all non-alphanumeric
+		 * characters, then checks whether the result contains any restricted
+		 * OEM keyword as a substring.
 		 * @param {string} author
 		 * @returns {boolean}
 		 */
 		function isRestrictedAuthor(author) {
 			if (!author) return false;
-			return author.trim().toLowerCase() === 'hamilton';
+			var normalized = author.toLowerCase().replace(/[^a-z0-9]/g, '');
+			if (!normalized) return false;
+			for (var i = 0; i < RESTRICTED_AUTHOR_KEYWORDS.length; i++) {
+				if (normalized.indexOf(RESTRICTED_AUTHOR_KEYWORDS[i]) !== -1) return true;
+			}
+			return false;
 		}
 
 		/**
@@ -1320,7 +1371,7 @@
 		function validateAuthorPassword(password) {
 			if (!password || typeof password !== 'string') return false;
 			var inputHash  = crypto.createHash('sha256').update(password).digest();
-			var storedHash = Buffer.from(HAMILTON_AUTHOR_PASSWORD_HASH, 'hex');
+			var storedHash = Buffer.from(OEM_AUTHOR_PASSWORD_HASH, 'hex');
 			try {
 				return crypto.timingSafeEqual(inputHash, storedHash);
 			} catch (_) {
@@ -6109,23 +6160,23 @@
 		}
 
 		// ---- Reset form ----
-		// Track whether Hamilton author was already authorized for this session
-		var pkg_hamiltonAuthorized = false;
+		// Track whether a restricted OEM author was already authorized for this session
+		var pkg_oemAuthorized = false;
 
-		// ---- Author/Organization field restriction: prompt for password when "Hamilton" is entered ----
+		// ---- Author/Organization field restriction: prompt for password when a restricted OEM name is entered ----
 		$(document).on("blur", "#pkg-author, #pkg-organization", async function() {
 			var fieldVal = $(this).val().trim();
-			if (isRestrictedAuthor(fieldVal) && !pkg_hamiltonAuthorized) {
+			if (isRestrictedAuthor(fieldVal) && !pkg_oemAuthorized) {
 				var pwOk = await promptAuthorPassword();
 				if (pwOk) {
-					pkg_hamiltonAuthorized = true;
+					pkg_oemAuthorized = true;
 				} else {
 					$(this).val('');
 					$(this).focus();
-					pkg_hamiltonAuthorized = false;
+					pkg_oemAuthorized = false;
 				}
 			} else if (!isRestrictedAuthor(fieldVal) && !isRestrictedAuthor($('#pkg-author').val().trim()) && !isRestrictedAuthor($('#pkg-organization').val().trim())) {
-				pkg_hamiltonAuthorized = false;
+				pkg_oemAuthorized = false;
 			}
 		});
 
@@ -6142,7 +6193,7 @@
 			$("#pkg-name-hint").removeClass("d-none");
 			pkg_autoDetectedName = "";
 			pkg_nameOverridden = false;
-			pkg_hamiltonAuthorized = false;
+			pkg_oemAuthorized = false;
 			pkg_libraryFiles = [];
 			pkg_demoMethodFiles = [];
 			pkg_iconFilePath = null;
@@ -6342,7 +6393,7 @@
 				if (isRestrictedAuthor(author) || isRestrictedAuthor(organization)) {
 					var pwOk = await promptAuthorPassword();
 					if (!pwOk) {
-						alert('Package creation cancelled. Using "Hamilton" as author or organization requires authorization.');
+						alert('Package creation cancelled. The specified author or organization is a restricted OEM name and requires authorization.');
 						return;
 					}
 				}
@@ -6361,7 +6412,7 @@
 					});
 				}
 
-				// Filter reserved tags ("System" and "Hamilton" are not allowed)
+				// Filter reserved tags (system and OEM names are not allowed)
 				var tagCheck = shared.filterReservedTags(tags);
 				if (tagCheck.removed.length > 0) {
 					showTagValidationErrorModal('The following tags are reserved and cannot be used: ' + tagCheck.removed.join(', ') + '\n\nThese tags have been automatically removed.');
@@ -9418,10 +9469,10 @@
 				if (hasRestrictedPackage) {
 					var pwOk = await promptAuthorPassword();
 					if (!pwOk) {
-						alert('Import cancelled. One or more packages in this archive use the restricted author/organization name "Hamilton".');
+						alert('Import cancelled. One or more packages in this archive use a restricted OEM author/organization name.');
 						return;
 					}
-					archiveHamiltonAuthorized = true;
+					archiveOemAuthorized = true;
 				}
 
 				var results = { success: [], failed: [] };
@@ -10148,7 +10199,7 @@
 				}
 
 				// ---- Restricted author/organization check on import ----
-				// If the package claims "Hamilton" as author or organization but is NOT a known system library,
+				// If the package claims a restricted OEM name as author or organization but is NOT a known system library,
 				// require password authorization before allowing the import.
 				var importAuthor = (manifest.author || '').trim();
 				var importOrg = (manifest.organization || '').trim();
@@ -10160,7 +10211,7 @@
 					if (!isKnownSysLib) {
 						var pwOk = await promptAuthorPassword();
 						if (!pwOk) {
-							alert('Import cancelled. The package author/organization "Hamilton" requires authorization for non-system libraries.');
+							alert('Import cancelled. The package uses a restricted OEM author/organization name and requires authorization for non-system libraries.');
 							_isImporting = false;
 							return;
 						}
@@ -12199,28 +12250,28 @@
 			$(this).css({"border": "", "background": ""});
 		});
 
-		// ---- Unsigned lib: Hamilton author/organization restriction ----
-		var ulib_hamiltonAuthorized = false;
+		// ---- Unsigned lib: restricted OEM author/organization protection ----
+		var ulib_oemAuthorized = false;
 
 		$(document).on("blur", "#ulib-author, #ulib-organization", async function() {
 			var fieldVal = $(this).val().trim();
-			if (isRestrictedAuthor(fieldVal) && !ulib_hamiltonAuthorized) {
+			if (isRestrictedAuthor(fieldVal) && !ulib_oemAuthorized) {
 				var pwOk = await promptAuthorPassword();
 				if (pwOk) {
-					ulib_hamiltonAuthorized = true;
+					ulib_oemAuthorized = true;
 				} else {
 					$(this).val('');
 					$(this).focus();
-					ulib_hamiltonAuthorized = false;
+					ulib_oemAuthorized = false;
 				}
 			} else if (!isRestrictedAuthor(fieldVal) && !isRestrictedAuthor($('#ulib-author').val().trim()) && !isRestrictedAuthor($('#ulib-organization').val().trim())) {
-				ulib_hamiltonAuthorized = false;
+				ulib_oemAuthorized = false;
 			}
 		});
 
-		// Reset Hamilton auth when modal closes
+		// Reset OEM auth when modal closes
 		$("#unsignedLibDetailModal").on("hidden.bs.modal", function() {
-			ulib_hamiltonAuthorized = false;
+			ulib_oemAuthorized = false;
 		});
 
 		// ---- Save unsigned library metadata ----
@@ -12231,14 +12282,14 @@
 			var author = $("#ulib-author").val().trim();
 			var organization = $("#ulib-organization").val().trim();
 
-			// Check Hamilton restriction on save
+			// Check restricted OEM name on save
 			if (isRestrictedAuthor(author) || isRestrictedAuthor(organization)) {
-				if (!ulib_hamiltonAuthorized) {
+				if (!ulib_oemAuthorized) {
 					var pwOk = await promptAuthorPassword();
 					if (pwOk) {
-						ulib_hamiltonAuthorized = true;
+						ulib_oemAuthorized = true;
 					} else {
-						alert("Cannot save: Hamilton author/organization requires authorization.");
+						alert("Cannot save: the specified author/organization is a restricted OEM name and requires authorization.");
 						return;
 					}
 				}
@@ -12247,7 +12298,7 @@
 			var tagsRaw = $("#ulib-tags").val().trim();
 			var tags = tagsRaw ? shared.sanitizeTags(tagsRaw.split(",")) : [];
 
-			// Filter reserved tags ("System" and "Hamilton" are not allowed)
+			// Filter reserved tags (system and OEM names are not allowed)
 			var tagCheck = shared.filterReservedTags(tags);
 			if (tagCheck.removed.length > 0) {
 				showTagValidationErrorModal('The following tags are reserved and cannot be used: ' + tagCheck.removed.join(', ') + '\n\nThese tags have been automatically removed.');

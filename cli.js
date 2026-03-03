@@ -117,21 +117,72 @@ function isSystemLibraryByName(libName) {
 // ---------------------------------------------------------------------------
 // Restricted Author Protection
 // ---------------------------------------------------------------------------
-// Password required to use "Hamilton" (case-insensitive) as author on
-// non-system packages. Prevents spoofing and acts as an additional signing
-// mechanism for first-party libraries.
+// ---- Restricted Author / Organization Protection ----
+// Password required to use any restricted OEM company name (case-insensitive,
+// whitespace-insensitive, character-insensitive substring match) as author or
+// organization on non-system packages.  This prevents spoofing and acts as an
+// additional signing mechanism for first-party / OEM libraries.
 //
 // The password is stored as a SHA-256 hash to avoid exposing the plaintext
 // in source control.  Comparison uses crypto.timingSafeEqual to resist
 // timing side-channel analysis.
-const HAMILTON_AUTHOR_PASSWORD_HASH = 'bbdc525497de1c19c57767e36b4f01dadcc05348664eea071ac984fd955bc207';
+const OEM_AUTHOR_PASSWORD_HASH = 'bbdc525497de1c19c57767e36b4f01dadcc05348664eea071ac984fd955bc207';
 
 /**
- * Check if an author name is restricted (i.e. "Hamilton" in any case).
+ * Restricted OEM keywords.  The input is normalized (lowercased, all
+ * non-alphanumeric characters removed) and tested for whether it
+ * **contains** any of these keywords anywhere in the string.
+ * Example: "NotHamilton" is blocked because it contains "hamilton".
+ */
+const RESTRICTED_AUTHOR_KEYWORDS = [
+    'hamilton',
+    'tecan',
+    'thermofisher', 'thermoscientific', 'fisherscientific',
+    'danaher',
+    'beckmancoulter',
+    'roche', 'rochediagnostics',
+    'siemens', 'healthineers',
+    'inheco',
+    'agilent',
+    'revvity', 'perkinelmer',
+    'biorad',
+    'qiagen',
+    'hudsonrobotics',
+    'sptlabtech',
+    'ttplabtech',
+    'swisslog',
+    'bectondickinson', 'bdbiosciences', 'bdkiestra',
+    'labvantage',
+    'labware',
+    'automata',
+    'opentrons',
+    'biosero',
+    'greenbuttongo',
+    'liconic',
+    'azenta', 'brooksautomation',
+    'slas', 'societyforlaboratoryautomationandscreening',
+    'highresbio',
+    'moleculardevices', 'moldev',
+    'bmglabtech',
+    'aurorabiomed',
+    'abcontrols',
+    'biotek', 'bioteck'
+];
+
+/**
+ * Check if an author/organization name is restricted.
+ * Normalizes the input by lowercasing and stripping all non-alphanumeric
+ * characters, then checks whether the result contains any restricted
+ * OEM keyword as a substring.
  */
 function isRestrictedAuthor(author) {
     if (!author) return false;
-    return author.trim().toLowerCase() === 'hamilton';
+    var normalized = author.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!normalized) return false;
+    for (var i = 0; i < RESTRICTED_AUTHOR_KEYWORDS.length; i++) {
+        if (normalized.indexOf(RESTRICTED_AUTHOR_KEYWORDS[i]) !== -1) return true;
+    }
+    return false;
 }
 
 /**
@@ -141,7 +192,7 @@ function isRestrictedAuthor(author) {
 function validateAuthorPassword(password) {
     if (!password || typeof password !== 'string') return false;
     var inputHash  = crypto.createHash('sha256').update(password).digest();
-    var storedHash = Buffer.from(HAMILTON_AUTHOR_PASSWORD_HASH, 'hex');
+    var storedHash = Buffer.from(OEM_AUTHOR_PASSWORD_HASH, 'hex');
     try {
         return crypto.timingSafeEqual(inputHash, storedHash);
     } catch (_) {
@@ -1182,16 +1233,16 @@ function cmdImportLib(args) {
     }
 
     // ---- Restricted author check ----
-    // If the package claims "Hamilton" as author or organization but is NOT a known system library,
+    // If the package claims a restricted OEM name as author or organization but is NOT a known system library,
     // require --author-password for authorization
     const importAuthor = (manifest.author || '').trim();
     const importOrg = (manifest.organization || '').trim();
     if ((isRestrictedAuthor(importAuthor) || isRestrictedAuthor(importOrg)) && !isSystemLibraryByName(libName)) {
         if (!args['author-password']) {
-            die('This package uses the restricted author name "Hamilton". Use --author-password <password> to authorize.');
+            die('This package uses a restricted OEM author/organization name. Use --author-password <password> to authorize.');
         }
         if (!validateAuthorPassword(args['author-password'])) {
-            die('Incorrect author password. Import of Hamilton-authored packages requires valid authorization.');
+            die('Incorrect author password. Import of packages with restricted OEM names requires valid authorization.');
         }
     }
 
@@ -1731,10 +1782,10 @@ function cmdCreatePackage(args) {
     // ---- Restricted author/organization check ----
     if (isRestrictedAuthor(spec.author) || isRestrictedAuthor(spec.organization)) {
         if (!args['author-password']) {
-            die('The author name "Hamilton" is restricted. Use --author-password <password> to authorize.');
+            die('The specified author/organization is a restricted OEM name. Use --author-password <password> to authorize.');
         }
         if (!validateAuthorPassword(args['author-password'])) {
-            die('Incorrect author password. Creating packages with author "Hamilton" requires valid authorization.');
+            die('Incorrect author password. Creating packages with restricted OEM names requires valid authorization.');
         }
     }
 
@@ -2328,8 +2379,8 @@ import-lib
   --force                       Overwrite without error if already installed
   --no-group                    Skip auto-assigning to a library group
   --no-cache                    Skip caching the package in the store
-  --author-password <pw>        Authorize importing packages with restricted
-                                author name "Hamilton"
+  --author-password <pw>        Authorize importing packages with a restricted
+                                OEM author/organization name
 
   Examples:
     node cli.js import-lib --file MyLib.hxlibpkg
@@ -2347,8 +2398,8 @@ import-archive
   --force                       Overwrite without error if already installed
   --no-group                    Skip auto-assigning to library groups
   --no-cache                    Skip caching packages in the store
-  --author-password <pw>        Authorize importing packages with restricted
-                                author name "Hamilton"
+  --author-password <pw>        Authorize importing packages with a restricted
+                                OEM author/organization name
 
   Examples:
     node cli.js import-archive --file bundle.hxlibarch
@@ -2405,7 +2456,7 @@ create-package
 
   --spec   <path>    [required]  Path to JSON spec file (see cli-schema.json)
   --output <path>    [required]  Output .hxlibpkg file path
-  --author-password <pw>        Required when author is "Hamilton"
+  --author-password <pw>        Required when author/organization is a restricted OEM name
 
   The spec file describes all metadata and which files to bundle.
   See cli-schema.json for the full JSON Schema definition.
