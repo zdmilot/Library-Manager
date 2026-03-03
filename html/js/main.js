@@ -1754,8 +1754,6 @@
 
 				function dismissSplashIfReady() {
 					if (!_splashAnimDone || !_splashInitDone) return;
-					// Set window title bar to full name, taskbar to short name
-					win.title = 'Library Manager for Venus 6';
 					// Restore scrolling now that splash is leaving
 					document.documentElement.style.overflow = '';
 					document.body.style.overflow = '';
