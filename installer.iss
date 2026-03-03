@@ -25,6 +25,8 @@ DisableProgramGroupPage=yes
 OutputBaseFilename=LibraryManagerForVenus6_v{#MyAppVersion}_Setup
 SetupIconFile={#MyAppIcon}
 UninstallDisplayIcon={app}\{#MyAppIcon}
+WizardImageFile=WizardImage.bmp
+WizardSmallImageFile=WizardSmallImage.bmp
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -32,6 +34,7 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64
 MinVersion=10.0
 LicenseFile=
+DisableWelcomePage=no
 ; Show the "Ready to Install" summary page
 DisableReadyPage=no
 
@@ -234,11 +237,12 @@ begin
   TermsMemo.Left := 0;
   TermsMemo.Top := 0;
   TermsMemo.Width := TermsPage.SurfaceWidth;
-  TermsMemo.Height := TermsPage.SurfaceHeight - 40;
+  TermsMemo.Height := TermsPage.SurfaceHeight - ScaleY(30);
   TermsMemo.ScrollBars := ssVertical;
   TermsMemo.ReadOnly := True;
   TermsMemo.WordWrap := True;
   TermsMemo.TabStop := False;
+  TermsMemo.Anchors := [akLeft, akTop, akRight, akBottom];
 
   ExtractTemporaryFile('TERMS_OF_USE.txt');
   ExtractTemporaryFile('PRIVACY_POLICY.txt');
@@ -253,9 +257,10 @@ begin
   AcceptCheckbox := TNewCheckBox.Create(WizardForm);
   AcceptCheckbox.Parent := TermsPage.Surface;
   AcceptCheckbox.Caption := 'I accept the Terms of Use and Privacy Policy';
-  AcceptCheckbox.Top := TermsMemo.Top + TermsMemo.Height + 8;
+  AcceptCheckbox.Top := TermsMemo.Top + TermsMemo.Height + ScaleY(6);
   AcceptCheckbox.Left := 0;
   AcceptCheckbox.Width := TermsPage.SurfaceWidth;
+  AcceptCheckbox.Anchors := [akLeft, akBottom, akRight];
   AcceptCheckbox.Checked := False;
   AcceptCheckbox.OnClick := @AcceptCheckboxClick;
 
@@ -268,11 +273,63 @@ begin
     'Choose the default settings for Library Manager for Venus 6.'
   );
 
-  // === Section 1: Regulated Environment ===
+  // === Section 1: Appearance ===
   SectionLabel := TNewStaticText.Create(WizardForm);
   SectionLabel.Parent := ConfigPage.Surface;
-  SectionLabel.Caption := 'Environment Mode';
+  SectionLabel.Caption := 'Appearance';
   SectionLabel.Top := 4;
+  SectionLabel.Left := 0;
+  SectionLabel.Font.Style := [fsBold];
+  SectionLabel.Font.Size := 9;
+
+  DarkModeCheckbox := TNewCheckBox.Create(WizardForm);
+  DarkModeCheckbox.Parent := ConfigPage.Surface;
+  DarkModeCheckbox.Caption := 'Always use dark mode (otherwise follows system setting)';
+  DarkModeCheckbox.Top := SectionLabel.Top + SectionLabel.Height + 8;
+  DarkModeCheckbox.Left := 8;
+  DarkModeCheckbox.Width := ConfigPage.SurfaceWidth - 16;
+  DarkModeCheckbox.Checked := False;
+
+  // --- Divider ---
+  DividerBevel := TBevel.Create(WizardForm);
+  DividerBevel.Parent := ConfigPage.Surface;
+  DividerBevel.Top := DarkModeCheckbox.Top + DarkModeCheckbox.Height + 16;
+  DividerBevel.Left := 0;
+  DividerBevel.Width := ConfigPage.SurfaceWidth;
+  DividerBevel.Height := 2;
+  DividerBevel.Shape := bsBottomLine;
+
+  // === Section 2: GitHub Links ===
+  SectionLabel := TNewStaticText.Create(WizardForm);
+  SectionLabel.Parent := ConfigPage.Surface;
+  SectionLabel.Caption := 'GitHub Integration';
+  SectionLabel.Top := DividerBevel.Top + DividerBevel.Height + 12;
+  SectionLabel.Left := 0;
+  SectionLabel.Font.Style := [fsBold];
+  SectionLabel.Font.Size := 9;
+
+  GithubLinksCheckbox := TNewCheckBox.Create(WizardForm);
+  GithubLinksCheckbox.Parent := ConfigPage.Surface;
+  GithubLinksCheckbox.Caption := 'Show GitHub Repository Links';
+  GithubLinksCheckbox.Top := SectionLabel.Top + SectionLabel.Height + 8;
+  GithubLinksCheckbox.Left := 8;
+  GithubLinksCheckbox.Width := ConfigPage.SurfaceWidth - 16;
+  GithubLinksCheckbox.Checked := False;  // Hidden by default
+
+  // --- Divider ---
+  DividerBevel2 := TBevel.Create(WizardForm);
+  DividerBevel2.Parent := ConfigPage.Surface;
+  DividerBevel2.Top := GithubLinksCheckbox.Top + GithubLinksCheckbox.Height + 16;
+  DividerBevel2.Left := 0;
+  DividerBevel2.Width := ConfigPage.SurfaceWidth;
+  DividerBevel2.Height := 2;
+  DividerBevel2.Shape := bsBottomLine;
+
+  // === Section 3: Regulated Environment Mode ===
+  SectionLabel := TNewStaticText.Create(WizardForm);
+  SectionLabel.Parent := ConfigPage.Surface;
+  SectionLabel.Caption := 'Regulated Environment Mode';
+  SectionLabel.Top := DividerBevel2.Top + DividerBevel2.Height + 12;
   SectionLabel.Left := 0;
   SectionLabel.Font.Style := [fsBold];
   SectionLabel.Font.Size := 9;
@@ -297,58 +354,6 @@ begin
   RegulatedInfoLabel.Font.Color := clGray;
   RegulatedInfoLabel.Font.Size := 8;
 
-  // --- Divider ---
-  DividerBevel := TBevel.Create(WizardForm);
-  DividerBevel.Parent := ConfigPage.Surface;
-  DividerBevel.Top := RegulatedInfoLabel.Top + RegulatedInfoLabel.Height + 16;
-  DividerBevel.Left := 0;
-  DividerBevel.Width := ConfigPage.SurfaceWidth;
-  DividerBevel.Height := 2;
-  DividerBevel.Shape := bsBottomLine;
-
-  // === Section 2: Appearance ===
-  SectionLabel := TNewStaticText.Create(WizardForm);
-  SectionLabel.Parent := ConfigPage.Surface;
-  SectionLabel.Caption := 'Appearance';
-  SectionLabel.Top := DividerBevel.Top + DividerBevel.Height + 12;
-  SectionLabel.Left := 0;
-  SectionLabel.Font.Style := [fsBold];
-  SectionLabel.Font.Size := 9;
-
-  DarkModeCheckbox := TNewCheckBox.Create(WizardForm);
-  DarkModeCheckbox.Parent := ConfigPage.Surface;
-  DarkModeCheckbox.Caption := 'Always use dark mode (otherwise follows system setting)';
-  DarkModeCheckbox.Top := SectionLabel.Top + SectionLabel.Height + 8;
-  DarkModeCheckbox.Left := 8;
-  DarkModeCheckbox.Width := ConfigPage.SurfaceWidth - 16;
-  DarkModeCheckbox.Checked := False;
-
-  // --- Divider ---
-  DividerBevel2 := TBevel.Create(WizardForm);
-  DividerBevel2.Parent := ConfigPage.Surface;
-  DividerBevel2.Top := DarkModeCheckbox.Top + DarkModeCheckbox.Height + 16;
-  DividerBevel2.Left := 0;
-  DividerBevel2.Width := ConfigPage.SurfaceWidth;
-  DividerBevel2.Height := 2;
-  DividerBevel2.Shape := bsBottomLine;
-
-  // === Section 3: GitHub Links ===
-  SectionLabel := TNewStaticText.Create(WizardForm);
-  SectionLabel.Parent := ConfigPage.Surface;
-  SectionLabel.Caption := 'GitHub Integration';
-  SectionLabel.Top := DividerBevel2.Top + DividerBevel2.Height + 12;
-  SectionLabel.Left := 0;
-  SectionLabel.Font.Style := [fsBold];
-  SectionLabel.Font.Size := 9;
-
-  GithubLinksCheckbox := TNewCheckBox.Create(WizardForm);
-  GithubLinksCheckbox.Parent := ConfigPage.Surface;
-  GithubLinksCheckbox.Caption := 'Show GitHub Repository Links';
-  GithubLinksCheckbox.Top := SectionLabel.Top + SectionLabel.Height + 8;
-  GithubLinksCheckbox.Left := 8;
-  GithubLinksCheckbox.Width := ConfigPage.SurfaceWidth - 16;
-  GithubLinksCheckbox.Checked := False;  // Hidden by default
-
   // -----------------------------------------------------------------------
   // Regulated Environment Warning page (shown only when regulated mode is selected)
   // -----------------------------------------------------------------------
@@ -363,11 +368,12 @@ begin
   RegulatedWarningMemo.Left := 0;
   RegulatedWarningMemo.Top := 0;
   RegulatedWarningMemo.Width := RegulatedWarningPage.SurfaceWidth;
-  RegulatedWarningMemo.Height := RegulatedWarningPage.SurfaceHeight - 40;
+  RegulatedWarningMemo.Height := RegulatedWarningPage.SurfaceHeight - ScaleY(30);
   RegulatedWarningMemo.ScrollBars := ssVertical;
   RegulatedWarningMemo.ReadOnly := True;
   RegulatedWarningMemo.WordWrap := True;
   RegulatedWarningMemo.TabStop := False;
+  RegulatedWarningMemo.Anchors := [akLeft, akTop, akRight, akBottom];
   RegulatedWarningMemo.Text :=
     'IMPORTANT DISCLAIMER' + #13#10 +
     '════════════════════════════════════════════════' + #13#10 + #13#10 +
@@ -389,9 +395,10 @@ begin
   RegulatedAcceptCheckbox := TNewCheckBox.Create(WizardForm);
   RegulatedAcceptCheckbox.Parent := RegulatedWarningPage.Surface;
   RegulatedAcceptCheckbox.Caption := 'I have read and accept the regulated environment mode disclaimer';
-  RegulatedAcceptCheckbox.Top := RegulatedWarningMemo.Top + RegulatedWarningMemo.Height + 8;
+  RegulatedAcceptCheckbox.Top := RegulatedWarningMemo.Top + RegulatedWarningMemo.Height + ScaleY(6);
   RegulatedAcceptCheckbox.Left := 0;
   RegulatedAcceptCheckbox.Width := RegulatedWarningPage.SurfaceWidth;
+  RegulatedAcceptCheckbox.Anchors := [akLeft, akBottom, akRight];
   RegulatedAcceptCheckbox.Checked := False;
   RegulatedAcceptCheckbox.OnClick := @RegulatedAcceptCheckboxClick;
 end;
@@ -885,7 +892,6 @@ Name: "{app}\local\exports"; Permissions: users-modify
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppIcon}"
-Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppIcon}"; Tasks: desktopicon
 
 [Run]
