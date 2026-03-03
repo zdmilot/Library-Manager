@@ -1,9 +1,9 @@
-﻿Privacy Policy - Library Manager for VENUS 6
+Privacy Policy - Library Manager for VENUS 6
 
 Effective date: March 1, 2026
 Last updated: March 3, 2026
 
-Library Manager for VENUS 6 (“the App”) is a desktop application for managing Hamilton VENUS library packages and related files. This policy explains what information the App processes, where it is stored, and when information may leave your device.
+Library Manager for VENUS 6 ("the App") is a desktop application for managing Hamilton VENUS library packages and related files. This policy explains what information the App processes, where it is stored, and when information may leave your device.
 
 1) Summary
 
@@ -13,7 +13,7 @@ The App does not collect telemetry, analytics, advertising identifiers, or usage
 
 The App does not transmit your library content, settings, or audit data to the developer.
 
-The App includes a “Report issue” link that opens a public GitHub issue page in your default web browser. Any information you submit on GitHub is controlled by you and handled by GitHub.
+The App includes a "Report issue" link that opens a public GitHub issue page in your default web browser. Any information you submit on GitHub is controlled by you and handled by GitHub.
 
 2) Information the App processes
 
@@ -47,18 +47,18 @@ No operational data is uploaded by the App. Data remains on your device unless y
 
 The App does not require a cloud account and does not include built-in analytics, advertising SDKs, or telemetry collection services.
 
-The App does not transmit your data to the developer’s servers.
+The App does not transmit your data to the developer's servers.
 The App may access the internet only if you choose actions that inherently involve your browser or external services, such as opening a web page link.
 
-5) “Report issue” link (GitHub)
+5) "Report issue" link (GitHub)
 
-The App may provide a “Report issue” option that opens your default web browser to a GitHub page where you can submit an issue.
+The App may provide a "Report issue" option that opens your default web browser to a GitHub page where you can submit an issue.
 
 The App does not automatically send device details (such as Windows version) or application details (such as VENUS version) to GitHub.
 
 Any information you enter into the GitHub issue form is submitted by you and may be publicly visible because the repository is public.
 
-GitHub processes information you submit according to GitHub’s privacy practices.
+GitHub processes information you submit according to GitHub's privacy practices.
 
 Repository: https://github.com/zdmilot/Library-Manager-for-Venus-6
 
@@ -66,7 +66,7 @@ Recommendation: Do not include sensitive information (such as usernames, machine
 
 6) Regulated environment mode
 
-The App may include a “regulated environment mode” intended for use in controlled or regulated workflows. When enabled, the App may disable features that could increase information-sharing risk (for example, opening external issue-reporting links).
+The App may include a "regulated environment mode" intended for use in controlled or regulated workflows. When enabled, the App may disable features that could increase information-sharing risk (for example, opening external issue-reporting links).
 
 Regardless of mode, the App does not transmit operational data to the developer.
 
