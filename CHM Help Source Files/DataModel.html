@@ -164,14 +164,14 @@
 <tr><td><code>gAll</code></td><td>All</td><td><code>fa-home</code></td><td>left</td><td>Shows all installed libraries</td></tr>
 <tr><td><code>gRecent</code></td><td>Recent</td><td><code>fa-history</code></td><td>left</td><td>Recently accessed libraries</td></tr>
 <tr><td><code>gStarred</code></td><td>Starred</td><td><code>fa-star</code></td><td>left</td><td>Libraries starred (favorited) by the user</td></tr>
-<tr><td><code>gHamilton</code></td><td>Hamilton</td><td><code>fa-check-circle</code> (solid)</td><td>left</td><td>Protected Hamilton-authored libraries</td></tr>
+<tr><td><code>gOEM</code></td><td>OEM</td><td><code>fa-check-circle</code> (solid)</td><td>left</td><td>Protected OEM-authored libraries</td></tr>
 <tr><td><code>gFolders</code></td><td>Import</td><td><code>fa-download</code></td><td>right</td><td>Import workflow tab</td></tr>
 <tr><td><code>gEditors</code></td><td>Export</td><td><code>fa-upload</code></td><td>right</td><td>Export workflow tab</td></tr>
 <tr><td><code>gHistory</code></td><td>History</td><td><code>fa-list</code></td><td>right</td><td>Action history</td></tr>
 </tbody>
 </table>
 
-<p>The <code>gHamilton</code> group has an additional <code>"protected": true</code> property that prevents it from being deleted or renamed. See <a href="LibraryGrouping.html">Library Grouping</a> for full details on Hamilton group protections.</p>
+<p>The <code>gOEM</code> group has an additional <code>"protected": true</code> property that prevents it from being deleted or renamed. See <a href="LibraryGrouping.html">Library Grouping</a> for full details on OEM group protections.</p>
 
 <h3>User-Created Groups (Stored in groups.json)</h3>
 <p>User-created groups have auto-generated <code>_id</code> values and <code>"default": false</code>. Each group has a name, FontAwesome icon class, and display metadata.</p>
@@ -190,8 +190,8 @@
 
 <div class="code"><pre>// In-memory only - not stored in groups.json
 {
-  "_id": "gHamilton",
-  "name": "Hamilton",
+  "_id": "gOEM",
+  "name": "OEM",
   "icon-class": "fa-check-circle",
   "default": true,
   "protected": true,

@@ -180,24 +180,24 @@ The application defines six built-in groups that are **hardcoded** in both `main
 |----|------|------|------|---------|
 | `gAll` | All | `fa-home` | left | Shows all installed (non-deleted) libraries |
 | `gRecent` | Recent | `fa-history` | left | Recently imported libraries |
-| `gHamilton` | Hamilton | `fa-check-circle` (solid) | left | Protected Hamilton-authored libraries |
+| `gOEM` | OEM | `fa-check-circle` (solid) | left | Protected OEM-authored libraries |
 | `gFolders` | Import | `fa-download` | right | Import workflow tab |
 | `gEditors` | Export | `fa-upload` | right | Export workflow tab |
 | `gHistory` | History | `fa-list` | right | Action history |
 
 User-created groups are stored in `groups.json` with `"default": false` and auto-generated `_id` values.
 
-### Hamilton default group
+### OEM default group
 
-The **Hamilton** group (`gHamilton`) is a special protected group that ships with the application. It is designed to contain libraries authored by Hamilton and is distinguished from regular custom groups in several ways:
+The **OEM** group (`gOEM`) is a special protected group that ships with the application. It is designed to contain libraries authored by OEM vendors (such as Hamilton and other equipment manufacturers) and is distinguished from regular custom groups in several ways:
 
-- **Non-deletable / non-renamable** - The Hamilton group has `"protected": true` in the `DEFAULT_GROUPS` map, preventing users from deleting or renaming it.
+- **Non-deletable / non-renamable** - The OEM group has `"protected": true` in the `DEFAULT_GROUPS` map, preventing users from deleting or renaming it.
 - **Always visible** - It appears in the left-side navigation between the System libraries group and user-created groups.
 - **Solid checkmark icon** - Uses `fas fa-check-circle` (Font Awesome 5 Solid) to visually distinguish it from user-created groups.
 - **Password-protected author name** - The author name "Hamilton" is restricted. When a user enters "Hamilton" (case-insensitive) as the author in the Library Packager, a password prompt modal is displayed. The correct password must be entered before the package can be built. This prevents unauthorized attribution of packages to Hamilton.
   - **GUI:** The `#authorPasswordModal` is triggered when the author field loses focus (`blur` event) and the value matches "Hamilton". The user must enter the password or clear the author field.
   - **CLI:** The `--author-password` flag must be supplied when `--spec` contains `"author": "Hamilton"`. If the password is missing or incorrect, the CLI exits with an error.
-- **Empty state message** - When no Hamilton packages are installed, the Hamilton tab displays a dedicated placeholder message: *"No Hamilton packages installed yet. Import a Hamilton-authored library package to see it here."*
+- **Empty state message** - When no OEM packages are installed, the OEM tab displays a dedicated placeholder message: *"No OEM packages installed yet. Import an OEM-authored library package to see it here."**
 ## 10) Recent/history and housekeeping
 
 - Tracks recent imports and exposes Recent view.
@@ -233,7 +233,7 @@ The **Hamilton** group (`gHamilton`) is a special protected group that ships wit
   - Settings
   - Group tree assignments
   - Installed library records
-- Default groups (All, Recent, Hamilton, Import, Export, History) are defined in a `DEFAULT_GROUPS` map in both `main.js` and `cli.js` and are resolved in-memory. They are never persisted to `groups.json`. A startup migration automatically removes any stale default-group records from the JSON file.
+- Default groups (All, Recent, OEM, Import, Export, History) are defined in a `DEFAULT_GROUPS` map in both `main.js` and `cli.js` and are resolved in-memory. They are never persisted to `groups.json`. A startup migration automatically removes any stale default-group records from the JSON file.
 - Persists key library lifecycle metadata:
   - Source package
   - Install and delete timestamps
@@ -667,6 +667,6 @@ This software provides complete library lifecycle management for Hamilton VENUS:
 - Package creation from raw files with composited brand icon
 - HMAC-SHA256 package signing and automatic verification on import
 - Verify & Repair tool for detecting and fixing library file integrity issues
-- Protected Hamilton default group with password-gated authorship
+- Protected OEM default group with password-gated authorship
 - Grouping, metadata, integrity validation, and local persistence
 - Pre-rendered static assets for consistent visual identity
