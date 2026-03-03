@@ -58,11 +58,19 @@ var
   TermsPage: TWizardPage;
   TermsMemo: TNewMemo;
   AcceptCheckbox: TNewCheckBox;
+  RegulatedWarningPage: TWizardPage;
+  RegulatedWarningMemo: TNewMemo;
+  RegulatedAcceptCheckbox: TNewCheckBox;
   UninstallMode: Integer;
 
 procedure AcceptCheckboxClick(Sender: TObject);
 begin
   WizardForm.NextButton.Enabled := AcceptCheckbox.Checked;
+end;
+
+procedure RegulatedAcceptCheckboxClick(Sender: TObject);
+begin
+  WizardForm.NextButton.Enabled := RegulatedAcceptCheckbox.Checked;
 end;
 
 procedure RegulatedCheckboxClick(Sender: TObject);
@@ -107,6 +115,8 @@ begin
     RegulatedInfoLabel.Caption :=
       'Regulated mode is disabled. All users can manage libraries freely.';
     RegulatedInfoLabel.Font.Color := clGray;
+    // Reset the disclaimer acceptance when regulated mode is unchecked
+    RegulatedAcceptCheckbox.Checked := False;
   end;
 end;
 
@@ -245,14 +255,70 @@ begin
   GithubLinksCheckbox.Left := 8;
   GithubLinksCheckbox.Width := ConfigPage.SurfaceWidth - 16;
   GithubLinksCheckbox.Checked := False;  // Hidden by default
+
+  // -----------------------------------------------------------------------
+  // Regulated Environment Warning page (shown only when regulated mode is selected)
+  // -----------------------------------------------------------------------
+  RegulatedWarningPage := CreateCustomPage(
+    ConfigPage.ID,
+    'Regulated Environment Mode Disclaimer',
+    'Please read the following important disclaimer before continuing.'
+  );
+
+  RegulatedWarningMemo := TNewMemo.Create(WizardForm);
+  RegulatedWarningMemo.Parent := RegulatedWarningPage.Surface;
+  RegulatedWarningMemo.Left := 0;
+  RegulatedWarningMemo.Top := 0;
+  RegulatedWarningMemo.Width := RegulatedWarningPage.SurfaceWidth;
+  RegulatedWarningMemo.Height := RegulatedWarningPage.SurfaceHeight - 40;
+  RegulatedWarningMemo.ScrollBars := ssVertical;
+  RegulatedWarningMemo.ReadOnly := True;
+  RegulatedWarningMemo.WordWrap := True;
+  RegulatedWarningMemo.TabStop := False;
+  RegulatedWarningMemo.Text :=
+    'IMPORTANT DISCLAIMER' + #13#10 +
+    '════════════════════════════════════════════════' + #13#10 + #13#10 +
+    'You have selected Regulated Environment Mode.' + #13#10 + #13#10 +
+    'If the App provides a "regulated environment mode," it is provided as an ' +
+    'optional feature intended to help reduce certain operational risks (for ' +
+    'example, by disabling optional behaviors). Regulated environment mode does ' +
+    'not guarantee compliance with any law, regulation, guidance, or internal ' +
+    'policy, and does not replace required validation/qualification, documentation, ' +
+    'change control, audit readiness, or security controls in your environment.' + #13#10 + #13#10 +
+    'The developer makes no warranties or representations regarding regulated use, ' +
+    'and assumes no liability arising from reliance on or use of regulated ' +
+    'environment mode.' + #13#10 + #13#10 +
+    '════════════════════════════════════════════════' + #13#10 + #13#10 +
+    'By clicking Next, you acknowledge that you have read and understood this ' +
+    'disclaimer and that enabling regulated environment mode does not constitute ' +
+    'compliance with any regulatory requirements.';
+
+  RegulatedAcceptCheckbox := TNewCheckBox.Create(WizardForm);
+  RegulatedAcceptCheckbox.Parent := RegulatedWarningPage.Surface;
+  RegulatedAcceptCheckbox.Caption := 'I have read and accept the regulated environment mode disclaimer';
+  RegulatedAcceptCheckbox.Top := RegulatedWarningMemo.Top + RegulatedWarningMemo.Height + 8;
+  RegulatedAcceptCheckbox.Left := 0;
+  RegulatedAcceptCheckbox.Width := RegulatedWarningPage.SurfaceWidth;
+  RegulatedAcceptCheckbox.Checked := False;
+  RegulatedAcceptCheckbox.OnClick := @RegulatedAcceptCheckboxClick;
 end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = TermsPage.ID then
     WizardForm.NextButton.Enabled := AcceptCheckbox.Checked
+  else if CurPageID = RegulatedWarningPage.ID then
+    WizardForm.NextButton.Enabled := RegulatedAcceptCheckbox.Checked
   else
     WizardForm.NextButton.Enabled := True;
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  // Skip the regulated warning page if regulated mode is not selected
+  if PageID = RegulatedWarningPage.ID then
+    Result := not RegulatedCheckbox.Checked;
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;

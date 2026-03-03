@@ -440,6 +440,8 @@ body {
 			#editModal + .modal-backdrop { z-index: 1055; }
 			#deleteModal { z-index: 1060; }
 			#deleteModal + .modal-backdrop { z-index: 1055; }
+			#regulatedModeConfirmModal { z-index: 1060; }
+			#regulatedModeConfirmModal + .modal-backdrop { z-index: 1055; }
 
 			.editModal-icon:hover, .editModal-image:hover{
 				opacity: 0.5;

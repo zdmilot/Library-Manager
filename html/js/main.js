@@ -9875,6 +9875,12 @@
 					);
 					$modal.find(".reg-confirm-btn").html('<i class="fas fa-lock mr-1"></i>I understand, enable regulated mode');
 					$modal.find(".reg-confirm-btn").removeClass("btn-success").addClass("btn-danger");
+					$modal.find(".reg-confirm-disclaimer-box").html(
+						'<p class="mb-1"><strong><i class="fas fa-info-circle mr-1"></i>Important Disclaimer</strong></p>' +
+						'<p class="mb-1">Regulated environment mode is provided as an optional feature intended to help reduce certain operational risks (for example, by disabling optional behaviors). ' +
+						'It <b>does not</b> guarantee compliance with any law, regulation, guidance, or internal policy, and <b>does not</b> replace required validation/qualification, documentation, change control, audit readiness, or security controls in your environment.</p>' +
+						'<p class="mb-0">The developer makes no warranties or representations regarding regulated use, and assumes no liability arising from reliance on or use of regulated environment mode.</p>'
+					).show();
 				} else {
 					$modal.find(".reg-confirm-title").text("Disable Regulated Environment Mode");
 					$modal.find(".reg-confirm-icon i").removeClass("fa-lock").addClass("fa-unlock");
@@ -9886,6 +9892,7 @@
 					);
 					$modal.find(".reg-confirm-btn").html('<i class="fas fa-unlock mr-1"></i>I understand, disable regulated mode');
 					$modal.find(".reg-confirm-btn").removeClass("btn-danger").addClass("btn-success");
+					$modal.find(".reg-confirm-disclaimer-box").hide();
 				}
 
 				// Reset input and button state
