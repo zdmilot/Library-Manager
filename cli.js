@@ -119,31 +119,17 @@ function isSystemLibraryByName(libName) {
 // ---------------------------------------------------------------------------
 // Restricted Author Protection
 // ---------------------------------------------------------------------------
-// ---- Restricted Author / Organization Protection ----
-// Uses the centralized keyword list and matching from shared.js.
-//
-// The password is stored as a SHA-256 hash to avoid exposing the plaintext
-// in source control.  Comparison uses crypto.timingSafeEqual to resist
-// timing side-channel analysis.
-const OEM_AUTHOR_PASSWORD_HASH = 'bbdc525497de1c19c57767e36b4f01dadcc05348664eea071ac984fd955bc207';
+// Uses the centralized constants and validation from shared.js.
+const OEM_AUTHOR_PASSWORD_HASH = shared.OEM_AUTHOR_PASSWORD_HASH;
 
 // Re-export from shared for local use
 const isRestrictedAuthor = shared.isRestrictedAuthor;
 
 /**
  * Validate CLI --author-password against the restricted author password.
- * Uses SHA-256 hashing and timing-safe comparison.
+ * Delegates to shared.validateAuthorPassword for consistent behaviour.
  */
-function validateAuthorPassword(password) {
-    if (!password || typeof password !== 'string') return false;
-    var inputHash  = crypto.createHash('sha256').update(password).digest();
-    var storedHash = Buffer.from(OEM_AUTHOR_PASSWORD_HASH, 'hex');
-    try {
-        return crypto.timingSafeEqual(inputHash, storedHash);
-    } catch (_) {
-        return false;
-    }
-}
+const validateAuthorPassword = shared.validateAuthorPassword;
 
 // ---------------------------------------------------------------------------
 // Minimal argument parser
@@ -211,8 +197,12 @@ function getWindowsVersion() {
 /**
  * Query the Windows registry for the Hamilton VENUS software version.
  * Returns the version string (e.g. "6.2.2.4006") or null.
+ * Result is cached after the first call to avoid repeated registry queries.
  */
+let _cachedVENUSVersion = undefined;
 function getVENUSVersion() {
+    if (_cachedVENUSVersion !== undefined) return _cachedVENUSVersion;
+    _cachedVENUSVersion = null;
     try {
         const execSync = require('child_process').execSync;
         const regPaths = [
@@ -229,13 +219,13 @@ function getVENUSVersion() {
                         if (!/Hamilton\s+VENUS\s+\d/i.test(entryRaw)) continue;
                         const allVals = execSync('reg query "' + sk + '"', { encoding: 'utf8', timeout: 5000 });
                         const verMatch = allVals.match(/DisplayVersion\s+REG_SZ\s+(.+)/i);
-                        if (verMatch) return verMatch[1].trim();
+                        if (verMatch) { _cachedVENUSVersion = verMatch[1].trim(); return _cachedVENUSVersion; }
                     } catch (_) { /* skip subkey */ }
                 }
             } catch (_) { /* skip registry path */ }
         }
     } catch (_) { /* registry query failed */ }
-    return null;
+    return _cachedVENUSVersion;
 }
 
 // ---------------------------------------------------------------------------
@@ -386,7 +376,7 @@ function getInstallPaths(db, libDirOverride, metDirOverride) {
         try {
             const rec = db.links.findOne({ _id: 'lib-folder' });
             if (rec && rec.path) libBasePath = rec.path;
-        } catch (_) {}
+        } catch (e) { process.stderr.write('  Warning: could not read lib-folder from DB: ' + e.message + '\n'); }
     }
 
     if (metDirOverride) {
@@ -396,7 +386,7 @@ function getInstallPaths(db, libDirOverride, metDirOverride) {
         try {
             const rec = db.links.findOne({ _id: 'met-folder' });
             if (rec && rec.path) metBasePath = rec.path;
-        } catch (_) {}
+        } catch (e) { process.stderr.write('  Warning: could not read met-folder from DB: ' + e.message + '\n'); }
     }
 
     return { libBasePath, metBasePath };
@@ -1766,7 +1756,9 @@ function cmdDeleteLib(args) {
                 );
             }
         }
-    } catch (_) {}
+    } catch (e) {
+        process.stderr.write('  Warning: could not update navigation tree: ' + e.message + '\n');
+    }
 
     console.log(`\nSuccess: "${displayName}" deleted.`);
 
@@ -2141,7 +2133,7 @@ function cmdVerifySyslibHashes(args) {
         try {
             const rec = db.links.findOne({ _id: 'lib-folder' });
             if (rec && rec.path) libBasePath = rec.path;
-        } catch (_) {}
+        } catch (e) { process.stderr.write('  Warning: could not read lib-folder from DB: ' + e.message + '\n'); }
     }
 
     if (!fs.existsSync(libBasePath)) {

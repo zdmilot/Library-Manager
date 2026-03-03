@@ -39,14 +39,8 @@
 		const crypto = require('crypto');
 		const shared = require('../lib/shared');
 
-		/** Shared MIME type lookup for image file extensions */
-		var IMAGE_MIME_MAP = {
-			'png':'image/png', 'jpg':'image/jpeg', 'jpeg':'image/jpeg',
-			'bmp':'image/bmp', 'gif':'image/gif', 'ico':'image/x-icon', 'svg':'image/svg+xml',
-			// keyed with leading dot for convenience (used by some callers)
-			'.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg',
-			'.bmp':'image/bmp', '.gif':'image/gif', '.ico':'image/x-icon', '.svg':'image/svg+xml'
-		};
+		/** Shared MIME type lookup for image file extensions (from shared.js) */
+		var IMAGE_MIME_MAP = shared.IMAGE_MIME_MAP;
 
 		/** Sanitize a ZIP entry filename - delegated to shared module */
 		var safeZipExtractPath = shared.safeZipExtractPath;
@@ -201,7 +195,7 @@
 			try {
 				var s = db_settings.settings.findOne({"_id":"0"});
 				regulatedMode = !!(s && s.chk_regulatedEnvironment);
-			} catch(e) {}
+			} catch(e) { console.warn('Could not read regulated mode setting: ' + e.message); }
 
 			if (regulatedMode) {
 				return { allowed: false, reason: 'Regulated environment mode is enabled.\n\nOnly users assigned to authorized groups (Lab Method Programmer, Lab Service) can manage libraries.\nContact your system administrator for access.' };
@@ -236,7 +230,7 @@
 			try {
 				var s = db_settings.settings.findOne({"_id":"0"});
 				regulatedMode = !!(s && s.chk_regulatedEnvironment);
-			} catch(e) {}
+			} catch(e) { console.warn('Could not read regulated mode setting: ' + e.message); }
 			if (!regulatedMode) return true; // Unregulated: any user can change settings
 			return isInAnyGroup(ALLOW_GROUPS); // Regulated: only authorized groups
 		}
@@ -413,6 +407,17 @@
 					}
 				}
 				trail.push(entry);
+
+				// Rotate audit trail when it exceeds 10,000 entries to prevent unbounded growth
+				var MAX_AUDIT_ENTRIES = 10000;
+				if (trail.length > MAX_AUDIT_ENTRIES) {
+					var archivePath = filePath.replace(/\.json$/, '_' + new Date().toISOString().replace(/[:.]/g, '-') + '.json');
+					try {
+						fs.writeFileSync(archivePath, JSON.stringify(trail.slice(0, trail.length - MAX_AUDIT_ENTRIES), null, 2), 'utf8');
+					} catch(_) { /* rotation archive is best-effort */ }
+					trail = trail.slice(trail.length - MAX_AUDIT_ENTRIES);
+				}
+
 				fs.writeFileSync(filePath, JSON.stringify(trail, null, 2), 'utf8');
 			} catch(e) {
 				console.warn('Could not write audit trail entry: ' + e.message);
@@ -911,7 +916,7 @@
 									fs.writeFileSync(dst, JSON.stringify([dstSettings], null, 2), 'utf8');
 									console.log('Merged settings from ' + oldDir);
 								}
-							} catch(_) {}
+							} catch(e) { console.warn('Settings merge failed for ' + oldDir + ': ' + e.message); }
 							return;
 						}
 						// For array-based files, only migrate if destination is empty/default
@@ -1270,32 +1275,19 @@
 		}
 
 		// ---- Restricted Author / Organization Protection ----
-		// Uses the centralized keyword list and matching from shared.js.
-		//
-		// The password is stored as a SHA-256 hash to avoid exposing the plaintext
-		// in source control.  Comparison uses crypto.timingSafeEqual to resist
-		// timing side-channel analysis.
-		var OEM_AUTHOR_PASSWORD_HASH = 'bbdc525497de1c19c57767e36b4f01dadcc05348664eea071ac984fd955bc207';
+		// Uses the centralized constants and validation from shared.js.
+		var OEM_AUTHOR_PASSWORD_HASH = shared.OEM_AUTHOR_PASSWORD_HASH;
 
 		// Re-export from shared for local use
 		var isRestrictedAuthor = shared.isRestrictedAuthor;
 
 		/**
 		 * Validate the password for using a restricted author name.
-		 * Uses SHA-256 hashing and timing-safe comparison.
+		 * Delegates to shared.validateAuthorPassword for consistent behaviour.
 		 * @param {string} password
 		 * @returns {boolean}
 		 */
-		function validateAuthorPassword(password) {
-			if (!password || typeof password !== 'string') return false;
-			var inputHash  = crypto.createHash('sha256').update(password).digest();
-			var storedHash = Buffer.from(OEM_AUTHOR_PASSWORD_HASH, 'hex');
-			try {
-				return crypto.timingSafeEqual(inputHash, storedHash);
-			} catch (_) {
-				return false;
-			}
-		}
+		var validateAuthorPassword = shared.validateAuthorPassword;
 
 		/**
 		 * Show a password prompt modal for restricted author usage.
@@ -2006,7 +1998,6 @@
 		$(document).on("click", ".link-OpenMethEditor", function () {
 			
 			var file_path = $(this).closest(".link-card-container").attr("data-filepath");
-			// console.log("Open in Method Editor " + file_path)
 			if(file_path!=""){
 				file_path = file_path.substr(0, file_path.lastIndexOf(".")) + ".med";
 				safeOpenItem(file_path);
@@ -2017,7 +2008,6 @@
 		$(document).on("click", ".link-OpenMethLocation", function () {
 			
 			var file_path = path.dirname($(this).closest(".link-card-container").attr("data-filepath"));
-			// console.log("Open Location " + file_path);
 			if(file_path!=""){
 				safeOpenItem(file_path);
 			}	
@@ -3532,7 +3522,7 @@
 			try {
 				var s = db_settings.settings.findOne({"_id":"0"});
 				regulatedMode = !!(s && s.chk_regulatedEnvironment);
-			} catch(ex) {}
+			} catch(ex) { console.warn('Could not read regulated mode setting: ' + ex.message); }
 			if (regulatedMode) {
 				e.preventDefault();
 				$(this).prop("checked", false);
@@ -3615,7 +3605,7 @@
 			try {
 				var s = db_settings.settings.findOne({"_id":"0"});
 				regulatedMode = !!(s && s.chk_regulatedEnvironment);
-			} catch(ex) {}
+			} catch(ex) { console.warn('Could not read regulated mode setting: ' + ex.message); }
 			if (regulatedMode) {
 				e.preventDefault();
 				$(this).prop("checked", false);
@@ -4598,7 +4588,6 @@
 		}
 
 		function saveTree(){
-			console.log("save tree..");
 			try {
 			// Build new tree array first, then write atomically to avoid
 			// data loss if a crash occurs between remove() and save().
@@ -4679,13 +4668,13 @@
 			$icon.empty();
 			if(icon_customImage && icon_customImage !== "" && icon_customImage !== "placeholder"){
 				var imgExists = false;
-				try { imgExists = fs.existsSync(icon_customImage); } catch(e){}
+				try { imgExists = fs.existsSync(icon_customImage); } catch(e){ console.warn('Icon existence check failed: ' + e.message); }
 				if(!imgExists && method["default"]){
-					try { imgExists = fs.existsSync("html/img/" + icon_customImage); } catch(e){}
+					try { imgExists = fs.existsSync("html/img/" + icon_customImage); } catch(e){ console.warn('Fallback icon check failed: ' + e.message); }
 					if(imgExists) icon_customImage = "img/" + icon_customImage;
 				}
 				if(imgExists){
-					$icon.html('<img src="' + icon_customImage + '">');
+					$icon.html('<img src="' + escapeHtml(icon_customImage) + '">');
 				} else {
 					$icon.html('<i class="fad fa-image fa-3x color-gray"></i>');
 				}
@@ -6438,7 +6427,10 @@
 								libImageFilename = path.basename(pkg_libraryFiles[i]);
 								libImageBase64 = fs.readFileSync(pkg_libraryFiles[i]).toString('base64');
 								libImageMime = 'image/bmp';
-							} catch(e) {}
+							} catch(e) {
+								console.warn('Could not read BMP icon ' + path.basename(pkg_libraryFiles[i]) + ': ' + e.message);
+								libImageFilename = null;
+							}
 							break;
 						}
 					}
@@ -8762,7 +8754,7 @@
 				});
 
 				var manifest = {
-					format_version: "1.0",
+					format_version: shared.FORMAT_VERSION,
 					library_name: libName,
 					author: lib.author || "",
 					organization: lib.organization || "",
@@ -8777,8 +8769,31 @@
 					library_files: manifestLibFiles,
 					demo_method_files: demoFiles.slice(),
 					help_files: helpFiles.slice(),
-					com_register_dlls: comDlls.slice()
+					com_register_dlls: comDlls.slice(),
+					app_version: shared.getAppVersion(),
+					windows_version: getWindowsVersion(),
+					venus_version: _cachedVENUSVersion || '',
+					package_lineage: (lib.package_lineage || []).concat([shared.buildLineageEvent('exported', {
+						username: getWindowsUsername(),
+						hostname: os.hostname(),
+						windowsVersion: getWindowsVersion(),
+						venusVersion: _cachedVENUSVersion || ''
+					})])
 				};
+
+				// Preserve extra DB fields for forward compatibility
+				var _knownLibKeys = ['_id','library_name','author','organization','version','venus_compatibility',
+					'description','github_url','tags','created_date','library_image','library_image_base64',
+					'library_image_mime','library_files','demo_method_files','help_files','com_register_dlls',
+					'com_warning','lib_install_path','demo_install_path','installed_date','installed_by',
+					'source_package','file_hashes','public_functions','required_dependencies','deleted',
+					'deleted_date','app_version','format_version','windows_version','venus_version',
+					'package_lineage','is_system_backup'];
+				Object.keys(lib).forEach(function(k) {
+					if (_knownLibKeys.indexOf(k) === -1 && !(k in manifest)) {
+						manifest[k] = lib[k];
+					}
+				});
 
 				// Create ZIP package
 				var zip = new AdmZip();
@@ -8920,7 +8935,7 @@
 					});
 
 					var manifest = {
-						format_version: "1.0",
+						format_version: shared.FORMAT_VERSION,
 						library_name: libName,
 						author: lib.author || "",
 						organization: lib.organization || "",
@@ -8935,8 +8950,31 @@
 						library_files: manifestLibFiles,
 						demo_method_files: demoFiles.slice(),
 						help_files: helpFiles.slice(),
-						com_register_dlls: comDlls.slice()
+						com_register_dlls: comDlls.slice(),
+						app_version: shared.getAppVersion(),
+						windows_version: getWindowsVersion(),
+						venus_version: _cachedVENUSVersion || '',
+						package_lineage: (lib.package_lineage || []).concat([shared.buildLineageEvent('exported', {
+							username: getWindowsUsername(),
+							hostname: os.hostname(),
+							windowsVersion: getWindowsVersion(),
+							venusVersion: _cachedVENUSVersion || ''
+						})])
 					};
+
+					// Preserve extra DB fields for forward compatibility
+					var _knownLibKeys2 = ['_id','library_name','author','organization','version','venus_compatibility',
+						'description','github_url','tags','created_date','library_image','library_image_base64',
+						'library_image_mime','library_files','demo_method_files','help_files','com_register_dlls',
+						'com_warning','lib_install_path','demo_install_path','installed_date','installed_by',
+						'source_package','file_hashes','public_functions','required_dependencies','deleted',
+						'deleted_date','app_version','format_version','windows_version','venus_version',
+						'package_lineage','is_system_backup'];
+					Object.keys(lib).forEach(function(k) {
+						if (_knownLibKeys2.indexOf(k) === -1 && !(k in manifest)) {
+							manifest[k] = lib[k];
+						}
+					});
 
 					// Create an inner zip for this library (.hxlibpkg)
 					var innerZip = new AdmZip();
@@ -9005,14 +9043,17 @@
 
 				// Add archive manifest
 				var archManifest = {
-					format_version: "1.0",
+					format_version: shared.FORMAT_VERSION,
 					archive_type: "hxlibarch",
 					created_date: new Date().toISOString(),
 					library_count: exportedLibs.length,
 					libraries: exportedLibs.map(function(l) { return l.name; }),
 					archive_icon: archiveIconBase64 ? 'archive_icon.png' : null,
 					archive_icon_base64: archiveIconBase64,
-					archive_icon_mime: archiveIconMime
+					archive_icon_mime: archiveIconMime,
+					app_version: shared.getAppVersion(),
+					windows_version: getWindowsVersion(),
+					venus_version: _cachedVENUSVersion || ''
 				};
 				archiveZip.addFile("archive_manifest.json", Buffer.from(JSON.stringify(archManifest, null, 2), "utf8"));
 
@@ -9249,7 +9290,7 @@
 
 					// Build manifest for this library
 					var manifest = {
-						format_version: "1.0",
+						format_version: shared.FORMAT_VERSION,
 						library_name: libName,
 						author: lib.author || "",
 						organization: lib.organization || "",
@@ -9264,8 +9305,31 @@
 						library_files: manifestLibFiles,
 						demo_method_files: demoFiles.slice(),
 						help_files: helpFiles.slice(),
-						com_register_dlls: comDlls.slice()
+						com_register_dlls: comDlls.slice(),
+						app_version: shared.getAppVersion(),
+						windows_version: getWindowsVersion(),
+						venus_version: _cachedVENUSVersion || '',
+						package_lineage: (lib.package_lineage || []).concat([shared.buildLineageEvent('exported', {
+							username: getWindowsUsername(),
+							hostname: os.hostname(),
+							windowsVersion: getWindowsVersion(),
+							venusVersion: _cachedVENUSVersion || ''
+						})])
 					};
+
+					// Preserve extra DB fields for forward compatibility
+					var _knownLibKeys3 = ['_id','library_name','author','organization','version','venus_compatibility',
+						'description','github_url','tags','created_date','library_image','library_image_base64',
+						'library_image_mime','library_files','demo_method_files','help_files','com_register_dlls',
+						'com_warning','lib_install_path','demo_install_path','installed_date','installed_by',
+						'source_package','file_hashes','public_functions','required_dependencies','deleted',
+						'deleted_date','app_version','format_version','windows_version','venus_version',
+						'package_lineage','is_system_backup'];
+					Object.keys(lib).forEach(function(k) {
+						if (_knownLibKeys3.indexOf(k) === -1 && !(k in manifest)) {
+							manifest[k] = lib[k];
+						}
+					});
 
 					// Create an inner zip for this library (.hxlibpkg)
 					var innerZip = new AdmZip();
@@ -9340,9 +9404,12 @@
 
 				// Add archive manifest
 				var archManifest = {
-					format_version: "1.0",
+					format_version: shared.FORMAT_VERSION,
 					archive_type: "hxlibarch",
 					created_date: new Date().toISOString(),
+					app_version: shared.getAppVersion(),
+					windows_version: getWindowsVersion(),
+					venus_version: _cachedVENUSVersion || '',
 					library_count: exportedLibs.length,
 					libraries: exportedLibs.map(function(l) { return l.name; }),
 					archive_icon: archiveIconBase64 ? 'archive_icon.png' : null,
@@ -12751,7 +12818,7 @@
 				var manifestDemoFiles = demoFiles.map(function(f) { return path.basename(f); });
 
 				var manifest = {
-					format_version: "1.0",
+					format_version: shared.FORMAT_VERSION,
 					library_name: libName,
 					author: uLib.author || "",
 					organization: uLib.organization || "",
@@ -12761,6 +12828,13 @@
 					github_url: uLib.github_url || "",
 					tags: uLib.tags || [],
 					created_date: new Date().toISOString(),
+					app_version: shared.getAppVersion(),
+					windows_version: getWindowsVersion(),
+					venus_version: _cachedVENUSVersion || '',
+					package_lineage: [shared.buildLineageEvent('created', {
+						venus_version: _cachedVENUSVersion || '',
+						windows_version: getWindowsVersion()
+					})],
 					library_image: uLib.library_image || null,
 					library_image_base64: uLib.library_image_base64 || null,
 					library_image_mime: uLib.library_image_mime || null,
