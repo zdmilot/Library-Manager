@@ -1,0 +1,22 @@
+Terms of Use
+Effective date: March 3, 2026
+
+Library Manager for Venus 6 ("the App") is an independent, community-developed desktop application. Please read these terms carefully before using the App.
+
+1) No affiliation with Hamilton Company
+The App is not endorsed, released, distributed, or associated with Hamilton Company. The App is an independent project and has no official relationship with Hamilton Company or any of its subsidiaries, partners, or affiliates.
+
+2) Trademarks
+Vantage, ML STAR, Nimbus, and other Hamilton product names are registered trademarks of Hamilton Company, based in Reno, Nevada. Any references to these trademarks within the App, its documentation, or its package ecosystem are purely incidental or arise from third-party packages and libraries that use those names. No claim of ownership or affiliation is implied.
+
+3) Use of "VENUS" and "Hamilton" names
+The terms "VENUS," "Venus 6," and "Venus 6+" are used solely as descriptors to indicate the intended application environment and availability of managed libraries. Their use does not constitute an endorsement, association, or guarantee of compatibility with any Hamilton Company product. References to "Hamilton" and related names are used purely for user clarity and interoperability purposes.
+
+4) No warranty
+THE APP IS PROVIDED "AS IS" AND "WHAT YOU SEE IS WHAT YOU GET," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE APP OR THE USE OR OTHER DEALINGS IN THE APP.
+
+5) No guarantees
+No guarantees are made regarding the functionality, reliability, accuracy, or availability of the App. Use of the App is at your own risk. The author assumes no responsibility for any loss of data, system issues, or other consequences resulting from the use of the App.
+
+6) Acceptance
+By using the App, you acknowledge that you have read, understood, and agree to be bound by these Terms of Use.

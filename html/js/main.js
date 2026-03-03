@@ -1730,9 +1730,10 @@
 
         //Window close.   Ensure to close any background running nw.exe
 		win.on('close', function () {
-			// Persist maximized state for next launch
+			// Persist maximized state for next launch (dual-write for reliability)
 			try {
 				saveSetting('windowMaximized', _windowIsMaximized);
+				localStorage.setItem('windowMaximized', String(_windowIsMaximized));
 			} catch(e) { console.log('Could not save window state: ' + e); }
 
 			gui.App.closeAllWindows();
@@ -1785,11 +1786,16 @@
 				}, remaining);
 
 				// Sync maximized state flag with persisted setting.
-				// The actual maximize is performed in index.html BEFORE
-				// win.show() so the window appears maximized instantly.
+				// The actual maximize + pre-sizing is performed in index.html
+				// BEFORE win.show() so the window appears full-screen instantly.
+				// localStorage is the primary source; settings DB is fallback.
 				try {
-					if (getSettingValue('windowMaximized')) {
+					var _storedMax = localStorage.getItem('windowMaximized');
+					if (_storedMax !== null) {
+						_windowIsMaximized = (_storedMax === 'true');
+					} else if (getSettingValue('windowMaximized')) {
 						_windowIsMaximized = true;
+						localStorage.setItem('windowMaximized', 'true');
 					}
 				} catch(e) { console.log('Could not restore window state: ' + e); }
 
@@ -2057,6 +2063,21 @@
 				$(".privacy-policy-text").text("Privacy policy file not found.");
 			}
 			$("#privacyPolicyModal").modal("show");
+		});
+
+		//Click terms of use link inside About modal.
+		$(document).on("click", ".about-terms-link", function (e) {
+			e.preventDefault();
+			$("#aboutModal").modal("hide");
+			// Load terms of use text from file
+			try {
+				var termsPath = path.join(path.dirname(process.execPath), 'TERMS_OF_USE.txt');
+				var termsText = fs.readFileSync(termsPath, 'utf8');
+				$(".terms-of-use-text").text(termsText);
+			} catch (ex) {
+				$(".terms-of-use-text").text("Terms of use file not found.");
+			}
+			$("#termsOfUseModal").modal("show");
 		});
 
 		//Click "Library Groups" from overflow menu.
@@ -3611,6 +3632,46 @@
 				$(".dark-mode-label").text("Night Mode");
 			}
 		}
+
+		/** Show or hide the manual dark-mode controls based on system-theme setting */
+		function applySystemThemeVisibility(useSystem) {
+			if (useSystem) {
+				$(".btn-dark-mode-toggle").hide();
+				$(".chk-darkMode-wrap").hide();
+			} else {
+				$(".btn-dark-mode-toggle").show();
+				$(".chk-darkMode-wrap").show();
+			}
+		}
+
+		/** Follow the OS dark/light preference */
+		function applySystemTheme() {
+			if (window.matchMedia) {
+				var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+				applyDarkMode(prefersDark);
+				$("#chk_darkMode").prop("checked", prefersDark);
+			}
+		}
+
+		// Listen for OS theme changes while the app is running
+		if (window.matchMedia) {
+			window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(e) {
+				if ($("#chk_useSystemTheme").is(":checked")) {
+					applyDarkMode(e.matches);
+					$("#chk_darkMode").prop("checked", e.matches);
+				}
+			});
+		}
+
+		// Settings checkbox toggle – use system theme
+		$(document).on("change", "#chk_useSystemTheme", function() {
+			var useSystem = $(this).is(":checked");
+			saveSetting("chk_useSystemTheme", useSystem);
+			applySystemThemeVisibility(useSystem);
+			if (useSystem) {
+				applySystemTheme();
+			}
+		});
 
 		// Overflow menu toggle (moon/sun icon)
 		$(document).on("click", ".btn-dark-mode-toggle", function(e) {
@@ -5197,10 +5258,19 @@
 			//setting - Data Location (read-only, always local/)
 			$(".txt-localDataPath").val(LOCAL_DATA_DIR);
 
+			//setting - Use System Theme
+			var useSystem = !!settings["chk_useSystemTheme"];
+			$("#chk_useSystemTheme").prop("checked", useSystem);
+			applySystemThemeVisibility(useSystem);
+
 			//setting - Dark Mode / Night Mode (persisted between sessions)
-			var darkEnabled = !!settings["chk_darkMode"];
-			$("#chk_darkMode").prop("checked", darkEnabled);
-			applyDarkMode(darkEnabled);
+			if (useSystem) {
+				applySystemTheme();
+			} else {
+				var darkEnabled = !!settings["chk_darkMode"];
+				$("#chk_darkMode").prop("checked", darkEnabled);
+				applyDarkMode(darkEnabled);
+			}
 
 			//reset nav bar and hide overflowing nav bar items
 			fitNavBarItems();

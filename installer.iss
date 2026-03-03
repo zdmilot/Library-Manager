@@ -287,7 +287,7 @@ begin
     '"chk_showGitHubLinks":' + GithubVal +
     '}]';
 
-  // Ensure the parent directory exists
+  // Ensure the parent directory exists (needed for the %LOCALAPPDATA% path)
   ForceDirectories(ExtractFileDir(SettingsPath));
   SaveStringToFile(SettingsPath, Json, False);
 end;
@@ -394,6 +394,10 @@ Source: "Library Manager for Venus 6.chm"; DestDir: "{app}"; Flags: ignoreversio
 
 ; README
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
+
+; Legal
+Source: "PRIVACY_POLICY.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "TERMS_OF_USE.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Dirs]
 ; Local data directory with full write access for the Users group.

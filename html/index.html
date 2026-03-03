@@ -41,46 +41,70 @@
 		</div>
 	</div>
 	<script>
-		// Show the NW.js window only after the splash screen has painted.
-		// If the user's last session was maximized, maximize BEFORE showing
-		// so the window appears full-screen instantly (no resize flash).
-		requestAnimationFrame(function() {
-			requestAnimationFrame(function() {
-				try {
-					var _win = require('nw.gui').Window.get();
-					// Read the persisted windowMaximized flag directly from the
-					// settings JSON so we can maximize before the window is visible.
+		// Show the NW.js window after the splash screen has painted.
+		// If the user's last session was maximized, pre-size the window to
+		// fill the screen BEFORE making it visible so there is no resize flash.
+		//
+		// Window-maximized state is stored in localStorage for instant,
+		// path-independent reads.  On first install localStorage is empty so
+		// we fall back to reading settings.json (default: true → maximized).
+		(function _earlyWindowInit() {
+			try {
+				var _win = require('nw.gui').Window.get();
+				var _shouldMaximize = true; // default for first install
+
+				// 1. Prefer localStorage (instant, no file-path ambiguity)
+				var _stored = localStorage.getItem('windowMaximized');
+				if (_stored !== null) {
+					_shouldMaximize = (_stored === 'true');
+				} else {
+					// 2. First run — try reading from settings.json seed
 					try {
 						var _fs = require('fs');
 						var _path = require('path');
 						var _dataDir;
-						// Mirror the resolution logic from main.js
 						if (typeof process !== 'undefined' && process.env && process.env.LMV6_DATA_DIR && process.env.LMV6_DATA_DIR.trim()) {
-							_dataDir = require('path').resolve(process.env.LMV6_DATA_DIR.trim());
+							_dataDir = _path.resolve(process.env.LMV6_DATA_DIR.trim());
 						} else if (typeof nw !== 'undefined' && nw.App && typeof nw.App.dataPath === 'string' && nw.App.dataPath.trim()) {
 							_dataDir = _path.join(nw.App.dataPath, 'local');
 						} else {
 							var _profRoot = (typeof process !== 'undefined' && process.env)
 								? (process.env.LOCALAPPDATA || process.env.APPDATA || '') : '';
-							if (_profRoot) {
-								_dataDir = _path.join(_profRoot, 'Library Manager for Venus 6', 'local');
-							}
+							if (_profRoot) _dataDir = _path.join(_profRoot, 'Library Manager for Venus 6', 'local');
 						}
 						if (_dataDir) {
 							var _settingsPath = _path.join(_dataDir, 'settings.json');
 							if (_fs.existsSync(_settingsPath)) {
 								var _raw = _fs.readFileSync(_settingsPath, 'utf8');
-								var _settings = JSON.parse(_raw);
-								if (Array.isArray(_settings) && _settings.length && _settings[0].windowMaximized) {
-									_win.maximize();
+								var _parsed = JSON.parse(_raw);
+								if (Array.isArray(_parsed) && _parsed.length && typeof _parsed[0].windowMaximized !== 'undefined') {
+									_shouldMaximize = !!_parsed[0].windowMaximized;
 								}
 							}
 						}
-					} catch(_e) { /* settings read failed - show at default size */ }
-					_win.show();
-				} catch(e) {}
-			});
-		});
+					} catch(_) {}
+				}
+
+				// 3. If maximized, pre-size the hidden window to fill the
+				//    available screen area so win.show() reveals a full-size
+				//    window instead of a 1280x800 window that then snaps larger.
+				if (_shouldMaximize) {
+					_win.moveTo(screen.availLeft || 0, screen.availTop || 0);
+					_win.resizeTo(screen.availWidth || 1920, screen.availHeight || 1080);
+				}
+
+				// 4. Wait for splash to composite, then show
+				requestAnimationFrame(function() {
+					requestAnimationFrame(function() {
+						_win.show();
+						if (_shouldMaximize) {
+							// Window is already screen-sized so this is invisible
+							_win.maximize();
+						}
+					});
+				});
+			} catch(e) {}
+		})();
 	</script>
 
 	<div class="container-fluid p-0">
@@ -1416,10 +1440,15 @@
 						<div class="settings-section col-md-12 p-3 no-gutters">
 							<h6>Display <span class="settings-admin-badge" style="display:none;" title="You have access to this setting as a Windows Administrator"><i class="fas fa-unlock text-success ml-1" style="font-size:0.85em;"></i></span></h6>
 							<div class="custom-control custom-checkbox">
+								<input type="checkbox" class="custom-control-input" id="chk_useSystemTheme">
+								<label class="custom-control-label" for="chk_useSystemTheme">Use system theme (follows your Windows light/dark setting)</label>
+							</div>
+							<small class="text-muted ml-4 d-block mb-2">Automatically match the operating system's light or dark appearance. When enabled, the manual day/night toggle is hidden.</small>
+							<div class="custom-control custom-checkbox mt-2 chk-darkMode-wrap">
 								<input type="checkbox" class="custom-control-input" id="chk_darkMode">
 								<label class="custom-control-label" for="chk_darkMode">Enable night mode (dark theme)</label>
 							</div>
-							<small class="text-muted ml-4 d-block mb-2">Switch between day (light) and night (dark) interface themes. This preference is retained between sessions.</small>
+							<small class="text-muted ml-4 d-block mb-2 chk-darkMode-wrap">Switch between day (light) and night (dark) interface themes. This preference is retained between sessions.</small>
 							<div class="custom-control custom-checkbox mt-2">
 								<input type="checkbox" class="custom-control-input" id="chk_hideSystemLibraries">
 								<label class="custom-control-label" for="chk_hideSystemLibraries">Hide system libraries on the front page</label>
@@ -2119,8 +2148,11 @@
 					</div>
 					<div class="about-info">
 						<p class="mb-2"><strong>Author:</strong> Zachary Milot</p>
-						<p class="mb-0">
+						<p class="mb-1">
 							<a href="#" class="about-privacy-link">Privacy Policy</a>
+						</p>
+						<p class="mb-0">
+							<a href="#" class="about-terms-link">Terms of Use</a>
 						</p>
 					</div>
 				</div>
@@ -2159,6 +2191,34 @@
 		</div>
 	</div>
 	<!---- Modal Privacy Policy end --->
+
+	<!---- Modal Terms of Use start --->
+	<div class="modal" tabindex="-1" role="dialog" id="termsOfUseModal">
+		<div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width:640px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<div class="d-flex align-items-center">
+						<div class="detail-modal-icon mr-3">
+							<i class="fas fa-file-contract fa-2x" style="color:var(--medium);"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Terms of Use</h5>
+						</div>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body terms-modal-body">
+					<pre class="terms-of-use-text"></pre>
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
+					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Terms of Use end --->
 
 	<!-- Hidden open dialog for Check Audit File -->
 	<input type="file" class="d-none" id="audit-open-dialog" accept=".txt">
