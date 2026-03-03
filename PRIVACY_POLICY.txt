@@ -1,31 +1,93 @@
-Privacy Policy
+Privacy Policy — Library Manager for VENUS 6
+
 Effective date: March 1, 2026
+Last updated: March 3, 2026
 
-Library Manager For Venus 6 ("the App") is a desktop application for managing Hamilton VENUS library packages and related files.
+Library Manager for VENUS 6 (“the App”) is a desktop application for managing Hamilton VENUS library packages and related files. This policy explains what information the App processes, where it is stored, and when information may leave your device.
 
-1) Data we process
-The App processes files and metadata that you choose to open, import, export, create, or delete, including package files, library files, demo method files, settings, and audit/history records.
+1) Summary
 
-2) Local-only storage
-The App stores operational data locally on your device (for example, installed library records, settings, group assignments, package cache, and audit trail). Data is not sent to our servers by default.
+The App is designed to work offline.
 
-3) Network use
+The App does not collect telemetry, analytics, advertising identifiers, or usage tracking.
+
+The App does not transmit your library content, settings, or audit data to the developer.
+
+The App includes a “Report issue” link that opens a public GitHub issue page in your default web browser. Any information you submit on GitHub is controlled by you and handled by GitHub.
+
+2) Information the App processes
+
+The App processes information you choose to work with, such as:
+
+Library package files and related metadata
+
+Library files, demo method files, and other workflow files you open or manage
+
+App settings and configuration
+
+Local audit/history records created by the App (if enabled)
+
+This processing occurs on your device to provide packaging, installation, validation, and management functionality.
+
+3) Local-only storage
+
+The App stores operational data locally on your device, which may include:
+
+Installed/known library records and package inventory
+
+Settings and preferences
+
+Local package cache and archives (if you choose to keep them)
+
+Audit trail/history records (if enabled)
+
+No operational data is uploaded by the App. Data remains on your device unless you export it, copy it, or choose to share it outside the App.
+
+4) Network use and data transmission
+
 The App does not require a cloud account and does not include built-in analytics, advertising SDKs, or telemetry collection services.
 
-4) Device and system access
-The App may access local file paths and system locations needed for library management workflows. Some COM-related operations may require administrator privileges, based on your actions.
+The App does not transmit your data to the developer’s servers.
+The App may access the internet only if you choose actions that inherently involve your browser or external services, such as opening a web page link.
 
-5) Data sharing
-We do not sell or broker your data. The App does not intentionally transmit your library content to third parties as part of core functionality.
+5) “Report issue” link (GitHub)
 
-6) Data retention and deletion
-Data remains on your device until you remove it, uninstall the App, or choose cleanup options provided by the uninstaller.
+The App may provide a “Report issue” option that opens your default web browser to a GitHub page where you can submit an issue.
 
-7) Security
-The App includes integrity and signature verification features for package workflows, but you remain responsible for endpoint security, access control, and backups in your environment.
+The App does not automatically send device details (such as Windows version) or application details (such as VENUS version) to GitHub.
 
-8) Children
+Any information you enter into the GitHub issue form is submitted by you and may be publicly visible because the repository is public.
+
+GitHub processes information you submit according to GitHub’s privacy practices.
+
+Repository: https://github.com/zdmilot/Library-Manager-for-Venus-6
+
+Recommendation: Do not include sensitive information (such as usernames, machine names, domain names, file paths, license keys, regulated data, or proprietary method/library contents) in public issue reports.
+
+6) Regulated environment mode
+
+The App may include a “regulated environment mode” intended for use in controlled or regulated workflows. When enabled, the App may disable features that could increase information-sharing risk (for example, opening external issue-reporting links).
+
+Regardless of mode, the App does not transmit operational data to the developer.
+
+7) Device, file system, and privilege access
+
+To perform library management workflows, the App may access local file paths and system locations you direct it to use.
+
+Certain operations (for example, installing to protected locations or interacting with COM components) may require administrator approval depending on your configuration and the actions you choose.
+
+8) Data retention and deletion
+
+Local data remains on your device until you remove it, uninstall the App, or use any cleanup options you choose (including uninstaller options, if provided). The developer does not have access to your local data.
+
+9) Security
+
+The App may include integrity, hashing, and signature verification features for package workflows. You remain responsible for endpoint security, OS access controls, and backups in your environment.
+
+10) Children
+
 The App is intended for professional/enterprise use and is not directed to children.
 
-9) Changes to this policy
-We may update this policy from time to time. The latest version will be provided in product documentation or the Store listing.
+11) Changes to this policy
+
+We may update this policy from time to time. The latest version will be provided in the Store listing and/or in product documentation.

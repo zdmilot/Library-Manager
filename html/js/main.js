@@ -2029,6 +2029,14 @@
 			}
 		});
 
+		//Click "Report Issue" from overflow menu.
+		$(document).on("click", ".overflow-report-issue", function (e) {
+			e.preventDefault();
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
+			$("#reportIssueModal").modal("show");
+		});
+
 		//Click "About" from overflow menu.
 		$(document).on("click", ".overflow-about", function (e) {
 			e.preventDefault();
@@ -3534,6 +3542,8 @@
 					$("#chk_showGitHubLinks").prop("checked", false).prop("disabled", true);
 					saveSetting("chk_showGitHubLinks", false);
 					$(".github-links-regulated-status").html('<i class="fas fa-lock mr-1 text-warning"></i>GitHub links cannot be enabled in regulated environment mode.');
+					// Hide Report Issue menu item in regulated mode (no external links)
+					$(".overflow-report-issue").hide();
 					invalidateNavBar();
 					console.log('Unsigned libraries and GitHub links disabled: regulated mode requires all packages to be signed.');
 				} else {
@@ -3542,6 +3552,8 @@
 					// Re-enable GitHub links toggle
 					$("#chk_showGitHubLinks").prop("disabled", false);
 					$(".github-links-regulated-status").html('');
+					// Show Report Issue menu item when not in regulated mode
+					$(".overflow-report-issue").show();
 				}
 			});
 		});
@@ -5182,9 +5194,13 @@
 				$("#chk_showGitHubLinks").prop("checked", false).prop("disabled", true);
 				saveSetting("chk_showGitHubLinks", false);
 				$(".github-links-regulated-status").html('<i class="fas fa-lock mr-1 text-warning"></i>GitHub links cannot be enabled in regulated environment mode.');
+				// Hide Report Issue menu item in regulated mode (no external links)
+				$(".overflow-report-issue").hide();
 			} else {
 				$("#chk_showGitHubLinks").prop("checked", settings["chk_showGitHubLinks"] !== false).prop("disabled", false);
 				$(".github-links-regulated-status").html('');
+				// Show Report Issue menu item when not in regulated mode
+				$(".overflow-report-issue").show();
 			}
 
 			//setting - Unsigned libraries

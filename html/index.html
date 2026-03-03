@@ -177,6 +177,7 @@
 									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive mr-2"></i>Export Archive</a>
 									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog mr-2"></i>Settings</a>
 									<a class="dropdown-item overflow-help" href="#"><i class="fas fa-question-circle mr-2"></i>Help</a>
+									<a class="dropdown-item overflow-report-issue" href="#"><i class="fas fa-bug mr-2"></i>Report Issue</a>
 									<a class="dropdown-item overflow-about" href="#"><i class="fas fa-info-circle mr-2"></i>About</a>
 								</div>
 							</div>
@@ -2121,7 +2122,7 @@
 
 	<!---- Modal About start --->
 	<div class="modal" tabindex="-1" role="dialog" id="aboutModal">
-		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:480px;">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:540px;">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
@@ -2136,7 +2137,7 @@
 						<span aria-hidden="true">&times;</span>
 					</button>
 				</div>
-				<div class="modal-body about-modal-body">
+				<div class="modal-body about-modal-body" style="max-height:70vh; overflow-y:auto;">
 					<div class="text-center mb-3">
 						<h5 class="mb-1">Library Manager for Venus 6</h5>
 						<span class="text-muted about-version"></span>
@@ -2150,6 +2151,54 @@
 							<a href="#" class="about-terms-link">Terms of Use</a>
 						</p>
 					</div>
+					<hr class="my-3">
+					<div class="about-attributions">
+						<h6 class="mb-2"><i class="fas fa-balance-scale mr-1"></i>Third-Party Licenses</h6>
+						<div class="about-attributions-list" style="font-size:0.8rem;">
+							<table class="table table-sm table-borderless mb-0 about-license-table">
+								<thead>
+									<tr>
+										<th class="py-1">Component</th>
+										<th class="py-1">License</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="py-1">Bootstrap v4.4.1</td>
+										<td class="py-1">MIT &ndash; &copy; 2011-2019 Twitter, Inc. &amp; The Bootstrap Authors</td>
+									</tr>
+									<tr>
+										<td class="py-1">jQuery v2.1.3</td>
+										<td class="py-1">MIT &ndash; &copy; 2005, 2014 jQuery Foundation, Inc.</td>
+									</tr>
+									<tr>
+										<td class="py-1">jQuery UI v1.12.1</td>
+										<td class="py-1">MIT &ndash; &copy; jQuery Foundation and other contributors</td>
+									</tr>
+									<tr>
+										<td class="py-1">Popper.js v1.x</td>
+										<td class="py-1">MIT &ndash; &copy; 2017 Federico Zivolo</td>
+									</tr>
+									<tr>
+										<td class="py-1">Font Awesome Pro 5.15.1</td>
+										<td class="py-1">Commercial License &ndash; &copy; Fonticons, Inc.</td>
+									</tr>
+									<tr>
+										<td class="py-1">adm-zip</td>
+										<td class="py-1">MIT &ndash; &copy; 2012 Alon Bar-David</td>
+									</tr>
+									<tr>
+										<td class="py-1">diskdb</td>
+										<td class="py-1">MIT &ndash; &copy; Arvind Ravulavaru</td>
+									</tr>
+									<tr>
+										<td class="py-1">NW.js (runtime)</td>
+										<td class="py-1">MIT &ndash; &copy; The Chromium Authors &amp; NW.js contributors</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
 					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Close</button>
@@ -2158,6 +2207,46 @@
 		</div>
 	</div>
 	<!---- Modal About end --->
+
+	<!---- Modal Report Issue start --->
+	<div class="modal" tabindex="-1" role="dialog" id="reportIssueModal">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:520px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<div class="d-flex align-items-center">
+						<div class="detail-modal-icon mr-3">
+							<i class="fas fa-bug fa-2x" style="color:var(--medium);"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Report Issue</h5>
+						</div>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body report-issue-modal-body">
+					<p class="mb-2">You can report bugs, request features, or ask questions by opening an issue on GitHub:</p>
+					<p class="text-center mb-3">
+						<a href="https://github.com/zdmilot/Library-Manager-for-Venus-6/issues" target="_blank" class="report-issue-link">
+							<i class="fas fa-external-link-alt mr-1"></i>https://github.com/zdmilot/Library-Manager-for-Venus-6/issues
+						</a>
+					</p>
+					<hr>
+					<div class="report-issue-warnings">
+						<p class="mb-2 text-muted text-sm"><i class="fas fa-info-circle mr-1"></i>The App does not automatically send device details (such as Windows version) or application details (such as VENUS version) to GitHub.</p>
+						<p class="mb-2 text-muted text-sm"><i class="fas fa-eye mr-1"></i>Any information you enter into the GitHub issue form is submitted by you and may be publicly visible because the repository is public.</p>
+						<p class="mb-2 text-muted text-sm"><i class="fas fa-shield-alt mr-1"></i>GitHub processes information you submit according to <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank">GitHub's privacy practices</a>.</p>
+						<p class="mb-0 text-sm" style="color:var(--warning-color, #e67e22);"><i class="fas fa-exclamation-triangle mr-1"></i><strong>Recommendation:</strong> Do not include sensitive information (such as usernames, machine names, domain names, file paths, license keys, regulated data, or proprietary method/library contents) in public issue reports.</p>
+					</div>
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
+					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Report Issue end --->
 
 	<!---- Modal Privacy Policy start --->
 	<div class="modal" tabindex="-1" role="dialog" id="privacyPolicyModal">

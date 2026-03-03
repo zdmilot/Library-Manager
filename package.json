@@ -3,6 +3,7 @@
   "main": "html/index.html",
   "description": "Library Manager for Venus 6",
   "version": "1.4.8",
+  "license": "Apache-2.0",
   "author": "Zachary Milot",
   "keywords": [
     "VENUS",

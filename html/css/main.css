@@ -3040,6 +3040,37 @@ body.dark-mode .about-modal-body {
 	color: #c8d6e5;
 }
 
+/* About modal - attributions table */
+.about-license-table th {
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #6c757d;
+	border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+.about-license-table td {
+	color: inherit;
+}
+.about-attributions-list {
+	background: #f0f2f5;
+	border: 1px solid rgba(0,0,0,0.08);
+	border-radius: 6px;
+	padding: 8px 12px;
+}
+body.dark-mode .about-license-table th {
+	color: #8899aa;
+	border-bottom-color: rgba(255,255,255,0.15);
+}
+body.dark-mode .about-attributions-list {
+	background: #1e2a35;
+	border-color: rgba(255,255,255,0.1);
+}
+
+/* Report Issue modal */
+body.dark-mode .report-issue-modal-body {
+	color: #c8d6e5;
+}
+
 /* Privacy modal & Terms modal */
 body.dark-mode .privacy-modal-body,
 body.dark-mode .terms-modal-body {
