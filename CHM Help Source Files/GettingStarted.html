@@ -47,14 +47,14 @@ node cli.js help</pre></div>
 <h2>First-Time Setup</h2>
 
 <h3>Local Data Directory</h3>
-<p>Library Manager for Venus 6 stores its working data (installed library records, group assignments, navigation tree, audit trail) in a <b>local data directory</b> within its own install folder. By default, this is located at:</p>
-<div class="code"><pre>C:\Program Files (x86)\Library Manager for Venus 6\local\</pre></div>
+<p>Library Manager for Venus 6 stores its working data (installed library records, group assignments, navigation tree, audit trail) in a <b>local data directory</b> within the current user profile. By default, this is located at:</p>
+<div class="code"><pre>%LOCALAPPDATA%\Library Manager for Venus 6\local\</pre></div>
 <p>This directory is created automatically on first run and seeded with empty JSON files for each data collection (<code>installed_libs.json</code>, <code>groups.json</code>, <code>tree.json</code>, <code>links.json</code>).</p>
 <p>You can override this directory for CLI operations by passing <code>--db-path</code>.</p>
 
 <h3>Package Store</h3>
 <p>Every imported <code>.hxlibpkg</code> file is automatically cached in the <b>package store</b> for future repair and version rollback. The package store is located at:</p>
-<div class="code"><pre>C:\Program Files (x86)\Library Manager for Venus 6\local\packages\</pre></div>
+<div class="code"><pre>%LOCALAPPDATA%\Library Manager for Venus 6\local\packages\</pre></div>
 <p>Packages are organized into subdirectories by library name, with timestamped filenames for version tracking. See <a href="VersionRollback.html">Version Rollback</a> for details.</p>
 
 <h2>Basic Workflows</h2>

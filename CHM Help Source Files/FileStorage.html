@@ -12,16 +12,16 @@
 <h2>Overview</h2>
 <p>Library Manager for Venus 6 stores all persistent application data in a single <code>local/</code> directory within the application&rsquo;s own install folder under <code>Program Files (x86)</code>. This design ensures that all settings, library registries, audit trails, package backups, and exports are globally accessible to every user account on the PC &mdash; which is essential because VENUS libraries must span the entire workstation and are not per-user resources.</p>
 
-<p><b>No data is stored in ProgramData, AppData, or any per-user directory.</b> All data resides within the application&rsquo;s install directory, making it straightforward to locate, back up, and manage.</p>
+<p><b>Mutable application data is stored in a per-user local profile directory.</b> This avoids write-permission issues in Program Files while keeping data easy to locate and back up.</p>
 
 <h2>Installation Directory</h2>
 <p>The application is installed to:</p>
 <pre>C:\Program Files (x86)\Library Manager for Venus 6\</pre>
-<p>This uses the 32-bit Program Files directory (<code>x86</code>) because the application is built on a 32-bit architecture (NW.js ia32). The installer configures folder permissions so that all local users have read and write access to the <code>local/</code> subdirectory.</p>
+<p>This uses the 32-bit Program Files directory (<code>x86</code>) because the application is built on a 32-bit architecture (NW.js ia32). The install directory is used for application binaries and static assets.</p>
 
 <h2>Local Data Directory</h2>
 <p>All mutable application data is stored under:</p>
-<pre>C:\Program Files (x86)\Library Manager for Venus 6\local\</pre>
+<pre>%LOCALAPPDATA%\Library Manager for Venus 6\local\</pre>
 
 <h3>Directory Structure</h3>
 <table>

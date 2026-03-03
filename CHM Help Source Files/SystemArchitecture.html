@@ -79,7 +79,7 @@
 <h2>2. Data Model &amp; Storage</h2>
 <!-- ================================================================== -->
 
-<p>All persistent data is stored as JSON files managed by <b>diskdb</b>. The database is split into two directories: <code>db/</code> contains shipped read-only reference data (system library definitions, integrity hashes), and <code>local/</code> contains all mutable per-machine state that changes during operation. The <code>local/</code> directory resides within the application&rsquo;s own <code>Program Files (x86)</code> install folder and is globally accessible to all Windows users on the PC. No data is stored in ProgramData, AppData, or any per-user directory. See <a href="FileStorage.html">File Storage &amp; Data Management</a> for the complete directory layout and <a href="DataModel.html">Data Model</a> for the full specification.</p>
+<p>All persistent data is stored as JSON files managed by <b>diskdb</b>. The database is split into two directories: <code>db/</code> contains shipped read-only reference data (system library definitions, integrity hashes), and <code>local/</code> contains all mutable state that changes during operation. By default, <code>local/</code> is stored under <code>%LOCALAPPDATA%\Library Manager for Venus 6\local\</code> for the current user. See <a href="FileStorage.html">File Storage &amp; Data Management</a> for the complete directory layout and <a href="DataModel.html">Data Model</a> for the full specification.</p>
 
 <h3>Settings (local/settings.json)</h3>
 <table class="entity-table">

@@ -264,15 +264,15 @@
 </table>
 
 <h2>Local Data Directory</h2>
-<p>All mutable application data is stored in the <code>local/</code> directory within the application&rsquo;s install folder:</p>
-<div class="code"><pre>C:\Program Files (x86)\Library Manager for Venus 6\local\</pre></div>
+<p>All mutable application data is stored in the <code>local/</code> directory under the current user profile:</p>
+<div class="code"><pre>%LOCALAPPDATA%\Library Manager for Venus 6\local\</pre></div>
 <p>This directory contains the live, mutable copy of the database that reflects the current installation state. It also contains:</p>
 <ul>
   <li><code>audit_trail.json</code> - A persistent audit trail recording all library lifecycle events (package creation, import, delete, rollback) with environmental context such as the Windows username, Windows OS version, VENUS version, and hostname. See <a href="LibraryAuditLog.html">Library Audit Log</a> for details.</li>
   <li><code>packages/</code> - Cached <code>.hxlibpkg</code> package backups organized by library name, used for version rollback and integrity repair</li>
   <li><code>exports/</code> - Default output directory for exported packages and archives</li>
 </ul>
-<p>No data is stored in <code>ProgramData</code>, <code>AppData</code>, the VENUS <code>HAMILTON\Library</code> directory, or any per-user directory. The VENUS Library directory (<code>C:\Program Files (x86)\HAMILTON\Library</code>) is used <b>only</b> for storing unpacked library files (HSL, DLL, etc.) and their associated resources.</p>
+<p>No mutable application database data is stored in <code>ProgramData</code> or the VENUS <code>HAMILTON\Library</code> directory. The VENUS Library directory (<code>C:\Program Files (x86)\HAMILTON\Library</code>) is used <b>only</b> for storing unpacked library files (HSL, DLL, etc.) and their associated resources.</p>
 
 <h2>Related</h2>
 <ul>
