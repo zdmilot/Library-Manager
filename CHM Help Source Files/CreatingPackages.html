@@ -123,6 +123,24 @@
 <h2>Output Structure</h2>
 <p>The resulting <code>.hxlibpkg</code> is a <a href="BinaryContainerFormat.html">binary container file</a> - not a plain ZIP archive. The container wraps an internal ZIP with the standard package structure described in <a href="PackageFormats.html">Package Formats</a>, including a <code>signature.json</code> entry with the per-file HMAC-SHA256 integrity signature. The outer binary container adds a second integrity layer (container-level HMAC-SHA256) and XOR scrambling that prevents the file from being opened by standard archive tools. See <a href="BinaryContainerFormat.html">Binary Container Format</a> for full technical details.</p>
 
+<h2>Environment Stamping &amp; Package Lineage</h2>
+<p>Every package created by Library Manager for Venus 6 is automatically stamped with environmental metadata:</p>
+<ul>
+  <li><b>Application version</b> (<code>app_version</code>) &mdash; the version of Library Manager that built the package</li>
+  <li><b>Windows version</b> (<code>windows_version</code>) &mdash; the OS type, release, and architecture of the build machine</li>
+  <li><b>VENUS version</b> (<code>venus_version</code>) &mdash; the installed Hamilton VENUS version at build time</li>
+  <li><b>Package lineage</b> (<code>package_lineage</code>) &mdash; an initial <code>"created"</code> event recording the operator's username, hostname, and all environment details above</li>
+</ul>
+<p>This enables full traceability of who created the package and on which system. When a package is later <b>exported</b> from another machine, an <code>"exported"</code> event is appended to the lineage &mdash; preserving the original creation context while adding the new export context. See <a href="PackageFormats.html">Package Formats: Package Lineage</a> for the complete lineage schema.</p>
+
+<h2>Package Portability &amp; Forward Compatibility</h2>
+<p>Packages are designed to be <b>portable</b> across different machines, VENUS versions, and Library Manager versions:</p>
+<ul>
+  <li><b>Version mismatch warnings:</b> When importing a package created by a different version of Library Manager, the user is warned if the package's <code>app_version</code> differs from the running version. A stronger warning is shown when the package was created with a <b>newer major version</b>, as it may contain features not supported by the importer.</li>
+  <li><b>Forward-compatible field preservation:</b> Any unrecognized fields in a package manifest are preserved during import into the database and carried through on export. This ensures that packages created by a newer version of the application do not lose metadata when processed by an older version.</li>
+  <li><b>Lineage accumulation:</b> Each export or repackage operation appends a new event to the lineage without modifying or removing prior events. A package can be traced through its entire lifecycle regardless of how many times it has been transferred between systems.</li>
+</ul>
+
 <h2>Audit Trail</h2>
 <p>Every package build is automatically recorded in the persistent <b>audit trail</b> (<code>audit_trail.json</code>). The entry captures the Windows username of the packager, the Windows OS version, the installed VENUS version, the computer hostname, and the package metadata (library name, version, author). This enables full traceability of who created each package and on which system. See <a href="LibraryAuditLog.html">Library Audit Log</a> for details.</p>
 </div>

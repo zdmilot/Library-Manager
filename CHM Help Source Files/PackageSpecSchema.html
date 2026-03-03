@@ -111,7 +111,7 @@
 </table>
 
 <h2>Additional Properties</h2>
-<p>The schema specifies <code>"additionalProperties": false</code>. Any unrecognized fields will cause validation failure.</p>
+<p>The schema specifies <code>"additionalProperties": true</code>. Any unrecognized properties in the spec file are silently accepted and preserved in the generated package manifest. This enables forward compatibility &mdash; spec files created for future application versions (with new optional fields) can still be processed by older versions without validation errors. The unknown fields are carried through into the <code>manifest.json</code> inside the output package.</p>
 
 <h2>Reserved Tag Keywords</h2>
 <div class="warning">
@@ -168,6 +168,10 @@
   ],
   "com_register_dlls": []
 }</pre></div>
+
+<div class="note">
+<p><b>Auto-Generated Manifest Fields:</b> The following fields are <b>automatically added</b> to the generated <code>manifest.json</code> during package creation and are <b>not</b> part of the spec file schema: <code>format_version</code>, <code>app_version</code>, <code>windows_version</code>, <code>venus_version</code>, <code>package_lineage</code>, and <code>created_date</code>. These are stamped by the application at build time. See <a href="PackageFormats.html">Package Formats</a> for the complete manifest schema.</p>
+</div>
 
 <h2>Library Name Auto-Detection Priority</h2>
 <p>When <code>library_name</code> is omitted:</p>

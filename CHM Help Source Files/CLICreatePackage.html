@@ -85,6 +85,18 @@ node cli.js create-package --spec specs/proj.json --output dist/proj.hxlibpkg</p
 </ul>
 <p>If any validation fails, the command prints a descriptive error and exits.</p>
 
+<h2>Auto-Generated Manifest Fields</h2>
+<p>The following fields are <b>automatically added</b> to the generated <code>manifest.json</code> and are <b>not</b> part of the spec file:</p>
+<ul>
+  <li><code>format_version</code> &mdash; the current package format version (<code>"2.0"</code>)</li>
+  <li><code>app_version</code> &mdash; the version of Library Manager for Venus 6</li>
+  <li><code>windows_version</code> &mdash; the Windows OS version of the build machine</li>
+  <li><code>venus_version</code> &mdash; the Hamilton VENUS version installed at build time</li>
+  <li><code>package_lineage</code> &mdash; an initial <code>"created"</code> event with operator and environment details</li>
+  <li><code>created_date</code> &mdash; ISO 8601 timestamp of package creation</li>
+</ul>
+<p>Any additional (unrecognized) properties in the spec file are preserved in the output manifest for forward compatibility.</p>
+
 <h2>Related</h2>
 <ul>
   <li><a href="CreatingPackages.html">Creating Packages</a></li>

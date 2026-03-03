@@ -721,5 +721,57 @@
 		<param name="Name" value="author password">
 		<param name="Local" value="LibraryGrouping.html">
 		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="app_version">
+		<param name="Local" value="PackageFormats.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="format_version">
+		<param name="Local" value="PackageFormats.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="windows_version">
+		<param name="Local" value="PackageFormats.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="venus_version">
+		<param name="Local" value="PackageFormats.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="package_lineage">
+		<param name="Local" value="PackageFormats.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="package lineage">
+		<param name="Local" value="CreatingPackages.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="lineage">
+		<param name="Local" value="PackageFormats.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="forward compatibility">
+		<param name="Local" value="PackageFormats.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="version mismatch">
+		<param name="Local" value="ImportingLibraries.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="package portability">
+		<param name="Local" value="CreatingPackages.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="portability">
+		<param name="Local" value="CreatingPackages.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="environment stamping">
+		<param name="Local" value="CreatingPackages.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="format version 2.0">
+		<param name="Local" value="PackageFormats.html">
+		</OBJECT>
 </UL>
 </BODY></HTML>

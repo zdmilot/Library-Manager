@@ -30,8 +30,8 @@
 <h2>Archive Contents</h2>
 <p>The output archive contains:</p>
 <ul>
-  <li>An <code>archive_manifest.json</code> with format version, creation date, library count, and library names</li>
-  <li>One <code>&lt;LibraryName&gt;.hxlibpkg</code> entry per selected library, each containing its own <code>manifest.json</code> and payload files</li>
+  <li>An <code>archive_manifest.json</code> with format version, creation date, <code>app_version</code>, <code>windows_version</code>, <code>venus_version</code>, library count, and library names</li>
+  <li>One <code>&lt;LibraryName&gt;.hxlibpkg</code> entry per selected library, each containing its own <code>manifest.json</code> (with lineage and environment stamps), payload files, and HMAC-SHA256 signature</li>
 </ul>
 
 <h2>Examples</h2>

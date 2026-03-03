@@ -28,7 +28,7 @@
 <table>
 <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td><code>format_version</code></td><td>string</td><td>No</td><td>Package format version (currently <code>"1.0"</code>)</td></tr>
+<tr><td><code>format_version</code></td><td>string</td><td>No</td><td>Package format version (currently <code>"2.0"</code>). Version 2.0 introduced package lineage, environment stamping, and forward-compatible field preservation.</td></tr>
 <tr><td><code>library_name</code></td><td>string</td><td>Yes</td><td>Name of the library (used as the install directory name)</td></tr>
 <tr><td><code>author</code></td><td>string</td><td>Yes</td><td>Library author's name</td></tr>
 <tr><td><code>organization</code></td><td>string</td><td>No</td><td>Author's organization or company</td></tr>
@@ -37,6 +37,10 @@
 <tr><td><code>description</code></td><td>string</td><td>No</td><td>Human-readable description of the library</td></tr>
 <tr><td><code>tags</code></td><td>string[]</td><td>No</td><td>Searchable keyword tags. The values <code>"System"</code> and <code>"Hamilton"</code> are reserved and cannot be used (case-insensitive).</td></tr>
 <tr><td><code>created_date</code></td><td>string</td><td>No</td><td>ISO 8601 timestamp of package creation</td></tr>
+<tr><td><code>app_version</code></td><td>string</td><td>No</td><td>Version of Library Manager for Venus 6 that created or last exported the package (e.g., <code>"1.5.3"</code>). Used for version mismatch detection on import.</td></tr>
+<tr><td><code>windows_version</code></td><td>string</td><td>No</td><td>Windows OS version of the machine that created or last exported the package (e.g., <code>"Windows_NT 10.0.19045 (x64)"</code>)</td></tr>
+<tr><td><code>venus_version</code></td><td>string</td><td>No</td><td>Hamilton VENUS version installed on the machine that created or last exported the package</td></tr>
+<tr><td><code>package_lineage</code></td><td>object[]</td><td>No</td><td>Ordered array of lifecycle events that have occurred to this package. Each event records who performed the action, when, on what system, and which application/format version was used. See <b>Package Lineage</b> below.</td></tr>
 <tr><td><code>library_image</code></td><td>string</td><td>No</td><td>Filename of the library icon image</td></tr>
 <tr><td><code>library_image_base64</code></td><td>string</td><td>No</td><td>Base64-encoded <b>raw</b> library image data (no overlay). The composited icon with the Library Manager logo overlay is stored separately in the <code>icon/</code> directory for Windows file-system display only (see <a href="VisualIdentity.html">Visual Identity</a>)</td></tr>
 <tr><td><code>library_image_mime</code></td><td>string</td><td>No</td><td>MIME type of the library image</td></tr>
@@ -47,9 +51,13 @@
 </tbody>
 </table>
 
+<div class="note">
+<p><b>Forward Compatibility:</b> The manifest may contain additional fields not listed above. Future versions of Library Manager for Venus 6 may add new metadata without bumping the format version. Any unrecognized fields in a manifest are <b>preserved</b> during import, export, and repackaging to ensure lossless round-tripping across application versions.</p>
+</div>
+
 <h3>Example Manifest</h3>
 <div class="code"><pre>{
-  "format_version": "1.0",
+  "format_version": "2.0",
   "library_name": "MyVenusLibrary",
   "author": "Jane Smith",
   "organization": "Acme Pharma",
@@ -58,6 +66,21 @@
   "description": "High-level pipetting helpers for the ML600.",
   "tags": ["pipetting", "ML600"],
   "created_date": "2026-01-15T10:30:00.000Z",
+  "app_version": "1.5.3",
+  "windows_version": "Windows_NT 10.0.19045 (x64)",
+  "venus_version": "4.11.0.8717",
+  "package_lineage": [
+    {
+      "event": "created",
+      "timestamp": "2026-01-15T10:30:00.000Z",
+      "app_version": "1.5.3",
+      "format_version": "2.0",
+      "username": "jsmith",
+      "hostname": "LAB-PC-01",
+      "windows_version": "Windows_NT 10.0.19045 (x64)",
+      "venus_version": "4.11.0.8717"
+    }
+  ],
   "library_image": "MyVenusLibrary.png",
   "library_image_base64": "iVBORw0KGgo...",
   "library_image_mime": "image/png",
@@ -71,6 +94,27 @@
   "help_files": ["MyVenusLibrary.chm"],
   "com_register_dlls": []
 }</pre></div>
+
+<h3>Package Lineage</h3>
+<p>The <code>package_lineage</code> array provides a complete audit trail of every lifecycle event that has occurred to a package. Events are appended in chronological order and are <b>never removed</b>, creating an immutable history that survives export and re-import cycles. This enables full traceability of a package from its original creation through any number of export and repackage operations.</p>
+
+<h4>Lineage Event Fields</h4>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>event</code></td><td>string</td><td>Event type: <code>"created"</code>, <code>"exported"</code>, or a custom string for future event types</td></tr>
+<tr><td><code>timestamp</code></td><td>string</td><td>ISO 8601 timestamp of the event</td></tr>
+<tr><td><code>app_version</code></td><td>string</td><td>Library Manager version at the time of the event</td></tr>
+<tr><td><code>format_version</code></td><td>string</td><td>Package format version at the time of the event</td></tr>
+<tr><td><code>username</code></td><td>string</td><td>Windows username of the operator</td></tr>
+<tr><td><code>hostname</code></td><td>string</td><td>Computer hostname</td></tr>
+<tr><td><code>windows_version</code></td><td>string</td><td>Windows OS version of the machine at event time</td></tr>
+<tr><td><code>venus_version</code></td><td>string</td><td>Hamilton VENUS version installed at event time</td></tr>
+</tbody>
+</table>
+
+<h4>Lineage Accumulation</h4>
+<p>When a library is <b>exported</b>, an <code>"exported"</code> event is appended to the existing lineage from the database record. This means a package that was created on Machine A, exported on Machine B, imported on Machine C, and exported again on Machine D will contain four lineage entries &mdash; one for each lifecycle event. The environmental context (Windows version, VENUS version, hostname, operator) of every machine in the chain is permanently recorded.</p>
 
 <h3>Package Signature (<code>signature.json</code>)</h3>
 <p>Every <code>.hxlibpkg</code> created by Library Manager for Venus 6 includes a <code>signature.json</code> entry in the internal ZIP containing an HMAC-SHA256 cryptographic signature. This inner signature covers every other entry in the ZIP and provides per-file integrity verification, complementing the outer container-level HMAC that covers the entire file. See <a href="BinaryContainerFormat.html">Binary Container Format</a> for how these two integrity layers work together.</p>
@@ -115,9 +159,12 @@
 <table>
 <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td><code>format_version</code></td><td>string</td><td>Archive format version (<code>"1.0"</code>)</td></tr>
+<tr><td><code>format_version</code></td><td>string</td><td>Archive format version (<code>"2.0"</code>)</td></tr>
 <tr><td><code>archive_type</code></td><td>string</td><td>Always <code>"hxlibarch"</code></td></tr>
 <tr><td><code>created_date</code></td><td>string</td><td>ISO 8601 timestamp of archive creation</td></tr>
+<tr><td><code>app_version</code></td><td>string</td><td>Version of Library Manager for Venus 6 that created the archive</td></tr>
+<tr><td><code>windows_version</code></td><td>string</td><td>Windows OS version of the machine that created the archive</td></tr>
+<tr><td><code>venus_version</code></td><td>string</td><td>Hamilton VENUS version installed on the creating machine</td></tr>
 <tr><td><code>library_count</code></td><td>integer</td><td>Number of packages in the archive</td></tr>
 <tr><td><code>libraries</code></td><td>string[]</td><td>List of library names included</td></tr>
 <tr><td><code>archive_icon_base64</code></td><td>string</td><td>Base64-encoded purple archive icon PNG</td></tr>

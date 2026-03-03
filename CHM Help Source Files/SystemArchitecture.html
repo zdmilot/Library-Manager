@@ -128,6 +128,11 @@
 <tr><td><code>file_hashes</code></td><td>object</td><td>Map of filename &rarr; SHA-256 hash</td></tr>
 <tr><td><code>public_functions</code></td><td>array</td><td>Parsed HSL public function signatures</td></tr>
 <tr><td><code>required_dependencies</code></td><td>array</td><td>Resolved #include dependencies</td></tr>
+<tr><td><code>format_version</code></td><td>string</td><td>Package format version (e.g. <code>"2.0"</code>)</td></tr>
+<tr><td><code>app_version</code></td><td>string</td><td>Library Manager version that created the package</td></tr>
+<tr><td><code>windows_version</code></td><td>string</td><td>Windows OS version at package creation time</td></tr>
+<tr><td><code>venus_version</code></td><td>string</td><td>Hamilton VENUS version at package creation time</td></tr>
+<tr><td><code>package_lineage</code></td><td>array</td><td>Array of lineage events (created, exported, etc.)</td></tr>
 <tr><td><code>deleted</code></td><td>boolean</td><td>Soft-delete flag</td></tr>
 <tr><td><code>deleted_date</code></td><td>string</td><td>When soft-deleted (ISO 8601)</td></tr>
 </tbody>
@@ -287,7 +292,7 @@
 
 <table class="phase-table">
 <tr><th colspan="2">Phase 3: Package Assembly</th></tr>
-<tr><td class="step-label">Build manifest.json</td><td>format_version: 1.0, library_name, author, version, created_date (ISO 8601), library_files[], demo_method_files[], help_files[], com_register_dlls[], library_image_base64 (embedded icon)</td></tr>
+<tr><td class="step-label">Build manifest.json</td><td>format_version: 2.0, library_name, author, version, created_date (ISO 8601), app_version, windows_version, venus_version, library_files[], demo_method_files[], help_files[], com_register_dlls[], library_image_base64 (embedded icon), package_lineage (initial &ldquo;created&rdquo; event). Any unrecognized spec fields are preserved for forward compatibility.</td></tr>
 <tr><td class="step-label">Create AdmZip instance</td><td>New empty ZIP archive in memory</td></tr>
 <tr><td class="step-label">Add manifest.json</td><td>Package metadata at ZIP root</td></tr>
 <tr><td class="step-label">Add library files</td><td>All library files &rarr; <code>library/</code> directory in ZIP</td></tr>
@@ -391,7 +396,8 @@
 
 <table class="phase-table">
 <tr><th colspan="2">Phase 6: Database &amp; Indexing</th></tr>
-<tr><td class="step-label">Upsert DB record</td><td>Remove existing record if overwriting; compute SHA-256 file hashes; parse public HSL functions; extract #include dependencies; save to installed_libs.json</td></tr>
+<tr><td class="step-label">Version mismatch check</td><td>Compare manifest <code>app_version</code> to the running Library Manager version. If they differ, warn the user (GUI shows a confirm dialog; CLI prints a warning). Packages from a newer major version produce a stronger warning. Legacy packages with no <code>app_version</code> are noted.</td></tr>
+<tr><td class="step-label">Upsert DB record</td><td>Remove existing record if overwriting; compute SHA-256 file hashes; parse public HSL functions; extract #include dependencies; preserve <code>app_version</code>, <code>format_version</code>, <code>windows_version</code>, <code>venus_version</code>, and <code>package_lineage</code> from the manifest; copy any unrecognized manifest fields for forward compatibility; save to installed_libs.json</td></tr>
 <tr><td class="step-label">Auto-assign to group</td><td>Restricted author &rarr; gOEM group. Others &rarr; first custom group. Auto-create &ldquo;Libraries&rdquo; group if none exist.</td></tr>
 </table>
 
@@ -431,7 +437,7 @@
 <tr><th colspan="2">Phase 2: Per-Library Packaging (repeated for each library)</th></tr>
 <tr><td class="step-label">Read DB record</td><td>Load library_files, demo_method_files, help_files, com_register_dlls from database</td></tr>
 <tr><td class="step-label">Sanitize file lists</td><td><code>sanitizeRelativeFileList()</code> on all file arrays</td></tr>
-<tr><td class="step-label">Build manifest.json</td><td>Per-library manifest with current metadata</td></tr>
+<tr><td class="step-label">Build manifest.json</td><td>Per-library manifest with current metadata, app_version, windows_version, venus_version, and an &ldquo;exported&rdquo; lineage event appended to <code>package_lineage</code>. Unrecognized DB fields are preserved.</td></tr>
 <tr><td class="step-label">Create inner ZIP</td><td>manifest.json + library/* files + demo_methods/* files</td></tr>
 <tr><td class="step-label">Sign inner ZIP</td><td><code>signPackageZip(innerZip)</code> &mdash; hash all entries, compute HMAC, embed signature.json</td></tr>
 <tr><td class="step-label">Wrap as .hxlibpkg</td><td><code>packContainer(innerZip, MAGIC_PKG)</code> &mdash; XOR scramble + HMAC header</td></tr>
@@ -442,7 +448,7 @@
 
 <table class="phase-table">
 <tr><th colspan="2">Phase 3: Archive Assembly</th></tr>
-<tr><td class="step-label">Create archive_manifest.json</td><td>format_version: 1.0, archive_type: hxlibarch, created_date (ISO 8601), library_count: N, libraries: [name1, name2, ...]</td></tr>
+<tr><td class="step-label">Create archive_manifest.json</td><td>format_version: 2.0, archive_type: hxlibarch, created_date (ISO 8601), app_version, windows_version, venus_version, library_count: N, libraries: [name1, name2, ...]</td></tr>
 <tr><td class="step-label">Add manifest to outer ZIP</td><td>archive_manifest.json at outer ZIP root</td></tr>
 <tr><td class="step-label">Wrap outer container</td><td><code>packContainer(archiveZip, MAGIC_ARC)</code> &mdash; XOR scramble + HMAC + HXLARC magic</td></tr>
 <tr><td class="step-label">Write to disk</td><td>Save as <code>ArchiveName.hxlibarch</code></td></tr>

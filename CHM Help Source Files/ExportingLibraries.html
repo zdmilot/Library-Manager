@@ -52,9 +52,15 @@
   <li>All library files in the <code>library/</code> directory (including <code>.chm</code> help files)</li>
   <li>All demo method files in the <code>demo_methods/</code> directory</li>
   <li>Metadata fields: tags, base64-encoded image, COM DLL list</li>
+  <li>Environment stamps: <code>app_version</code>, <code>windows_version</code>, <code>venus_version</code> of the exporting machine</li>
+  <li><code>package_lineage</code> with an <code>"exported"</code> event appended to the existing lineage history</li>
+  <li>Any forward-compatible fields from the original manifest that were preserved during import</li>
   <li><code>signature.json</code> - HMAC-SHA256 integrity signature covering all package entries</li>
 </ul>
 <p>The resulting file is wrapped in a <a href="BinaryContainerFormat.html">binary container</a> with its own HMAC-SHA256 digest and XOR scrambling, ensuring the package cannot be opened or modified by standard tools.</p>
+
+<h3>Lineage Accumulation on Export</h3>
+<p>When a library is exported, the application reads the existing <code>package_lineage</code> from the database record (which was preserved from the original import) and appends a new <code>"exported"</code> event with the current operator's username, hostname, Windows version, VENUS version, and application version. This means a package that has been created &rarr; imported &rarr; exported &rarr; imported &rarr; exported will contain the full chain of custody for every system it has passed through. See <a href="PackageFormats.html">Package Formats: Package Lineage</a> for the event schema.</p>
 
 <h3>Restrictions</h3>
 <ul>

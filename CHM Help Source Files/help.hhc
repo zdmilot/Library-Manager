@@ -81,6 +81,10 @@
 				<param name="Name" value="Success Dialogs">
 				<param name="Local" value="SuccessDialogs.html">
 				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Package Portability &amp; Lineage">
+				<param name="Local" value="CreatingPackages.html#portability">
+				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Workflows">

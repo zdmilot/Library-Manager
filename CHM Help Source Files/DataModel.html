@@ -54,6 +54,11 @@
 <tr><td><code>description</code></td><td>string</td><td>Library description text</td></tr>
 <tr><td><code>tags</code></td><td>string[]</td><td>Searchable keyword tags. The values <code>"System"</code> and <code>"Hamilton"</code> are reserved and rejected during package creation (case-insensitive).</td></tr>
 <tr><td><code>created_date</code></td><td>string (ISO 8601)</td><td>Date the package was originally created</td></tr>
+<tr><td><code>format_version</code></td><td>string</td><td>Package format version from the manifest (e.g., <code>"2.0"</code>)</td></tr>
+<tr><td><code>app_version</code></td><td>string</td><td>Version of Library Manager for Venus 6 that created the package</td></tr>
+<tr><td><code>windows_version</code></td><td>string</td><td>Windows OS version of the machine that created the package (e.g., <code>"Windows_NT 10.0.19045 (x64)"</code>)</td></tr>
+<tr><td><code>venus_version</code></td><td>string</td><td>Hamilton VENUS version installed on the machine that created the package</td></tr>
+<tr><td><code>package_lineage</code></td><td>object[]</td><td>Ordered array of lifecycle events from the package manifest. Each event records who performed the action, when, on what system. See <a href="PackageFormats.html">Package Formats: Package Lineage</a>.</td></tr>
 <tr><td><code>library_image</code></td><td>string | null</td><td>Image filename (or null if no image)</td></tr>
 <tr><td><code>library_image_base64</code></td><td>string | null</td><td>Base64-encoded image data for display in the GUI</td></tr>
 <tr><td><code>library_image_mime</code></td><td>string | null</td><td>MIME type of the image (e.g., <code>image/png</code>)</td></tr>

@@ -7777,6 +7777,48 @@
 				$("#libDetailModal .lib-detail-tags-section").addClass("d-none");
 			}
 
+			// Package info (app_version, format_version, windows_version, venus_version)
+			var _hasPackageInfo = lib.app_version || lib.format_version || lib.windows_version || lib.venus_version;
+			if (_hasPackageInfo) {
+				var _piHtml = '<div class="small">';
+				if (lib.format_version) _piHtml += '<div><b>Format Version:</b> ' + escapeHtml(lib.format_version) + '</div>';
+				if (lib.app_version) _piHtml += '<div><b>Created with App Version:</b> ' + escapeHtml(lib.app_version) + '</div>';
+				if (lib.windows_version) _piHtml += '<div><b>Windows Version:</b> ' + escapeHtml(lib.windows_version) + '</div>';
+				if (lib.venus_version) _piHtml += '<div><b>VENUS Version:</b> ' + escapeHtml(lib.venus_version) + '</div>';
+				_piHtml += '</div>';
+				$("#libDetailModal .lib-detail-package-info").html(_piHtml);
+				$("#libDetailModal .lib-detail-package-info-section").removeClass("d-none");
+			} else {
+				$("#libDetailModal .lib-detail-package-info-section").addClass("d-none");
+			}
+
+			// Package lineage
+			var _lineage = lib.package_lineage || [];
+			if (_lineage.length > 0) {
+				var _linHtml = '<div class="small">';
+				_lineage.forEach(function(evt, idx) {
+					var evtIcon = evt.event === 'created' ? 'fa-plus-circle text-success' :
+								  evt.event === 'exported' ? 'fa-upload text-primary' :
+								  'fa-exchange-alt text-info';
+					_linHtml += '<div class="mb-2 pb-2' + (idx < _lineage.length - 1 ? ' border-bottom' : '') + '">';
+					_linHtml += '<div><i class="fas ' + evtIcon + ' mr-1"></i><b>' + escapeHtml(evt.event || 'unknown') + '</b>';
+					if (evt.timestamp) _linHtml += ' <span class="text-muted">— ' + escapeHtml(evt.timestamp) + '</span>';
+					_linHtml += '</div>';
+					if (evt.app_version) _linHtml += '<div class="ml-3">App: v' + escapeHtml(evt.app_version) + '</div>';
+					if (evt.username) _linHtml += '<div class="ml-3">User: ' + escapeHtml(evt.username) + '</div>';
+					if (evt.hostname) _linHtml += '<div class="ml-3">Host: ' + escapeHtml(evt.hostname) + '</div>';
+					if (evt.windows_version) _linHtml += '<div class="ml-3">Windows: ' + escapeHtml(evt.windows_version) + '</div>';
+					if (evt.venus_version) _linHtml += '<div class="ml-3">VENUS: ' + escapeHtml(evt.venus_version) + '</div>';
+					if (evt.format_version) _linHtml += '<div class="ml-3">Format: ' + escapeHtml(evt.format_version) + '</div>';
+					_linHtml += '</div>';
+				});
+				_linHtml += '</div>';
+				$("#libDetailModal .lib-detail-lineage").html(_linHtml);
+				$("#libDetailModal .lib-detail-lineage-section").removeClass("d-none");
+			} else {
+				$("#libDetailModal .lib-detail-lineage-section").addClass("d-none");
+			}
+
 			// Library image in body
 			if (lib.library_image_base64) {
 				$("#libDetailModal .lib-detail-image").attr("src", "data:" + detailMime + ";base64," + lib.library_image_base64);
@@ -8208,6 +8250,11 @@
 					github_url: manifest.github_url || "",
 					tags: manifest.tags || [],
 					created_date: manifest.created_date || "",
+					app_version: manifest.app_version || "",
+					format_version: manifest.format_version || "",
+					windows_version: manifest.windows_version || "",
+					venus_version: manifest.venus_version || "",
+					package_lineage: manifest.package_lineage || [],
 					library_image: manifest.library_image || null,
 					library_image_base64: manifest.library_image_base64 || null,
 					library_image_mime: manifest.library_image_mime || null,
@@ -8224,6 +8271,9 @@
 					public_functions: extractPublicFunctions(libFiles, libDestDir),
 					required_dependencies: extractRequiredDependencies(libFiles, libDestDir)
 				};
+				// Forward-compat: preserve unknown manifest fields in DB record
+				var _knownManifestKeysRb = ['library_name','author','organization','version','venus_compatibility','description','github_url','tags','created_date','app_version','format_version','windows_version','venus_version','package_lineage','library_image','library_image_base64','library_image_mime','library_files','demo_method_files','help_files','com_register_dlls'];
+				Object.keys(manifest).forEach(function(mk) { if (_knownManifestKeysRb.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
 
 				// Update publisher registry
@@ -9571,6 +9621,17 @@
 							return;
 						}
 
+						// Version mismatch check for inner package
+						var _archPkgVer = manifest.app_version || '';
+						var _archCurVer = shared.getAppVersion();
+						if (_archPkgVer) {
+							var _archPkgMajor = parseInt((_archPkgVer.split('.')[0] || '0'), 10);
+							var _archCurMajor = parseInt((_archCurVer.split('.')[0] || '0'), 10);
+							if (_archPkgMajor > _archCurMajor) {
+								console.warn('[archive-import] Package ' + libName + ' was created with newer major version (v' + _archPkgVer + ' > v' + _archCurVer + ')');
+							}
+						}
+
 						// Verify inner package signature
 						var innerSig = verifyPackageSignature(innerZip);
 						if (innerSig.signed && !innerSig.valid) {
@@ -9664,6 +9725,11 @@
 							github_url: manifest.github_url || "",
 							tags: manifest.tags || [],
 							created_date: manifest.created_date || "",
+							app_version: manifest.app_version || "",
+							format_version: manifest.format_version || "",
+							windows_version: manifest.windows_version || "",
+							venus_version: manifest.venus_version || "",
+							package_lineage: manifest.package_lineage || [],
 							library_image: manifest.library_image || null,
 							library_image_base64: manifest.library_image_base64 || null,
 							library_image_mime: manifest.library_image_mime || null,
@@ -9680,6 +9746,9 @@
 							public_functions: extractPublicFunctions(libFiles, libDestDir),
 							required_dependencies: extractRequiredDependencies(libFiles, libDestDir)
 						};
+						// Forward-compat: preserve unknown manifest fields in DB record
+						var _knownManifestKeysArch = ['library_name','author','organization','version','venus_compatibility','description','github_url','tags','created_date','app_version','format_version','windows_version','venus_version','package_lineage','library_image','library_image_base64','library_image_mime','library_files','demo_method_files','help_files','com_register_dlls'];
+						Object.keys(manifest).forEach(function(mk) { if (_knownManifestKeysArch.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
 						var saved = db_installed_libs.installed_libs.save(dbRecord);
 
 						// Update publisher registry
@@ -10272,6 +10341,22 @@
 					if (!confirm(sigMsg)) { _isImporting = false; return; }
 				}
 
+				// ---- Version mismatch warning ----
+				var _pkgAppVer = manifest.app_version || '';
+				var _curAppVer = shared.getAppVersion();
+				if (_pkgAppVer && _pkgAppVer !== _curAppVer) {
+					var _pkgMajor = parseInt((_pkgAppVer.split('.')[0] || '0'), 10);
+					var _curMajor = parseInt((_curAppVer.split('.')[0] || '0'), 10);
+					var _vmMsg = 'This package was created with Library Manager v' + _pkgAppVer + '.\nYou are running v' + _curAppVer + '.';
+					if (_pkgMajor > _curMajor) {
+						_vmMsg += '\n\nWARNING: The package was created with a NEWER major version.\nSome features or metadata may not be fully supported.';
+					}
+					_vmMsg += '\n\nDo you want to continue?';
+					if (!confirm(_vmMsg)) { _isImporting = false; return; }
+				} else if (!_pkgAppVer && manifest.format_version && manifest.format_version !== shared.FORMAT_VERSION) {
+					console.warn('[import] Legacy package detected (format_version ' + manifest.format_version + ', no app_version). Current format: ' + shared.FORMAT_VERSION);
+				}
+
 				// ---- Author/organization length validation on import ----
 				var importAuthor = (manifest.author || '').trim();
 				var importOrg = (manifest.organization || '').trim();
@@ -10698,6 +10783,11 @@
 					github_url: manifest.github_url || "",
 					tags: manifest.tags || [],
 					created_date: manifest.created_date || "",
+					app_version: manifest.app_version || "",
+					format_version: manifest.format_version || "",
+					windows_version: manifest.windows_version || "",
+					venus_version: manifest.venus_version || "",
+					package_lineage: manifest.package_lineage || [],
 					library_image: manifest.library_image || null,
 					library_image_base64: manifest.library_image_base64 || null,
 					library_image_mime: manifest.library_image_mime || null,
@@ -10714,6 +10804,9 @@
 					public_functions: extractPublicFunctions(libFiles, libDestDir),
 					required_dependencies: extractRequiredDependencies(libFiles, libDestDir)
 				};
+				// Forward-compat: preserve unknown manifest fields in DB record
+				var _knownManifestKeysImp = ['library_name','author','organization','version','venus_compatibility','description','github_url','tags','created_date','app_version','format_version','windows_version','venus_version','package_lineage','library_image','library_image_base64','library_image_mime','library_files','demo_method_files','help_files','com_register_dlls'];
+				Object.keys(manifest).forEach(function(mk) { if (_knownManifestKeysImp.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
 
 				// Update publisher registry

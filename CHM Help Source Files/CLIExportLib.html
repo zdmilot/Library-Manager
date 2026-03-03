@@ -36,10 +36,13 @@
       <li>All expected library files must exist on disk (aborts if any are missing)</li>
     </ul>
   </li>
-  <li>A new <code>manifest.json</code> is built from the current database record with a fresh <code>created_date</code></li>
+  <li>A new <code>manifest.json</code> is built from the current database record with a fresh <code>created_date</code>, the current <code>app_version</code>, <code>windows_version</code>, and <code>venus_version</code></li>
+  <li>An <code>"exported"</code> event is appended to the existing <code>package_lineage</code> from the database record, recording the operator, hostname, and environment of the exporting machine</li>
+  <li>Any forward-compatible fields in the database record that are not part of the known schema are preserved in the exported manifest</li>
   <li>All library files and help files are packed into <code>library/</code></li>
   <li>All demo method files are packed into <code>demo_methods/</code></li>
-  <li>The ZIP is written to the specified output path</li>
+  <li>The ZIP is signed with HMAC-SHA256 and wrapped in a binary container</li>
+  <li>The container is written to the specified output path</li>
 </ol>
 
 <h2>Examples</h2>
