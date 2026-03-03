@@ -762,7 +762,7 @@
 			"gFolders":  { "_id": "gFolders",  "name": "Import",   "icon-class": "fa-download",     "default": true, "navbar": "right", "favorite": false },
 			"gEditors":  { "_id": "gEditors",  "name": "Export",   "icon-class": "fa-upload",       "default": true, "navbar": "right", "favorite": true  },
 			"gHistory":  { "_id": "gHistory",  "name": "History",  "icon-class": "fa-list",         "default": true, "navbar": "right", "favorite": true  },
-			"gHamilton": { "_id": "gHamilton", "name": "Hamilton", "icon-class": "fa-check-circle", "default": true, "navbar": "left",  "favorite": true, "protected": true }
+			"gOEM": { "_id": "gOEM", "name": "OEM", "icon-class": "fa-check-circle", "default": true, "navbar": "left",  "favorite": true, "protected": true }
 		};
 
 		/**
@@ -837,7 +837,7 @@
 				'installed_libs.json': '[]',
 				'publisher_registry.json': '{"publishers":[],"tags":[],"maxPublisherSpaces":0}',
 				'groups.json': '[]',
-				'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gHamilton","method-ids":[],"locked":true}]',
+				'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gOEM","method-ids":[],"locked":true}]',
 				'links.json': '[{"_id":"method-editor","name":"Method Editor","description":"","icon-customImage":"HxMet.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxMetEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lc-editor","name":"Liquid Class Editor","description":"","icon-customImage":"HxLiq.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxCoreLiquidEditor.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lbw-editor","name":"Labware Editor","description":"","icon-customImage":"HxLbw.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxLabwrEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"hsl-editor","name":"HSL Editor","description":"","icon-customImage":"HxHSL.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxHSLMetEd.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"sysCfg-editor","name":"System Configuration Editor","description":"","icon-customImage":"HxCfg.png","icon-class":"fa-dna","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\Hamilton.HxConfigEditor.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"run-control","group-id":"gEditors","name":"Run Control","description":"","icon-customImage":"HxRun.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxRun.exe","type":"file","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"ham-version","group-id":"gEditors","name":"Hamilton Version","description":"","icon-customImage":"HxVer.png","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin\\\\HxVersion.exe","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"bin-folder","name":"Bin","description":"VENUS software executables and dlls","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Bin","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"cfg-folder","name":"Config","description":"VENUS software configuration files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Config","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lbw-folder","name":"Labware","description":"VENUS software labware definitions for carriers, racks, tubes and consumables","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Labware","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"lib-folder","name":"Library","description":"VENUS software library files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Library","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"log-folder","name":"LogFiles","description":"Run traces and STAR communication logs","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Logfiles","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0},{"_id":"met-folder","name":"Methods","description":"Method files","icon-customImage":"","icon-class":"fa-folder","icon-color":"color-blue","path":"C:\\\\Program Files (x86)\\\\Hamilton\\\\Methods","type":"folder","default":true,"favorite":true,"last-started":"","last-startedUTC":0}]'
 			};
 			for (var fname in seedFiles) {
@@ -1150,10 +1150,10 @@
 				var groupsData = JSON.parse(groupsRaw);
 				var defaultIds = Object.keys(DEFAULT_GROUPS);
 				var before = groupsData.length;
-				// Also remove orphan Hamilton entries with random _ids
+				// Also remove orphan Hamilton/OEM entries with random _ids
 				groupsData = groupsData.filter(function(g) {
 					if (defaultIds.indexOf(g._id) !== -1) return false;
-					if (g.name === 'Hamilton' && g['protected']) return false;
+					if ((g.name === 'Hamilton' || g.name === 'OEM') && g['protected']) return false;
 					return true;
 				});
 				if (groupsData.length !== before) {
@@ -1170,11 +1170,34 @@
 				defaultIds.forEach(function(gid) {
 					var found = treeData.some(function(t){ return t["group-id"] === gid; });
 					if (!found) {
-						treeData.push({ "group-id": gid, "method-ids": [], "locked": (gid === 'gHamilton') });
+						treeData.push({ "group-id": gid, "method-ids": [], "locked": (gid === 'gOEM') });
 						treeChanged = true;
 						console.log('Created tree entry for default group: ' + gid);
 					}
 				});
+
+				// Migrate legacy gHamilton tree entries to gOEM
+				var legacyIdx = -1;
+				var oemIdx = -1;
+				for (var mi = 0; mi < treeData.length; mi++) {
+					if (treeData[mi]["group-id"] === 'gHamilton') legacyIdx = mi;
+					if (treeData[mi]["group-id"] === 'gOEM') oemIdx = mi;
+				}
+				if (legacyIdx !== -1) {
+					var legacyIds = treeData[legacyIdx]["method-ids"] || [];
+					if (oemIdx !== -1) {
+						// Merge legacy method-ids into gOEM
+						var oemIds = treeData[oemIdx]["method-ids"] || [];
+						legacyIds.forEach(function(id) { if (oemIds.indexOf(id) === -1) oemIds.push(id); });
+						treeData[oemIdx]["method-ids"] = oemIds;
+					} else {
+						// Rename gHamilton to gOEM in place
+						treeData[legacyIdx]["group-id"] = 'gOEM';
+					}
+					if (oemIdx !== -1) treeData.splice(legacyIdx, 1);
+					treeChanged = true;
+					console.log('Migrated legacy gHamilton tree entry to gOEM');
+				}
 				if (treeChanged) {
 					fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
 					db_tree = db.connect(USER_DATA_DIR, ['tree']);
