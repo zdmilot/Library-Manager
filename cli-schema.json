@@ -18,7 +18,8 @@
 
     "author": {
       "type": "string",
-      "minLength": 1,
+      "minLength": 3,
+      "maxLength": 29,
       "description": "Full name of the library author. Required.",
       "examples": ["Jane Smith", "Automation Team"]
     },

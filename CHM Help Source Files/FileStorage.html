@@ -12,8 +12,6 @@
 <h2>Overview</h2>
 <p>Library Manager for Venus 6 stores all persistent application data in a single <code>local/</code> directory within the application&rsquo;s own install folder under <code>Program Files (x86)</code>. This design ensures that all settings, library registries, audit trails, package backups, and exports are globally accessible to every user account on the PC &mdash; which is essential because VENUS libraries must span the entire workstation and are not per-user resources.</p>
 
-<p><b>Mutable application data is stored in a per-user local profile directory.</b> This avoids write-permission issues in Program Files while keeping data easy to locate and back up.</p>
-
 <h2>Installation Directory</h2>
 <p>The application is installed to:</p>
 <pre>C:\Program Files (x86)\Library Manager for Venus 6\</pre>
@@ -21,7 +19,7 @@
 
 <h2>Local Data Directory</h2>
 <p>All mutable application data is stored under:</p>
-<pre>%LOCALAPPDATA%\Library Manager for Venus 6\local\</pre>
+<pre>C:\Program Files (x86)\Library Manager for Venus 6\local\</pre>
 
 <h3>Directory Structure</h3>
 <table>
@@ -69,8 +67,17 @@
 <tr><td><code>chk_hideSystemLibraries</code></td><td>boolean</td><td>Hide system libraries on the front page</td></tr>
 <tr><td><code>chk_showGitHubLinks</code></td><td>boolean</td><td>Show GitHub repository links in library details</td></tr>
 <tr><td><code>chk_includeUnsignedLibs</code></td><td>boolean</td><td>Include unsigned libraries on the front page</td></tr>
+<tr><td><code>chk_scanUnsignedOnLaunch</code></td><td>boolean</td><td>Automatically scan for unsigned libraries each time the application launches</td></tr>
+<tr><td><code>chk_useSystemTheme</code></td><td>boolean</td><td>Follow the Windows system light/dark theme instead of using the manual dark mode toggle</td></tr>
+<tr><td><code>chk_settingHistoryCleanup</code></td><td>boolean</td><td>Enable automatic audit trail history cleanup</td></tr>
+<tr><td><code>history-days</code></td><td>string</td><td>Number of days to retain audit trail entries when history cleanup is enabled</td></tr>
+<tr><td><code>cleanup-action</code></td><td>string</td><td>Action to take on old audit trail entries (e.g., archive or delete)</td></tr>
+<tr><td><code>history-archive-folder</code></td><td>string</td><td>Directory path for archived audit trail files</td></tr>
 <tr><td><code>recent-max</code></td><td>string</td><td>Maximum number of recently imported libraries to display</td></tr>
 <tr><td><code>starred_libs</code></td><td>array</td><td>List of starred/favorited library IDs</td></tr>
+<tr><td><code>sysLibMetadataComplete</code></td><td>boolean</td><td>Internal flag indicating system library metadata scan has been completed</td></tr>
+<tr><td><code>sysLibBackupComplete</code></td><td>boolean</td><td>Internal flag indicating first-run system library backup has been completed</td></tr>
+<tr><td><code>windowMaximized</code></td><td>boolean</td><td>Persisted window maximized state</td></tr>
 </tbody>
 </table>
 

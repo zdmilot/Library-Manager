@@ -21,14 +21,13 @@
 <tbody>
 <tr><td><code>--name &lt;name&gt;</code></td><td><span class="badge badge-required">Required</span></td><td>Library name to look up in the package store</td></tr>
 <tr><td><code>--json</code>, <code>-j</code></td><td><span class="badge badge-optional">Optional</span></td><td>Output results as a JSON array</td></tr>
-<tr><td><code>--db-path &lt;path&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Override user data directory (affects package store location)</td></tr>
-<tr><td><code>--lib-dir &lt;path&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Override library directory</td></tr>
+<tr><td><code>--store-dir &lt;path&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Override the package store directory (global option)</td></tr>
 </tbody>
 </table>
 
 <h2>Package Store Location</h2>
 <p>Cached packages are stored in:</p>
-<div class="code"><pre>%LOCALAPPDATA%\Library Manager for Venus 6\local\packages\&lt;LibraryName&gt;\</pre></div>
+<div class="code"><pre>C:\Program Files (x86)\Library Manager for Venus 6\local\packages\&lt;LibraryName&gt;\</pre></div>
 <p>Files follow the naming pattern: <code>&lt;Name&gt;_v&lt;Version&gt;_&lt;timestamp&gt;.hxlibpkg</code></p>
 
 <h2>Output Fields</h2>

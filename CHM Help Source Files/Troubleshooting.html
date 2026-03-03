@@ -70,7 +70,7 @@
 <p><b>Cause:</b> The application may be reading from the wrong user data directory, or the database files were corrupted.</p>
 <p><b>Solution:</b></p>
 <ul>
-  <li>Verify that the local data directory exists at <code>%LOCALAPPDATA%\Library Manager for Venus 6\local\</code> and contains the expected JSON files</li>
+  <li>Verify that the local data directory exists at <code>C:\Program Files (x86)\Library Manager for Venus 6\local\</code> and contains the expected JSON files</li>
   <li>For CLI commands, verify the <code>--db-path</code> flag points to the correct directory</li>
   <li>Shadow copies (<code>._groups.json</code>, <code>._links.json</code>, etc.) in the data directory are diskdb backup files - do not delete them</li>
 </ul>
@@ -79,7 +79,7 @@
 <p><b>Cause:</b> The <code>local/packages/</code> folder was deleted, moved, or has permission issues.</p>
 <p><b>Solution:</b></p>
 <ul>
-  <li>The package store is located at: <code>%LOCALAPPDATA%\Library Manager for Venus 6\local\packages\</code></li>
+  <li>The package store is located at: <code>C:\Program Files (x86)\Library Manager for Venus 6\local\packages\</code></li>
   <li>Ensure write permissions exist. Package caching is automatic during import - the next import will recreate the directory structure</li>
   <li>If you need to disable caching for a CLI import, use <code>--no-cache</code></li>
 </ul>
@@ -88,7 +88,7 @@
 <p><b>Cause:</b> No packages have been cached for that library name, or the library name does not exactly match (case-sensitive on the directory name).</p>
 <p><b>Solution:</b></p>
 <ul>
-  <li>Check if the <code>%LOCALAPPDATA%\Library Manager for Venus 6\local\packages\&lt;LibName&gt;\</code> directory exists and contains <code>.hxlibpkg</code> files</li>
+  <li>Check if the <code>C:\Program Files (x86)\Library Manager for Venus 6\local\packages\&lt;LibName&gt;\</code> directory exists and contains <code>.hxlibpkg</code> files</li>
   <li>Verify the exact library name spelling</li>
   <li>Packages imported with <code>--no-cache</code> are not stored in the package store</li>
 </ul>
@@ -137,7 +137,7 @@
 <p><b>Solution:</b></p>
 <ul>
   <li>Re-import the original <code>.hxlibpkg</code> using the Import workflow or <code>import-lib --force</code></li>
-  <li>If you have the original package file, you can also manually copy it to the package store at <code>%LOCALAPPDATA%\Library Manager for Venus 6\local\packages\&lt;LibName&gt;\</code></li>
+  <li>If you have the original package file, you can also manually copy it to the package store at <code>C:\Program Files (x86)\Library Manager for Venus 6\local\packages\&lt;LibName&gt;\</code></li>
   <li>Ensure the package store directory has correct write permissions</li>
 </ul>
 

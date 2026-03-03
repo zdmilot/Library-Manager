@@ -161,22 +161,21 @@
 <p>Defines the navigation groups (tabs) shown in the GUI. The application uses a <b>two-tier group architecture</b>:</p>
 
 <h3>Default Groups (Hardcoded)</h3>
-<p>Seven built-in groups are defined in a <code>DEFAULT_GROUPS</code> map in the application source code. These are <b>never stored</b> in <code>groups.json</code> - they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the JSON file to prevent duplicates.</p>
+<p>Six built-in groups are defined in a <code>DEFAULT_GROUPS</code> map in the application source code. These are <b>never stored</b> in <code>groups.json</code> - they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the JSON file to prevent duplicates.</p>
 
 <table>
 <thead><tr><th>ID</th><th>Name</th><th>Icon</th><th>Side</th><th>Purpose</th></tr></thead>
 <tbody>
 <tr><td><code>gAll</code></td><td>All</td><td><code>fa-home</code></td><td>left</td><td>Shows all installed libraries</td></tr>
 <tr><td><code>gRecent</code></td><td>Recent</td><td><code>fa-history</code></td><td>left</td><td>Recently accessed libraries</td></tr>
-<tr><td><code>gStarred</code></td><td>Starred</td><td><code>fa-star</code></td><td>left</td><td>Libraries starred (favorited) by the user</td></tr>
-<tr><td><code>gHamilton</code></td><td>Hamilton</td><td><code>fa-check-circle</code> (solid)</td><td>left</td><td>Protected Hamilton-authored libraries</td></tr>
+<tr><td><code>gOEM</code></td><td>OEM</td><td><code>fa-check-circle</code> (solid)</td><td>left</td><td>Protected OEM-authored libraries</td></tr>
 <tr><td><code>gFolders</code></td><td>Import</td><td><code>fa-download</code></td><td>right</td><td>Import workflow tab</td></tr>
 <tr><td><code>gEditors</code></td><td>Export</td><td><code>fa-upload</code></td><td>right</td><td>Export workflow tab</td></tr>
 <tr><td><code>gHistory</code></td><td>History</td><td><code>fa-list</code></td><td>right</td><td>Action history</td></tr>
 </tbody>
 </table>
 
-<p>The <code>gHamilton</code> group has an additional <code>"protected": true</code> property that prevents it from being deleted or renamed. See <a href="LibraryGrouping.html">Library Grouping</a> for full details on Hamilton group protections.</p>
+<p>The <code>gOEM</code> group has an additional <code>"protected": true</code> property that prevents it from being deleted or renamed. See <a href="LibraryGrouping.html">Library Grouping</a> for full details on OEM group protections.</p>
 
 <h3>User-Created Groups (Stored in groups.json)</h3>
 <p>User-created groups have auto-generated <code>_id</code> values and <code>"default": false</code>. Each group has a name, FontAwesome icon class, and display metadata.</p>
@@ -195,8 +194,8 @@
 
 <div class="code"><pre>// In-memory only - not stored in groups.json
 {
-  "_id": "gHamilton",
-  "name": "Hamilton",
+  "_id": "gOEM",
+  "name": "OEM",
   "icon-class": "fa-check-circle",
   "default": true,
   "protected": true,
@@ -269,8 +268,8 @@
 </table>
 
 <h2>Local Data Directory</h2>
-<p>All mutable application data is stored in the <code>local/</code> directory under the current user profile:</p>
-<div class="code"><pre>%LOCALAPPDATA%\Library Manager for Venus 6\local\</pre></div>
+<p>All mutable application data is stored in the <code>local/</code> directory within the application install folder:</p>
+<div class="code"><pre>C:\Program Files (x86)\Library Manager for Venus 6\local\</pre></div>
 <p>This directory contains the live, mutable copy of the database that reflects the current installation state. It also contains:</p>
 <ul>
   <li><code>audit_trail.json</code> - A persistent audit trail recording all library lifecycle events (package creation, import, delete, rollback) with environmental context such as the Windows username, Windows OS version, VENUS version, and hostname. See <a href="LibraryAuditLog.html">Library Audit Log</a> for details.</li>
