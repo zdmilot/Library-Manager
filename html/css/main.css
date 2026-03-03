@@ -323,7 +323,15 @@ body {
 .settings-section{
 	background-color: var(--method-background);
 	color: var(--dark1);
-	margin-bottom: 20px;
+	margin-bottom: 12px;
+	border-radius: 8px;
+	border: 1px solid #e9ecef;
+	padding: 16px 20px !important;
+}
+
+/* Card footer divider line */
+.imp-lib-card-footer {
+	border-top: 1px solid #eee;
 }
 
 .custom-checkbox .custom-control-input:checked~.custom-control-label::before
@@ -2582,7 +2590,13 @@ body.dark-mode .dropdown-navitem-clearbg {
 
 /* Settings sections */
 body.dark-mode .settings-section {
-	border-bottom-color: #2a3a5c;
+	background-color: #16213e;
+	border-color: #2a3a5c;
+}
+
+/* Card footer divider line in dark mode */
+body.dark-mode .imp-lib-card-footer {
+	border-top-color: #2a3a5c;
 }
 
 /* Links sidebar */

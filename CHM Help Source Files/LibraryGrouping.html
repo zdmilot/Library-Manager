@@ -21,7 +21,7 @@
 <tr><td><code>gAll</code></td><td>All</td><td><code>fa-home</code></td><td>left</td><td>Shows all installed (non-deleted) libraries</td></tr>
 <tr><td><code>gRecent</code></td><td>Recent</td><td><code>fa-history</code></td><td>left</td><td>Recently imported libraries</td></tr>
 <tr><td><code>gStarred</code></td><td>Starred</td><td><code>fa-star</code></td><td>left</td><td>Libraries marked as favorites by the user (see <a href="GUIOverview.html">GUI Overview &mdash; Starred Libraries</a>)</td></tr>
-<tr><td><code>gHamilton</code></td><td>Hamilton</td><td><code>fa-check-circle</code> (solid)</td><td>left</td><td>Protected Hamilton-authored libraries</td></tr>
+<tr><td><code>gOEM</code></td><td>OEM</td><td><code>fa-check-circle</code> (solid)</td><td>left</td><td>Protected OEM-authored libraries</td></tr>
 <tr><td><code>gFolders</code></td><td>Import</td><td><code>fa-download</code></td><td>right</td><td>Import workflow tab</td></tr>
 <tr><td><code>gEditors</code></td><td>Export</td><td><code>fa-upload</code></td><td>right</td><td>Export workflow tab</td></tr>
 <tr><td><code>gHistory</code></td><td>History</td><td><code>fa-list</code></td><td>right</td><td>Action history</td></tr>
@@ -30,12 +30,12 @@
 
 <p>User-created groups are stored in <code>groups.json</code> with <code>"default": false</code> and auto-generated <code>_id</code> values.</p>
 
-<h2>Hamilton Default Group</h2>
-<p>The <b>Hamilton</b> group (<code>gHamilton</code>) is a special protected group that ships with the application. It is designed to contain libraries authored by Hamilton and is distinguished from regular custom groups in several important ways:</p>
+<h2>OEM Default Group</h2>
+<p>The <b>OEM</b> group (<code>gOEM</code>) is a special protected group that ships with the application. It is designed to contain libraries authored by OEM vendors (such as Hamilton and other equipment manufacturers) and is distinguished from regular custom groups in several important ways:</p>
 
 <h3>Protection</h3>
 <ul>
-  <li><b>Non-deletable and non-renamable</b> - The Hamilton group has <code>"protected": true</code> in the <code>DEFAULT_GROUPS</code> map, preventing users from deleting or renaming it through the settings panel.</li>
+  <li><b>Non-deletable and non-renamable</b> - The OEM group has <code>"protected": true</code> in the <code>DEFAULT_GROUPS</code> map, preventing users from deleting or renaming it through the settings panel.</li>
   <li><b>Always visible</b> - It appears in the left-side navigation between the System libraries group and user-created groups. It cannot be hidden.</li>
   <li><b>Solid checkmark icon</b> - Uses the Font Awesome 5 Solid <code>fa-check-circle</code> icon to visually distinguish it from user-created groups.</li>
 </ul>
@@ -49,7 +49,7 @@
 <img src="images/Restricted-Orgainization--Hamilton.png" alt="Restricted organization password prompt for Hamilton author name" class="doc-screenshot">
 
 <h3>Empty State</h3>
-<p>When no Hamilton-authored packages are installed, the Hamilton tab displays a dedicated placeholder message: <i>"No Hamilton packages installed yet. Import a Hamilton-authored library package to see it here."</i></p>
+<p>When no OEM-authored packages are installed, the OEM tab displays a dedicated placeholder message: <i>"No OEM packages installed yet. Import an OEM-authored library package to see it here."</i></p>
 
 <h2>Managing Groups</h2>
 
@@ -77,7 +77,7 @@
 <p>Groups can be shown or hidden in the navigation using the favorite/show-hide toggle. Hidden groups and their assigned libraries still exist but are not displayed as navigation tabs.</p>
 
 <h2>Data Persistence</h2>
-<p>Default groups (All, Recent, Hamilton, Import, Export, History) are <b>not</b> stored in <code>groups.json</code>. They are defined in a hardcoded <code>DEFAULT_GROUPS</code> map in the application source code and resolved in-memory. Only user-created custom groups are stored in <code>groups.json</code>.</p>
+<p>Default groups (All, Recent, OEM, Import, Export, History) are <b>not</b> stored in <code>groups.json</code>. They are defined in a hardcoded <code>DEFAULT_GROUPS</code> map in the application source code and resolved in-memory. Only user-created custom groups are stored in <code>groups.json</code>.</p>
 <p>Group-to-library assignments are stored in <code>tree.json</code> within the user data directory. See <a href="DataModel.html">Data Model &amp; Persistence</a> for details.</p>
 
 <h2>Group Record Structure (User-Created Groups)</h2>
@@ -101,7 +101,7 @@
 <p>When the <a href="UnsignedLibraries.html">Unsigned Libraries</a> feature is enabled and at least one unsigned library has been discovered by scanning, a special <b>Unsigned</b> group is injected into the navigation bar. This group is distinct from both default and custom groups:</p>
 <ul>
   <li>Uses the <code>far fa-times-circle</code> icon</li>
-  <li>Appears after the Hamilton group in the left navigation</li>
+  <li>Appears after the OEM group in the left navigation</li>
   <li><b>Locked</b> - libraries cannot be dragged into or out of it</li>
   <li>Not stored in <code>tree.json</code> or <code>groups.json</code> - it is generated dynamically</li>
   <li>Not included in the sortable group ordering</li>

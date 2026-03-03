@@ -71,7 +71,7 @@ const DEFAULT_GROUPS = {
     gFolders:  { _id: 'gFolders',  name: 'Import',   'icon-class': 'fa-download',     'default': true, navbar: 'right', favorite: false },
     gEditors:  { _id: 'gEditors',  name: 'Export',   'icon-class': 'fa-upload',       'default': true, navbar: 'right', favorite: true  },
     gHistory:  { _id: 'gHistory',  name: 'History',  'icon-class': 'fa-list',         'default': true, navbar: 'right', favorite: true  },
-    gHamilton: { _id: 'gHamilton', name: 'Hamilton', 'icon-class': 'fa-check-circle', 'default': true, navbar: 'left',  favorite: true, 'protected': true }
+    gOEM:      { _id: 'gOEM',      name: 'OEM',      'icon-class': 'fa-check-circle', 'default': true, navbar: 'left',  favorite: true, 'protected': true }
 };
 
 /**
@@ -351,7 +351,7 @@ function ensureLocalDataDir(dirPath) {
         'settings.json': '[{"_id":"0"}]',
         'installed_libs.json': '[]',
         'groups.json': '[]',
-        'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gHamilton","method-ids":[],"locked":true}]',
+        'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gOEM","method-ids":[],"locked":true}]',
         'links.json': '[]'
     };
     for (const [fname, content] of Object.entries(seeds)) {
@@ -759,35 +759,35 @@ function autoAddToGroup(db, savedLibId, authorName) {
         const navtree = db.tree.find();
         let targetGroupId = null;
 
-        // If author is Hamilton, auto-assign to the Hamilton group
+        // If author is restricted, auto-assign to the OEM group
         if (isRestrictedAuthor(authorName)) {
-            let hamiltonTreeEntry = null;
+            let oemTreeEntry = null;
             for (let i = 0; i < navtree.length; i++) {
-                if (navtree[i]['group-id'] === 'gHamilton') {
-                    hamiltonTreeEntry = navtree[i];
+                if (navtree[i]['group-id'] === 'gOEM') {
+                    oemTreeEntry = navtree[i];
                     break;
                 }
             }
-            if (hamiltonTreeEntry) {
-                targetGroupId = 'gHamilton';
-                const ids = hamiltonTreeEntry['method-ids'] || [];
+            if (oemTreeEntry) {
+                targetGroupId = 'gOEM';
+                const ids = oemTreeEntry['method-ids'] || [];
                 ids.push(savedLibId);
                 db.tree.update(
-                    { 'group-id': 'gHamilton' },
+                    { 'group-id': 'gOEM' },
                     { 'method-ids': ids },
                     { multi: false, upsert: false }
                 );
             } else {
-                // Hamilton group is hardcoded; just create the tree entry
+                // OEM group is hardcoded; just create the tree entry
                 db.tree.save({
-                    'group-id': 'gHamilton',
+                    'group-id': 'gOEM',
                     'method-ids': [savedLibId],
                     locked: true
                 });
-                targetGroupId = 'gHamilton';
+                targetGroupId = 'gOEM';
             }
         } else {
-            // Non-Hamilton: add to first custom group
+            // Non-OEM: add to first custom group
             for (let i = 0; i < navtree.length; i++) {
                 const gEntry = getGroupById(db, navtree[i]['group-id']);
                 if (gEntry && !gEntry['default']) {

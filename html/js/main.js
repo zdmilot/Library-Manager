@@ -1945,7 +1945,7 @@
 			} else {
 				// Custom group or other tab - show filtered library cards
 				var groupData = getGroupById(group_id);
-				if(groupData && (!groupData["default"] || group_id === "gHamilton")){
+				if(groupData && (!groupData["default"] || group_id === "gOEM")){
 					$(".links-container").addClass("d-none");
 					$(".exporter-container").addClass("d-none");
 					$(".importer-container").removeClass("d-none");
@@ -3471,7 +3471,7 @@
 					'</div>' +
 					(shortDesc ? '<p class="text-muted mt-2 mb-1" style="font-size:0.85em;">' + shortDesc + '</p>' : '') +
 					(tagsHtml ? '<div class="mt-1 mb-2">' + tagsHtml + '</div>' : '') +
-					'<div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #eee;">' +
+					'<div class="d-flex justify-content-between align-items-center mt-2 pt-2 imp-lib-card-footer">' +
 						(hasChmHelp ? '<a href="#" class="text-sm imp-lib-card-help-link" style="color:var(--medium);" data-lib-id="' + lib._id + '">Help</a>' : '<span></span>') +
 						'<span class="imp-lib-star" data-lib-id="' + lib._id + '" title="' + (isLibStarred(lib._id) ? 'Unstar' : 'Star') + '"><i class="' + (isLibStarred(lib._id) ? 'fas' : 'far') + ' fa-star"></i></span>' +
 					'</div>' +
@@ -4201,9 +4201,9 @@
 					var group_favorite = navgroup["favorite"];
 					var group_protected = navgroup["protected"] || false;
 
-					// Skip Export, History, Hamilton, Starred, and Import from normal nav rendering
+					// Skip Export, History, OEM, Starred, and Import from normal nav rendering
 					// These nav items are injected separately after the loop
-					var skipNavItem = (group_id === "gEditors" || group_id === "gHistory" || group_id === "gHamilton" || group_id === "gFolders" || group_id === "gStarred");
+					var skipNavItem = (group_id === "gEditors" || group_id === "gHistory" || group_id === "gOEM" || group_id === "gFolders" || group_id === "gStarred");
 
 					var classCustomGroup = "";
 					if(!group_default || group_protected){
@@ -4400,25 +4400,25 @@
 				}
 			}
 
-			// ---- Inject the Hamilton group nav item (after System) ----
+			// ---- Inject the OEM group nav item (after System) ----
 			{
-				var hamiltonGrp = getGroupById("gHamilton");
-				if (hamiltonGrp) {
-					var hamFav = hamiltonGrp["favorite"];
-					var hamIcon = hamiltonGrp["icon-class"] || "fa-check-circle";
-					var hamNavStr = '<li class="nav-item custom-group' + (hamFav ? '' : ' d-none') + '" data-group-id="gHamilton">' +
-						'<div class="navitem-content"><div><i class="fas fa-1x ' + hamIcon + '"></i></div>' +
-						'<div><span class="nav-item-text">' + hamiltonGrp["name"] + '</span></div></div></li>';
-					$(".navbarLeft").append(hamNavStr);
+				var oemGrp = getGroupById("gOEM");
+				if (oemGrp) {
+					var oemFav = oemGrp["favorite"];
+					var oemIcon = oemGrp["icon-class"] || "fa-check-circle";
+					var oemNavStr = '<li class="nav-item custom-group' + (oemFav ? '' : ' d-none') + '" data-group-id="gOEM">' +
+						'<div class="navitem-content"><div><i class="fas fa-1x ' + oemIcon + '"></i></div>' +
+						'<div><span class="nav-item-text">' + oemGrp["name"] + '</span></div></div></li>';
+					$(".navbarLeft").append(oemNavStr);
 				}
 			}
 
 			// ---- HARDCODED NAV ORDER ENFORCEMENT ----
 			// All is ALWAYS the leftmost nav item (it is the home screen).
 			// System groups come next, then user-defined groups at the end.
-			// Order: All | Starred | Recent | System | Hamilton | Unsigned | [user groups]
+			// Order: All | Starred | Recent | System | OEM | Unsigned | [user groups]
 			// ** AI NOTE: gAll must NEVER be moved from the leftmost position **
-			var _sysNavIds = { gAll:1, gRecent:1, gStarred:1, gSystem:1, gHamilton:1, gUnsigned:1 };
+			var _sysNavIds = { gAll:1, gRecent:1, gStarred:1, gSystem:1, gOEM:1, gUnsigned:1 };
 			// Move all user-defined groups to the end of navbarLeft
 			$(".navbarLeft .nav-item").each(function() {
 				var gid = $(this).attr('data-group-id');
@@ -4427,8 +4427,8 @@
 				}
 			});
 			// Enforce exact system group order in navbar:
-			// All | Starred | Recent | System | Hamilton | Unsigned | [user groups]
-			var _navOrder = ['gAll', 'gStarred', 'gRecent', 'gSystem', 'gHamilton', 'gUnsigned'];
+			// All | Starred | Recent | System | OEM | Unsigned | [user groups]
+			var _navOrder = ['gAll', 'gStarred', 'gRecent', 'gSystem', 'gOEM', 'gUnsigned'];
 			var $navbarLeft = $(".navbarLeft");
 			for (var _ni = _navOrder.length - 1; _ni >= 0; _ni--) {
 				var $navEntry = $navbarLeft.find('.nav-item[data-group-id="' + _navOrder[_ni] + '"]');
@@ -4485,12 +4485,12 @@
 
 			// ---- ACCORDION ORDER ENFORCEMENT ----
 			// Must be a 1:1 match with the nav bar order for system/auto-generated groups.
-			// Nav order:  All | Starred | Recent | System | Hamilton | Unsigned | [user groups]
-			// Accordion visible order: Starred | System | Hamilton | Unsigned | [user groups] | Unassigned
+			// Nav order:  All | Starred | Recent | System | OEM | Unsigned | [user groups]
+			// Accordion visible order: Starred | System | OEM | Unsigned | [user groups] | Unassigned
 			// (All, Recent, Folders, Editors, History are hidden via d-none)
 			{
 				var $accordion = $(".settings-links #accordion");
-				var _sysAccIds = { gAll:1, gRecent:1, gStarred:1, gFolders:1, gEditors:1, gHistory:1, gUnsigned:1, gSystem:1, gHamilton:1 };
+				var _sysAccIds = { gAll:1, gRecent:1, gStarred:1, gFolders:1, gEditors:1, gHistory:1, gUnsigned:1, gSystem:1, gOEM:1 };
 
 				// 1) Remove duplicate accordion entries (keep the first occurrence of each group-id)
 				var _seenAccIds = {};
@@ -4507,7 +4507,7 @@
 
 				// 2) Enforce exact order: system groups in fixed order, then user groups, then Unassigned
 				//    This matches the nav bar order exactly.
-				var _accOrder = ['gStarred', 'gSystem', 'gHamilton', 'gUnsigned'];
+				var _accOrder = ['gStarred', 'gSystem', 'gOEM', 'gUnsigned'];
 				// Detach system groups and re-prepend them in the correct order
 				for (var _oi = _accOrder.length - 1; _oi >= 0; _oi--) {
 					var $sysEntry = $accordion.find('.settings-links-group[data-group-id="' + _accOrder[_oi] + '"]');
@@ -7362,8 +7362,8 @@
 				var emptyMsg;
 				if (recentMode) {
 					emptyMsg = 'No recent imports.<br>Import a <b>.hxlibpkg</b> package to see it here.';
-				} else if (groupId === 'gHamilton') {
-					emptyMsg = 'No Hamilton packages installed yet.<br>Import an official Hamilton <b>.hxlibpkg</b> to see it here.';
+				} else if (groupId === 'gOEM') {
+					emptyMsg = 'No OEM packages installed yet.<br>Import an OEM-authored <b>.hxlibpkg</b> to see it here.';
 				} else if (groupId) {
 					emptyMsg = 'No libraries assigned to this group.<br>Drag libraries into this group from <b>Settings &gt; Library Groups</b>.';
 				} else {
@@ -7478,7 +7478,7 @@
 							'</div>' +
 							(shortDesc ? '<p class="text-muted mt-2 mb-1" style="font-size:0.85em;">' + shortDesc + '</p>' : '') +
 							(tagsHtml ? '<div class="mt-1 mb-2">' + tagsHtml + '</div>' : '') +
-							'<div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #eee;">' +
+							'<div class="d-flex justify-content-between align-items-center mt-2 pt-2 imp-lib-card-footer">' +
 								(hasChmHelp ? '<a href="#" class="text-sm imp-lib-card-help-link" style="color:var(--medium);" data-lib-id="' + lib._id + '">Help</a>' : '<span></span>') +
 								'<span class="imp-lib-star" data-lib-id="' + lib._id + '" title="' + (isLibStarred(lib._id) ? 'Unstar' : 'Star') + '"><i class="' + (isLibStarred(lib._id) ? 'fas' : 'far') + ' fa-star"></i></span>' +
 							'</div>' +
@@ -7660,7 +7660,7 @@
 						'</div>' +
 						'<p class="text-muted mt-2 mb-1" style="font-size:0.85em;">' + shortDesc + '</p>' +
 						'<div class="mt-1 mb-1">' + typeBadges + '</div>' +
-						'<div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #eee;">' +
+						'<div class="d-flex justify-content-between align-items-center mt-2 pt-2 imp-lib-card-footer">' +
 							(hasSysChmHelp ? '<a href="#" class="text-sm imp-lib-card-help-link" style="color:var(--medium);" data-lib-id="' + sLib._id + '">Help</a>' : '<span></span>') +
 							'<span class="imp-lib-star" data-lib-id="' + sLib._id + '" title="' + (isLibStarred(sLib._id) ? 'Unstar' : 'Star') + '"><i class="' + (isLibStarred(sLib._id) ? 'fas' : 'far') + ' fa-star"></i></span>' +
 						'</div>' +
@@ -8201,22 +8201,22 @@
 					var rollbackOrg = (manifest.organization || '').trim();
 
 					if (isRestrictedAuthor(rollbackAuthor) || isRestrictedAuthor(rollbackOrg)) {
-						// Hamilton author: route to gHamilton group
-						var hamiltonTreeEntry = null;
+						// Restricted author: route to gOEM group
+						var oemTreeEntry = null;
 						for (var ti = 0; ti < navtree.length; ti++) {
-							if (navtree[ti]["group-id"] === "gHamilton") {
-								hamiltonTreeEntry = navtree[ti];
+							if (navtree[ti]["group-id"] === "gOEM") {
+								oemTreeEntry = navtree[ti];
 								break;
 							}
 						}
-						if (hamiltonTreeEntry) {
-							targetGroupId = "gHamilton";
-							var existingIds = (hamiltonTreeEntry["method-ids"] || []).slice();
+						if (oemTreeEntry) {
+							targetGroupId = "gOEM";
+							var existingIds = (oemTreeEntry["method-ids"] || []).slice();
 							existingIds.push(saved._id);
 							var treePath = path.join(USER_DATA_DIR, 'tree.json');
 							var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
 							for (var ui = 0; ui < treeData.length; ui++) {
-								if (treeData[ui]["group-id"] === "gHamilton") {
+								if (treeData[ui]["group-id"] === "gOEM") {
 									treeData[ui]["method-ids"] = existingIds;
 									break;
 								}
@@ -8224,20 +8224,20 @@
 							fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
 							db_tree = db.connect(USER_DATA_DIR, ['tree']);
 						} else {
-							// Hamilton group tree entry missing; create it
+							// OEM group tree entry missing; create it
 							var treePath2 = path.join(USER_DATA_DIR, 'tree.json');
 							var treeData2 = JSON.parse(fs.readFileSync(treePath2, 'utf8'));
 							treeData2.push({
-								"group-id": "gHamilton",
+								"group-id": "gOEM",
 								"method-ids": [saved._id],
 								"locked": true
 							});
 							fs.writeFileSync(treePath2, JSON.stringify(treeData2), 'utf8');
 							db_tree = db.connect(USER_DATA_DIR, ['tree']);
-							targetGroupId = "gHamilton";
+							targetGroupId = "gOEM";
 						}
 					} else {
-						// Non-Hamilton: add to first custom group
+						// Non-OEM: add to first custom group
 						for (var ti = 0; ti < navtree.length; ti++) {
 							var gEntry = getGroupById(navtree[ti]["group-id"]);
 							if (gEntry && !gEntry["default"]) {
@@ -9599,22 +9599,22 @@
 						var archImportOrg = (manifest.organization || '').trim();
 
 						if (isRestrictedAuthor(archImportAuthor) || isRestrictedAuthor(archImportOrg)) {
-							// Hamilton author: add to the Hamilton group
-							var hamiltonTreeEntry = null;
+							// Restricted author: add to the OEM group
+							var oemTreeEntry = null;
 							for (var ti = 0; ti < navtree.length; ti++) {
-								if (navtree[ti]["group-id"] === "gHamilton") {
-									hamiltonTreeEntry = navtree[ti];
+								if (navtree[ti]["group-id"] === "gOEM") {
+									oemTreeEntry = navtree[ti];
 									break;
 								}
 							}
-							if (hamiltonTreeEntry) {
-								targetGroupId = "gHamilton";
-								var existingIds = (hamiltonTreeEntry["method-ids"] || []).slice();
+							if (oemTreeEntry) {
+								targetGroupId = "gOEM";
+								var existingIds = (oemTreeEntry["method-ids"] || []).slice();
 								existingIds.push(saved._id);
 								var treePath = path.join(USER_DATA_DIR, 'tree.json');
 								var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
 								for (var ui = 0; ui < treeData.length; ui++) {
-									if (treeData[ui]["group-id"] === "gHamilton") {
+									if (treeData[ui]["group-id"] === "gOEM") {
 										treeData[ui]["method-ids"] = existingIds;
 										break;
 									}
@@ -9622,20 +9622,20 @@
 								fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
 								db_tree = db.connect(USER_DATA_DIR, ['tree']);
 							} else {
-								// Hamilton group tree entry missing; create it
+								// OEM group tree entry missing; create it
 								var treePath2 = path.join(USER_DATA_DIR, 'tree.json');
 								var treeData2 = JSON.parse(fs.readFileSync(treePath2, 'utf8'));
 								treeData2.push({
-									"group-id": "gHamilton",
+									"group-id": "gOEM",
 									"method-ids": [saved._id],
 									"locked": true
 								});
 								fs.writeFileSync(treePath2, JSON.stringify(treeData2), 'utf8');
 								db_tree = db.connect(USER_DATA_DIR, ['tree']);
-								targetGroupId = "gHamilton";
+								targetGroupId = "gOEM";
 							}
 						} else {
-							// Non-Hamilton author: add to first custom group
+							// Non-OEM author: add to first custom group
 							for (var ti = 0; ti < navtree.length; ti++) {
 								var gEntry = getGroupById(navtree[ti]["group-id"]);
 								if (gEntry && !gEntry["default"]) {
@@ -10582,23 +10582,23 @@
 				var savedAuthor = (manifest.author || '').trim();
 				var savedOrg = (manifest.organization || '').trim();
 				if (isRestrictedAuthor(savedAuthor) || isRestrictedAuthor(savedOrg)) {
-					// Find or create the Hamilton group entry in the tree
-					var hamiltonTreeEntry = null;
+					// Find or create the OEM group entry in the tree
+					var oemTreeEntry = null;
 					for (var ti = 0; ti < navtree.length; ti++) {
-						if (navtree[ti]["group-id"] === "gHamilton") {
-							hamiltonTreeEntry = navtree[ti];
+						if (navtree[ti]["group-id"] === "gOEM") {
+							oemTreeEntry = navtree[ti];
 							break;
 						}
 					}
-					if (hamiltonTreeEntry) {
-						targetGroupId = "gHamilton";
-						var existingIds = (hamiltonTreeEntry["method-ids"] || []).slice();
+					if (oemTreeEntry) {
+						targetGroupId = "gOEM";
+						var existingIds = (oemTreeEntry["method-ids"] || []).slice();
 						existingIds.push(saved._id);
 						// Use raw file I/O to safely update tree (diskdb update may replace entire record)
 						var treePath = path.join(USER_DATA_DIR, 'tree.json');
 						var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
 						for (var ui = 0; ui < treeData.length; ui++) {
-							if (treeData[ui]["group-id"] === "gHamilton") {
+							if (treeData[ui]["group-id"] === "gOEM") {
 								treeData[ui]["method-ids"] = existingIds;
 								break;
 							}
@@ -10606,20 +10606,20 @@
 						fs.writeFileSync(treePath, JSON.stringify(treeData), 'utf8');
 						db_tree = db.connect(USER_DATA_DIR, ['tree']);
 					} else {
-						// Hamilton group is hardcoded; just create the tree entry
+						// OEM group is hardcoded; just create the tree entry
 						var treePath2 = path.join(USER_DATA_DIR, 'tree.json');
 						var treeData2 = JSON.parse(fs.readFileSync(treePath2, 'utf8'));
 						treeData2.push({
-							"group-id": "gHamilton",
+							"group-id": "gOEM",
 							"method-ids": [saved._id],
 							"locked": true
 						});
 						fs.writeFileSync(treePath2, JSON.stringify(treeData2), 'utf8');
 						db_tree = db.connect(USER_DATA_DIR, ['tree']);
-						targetGroupId = "gHamilton";
+						targetGroupId = "gOEM";
 					}
 				} else {
-					// Non-Hamilton author: add to first custom group
+					// Non-OEM author: add to first custom group
 					for (var ti = 0; ti < navtree.length; ti++) {
 						var gEntry = getGroupById(navtree[ti]["group-id"]);
 						if (gEntry && !gEntry["default"]) {
@@ -11904,7 +11904,7 @@
 						'</div>' +
 						(shortDesc ? '<p class="text-muted mt-2 mb-1" style="font-size:0.85em;">' + shortDesc + '</p>' : '') +
 						(tagsHtml ? '<div class="mt-1 mb-2">' + tagsHtml + '</div>' : '') +
-						'<div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #eee;">' +
+						'<div class="d-flex justify-content-between align-items-center mt-2 pt-2 imp-lib-card-footer">' +
 							'<a href="#" class="text-sm unsigned-lib-card-details cursor-pointer" style="color:var(--medium);"><i class="fas fa-edit mr-1"></i>Edit &amp; Export</a>' +
 							'<span class="text-muted" style="font-size:0.75rem;">' + fileCount + ' file' + (fileCount !== 1 ? 's' : '') + '</span>' +
 						'</div>' +
@@ -12483,21 +12483,21 @@
 				var savedAuthor = (uLib.author || '').trim();
 				var savedOrg = (uLib.organization || '').trim();
 				if (isRestrictedAuthor(savedAuthor) || isRestrictedAuthor(savedOrg)) {
-					var hamiltonTreeEntry = null;
+					var oemTreeEntry = null;
 					for (var ti = 0; ti < navtree.length; ti++) {
-						if (navtree[ti]["group-id"] === "gHamilton") {
-							hamiltonTreeEntry = navtree[ti];
+						if (navtree[ti]["group-id"] === "gOEM") {
+							oemTreeEntry = navtree[ti];
 							break;
 						}
 					}
-					if (hamiltonTreeEntry) {
-						targetGroupId = "gHamilton";
-						var existingIds = (hamiltonTreeEntry["method-ids"] || []).slice();
+					if (oemTreeEntry) {
+						targetGroupId = "gOEM";
+						var existingIds = (oemTreeEntry["method-ids"] || []).slice();
 						existingIds.push(saved._id);
 						var treePath = path.join(USER_DATA_DIR, 'tree.json');
 						var treeData = JSON.parse(fs.readFileSync(treePath, 'utf8'));
 						for (var ui = 0; ui < treeData.length; ui++) {
-							if (treeData[ui]["group-id"] === "gHamilton") {
+							if (treeData[ui]["group-id"] === "gOEM") {
 								treeData[ui]["method-ids"] = existingIds;
 								break;
 							}
@@ -12508,13 +12508,13 @@
 						var treePath2 = path.join(USER_DATA_DIR, 'tree.json');
 						var treeData2 = JSON.parse(fs.readFileSync(treePath2, 'utf8'));
 						treeData2.push({
-							"group-id": "gHamilton",
+							"group-id": "gOEM",
 							"method-ids": [saved._id],
 							"locked": true
 						});
 						fs.writeFileSync(treePath2, JSON.stringify(treeData2), 'utf8');
 						db_tree = db.connect(USER_DATA_DIR, ['tree']);
-						targetGroupId = "gHamilton";
+						targetGroupId = "gOEM";
 					}
 				} else {
 					for (var ti = 0; ti < navtree.length; ti++) {
