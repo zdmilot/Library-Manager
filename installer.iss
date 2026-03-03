@@ -55,6 +55,14 @@ var
   IsRegulatedMode: Boolean;
   IsDarkMode: Boolean;
   IsGithubLinksHidden: Boolean;
+  TermsPage: TWizardPage;
+  TermsMemo: TNewMemo;
+  AcceptCheckbox: TNewCheckBox;
+
+procedure AcceptCheckboxClick(Sender: TObject);
+begin
+  WizardForm.NextButton.Enabled := AcceptCheckbox.Checked;
+end;
 
 procedure RegulatedCheckboxClick(Sender: TObject);
 var
@@ -106,7 +114,47 @@ var
   SectionLabel: TNewStaticText;
   DividerBevel: TBevel;
   DividerBevel2: TBevel;
+  TermsText, PrivacyText: AnsiString;
 begin
+  // -----------------------------------------------------------------------
+  // Terms of Use and Privacy Policy acceptance page
+  // -----------------------------------------------------------------------
+  TermsPage := CreateCustomPage(
+    wpWelcome,
+    'Terms of Use and Privacy Policy',
+    'Please read the following Terms of Use and Privacy Policy before continuing.'
+  );
+
+  TermsMemo := TNewMemo.Create(WizardForm);
+  TermsMemo.Parent := TermsPage.Surface;
+  TermsMemo.Left := 0;
+  TermsMemo.Top := 0;
+  TermsMemo.Width := TermsPage.SurfaceWidth;
+  TermsMemo.Height := TermsPage.SurfaceHeight - 40;
+  TermsMemo.ScrollBars := ssVertical;
+  TermsMemo.ReadOnly := True;
+  TermsMemo.WordWrap := True;
+  TermsMemo.TabStop := False;
+
+  ExtractTemporaryFile('TERMS_OF_USE.txt');
+  ExtractTemporaryFile('PRIVACY_POLICY.txt');
+  if LoadStringFromFile(ExpandConstant('{tmp}\TERMS_OF_USE.txt'), TermsText) and
+     LoadStringFromFile(ExpandConstant('{tmp}\PRIVACY_POLICY.txt'), PrivacyText) then
+  begin
+    TermsMemo.Text := String(TermsText) + #13#10 + #13#10 +
+      '════════════════════════════════════════════════════════' + #13#10 + #13#10 +
+      String(PrivacyText);
+  end;
+
+  AcceptCheckbox := TNewCheckBox.Create(WizardForm);
+  AcceptCheckbox.Parent := TermsPage.Surface;
+  AcceptCheckbox.Caption := 'I accept the Terms of Use and Privacy Policy';
+  AcceptCheckbox.Top := TermsMemo.Top + TermsMemo.Height + 8;
+  AcceptCheckbox.Left := 0;
+  AcceptCheckbox.Width := TermsPage.SurfaceWidth;
+  AcceptCheckbox.Checked := False;
+  AcceptCheckbox.OnClick := @AcceptCheckboxClick;
+
   // -----------------------------------------------------------------------
   // Custom configuration page
   // -----------------------------------------------------------------------
@@ -196,6 +244,28 @@ begin
   GithubLinksCheckbox.Left := 8;
   GithubLinksCheckbox.Width := ConfigPage.SurfaceWidth - 16;
   GithubLinksCheckbox.Checked := False;  // Hidden by default
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageID = TermsPage.ID then
+    WizardForm.NextButton.Enabled := AcceptCheckbox.Checked
+  else
+    WizardForm.NextButton.Enabled := True;
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+  if CurPageID = TermsPage.ID then
+  begin
+    if not AcceptCheckbox.Checked then
+    begin
+      MsgBox('You must accept the Terms of Use and Privacy Policy to continue.',
+        mbError, MB_OK);
+      Result := False;
+    end;
+  end;
 end;
 
 // -----------------------------------------------------------------------
@@ -398,6 +468,10 @@ Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
 ; Legal
 Source: "PRIVACY_POLICY.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "TERMS_OF_USE.txt"; DestDir: "{app}"; Flags: ignoreversion
+
+; Legal (temp copies for installer terms acceptance page)
+Source: "TERMS_OF_USE.txt"; Flags: dontcopy
+Source: "PRIVACY_POLICY.txt"; Flags: dontcopy
 
 [Dirs]
 ; Local data directory with full write access for the Users group.
