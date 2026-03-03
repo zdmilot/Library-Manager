@@ -5980,7 +5980,7 @@
 			var $input = $("#pkg-library-name");
 			if($input.prop("readonly")){
 				// Enable editing
-				$input.prop("readonly", false).css({"background-color": "", "cursor": ""}).focus();
+				$input.prop("readonly", false).removeClass("pkg-readonly-input").css({"cursor": ""}).focus();
 				$(this).html('<i class="fas fa-undo"></i>').attr("title", "Revert to auto-detected name");
 				pkg_nameOverridden = true;
 				if(pkg_autoDetectedName && $input.val() !== pkg_autoDetectedName){
@@ -5989,7 +5989,7 @@
 				}
 			} else {
 				// Revert to auto-detected
-				$input.val(pkg_autoDetectedName).prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
+				$input.val(pkg_autoDetectedName).prop("readonly", true).addClass("pkg-readonly-input").css({"cursor": "default"});
 				$(this).html('<i class="fas fa-pencil-alt"></i>').attr("title", "Override auto-detected name");
 				pkg_nameOverridden = false;
 				$("#pkg-name-warning").addClass("d-none");
@@ -6113,7 +6113,7 @@
 			$("#pkg-venus-compat").val('');
 			$("#pkg-description").val('');
 			$("#pkg-tags").val('');
-			$("#pkg-library-name").val('').prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
+			$("#pkg-library-name").val('').prop("readonly", true).addClass("pkg-readonly-input").css({"cursor": "default"});
 			$("#pkg-toggle-name-edit").html('<i class="fas fa-pencil-alt"></i>').attr("title", "Override auto-detected name");
 			$("#pkg-name-warning").addClass("d-none");
 			$("#pkg-name-hint").removeClass("d-none");

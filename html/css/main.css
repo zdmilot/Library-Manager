@@ -698,6 +698,26 @@ body {
 	font-size: 0.85rem;
 }
 
+/* Regulated mode confirm - light mode base styles */
+.reg-confirm-warning-box {
+	background: #fff8f0;
+	color: #5f1616;
+}
+.reg-confirm-info-box {
+	background: #f0f4ff;
+	border: 1px solid #a8c5e2;
+	color: #1a3a5c;
+}
+.reg-confirm-label {
+	color: #555;
+}
+
+/* Readonly input base style */
+.pkg-readonly-input {
+	background-color: #e9ecef;
+	cursor: default;
+}
+
 .delete-confirm-com-box {
 	background: #f0f4ff;
 	border: 1px solid #a8c5e2;
@@ -2629,6 +2649,402 @@ body.dark-mode .custom-control-input:checked ~ .custom-control-label::before {
 	background-color: #3a7bd5;
 	border-color: #3a7bd5;
 }
+
+/* Unchecked checkbox background */
+body.dark-mode .custom-control-label::before {
+	background-color: #0f0f23;
+	border-color: #2a3a5c;
+}
+
+/* Custom select */
+body.dark-mode .custom-select {
+	background-color: #0f0f23;
+	color: #c8d6e5;
+	border-color: #2a3a5c;
+}
+body.dark-mode .custom-select:focus {
+	background-color: #16213e;
+	color: #e0e6ed;
+	border-color: #3a7bd5;
+}
+
+/* Input group addons */
+body.dark-mode .input-group-text {
+	background-color: #16213e;
+	color: #8899aa;
+	border-color: #2a3a5c;
+}
+
+/* Progress bar */
+body.dark-mode .progress {
+	background-color: #0f0f23;
+}
+
+/* Settings accordion items */
+body.dark-mode .settings-links-method {
+	background-color: #16213e;
+	border-bottom-color: #2a3a5c;
+}
+body.dark-mode .settings-links-method .name {
+	color: #c8d6e5;
+}
+
+/* Card header / card body (exporter, accordion) */
+body.dark-mode .card-header {
+	background-color: #1a2640;
+	color: #c8d6e5;
+	border-bottom-color: #2a3a5c;
+}
+body.dark-mode .card-body {
+	background-color: #16213e;
+	color: #c8d6e5;
+}
+
+/* Delete / Upgrade / Rollback warning boxes */
+body.dark-mode .delete-confirm-warning-box {
+	background: rgba(215, 58, 73, 0.12);
+	border-color: #d73a49;
+	color: #ef8a8a;
+}
+body.dark-mode .delete-confirm-warning-box strong {
+	color: #f0a0a0;
+}
+body.dark-mode .delete-confirm-consequences {
+	color: #d4a85a;
+}
+
+body.dark-mode .upgrade-confirm-warning-box {
+	background: rgba(215, 58, 73, 0.12);
+	border-color: #d73a49;
+	color: #ef8a8a;
+}
+body.dark-mode .upgrade-confirm-warning-box strong {
+	color: #f0a0a0;
+}
+body.dark-mode .upgrade-confirm-consequences {
+	color: #ef8a8a;
+}
+
+body.dark-mode .rollback-confirm-warning-box {
+	background: rgba(215, 58, 73, 0.12);
+	border-color: #d73a49;
+	color: #ef8a8a;
+}
+body.dark-mode .rollback-confirm-warning-box strong {
+	color: #f0a0a0;
+}
+body.dark-mode .rollback-confirm-consequences {
+	color: #ef8a8a;
+}
+
+/* Confirm box info/label overrides */
+body.dark-mode .delete-confirm-com-box {
+	background: rgba(58, 123, 213, 0.1);
+	border-color: #2a3a5c;
+	color: #8abaef;
+}
+body.dark-mode .delete-confirm-label,
+body.dark-mode .upgrade-confirm-label,
+body.dark-mode .rollback-confirm-label {
+	color: #8899aa;
+}
+
+/* Archive conflict table */
+body.dark-mode .arch-conflict-table thead th {
+	background: rgba(215, 58, 73, 0.15);
+	color: #ef8a8a;
+}
+body.dark-mode .arch-conflict-table td {
+	background: #16213e;
+	color: #c8d6e5;
+	border-color: #2a3a5c;
+}
+
+/* Import success COM status */
+body.dark-mode .import-success-com-status.com-warning {
+	background: rgba(255, 193, 7, 0.12);
+	color: #f0c850;
+	border-color: #5c4a1a;
+}
+body.dark-mode .import-success-com-status.com-ok {
+	background: rgba(40, 167, 69, 0.12);
+	color: #6dda89;
+	border-color: #1a5c2a;
+}
+
+/* Package file list */
+body.dark-mode .pkg-file-list {
+	background: #0f0f23;
+	border-color: #2a3a5c;
+}
+body.dark-mode .pkg-file-item {
+	border-bottom-color: #2a3a5c;
+	color: #c8d6e5;
+}
+body.dark-mode .pkg-file-item .pkg-file-name {
+	color: #c8d6e5;
+}
+body.dark-mode .pkg-file-item .pkg-file-dir {
+	color: #6a7a8a;
+}
+body.dark-mode .pkg-empty-msg {
+	color: #5a6a7a;
+}
+
+/* Package icon preview */
+body.dark-mode .pkg-icon-preview {
+	background: #0f0f23;
+	border-color: #3a4a6c;
+}
+
+/* File-type warning modal */
+body.dark-mode .pkg-filetype-warn-body {
+	background: rgba(232, 163, 23, 0.1);
+	border-top-color: #e8a317;
+}
+body.dark-mode .pkg-filetype-warn-title {
+	color: #f0c850;
+}
+body.dark-mode .pkg-filetype-warn-message {
+	color: #d4a85a;
+}
+body.dark-mode .pkg-filetype-warn-footer {
+	background: rgba(232, 163, 23, 0.1);
+	border-top-color: #5c4a1a;
+}
+body.dark-mode .pkg-filetype-warn-footer .pkg-filetype-warn-yes {
+	color: #8899aa;
+	border-color: #3a4a6c;
+}
+body.dark-mode .pkg-filetype-warn-footer .pkg-filetype-warn-yes:hover {
+	color: #c8d6e5;
+	border-color: #5a6a8c;
+}
+body.dark-mode .pkg-filetype-warn-content {
+	background: #1a1a2e;
+}
+
+/* File-type warn: error variant */
+body.dark-mode .pkg-filetype-warn-content.pkg-filetype-warn-error .pkg-filetype-warn-body {
+	background: rgba(215, 58, 73, 0.1);
+	border-top-color: #d73a49;
+}
+body.dark-mode .pkg-filetype-warn-content.pkg-filetype-warn-error .pkg-filetype-warn-title {
+	color: #ef8a8a;
+}
+body.dark-mode .pkg-filetype-warn-content.pkg-filetype-warn-error .pkg-filetype-warn-message {
+	color: #e07575;
+}
+body.dark-mode .pkg-filetype-warn-content.pkg-filetype-warn-error .pkg-filetype-warn-footer {
+	background: rgba(215, 58, 73, 0.1);
+	border-top-color: #5c1a1a;
+}
+
+/* COM warning card */
+body.dark-mode .imp-lib-card-warning {
+	background-color: rgba(240, 173, 78, 0.12) !important;
+	border-left-color: #f0ad4e !important;
+}
+body.dark-mode .imp-lib-card-warning:hover {
+	box-shadow: 0 3px 6px rgba(240, 173, 78, 0.25), 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Issues banner */
+body.dark-mode .imp-issues-banner-inner {
+	background: rgba(220, 53, 69, 0.1);
+	border-color: #5c1a1a;
+	border-left-color: #dc3545;
+}
+body.dark-mode .imp-issues-banner-header {
+	background: rgba(220, 53, 69, 0.12);
+	border-bottom-color: rgba(220, 53, 69, 0.2);
+}
+body.dark-mode .imp-issues-item {
+	border-bottom-color: rgba(255,255,255,0.05);
+}
+body.dark-mode .imp-issues-item .issue-detail {
+	color: #7a8ba0;
+}
+
+/* Integrity error card */
+body.dark-mode .imp-lib-card-integrity-error {
+	background-color: rgba(217, 83, 79, 0.12) !important;
+	border-left-color: #d9534f !important;
+}
+body.dark-mode .imp-lib-card-integrity-error:hover {
+	box-shadow: 0 3px 6px rgba(217, 83, 79, 0.3), 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* System library card */
+body.dark-mode .imp-lib-card-system {
+	background-color: rgba(108, 117, 125, 0.12) !important;
+	border-left-color: #6c757d !important;
+}
+body.dark-mode .imp-lib-card-system.imp-lib-card-integrity-error {
+	background-color: rgba(217, 83, 79, 0.12) !important;
+	border-left-color: #d9534f !important;
+}
+
+/* Unsigned library cards */
+body.dark-mode .imp-unsigned-lib-card {
+	background-color: #1a2640;
+	border-left-color: #5a6a8c;
+}
+body.dark-mode .imp-unsigned-lib-card [style*="border-top"] {
+	border-top-color: #2a3a5c !important;
+}
+
+/* Export archive list */
+body.dark-mode .exp-arch-lib-list {
+	border-color: #2a3a5c;
+}
+body.dark-mode .exp-arch-lib-item {
+	border-bottom-color: #2a3a5c;
+}
+body.dark-mode .exp-arch-lib-item:hover {
+	background-color: rgba(58,123,213,0.1);
+}
+
+/* System detail files list */
+body.dark-mode .system-detail-files-list {
+	background: #0f0f23;
+	border-color: #2a3a5c;
+}
+body.dark-mode .system-detail-files-list .file-item {
+	color: #c8d6e5;
+}
+body.dark-mode .system-detail-files-list .file-item i {
+	color: #7a8ba0;
+}
+
+/* Event history */
+body.dark-mode .evt-history-row {
+	border-bottom-color: #2a3a5c;
+}
+body.dark-mode .evt-history-row:hover {
+	background: rgba(255,255,255,0.03);
+}
+body.dark-mode .evt-history-title {
+	color: #e0e6ed;
+}
+body.dark-mode .evt-history-detail-text {
+	color: #8899aa;
+}
+body.dark-mode .evt-history-time {
+	color: #7a8ba0;
+}
+body.dark-mode .evt-history-user {
+	color: #6a7a8a;
+}
+body.dark-mode .evt-history-detail-block {
+	background: #0f0f23;
+	color: #8abaef;
+}
+body.dark-mode .evt-history-empty {
+	color: #5a6a8a;
+}
+
+/* Regulated mode confirm inline-styled boxes */
+body.dark-mode .reg-confirm-warning-box {
+	background: rgba(215, 58, 73, 0.12) !important;
+	color: #ef8a8a !important;
+}
+body.dark-mode .reg-confirm-info-box {
+	background: rgba(58, 123, 213, 0.1) !important;
+	border-color: #2a3a5c !important;
+	color: #8abaef !important;
+}
+body.dark-mode .reg-confirm-label {
+	color: #8899aa !important;
+}
+
+/* Readonly inputs */
+body.dark-mode .pkg-readonly-input {
+	background-color: #0f0f23 !important;
+	color: #8899aa;
+	border-color: #2a3a5c;
+}
+
+/* Readonly inputs with inline #e9ecef background */
+body.dark-mode input[readonly],
+body.dark-mode .form-control[readonly] {
+	background-color: #0f0f23 !important;
+	color: #8899aa;
+	border-color: #2a3a5c;
+	cursor: default;
+}
+
+/* Bootstrap modal backdrop in dark mode */
+body.dark-mode .modal-backdrop {
+	background-color: #000;
+}
+
+/* Dropdown dividers */
+body.dark-mode .dropdown-divider {
+	border-top-color: #2a3a5c;
+}
+
+/* Modal body generic */
+body.dark-mode .modal-body {
+	color: #c8d6e5;
+}
+
+/* Validation error fields (red tint that works in dark mode) */
+body.dark-mode [style*="FFCECE"],
+body.dark-mode [style*="ffcece"] {
+	background: rgba(215, 58, 73, 0.2) !important;
+	color: #e0e6ed !important;
+}
+
+/* Paragraph and span text inside modals */
+body.dark-mode .modal p,
+body.dark-mode .modal span:not(.badge):not(.close span) {
+	color: inherit;
+}
+
+/* col-form-label inside modals */
+body.dark-mode .col-form-label {
+	color: #c8d6e5;
+}
+
+/* Badge variants */
+body.dark-mode .badge-danger {
+	background-color: rgba(215, 58, 73, 0.25);
+	color: #ef8a8a;
+}
+body.dark-mode .badge-warning {
+	background-color: rgba(255, 193, 7, 0.2);
+	color: #f0c850;
+}
+body.dark-mode .badge-info {
+	background-color: rgba(58, 123, 213, 0.2);
+	color: #8abaef;
+}
+body.dark-mode .badge-success {
+	background-color: rgba(40, 167, 69, 0.2);
+	color: #6dda89;
+}
+body.dark-mode .badge-outline-secondary {
+	border-color: #3a4a6c;
+	color: #8899aa;
+}
+
+/* About modal */
+body.dark-mode .about-modal-body {
+	color: #c8d6e5;
+}
+
+/* Privacy modal */
+body.dark-mode .privacy-modal-body {
+	color: #c8d6e5;
+}
+
+/* pkg-com-checkbox label text */
+body.dark-mode .pkg-com-label {
+	color: #8899aa;
+}
+
+/* ---- End comprehensive dark mode overrides ---- */
 
 /* Dark mode toggle button styling */
 .btn-dark-mode-toggle {
