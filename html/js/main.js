@@ -1,5 +1,5 @@
-
-		// main.js v1.5.3
+﻿
+		// main.js v1.5.4
 		// Author: Zachary Milot
 
 		var gui = require('nw.gui');
@@ -34,7 +34,7 @@
 		var HxFolder_Methods = "C:\\Program Files (x86)\\HAMILTON\\Methods";
 
 		const fs = require('fs');
-		// image-size removed — no longer used
+		// image-size removed - no longer used
 		const os = require("os");
 		const crypto = require('crypto');
 		const shared = require('../lib/shared');
@@ -779,16 +779,16 @@
 		//
 		// Directory layout:
 		//   <app_install_dir>/local/
-		//     settings.json        – application settings (singleton record)
-		//     installed_libs.json  – installed library registry
-		//     groups.json          – custom user groups
-		//     tree.json            – group→library membership tree
-		//     links.json           – VENUS tool shortcuts & folder paths
-		//     unsigned_libs.json   – scanned unsigned libraries
-		//     publisher_registry.json – publisher/tag autocomplete data
-		//     audit_trail.json     – append-only event audit log
-		//     packages/            – cached .hxlibpkg backups for rollback & repair
-		//     exports/             – default export output directory
+		//     settings.json        - application settings (singleton record)
+		//     installed_libs.json  - installed library registry
+		//     groups.json          - custom user groups
+		//     tree.json            - group→library membership tree
+		//     links.json           - VENUS tool shortcuts & folder paths
+		//     unsigned_libs.json   - scanned unsigned libraries
+		//     publisher_registry.json - publisher/tag autocomplete data
+		//     audit_trail.json     - append-only event audit log
+		//     packages/            - cached .hxlibpkg backups for rollback & repair
+		//     exports/             - default export output directory
 		// ================================================================
 
 		var APP_ROOT = (typeof nw !== 'undefined' && nw.__dirname) ? nw.__dirname : __dirname;
@@ -3723,7 +3723,7 @@
 			});
 		}
 
-		// Settings checkbox toggle – use system theme
+		// Settings checkbox toggle - use system theme
 		$(document).on("change", "#chk_useSystemTheme", function() {
 			var useSystem = $(this).is(":checked");
 			saveSetting("chk_useSystemTheme", useSystem);
@@ -3738,7 +3738,7 @@
 			}
 		});
 
-		// Toolbar toggle (moon/sun icon) — only visible when system theme is off
+		// Toolbar toggle (moon/sun icon) - only visible when system theme is off
 		$(document).on("click", ".btn-dark-mode-toggle", function(e) {
 			e.preventDefault();
 			var isNowDark = !$("body").hasClass("dark-mode");
@@ -7563,7 +7563,7 @@
 				$("#libDetailModal .lib-detail-desc-section").addClass("d-none");
 			}
 
-			// GitHub URL (respect display setting — always hidden in regulated mode)
+			// GitHub URL (respect display setting - always hidden in regulated mode)
 			var ghRegulated = !!getSettingValue("chk_regulatedEnvironment");
 			if (lib.github_url && !ghRegulated && getSettingValue("chk_showGitHubLinks") !== false) {
 				var ghValidation = shared.validateGitHubRepoUrl(lib.github_url);
@@ -7611,7 +7611,7 @@
 								  'fa-exchange-alt text-info';
 					_linHtml += '<div class="mb-2 pb-2' + (idx < _lineage.length - 1 ? ' border-bottom' : '') + '">';
 					_linHtml += '<div><i class="fas ' + evtIcon + ' mr-1"></i><b>' + escapeHtml(evt.event || 'unknown') + '</b>';
-					if (evt.timestamp) _linHtml += ' <span class="text-muted">— ' + escapeHtml(evt.timestamp) + '</span>';
+					if (evt.timestamp) _linHtml += ' <span class="text-muted">- ' + escapeHtml(evt.timestamp) + '</span>';
 					_linHtml += '</div>';
 					if (evt.app_version) _linHtml += '<div class="ml-3">App: v' + escapeHtml(evt.app_version) + '</div>';
 					if (evt.username) _linHtml += '<div class="ml-3">User: ' + escapeHtml(evt.username) + '</div>';
@@ -8158,7 +8158,7 @@
 				} catch(_) { /* non-critical */ }
 
 				if (comDlls.length > 0) {
-					alert('NOTE: This library has COM DLLs that may need re-registration:\n\n' + comDlls.join(', ') + '\n\nRe-import via the GUI for automatic 32-bit COM registration, or run the 32-bit RegAsm manually:\n  C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>\n\nIMPORTANT: Do NOT use Framework64 — VENUS is a 32-bit application.');
+					alert('NOTE: This library has COM DLLs that may need re-registration:\n\n' + comDlls.join(', ') + '\n\nRe-import via the GUI for automatic 32-bit COM registration, or run the 32-bit RegAsm manually:\n  C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>\n\nIMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.');
 				}
 
 			} catch(e) {

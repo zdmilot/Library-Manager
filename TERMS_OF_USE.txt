@@ -1,4 +1,4 @@
-## Terms of Use — Library Manager for VENUS 6
+﻿## Terms of Use - Library Manager for VENUS 6
 
 **Effective date:** March 3, 2026
 **Last updated:** March 3, 2026
@@ -12,7 +12,7 @@ The App is an independent, community-developed desktop application intended to h
 ### 2) Open source license governs
 
 The App is **open source** and is licensed under the **Apache License, Version 2.0** (the “License”).
-Your rights to use, reproduce, modify, distribute, and otherwise work with the App are granted under the License—not limited by these Terms.
+Your rights to use, reproduce, modify, distribute, and otherwise work with the App are granted under the License-not limited by these Terms.
 
 **Commercial use is permitted under the License.**
 

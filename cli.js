@@ -1,7 +1,7 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Library Manager for Venus 6 CLI  v1.5.3
+ * Library Manager for Venus 6 CLI  v1.5.4
  * Command-line interface for managing Hamilton VENUS libraries.
  *
  * Copyright (c) 2026 Zachary Milot
@@ -1007,7 +1007,7 @@ function cmdImportLib(args) {
         console.log(`\n  NOTE: COM registration required for: ${comDlls.join(', ')}`);
         console.log(`  Use the GUI import or run the 32-bit RegAsm manually:`);
         console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>`);
-        console.log(`  IMPORTANT: Do NOT use Framework64 — VENUS is a 32-bit application.`);
+        console.log(`  IMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.`);
     }
 }
 
@@ -1492,7 +1492,7 @@ function cmdDeleteLib(args) {
         console.log(`\n  NOTE: COM DLLs were NOT automatically deregistered: ${comDlls.join(', ')}`);
         console.log(`  Run the 32-bit RegAsm with elevated privileges if needed:`);
         console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /unregister <dll>`);
-        console.log(`  IMPORTANT: Do NOT use Framework64 — VENUS is a 32-bit application.`);
+        console.log(`  IMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.`);
     }
 }
 
@@ -2116,7 +2116,7 @@ function cmdRollbackLib(args) {
         console.log(`\n  NOTE: COM registration required for: ${comDlls.join(', ')}`);
         console.log(`  Use the GUI import or run the 32-bit RegAsm manually:`);
         console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>`);
-        console.log(`  IMPORTANT: Do NOT use Framework64 — VENUS is a 32-bit application.`);
+        console.log(`  IMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.`);
     }
 }
 
@@ -2125,7 +2125,7 @@ function cmdRollbackLib(args) {
 // ===========================================================================
 function printHelp() {
     console.log(`
-Library Manager for Venus 6 CLI  v1.5.3
+Library Manager for Venus 6 CLI  v1.5.4
 Hamilton VENUS Library Package Management
 
 USAGE
@@ -2240,7 +2240,7 @@ delete-lib
 
   NOTE: COM DLL deregistration must be done manually via the 32-bit RegAsm.exe.
         Use: C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister <dll>
-        Do NOT use Framework64 — VENUS is a 32-bit application.
+        Do NOT use Framework64 - VENUS is a 32-bit application.
 
   Examples:
     node cli.js delete-lib --name "MyLibrary" --yes
