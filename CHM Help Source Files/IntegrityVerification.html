@@ -274,7 +274,35 @@
 <ul>
   <li><b>Error/warning detail lines:</b> Each error or warning is listed below the library name (e.g., "Checksum changed: HSLBarcodeReader.hsl")</li>
   <li><b>Cached count:</b> Shows how many cached/backup versions are available in the package store (e.g., "1 backup" or "3 cached")</li>
+  <li><b>COM badge:</b> Libraries with registered COM DLLs display a <b>COM</b> badge. The badge color indicates registration status: <span style="color:#17a2b8;">blue</span> when all DLLs are registered, <span style="color:#f0ad4e;">yellow</span> when one or more DLLs are not registered.</li>
 </ul>
+
+<h3>COM Registration Verification</h3>
+<p>Libraries that include .NET COM DLLs (specified via <code>com_register_dlls</code> in the package manifest) are automatically checked for proper COM registration in the Windows registry during the Verify &amp; Repair scan.</p>
+
+<h4>How It Works</h4>
+<ol>
+  <li>For each library with COM DLLs, the tool uses the <b>32-bit RegAsm.exe</b> (<code>C:\Windows\Microsoft.NET\Framework\</code>) with the <code>/regfile</code> flag to discover CLSIDs the DLL would register.</li>
+  <li>Each discovered CLSID is checked against the 32-bit registry hive (<code>HKCR\WOW6432Node\CLSID</code> and <code>HKCR\CLSID</code>).</li>
+  <li>If all CLSIDs are present, the library shows a green COM status. If any CLSIDs are missing, the library shows a yellow warning with details about which DLLs are not registered.</li>
+</ol>
+
+<div class="note">
+<p><b>Important:</b> Only the 32-bit RegAsm.exe from <code>C:\Windows\Microsoft.NET\Framework\</code> is used. The 64-bit RegAsm.exe from <code>Framework64</code> is never used because Hamilton VENUS 6 is a 32-bit (x86) application. Registering COM objects with the 64-bit RegAsm would place them in the wrong registry hive, making them invisible to VENUS.</p>
+</div>
+
+<h4>Re-register COM DLLs</h4>
+<p>If the scan detects that COM DLLs are not registered (or have become unregistered), a <b>Re-register COM</b> button appears next to the library. Clicking it will:</p>
+<ol>
+  <li>Verify that the DLL files exist on disk (if missing, you must repair the library first).</li>
+  <li>Prompt for confirmation.</li>
+  <li>Register the DLLs using the 32-bit RegAsm.exe with <code>/codebase</code> (a UAC elevation prompt will appear).</li>
+  <li>Update the library's database record to reflect the new registration status.</li>
+</ol>
+<p>This allows you to fix COM registration issues without needing to delete and re-import the library.</p>
+
+<h4>COM Deregistration on Delete</h4>
+<p>When a library with COM DLLs is deleted, the application automatically deregisters the DLLs before removing the files. This ensures that stale COM registrations do not remain in the Windows registry. In the GUI, a UAC elevation prompt will appear. In the CLI, the <code>delete-lib</code> command must be run as Administrator for automatic deregistration.</p>
 
 <h3>Repair Options</h3>
 <ul>
@@ -383,6 +411,9 @@
 <tr><td>Repair button is missing for a failed library</td><td>No cached package exists in the package store</td><td>Re-import the library from the original <code>.hxlibpkg</code> file</td></tr>
 <tr><td>Repair aborts with "signature verification FAILED"</td><td>The backup/cached package itself has been corrupted or tampered with</td><td>Obtain a fresh copy of the package and re-import it</td></tr>
 <tr><td>False positive: "Checksum changed" on a system library you didn't modify</td><td>A VENUS software update or Method Editor re-save may have updated the footer</td><td>Re-run <code>generate-syslib-hashes</code> to update the baseline with the current values</td></tr>
+<tr><td>COM DLLs show as "not registered" after Windows update or re-image</td><td>Windows updates or system restores can remove COM registrations from the registry</td><td>Use the <b>Re-register COM</b> button in the Verify &amp; Repair tool to re-register the DLLs</td></tr>
+<tr><td>Re-register COM button does not appear</td><td>The library's file integrity check failed (files are missing or corrupted)</td><td>Repair the library first to restore the files, then re-register COM DLLs</td></tr>
+<tr><td>COM registration fails with "requires administrator rights"</td><td>RegAsm.exe requires elevated privileges to write to the system registry</td><td>Accept the UAC prompt when it appears. In the CLI, run the command as Administrator.</td></tr>
 </tbody>
 </table>
 

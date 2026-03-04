@@ -1488,8 +1488,60 @@ function cmdDeleteLib(args) {
     } catch (_) { /* non-critical */ }
 
     const comDlls = lib.com_register_dlls || [];
-    if (comDlls.length > 0) {
-        console.log(`\n  NOTE: COM DLLs were NOT automatically deregistered: ${comDlls.join(', ')}`);
+    if (comDlls.length > 0 && !args['keep-files']) {
+        console.log(`\n  Deregistering ${comDlls.length} COM DLL(s)...`);
+        const libPath = lib.lib_install_path || lib.install_path || '';
+        // Locate 32-bit RegAsm.exe (NEVER use Framework64 - VENUS is 32-bit x86)
+        const frameworkDir = 'C:\\Windows\\Microsoft.NET\\Framework\\';
+        let regasmPath = null;
+        try {
+            const dirs = fs.readdirSync(frameworkDir)
+                .filter(d => /^v\d/.test(d))
+                .sort()
+                .reverse();
+            for (const d of dirs) {
+                const candidate = path.join(frameworkDir, d, 'RegAsm.exe');
+                if (fs.existsSync(candidate) && !/Framework64/i.test(candidate)) {
+                    regasmPath = candidate;
+                    break;
+                }
+            }
+        } catch (_) {}
+
+        if (!regasmPath) {
+            console.log('  WARNING: 32-bit RegAsm.exe not found. COM DLLs were NOT deregistered.');
+            console.log('  Manually deregister with:');
+            comDlls.forEach(dll => {
+                console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /unregister "${path.join(libPath, dll)}"`);
+            });
+        } else {
+            let deregOk = 0;
+            let deregFail = 0;
+            comDlls.forEach(dll => {
+                const dllPath = path.join(libPath, dll);
+                if (!fs.existsSync(dllPath)) {
+                    console.log(`  Skip: ${dll} (file not found)`);
+                    return;
+                }
+                try {
+                    const { execSync } = require('child_process');
+                    execSync(`"${regasmPath}" /unregister "${dllPath}"`, {
+                        timeout: 30000,
+                        windowsHide: true,
+                        stdio: 'pipe'
+                    });
+                    deregOk++;
+                    console.log(`  Deregistered: ${dll}`);
+                } catch (e) {
+                    deregFail++;
+                    console.log(`  FAILED to deregister: ${dll} – ${(e.message || '').substring(0, 100)}`);
+                    console.log(`  You may need to run this CLI as Administrator for COM deregistration.`);
+                }
+            });
+            console.log(`  COM deregistration: ${deregOk} succeeded, ${deregFail} failed.`);
+        }
+    } else if (comDlls.length > 0 && args['keep-files']) {
+        console.log(`\n  NOTE: --keep-files set. COM DLLs were NOT deregistered: ${comDlls.join(', ')}`);
         console.log(`  Run the 32-bit RegAsm with elevated privileges if needed:`);
         console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /unregister <dll>`);
         console.log(`  IMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.`);
@@ -2238,9 +2290,9 @@ delete-lib
   --hard                         Hard-delete DB record (removes history)
   --keep-files                   Remove from DB only; leave disk files intact
 
-  NOTE: COM DLL deregistration must be done manually via the 32-bit RegAsm.exe.
-        Use: C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister <dll>
-        Do NOT use Framework64 - VENUS is a 32-bit application.
+  COM DLLs are automatically deregistered using the 32-bit RegAsm.exe unless
+  --keep-files is specified. Run as Administrator for COM deregistration.
+  IMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.
 
   Examples:
     node cli.js delete-lib --name "MyLibrary" --yes

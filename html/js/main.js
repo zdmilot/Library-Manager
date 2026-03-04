@@ -6699,6 +6699,122 @@
 			return {allSuccess: allSuccess, results: results};
 		}
 
+		/**
+		 * Check whether a single .NET assembly DLL is registered as a COM object
+		 * in the 32-bit (WOW6432Node) registry hive.
+		 *
+		 * Strategy: run the 32-bit RegAsm.exe /regfile:<temp> <dll> to generate a
+		 * .reg file listing the CLSIDs the DLL *would* register, then check whether
+		 * those CLSIDs already exist under HKCR\WOW6432Node\CLSID (or the 32-bit
+		 * view).  Falls back to a simpler heuristic if RegAsm /regfile fails.
+		 *
+		 * @param {string} dllPath - Full path to the .NET DLL
+		 * @returns {{ registered: boolean, details: string }}
+		 */
+		function checkCOMRegistrationStatus(dllPath) {
+			if (!fs.existsSync(dllPath)) {
+				return { registered: false, details: 'DLL file not found' };
+			}
+
+			var execSync = require('child_process').execSync;
+
+			// Use RegAsm /regfile to discover CLSIDs without actually registering
+			var regasm = findRegAsmPath();
+			if (!regasm) {
+				return { registered: false, details: '32-bit RegAsm.exe not found' };
+			}
+
+			var os = require('os');
+			var tmpReg = path.join(os.tmpdir(), 'lm_comcheck_' + Date.now() + '.reg');
+			try {
+				execSync('"' + regasm + '" "' + dllPath + '" /regfile:"' + tmpReg + '"', {
+					timeout: 15000,
+					windowsHide: true,
+					stdio: 'pipe'
+				});
+			} catch (e) {
+				// RegAsm /regfile can fail if the DLL is not a valid .NET assembly
+				try { fs.unlinkSync(tmpReg); } catch(_) {}
+				return { registered: false, details: 'RegAsm /regfile failed: ' + (e.message || '').substring(0, 120) };
+			}
+
+			// Parse the .reg file for CLSID entries
+			var regContent = '';
+			try { regContent = fs.readFileSync(tmpReg, 'utf16le'); } catch(_) {
+				try { regContent = fs.readFileSync(tmpReg, 'utf8'); } catch(_2) {}
+			}
+			try { fs.unlinkSync(tmpReg); } catch(_) {}
+
+			var clsidPattern = /\[HKEY_CLASSES_ROOT\\CLSID\\(\{[0-9A-Fa-f\-]+\})/g;
+			var clsids = [];
+			var match;
+			while ((match = clsidPattern.exec(regContent)) !== null) {
+				if (clsids.indexOf(match[1]) === -1) clsids.push(match[1]);
+			}
+
+			if (clsids.length === 0) {
+				return { registered: false, details: 'No COM CLSIDs found in DLL' };
+			}
+
+			// Check each CLSID in the 32-bit registry hive
+			var registeredCount = 0;
+			var missingClsids = [];
+			for (var i = 0; i < clsids.length; i++) {
+				// Check WOW6432Node (32-bit view on 64-bit Windows)
+				var regKey = 'HKCR\\WOW6432Node\\CLSID\\' + clsids[i];
+				try {
+					execSync('reg query "' + regKey + '" /ve', {
+						timeout: 5000,
+						windowsHide: true,
+						stdio: 'pipe'
+					});
+					registeredCount++;
+				} catch (_) {
+					// Also try direct HKCR\CLSID (32-bit OS or SysWOW64 redirect)
+					var regKey2 = 'HKCR\\CLSID\\' + clsids[i];
+					try {
+						execSync('reg query "' + regKey2 + '" /ve', {
+							timeout: 5000,
+							windowsHide: true,
+							stdio: 'pipe'
+						});
+						registeredCount++;
+					} catch (_2) {
+						missingClsids.push(clsids[i]);
+					}
+				}
+			}
+
+			if (registeredCount === clsids.length) {
+				return { registered: true, details: registeredCount + ' of ' + clsids.length + ' CLSID(s) registered' };
+			} else {
+				return { registered: false, details: registeredCount + ' of ' + clsids.length + ' CLSID(s) registered; missing: ' + missingClsids.join(', ') };
+			}
+		}
+
+		/**
+		 * Verify COM registration status for all DLLs in a library.
+		 * @param {Object} lib - installed library DB record
+		 * @returns {{ allRegistered: boolean, results: Array<{dll: string, registered: boolean, details: string}> }}
+		 */
+		function verifyCOMRegistration(lib) {
+			var comDlls = lib.com_register_dlls || [];
+			if (comDlls.length === 0) return { allRegistered: true, results: [] };
+
+			var libPath = lib.lib_install_path || '';
+			var results = [];
+			var allRegistered = true;
+
+			for (var i = 0; i < comDlls.length; i++) {
+				var dllFullPath = path.join(libPath, comDlls[i]);
+				var status = checkCOMRegistrationStatus(dllFullPath);
+				results.push({ dll: comDlls[i], registered: status.registered, details: status.details });
+				if (!status.registered) allRegistered = false;
+			}
+
+			return { allRegistered: allRegistered, results: results };
+		}
+
 		//**************************************************************************************
 		//******  LIBRARY IMPORTER *************************************************************
 		//**************************************************************************************
@@ -8072,6 +8188,7 @@
 					help_files: helpFiles,
 					com_register_dlls: comDlls,
 					com_warning: comWarning,
+					com_registered: comDlls.length > 0 && !comWarning,
 					lib_install_path: libDestDir,
 					demo_install_path: demoDestDir,
 					installed_date: new Date().toISOString(),
@@ -9490,6 +9607,7 @@
 							help_files: helpFiles,
 							com_register_dlls: comDlls,
 							com_warning: comDlls.length > 0,  // mark as warning; cleared below if registration succeeds
+							com_registered: false,
 							lib_install_path: libDestDir,
 							demo_install_path: demoDestDir,
 							installed_date: new Date().toISOString(),
@@ -9515,10 +9633,10 @@
 							var dllPaths = comDlls.map(function(d) { return path.join(libDestDir, d); });
 							comRegisterMultipleDlls(dllPaths, true).then(function(comResult) {
 								if (comResult.allSuccess) {
-									// Clear the warning flag
+									// Clear the warning flag and mark as registered
 									db_installed_libs.installed_libs.update(
 										{"_id": saved._id},
-										{"com_warning": false},
+										{"com_warning": false, "com_registered": true},
 										{multi: false, upsert: false}
 									);
 								} else {
@@ -10514,6 +10632,7 @@
 					help_files: helpFiles,
 					com_register_dlls: comDlls,
 					com_warning: comWarning,
+					com_registered: comDlls.length > 0 && !comWarning,
 					lib_install_path: libDestDir,
 					demo_install_path: demoDestDir,
 					installed_date: new Date().toISOString(),
@@ -11020,8 +11139,24 @@
 			e.preventDefault();
 			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
 			$(".btn-overflow-toggle").attr("aria-expanded", "false");
-			repairPopulateModal();
+
+			// Show loading state first, then populate asynchronously
+			var $list = $(".repair-lib-list");
+			$list.html(
+				'<div class="text-center py-4">' +
+					'<div class="spinner-border text-muted" role="status" style="width:2rem;height:2rem;"></div>' +
+					'<p class="text-muted mt-2">Verifying libraries and COM registrations...</p>' +
+					'<div class="progress mt-2 mx-auto" style="max-width:300px;height:6px;">' +
+						'<div class="progress-bar" role="progressbar" style="width:0%;background:var(--accent);"></div>' +
+					'</div>' +
+				'</div>'
+			);
+			$(".repair-status-text").text('');
+			$(".repair-all-btn").prop("disabled", true);
 			$("#repairModal").modal("show");
+
+			// Defer to allow modal to render before heavy work
+			setTimeout(function() { repairPopulateModal(); }, 80);
 		});
 
 		/**
@@ -11128,6 +11263,14 @@
 				var integrity = verifyLibraryIntegrity(lib);
 				var cached = listCachedVersions(libName);
 				var hasCached = cached.length > 0;
+				var comDlls = lib.com_register_dlls || [];
+				var hasCom = comDlls.length > 0;
+
+				// COM registration verification
+				var comStatus = null;
+				if (hasCom) {
+					comStatus = verifyCOMRegistration(lib);
+				}
 
 				var statusClass, statusIcon, statusText;
 				if (!integrity.valid) {
@@ -11135,7 +11278,7 @@
 					statusIcon = 'fa-times-circle';
 					statusText = 'FAILED';
 					failCount++;
-				} else if (integrity.warnings.length > 0) {
+				} else if ((hasCom && comStatus && !comStatus.allRegistered) || integrity.warnings.length > 0) {
 					statusClass = 'text-warning';
 					statusIcon = 'fa-exclamation-triangle';
 					statusText = 'WARNING';
@@ -11150,6 +11293,19 @@
 				integrity.errors.forEach(function(e) { detailLines.push('<span class="text-danger text-sm">&bull; ' + escapeHtml(e) + '</span>'); });
 				integrity.warnings.forEach(function(w) { detailLines.push('<span class="text-warning text-sm">&bull; ' + escapeHtml(w) + '</span>'); });
 
+				// COM registration details
+				if (hasCom && comStatus) {
+					if (comStatus.allRegistered) {
+						detailLines.push('<span class="text-success text-sm">&bull; COM: All ' + comDlls.length + ' DLL(s) registered <i class="fas fa-check ml-1"></i></span>');
+					} else {
+						comStatus.results.forEach(function(r) {
+							if (!r.registered) {
+								detailLines.push('<span class="text-warning text-sm">&bull; COM not registered: ' + escapeHtml(r.dll) + ' (' + escapeHtml(r.details) + ')</span>');
+							}
+						});
+					}
+				}
+
 				var repairBtnHtml = '';
 				if (!integrity.valid && hasCached) {
 					repairBtnHtml = '<button class="btn btn-sm btn-outline-success repair-single-btn ml-2" data-lib-name="' + libName.replace(/"/g, '&quot;') + '" data-is-system="false" title="Re-install from cached package"><i class="fas fa-wrench mr-1"></i>Repair</button>';
@@ -11157,8 +11313,17 @@
 					repairBtnHtml = '<span class="text-muted text-sm ml-2" title="No cached package available for repair"><i class="fas fa-ban mr-1"></i>No cached pkg</span>';
 				}
 
+				// COM re-register button (shown when COM DLLs exist but are not all registered, and file integrity is OK)
+				if (hasCom && comStatus && !comStatus.allRegistered && integrity.valid) {
+					repairBtnHtml += '<button class="btn btn-sm btn-outline-info repair-com-btn ml-2" data-lib-id="' + (lib._id || '').replace(/"/g, '&quot;') + '" title="Re-register COM DLLs using 32-bit RegAsm.exe"><i class="fas fa-cog mr-1"></i>Re-register COM</button>';
+				}
+
 				var cachedInfo = hasCached
 					? '<span class="text-muted text-sm ml-2" title="' + cached.length + ' cached version(s) available"><i class="fas fa-archive mr-1"></i>' + cached.length + ' cached</span>'
+					: '';
+
+				var comBadge = hasCom
+					? '<span class="badge badge-' + (comStatus && comStatus.allRegistered ? 'info' : 'warning') + ' ml-2" style="font-size:0.6rem;" title="COM DLLs: ' + escapeHtml(comDlls.join(', ')) + '"><i class="fas fa-cog mr-1"></i>COM</span>'
 					: '';
 
 				var html =
@@ -11168,15 +11333,20 @@
 							'<div class="d-flex align-items-center flex-wrap">' +
 								'<span class="font-weight-bold" style="color:var(--medium2);">' + escapeHtml(libName) + '</span>' +
 								'<span class="badge badge-light ml-2">' + escapeHtml(lib.version || '') + '</span>' +
+								comBadge +
 								'<span class="ml-2 ' + statusClass + ' text-sm font-weight-bold">' + statusText + '</span>' +
 								cachedInfo +
 							'</div>' +
 							(detailLines.length > 0 ? '<div class="mt-1">' + detailLines.join('<br>') + '</div>' : '') +
 						'</div>' +
-						'<div class="ml-2 d-flex align-items-center" style="white-space:nowrap;">' + repairBtnHtml + '</div>' +
+						'<div class="ml-2 d-flex align-items-center flex-wrap" style="white-space:nowrap;">' + repairBtnHtml + '</div>' +
 					'</div>';
 
 				$list.append(html);
+
+				// Update progress bar
+				var progress = Math.round(((totalCount) / (libs.length + sysLibs.length)) * 100);
+				$(".repair-lib-list .progress-bar").css("width", progress + "%");
 			});
 
 			var statusParts = [];
@@ -11199,6 +11369,46 @@
 				repairPopulateModal();
 			} else {
 				repairLibraryFromCache(libName);
+			}
+		});
+
+		// Re-register COM DLLs from Verify & Repair modal
+		$(document).on("click", ".repair-com-btn", async function(e) {
+			e.stopPropagation();
+			var libId = $(this).attr("data-lib-id");
+			if (!libId) return;
+			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
+			if (!lib) {
+				alert("Library record not found.");
+				return;
+			}
+			var comDlls = lib.com_register_dlls || [];
+			if (comDlls.length === 0) {
+				alert("No COM DLLs configured for this library.");
+				return;
+			}
+			var libPath = lib.lib_install_path || "";
+			var dllPaths = comDlls.map(function(dll) {
+				return path.join(libPath, dll);
+			});
+			// Verify the DLL files exist before attempting registration
+			var missing = dllPaths.filter(function(p) { return !fs.existsSync(p); });
+			if (missing.length > 0) {
+				alert("The following COM DLL files are missing and cannot be registered:\n\n" + missing.join("\n") + "\n\nRepair the library first to restore the files.");
+				return;
+			}
+			if (!confirm("Re-register " + comDlls.length + " COM DLL(s) for \"" + (lib.library_name || "Unknown") + "\"?\n\n" + comDlls.join("\n") + "\n\nThis requires administrator privileges (UAC prompt).")) return;
+			var result = await comRegisterMultipleDlls(dllPaths, true);
+			if (result.allSuccess) {
+				// Update the DB record
+				db_installed_libs.installed_libs.update({"_id": libId}, { com_registered: true, com_warning: false }, { multi: false, upsert: false });
+				alert("COM registration successful for " + comDlls.length + " DLL(s).");
+				repairPopulateModal();
+			} else {
+				var failedDlls = result.results.filter(function(r) { return !r.success; });
+				var errMsgs = failedDlls.map(function(r) { return path.basename(r.dll) + ": " + (r.error || "Unknown error"); });
+				db_installed_libs.installed_libs.update({"_id": libId}, { com_registered: false, com_warning: true }, { multi: false, upsert: false });
+				alert("COM registration failed for " + failedDlls.length + " of " + comDlls.length + " DLL(s).\n\n" + errMsgs.join("\n"));
 			}
 		});
 
@@ -12406,6 +12616,7 @@
 					help_files: helpFiles,
 					com_register_dlls: comDlls,
 					com_warning: false,
+					com_registered: false,
 					lib_install_path: libDestDir,
 					demo_install_path: demoDestDir,
 					installed_date: new Date().toISOString(),

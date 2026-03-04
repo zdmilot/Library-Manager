@@ -34,6 +34,7 @@
   <li>System library check - system libraries return <code>SYSTEM_LIBRARY_READ_ONLY</code> error</li>
   <li>Unless <code>--keep-files</code> is set:
     <ul>
+      <li>If the library has COM-registered DLLs, they are automatically deregistered using the <b>32-bit</b> <code>RegAsm.exe /unregister</code></li>
       <li>All library files and help files are deleted from the library install path</li>
       <li>All demo method files are deleted from the demo install path</li>
       <li>Empty directories are removed after file deletion</li>
@@ -61,10 +62,10 @@ node cli.js delete-lib --name "MyLibrary" --yes --keep-files
 :: Delete by database ID
 node cli.js delete-lib --id a1b2c3d4 --yes</pre></div>
 
-<div class="warning">
-<p><b>Warning:</b> COM DLLs are <b>not</b> automatically deregistered by the CLI. If the library had COM-registered DLLs, run the <b>32-bit</b> <code>RegAsm.exe</code> with elevated privileges manually:</p>
-<div class="code"><pre>C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister &lt;dll&gt;</pre></div>
-<p>Do <b>NOT</b> use <code>Framework64</code> &mdash; VENUS is a 32-bit application. See <a href="ImportingLibraries.html">COM DLL Registration</a> for details.</p>
+<div class="note">
+<p><b>COM DLL Deregistration:</b> The CLI automatically attempts to deregister COM DLLs using the 32-bit <code>RegAsm.exe</code> before removing files. The CLI must be run as <b>Administrator</b> for this to succeed. If not elevated, deregistration will fail with a warning and the DLL paths are printed for manual deregistration.</p>
+<p>When <code>--keep-files</code> is specified, COM deregistration is skipped.</p>
+<p>Do <b>NOT</b> use <code>Framework64</code> for manual deregistration &mdash; VENUS is a 32-bit application. See <a href="ImportingLibraries.html">COM DLL Registration</a> for details.</p>
 </div>
 
 <h2>Related</h2>
