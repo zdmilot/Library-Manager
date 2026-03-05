@@ -7351,7 +7351,7 @@
 			try {
 				// Generate the key pair
 				var keyPair = generateSigningKeyPair();
-				var cert = buildPublisherCertificate(keyPair.publicKeyRaw, publisher, organization || undefined);
+				var cert = buildPublisherCertificate(publisher, organization || undefined, keyPair.publicKeyRaw);
 
 				// Build filenames
 				var safeName = publisher.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
