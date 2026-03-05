@@ -58,6 +58,8 @@
 <h3>Protected Author Name</h3>
 <p>Certain <b>restricted OEM and laboratory automation company names</b> cannot be used as the author without authorization. If you enter a restricted company name (case-insensitive) as the author, a password prompt is displayed. You must enter the correct password before the package can be built. This prevents unauthorized attribution of packages to OEM vendors. See <a href="LibraryGrouping.html">Library Grouping</a> for more details about the OEM group and its protections.</p>
 
+<p>Once imported, libraries with a restricted OEM author name display a blue verified badge <img src="images/blue-check.png" alt="Blue verified checkmark" style="height:14px; vertical-align:middle;"> next to the author name across the application. This badge is rendered only when the package is code-signed with an Ed25519 certificate whose holder matches the OEM identity. See <a href="IntegrityVerification.html">Integrity Verification</a> for details on the OEM Verified Badge and Code Signing Certificate section.</p>
+
 <h3>Packager Reset</h3>
 <p>The Library Packager includes a reset workflow to clear all staged metadata and files, returning to a clean state.</p>
 

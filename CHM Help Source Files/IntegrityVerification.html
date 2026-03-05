@@ -410,9 +410,7 @@
 <h3>OEM Verified Badge</h3>
 
 <p>Libraries published by a recognized OEM author display a <b>blue verified checkmark</b>
-<span style="display:inline-flex; align-items:center; gap:2px; color:#0a84ff; font-weight:600; vertical-align:middle;">
-<span style="display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:#0a84ff; color:#fff; font-size:8px;">&#10003;</span>
-</span>
+<img src="images/blue-check.png" alt="Blue verified checkmark badge" style="height:16px; vertical-align:middle;">
 next to the author name. This badge appears across the application:</p>
 
 <ul>
@@ -421,6 +419,29 @@ next to the author name. This badge appears across the application:</p>
   <li><b>Import preview</b> &mdash; shown when previewing a package before import</li>
   <li><b>Settings library list</b> &mdash; in the accordion list under Settings</li>
 </ul>
+
+<h4>Hover Tooltip</h4>
+<p>When the user hovers over the <img src="images/blue-check.png" alt="Blue verified checkmark" style="height:14px; vertical-align:middle;"> badge, a dark tooltip appears showing certificate details:</p>
+<ul>
+  <li>Publisher name and organization</li>
+  <li>Key ID and fingerprint (truncated)</li>
+  <li>Signature algorithm (Ed25519)</li>
+  <li>Certificate format and issued date</li>
+</ul>
+<p>The tooltip is rendered from the <code>publisher_cert</code> object stored in the library&rsquo;s database record. If no certificate is available (e.g., system libraries), the badge appears without a tooltip.</p>
+
+<h4>Code Signing Certificate Section</h4>
+<p>For <b>verified OEM libraries only</b>, the library detail modal includes a <b>Code Signing Certificate</b> section as the last section before the modal footer. This section displays the full certificate details:</p>
+<ul>
+  <li>Publisher and organization</li>
+  <li>Certificate format (<code>hxlibpkg-publisher-cert/1.0</code>)</li>
+  <li>Signature algorithm (Ed25519 / EdDSA)</li>
+  <li>Key ID and full public key (Base64)</li>
+  <li>SHA-256 fingerprint</li>
+  <li>Issued date</li>
+  <li>Matched OEM keyword badges</li>
+</ul>
+<p>This section is hidden for community libraries and system libraries. It is populated by the <code>buildCertDetailSection(cert)</code> function in <code>main.js</code>.</p>
 
 <p>The badge is a visual indicator only &mdash; it communicates that the library author matches a protected OEM identity. The actual enforcement (blocking packages that fail certificate verification) is handled by the certificate matching logic described above.</p>
 
