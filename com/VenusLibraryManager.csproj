@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputType>Library</OutputType>
+    <AssemblyName>VenusLibraryManager</AssemblyName>
+    <RootNamespace>VenusLibraryManager</RootNamespace>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <ComVisible>true</ComVisible>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <SignAssembly>false</SignAssembly>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin\</OutputPath>
+    <Version>1.6.5</Version>
+    <Description>COM-visible .NET class library for Library Manager for Venus 6. Provides 1:1 parity with CLI/REST API operations for managing Hamilton VENUS libraries.</Description>
+    <Company>Zachary Milot</Company>
+    <Product>Library Manager for Venus 6</Product>
+    <Copyright>Copyright (c) 2026 Zachary Milot</Copyright>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Runtime.InteropServices" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+</Project>

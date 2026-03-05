@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CLI: trust-publisher</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">CLI: trust-publisher</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; trust-publisher</div>
+
+<h2>Description</h2>
+<p>Adds or revokes trust for a publisher&rsquo;s code signing certificate. When a publisher certificate is trusted, packages signed by that publisher show <b>TRUSTED</b> status on import and verification. When revoked, packages from that publisher show <b>UNTRUSTED</b>.</p>
+
+<h2>Usage</h2>
+<div class="code"><pre>node cli.js trust-publisher --cert &lt;cert.json&gt; [--revoke]</pre></div>
+
+<h2>Options</h2>
+<table>
+<thead><tr><th>Flag</th><th>Required</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>--cert &lt;path&gt;</code></td><td><span class="badge badge-required">Required</span></td><td>Path to the publisher <code>.cert.json</code> file</td></tr>
+<tr><td><code>--revoke</code></td><td><span class="badge badge-optional">Optional</span></td><td>Revoke trust instead of granting it</td></tr>
+</tbody>
+</table>
+
+<h2>Certificate Validation</h2>
+<p>The certificate file is validated before being registered. The following checks are performed:</p>
+<ul>
+  <li><code>cert_format</code> must be <code>"hxlibpkg-publisher-cert/1.0"</code></li>
+  <li><code>publisher</code> field must be present and non-empty</li>
+  <li><code>public_key</code> must be a valid 32-byte Ed25519 key (base64-encoded)</li>
+  <li><code>fingerprint</code> must match the SHA-256 hash of the public key</li>
+  <li><code>key_id</code> must be present</li>
+</ul>
+<p>If validation fails, the command prints the specific validation errors and exits.</p>
+
+<h2>Examples</h2>
+<div class="code"><pre>:: Trust a publisher certificate
+node cli.js trust-publisher --cert jane_smith.cert.json
+
+:: Revoke a previously trusted certificate
+node cli.js trust-publisher --cert jane_smith.cert.json --revoke</pre></div>
+
+<h2>Publisher Registry</h2>
+<p>Trust state is stored in <code>local/publisher_registry.json</code>. Each publisher can have multiple certificates (e.g., for key rotation). Trust is managed per-certificate, not per-publisher &mdash; revoking one certificate does not affect other certificates from the same publisher.</p>
+
+<h2>Related</h2>
+<ul>
+  <li><a href="CLIGenerateKeypair.html">CLI: generate-keypair</a></li>
+  <li><a href="CLIListPublishers.html">CLI: list-publishers</a></li>
+  <li><a href="CLIVerifyPackage.html">CLI: verify-package</a></li>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a></li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

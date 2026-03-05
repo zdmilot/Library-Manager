@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>REST API: GET /api/libraries</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">REST API: GET /api/libraries</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="RESTAPIReference.html">REST API Reference</a> &raquo; List Libraries</div>
+
+<h2>Endpoint</h2>
+<div class="code"><pre>GET /api/libraries</pre></div>
+
+<h2>Description</h2>
+<p>Returns an array of all installed libraries. Equivalent to the CLI command <code>list-libs</code>. By default, soft-deleted libraries are excluded from results.</p>
+
+<h2>Parameters</h2>
+
+<h3>Query Parameters</h3>
+<table>
+<thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>includeDeleted</code></td><td>boolean</td><td>No</td><td><code>false</code></td><td>When <code>true</code>, include soft-deleted libraries in the results</td></tr>
+</tbody>
+</table>
+
+<h2>Response</h2>
+<p>Returns the standard envelope with <code>data</code> containing an array of Library objects:</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>_id</code></td><td>string</td><td>Unique library ID</td></tr>
+<tr><td><code>library_name</code></td><td>string</td><td>Library name</td></tr>
+<tr><td><code>author</code></td><td>string</td><td>Author name</td></tr>
+<tr><td><code>organization</code></td><td>string</td><td>Organization name</td></tr>
+<tr><td><code>version</code></td><td>string</td><td>Version string</td></tr>
+<tr><td><code>venus_compatibility</code></td><td>string</td><td>VENUS version compatibility</td></tr>
+<tr><td><code>description</code></td><td>string</td><td>Library description</td></tr>
+<tr><td><code>github_url</code></td><td>string</td><td>GitHub repository URL</td></tr>
+<tr><td><code>tags</code></td><td>string[]</td><td>Library tags</td></tr>
+<tr><td><code>created_date</code></td><td>string</td><td>ISO 8601 creation date</td></tr>
+<tr><td><code>library_files</code></td><td>string[]</td><td>Installed library file paths</td></tr>
+<tr><td><code>demo_method_files</code></td><td>string[]</td><td>Installed demo method file paths</td></tr>
+<tr><td><code>help_files</code></td><td>string[]</td><td>Associated help file paths</td></tr>
+<tr><td><code>com_register_dlls</code></td><td>string[]</td><td>COM DLLs requiring registration</td></tr>
+<tr><td><code>lib_install_path</code></td><td>string</td><td>Library install directory</td></tr>
+<tr><td><code>demo_install_path</code></td><td>string</td><td>Demo methods install directory</td></tr>
+<tr><td><code>installed_date</code></td><td>string</td><td>ISO 8601 install timestamp</td></tr>
+<tr><td><code>installed_by</code></td><td>string</td><td>Windows username that performed the install</td></tr>
+<tr><td><code>public_functions</code></td><td>object[]</td><td>Parsed public HSL functions</td></tr>
+<tr><td><code>deleted</code></td><td>boolean</td><td>Soft-delete flag</td></tr>
+<tr><td><code>deleted_date</code></td><td>string</td><td>ISO 8601 deletion timestamp (if deleted)</td></tr>
+</tbody>
+</table>
+
+<h3>Example Response</h3>
+<div class="code"><pre>{
+  "success": true,
+  "data": [
+    {
+      "_id": "abc123",
+      "library_name": "MyLibrary",
+      "author": "John Doe",
+      "organization": "Acme Labs",
+      "version": "2.1.0",
+      "venus_compatibility": "VENUS 6",
+      "description": "Sample library for demo purposes",
+      "tags": ["liquid-handling", "plate-transfer"],
+      "created_date": "2026-01-15T10:30:00.000Z",
+      "library_files": ["MyLibrary.hsl", "MyLibrary.hs_"],
+      "demo_method_files": ["Demo_MyLibrary.med"],
+      "help_files": ["MyLibrary.chm"],
+      "com_register_dlls": [],
+      "lib_install_path": "C:\\Program Files (x86)\\HAMILTON\\Library\\MyLibrary",
+      "demo_install_path": "C:\\Program Files (x86)\\HAMILTON\\Methods\\Library Demo Methods\\MyLibrary",
+      "installed_date": "2026-02-01T14:00:00.000Z",
+      "installed_by": "admin",
+      "public_functions": [],
+      "deleted": false
+    }
+  ]
+}</pre></div>
+
+<h2>Examples</h2>
+
+<h3>cURL</h3>
+<div class="code"><pre># List all active libraries
+curl http://localhost:5555/api/libraries
+
+# Include soft-deleted libraries
+curl "http://localhost:5555/api/libraries?includeDeleted=true"</pre></div>
+
+<h3>PowerShell</h3>
+<div class="code"><pre># List all active libraries
+Invoke-RestMethod http://localhost:5555/api/libraries
+
+# Include soft-deleted libraries
+Invoke-RestMethod "http://localhost:5555/api/libraries?includeDeleted=true"</pre></div>
+
+<h2>Related</h2>
+<ul>
+  <li><a href="RESTGetLibrary.html">REST API: GET /api/libraries/:nameOrId</a></li>
+  <li><a href="RESTImportLibrary.html">REST API: POST /api/libraries/import</a></li>
+  <li><a href="CLIListLibs.html">CLI: list-libs</a></li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

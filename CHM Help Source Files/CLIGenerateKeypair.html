@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CLI: generate-keypair</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">CLI: generate-keypair</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; generate-keypair</div>
+
+<h2>Description</h2>
+<p>Generates an Ed25519 key pair for code signing library packages. The resulting private key (<code>.key.pem</code>) is used to sign packages during creation (with <code>create-package --sign-key</code>), while the publisher certificate (<code>.cert.json</code>) is distributed to package consumers. The certificate is automatically registered as trusted in the local publisher registry unless <code>--no-trust</code> is specified.</p>
+
+<h2>Usage</h2>
+<div class="code"><pre>node cli.js generate-keypair --publisher &lt;name&gt; [options]</pre></div>
+
+<h2>Options</h2>
+<table>
+<thead><tr><th>Flag</th><th>Required</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>--publisher &lt;name&gt;</code></td><td><span class="badge badge-required">Required</span></td><td>Publisher name (3&ndash;29 characters)</td></tr>
+<tr><td><code>--organization &lt;name&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Organization name</td></tr>
+<tr><td><code>--output-dir &lt;dir&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Output directory for key files. Default: current working directory</td></tr>
+<tr><td><code>--force</code></td><td><span class="badge badge-optional">Optional</span></td><td>Overwrite existing key/cert files</td></tr>
+<tr><td><code>--no-trust</code></td><td><span class="badge badge-optional">Optional</span></td><td>Do not auto-register the certificate as trusted in the local publisher registry</td></tr>
+<tr><td><code>--author-password &lt;pw&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Required when the publisher name is a restricted OEM name</td></tr>
+</tbody>
+</table>
+
+<h2>Output Files</h2>
+<p>Two files are generated in the output directory:</p>
+<ul>
+  <li><code>&lt;publisher&gt;.key.pem</code> &mdash; Ed25519 private key (PEM-encoded PKCS#8). <b>Keep this secret.</b></li>
+  <li><code>&lt;publisher&gt;.cert.json</code> &mdash; Publisher certificate (JSON). Distribute freely to package consumers.</li>
+</ul>
+
+<h3>Certificate Format</h3>
+<div class="code"><pre>{
+  "cert_format":   "hxlibpkg-publisher-cert/1.0",
+  "publisher":     "Jane Smith",
+  "organization":  "Acme Pharma",
+  "public_key":    "&lt;base64 raw Ed25519 public key&gt;",
+  "fingerprint":   "&lt;SHA-256 hex of raw public key bytes&gt;",
+  "key_id":        "&lt;first 16 chars of fingerprint&gt;",
+  "created_date":  "&lt;ISO 8601 timestamp&gt;"
+}</pre></div>
+
+<h2>Examples</h2>
+<div class="code"><pre>:: Generate a key pair
+node cli.js generate-keypair --publisher "Jane Smith" --organization "Acme Pharma"
+
+:: Generate to specific directory
+node cli.js generate-keypair --publisher "Jane Smith" --output-dir C:\Keys
+
+:: Overwrite existing keys
+node cli.js generate-keypair --publisher "Jane Smith" --force</pre></div>
+
+<h2>Code Signing Workflow</h2>
+<ol>
+  <li>Generate a key pair with <code>generate-keypair</code></li>
+  <li>Create signed packages with <code>create-package --sign-key &lt;key.pem&gt;</code></li>
+  <li>Distribute the <code>.cert.json</code> to package consumers</li>
+  <li>Consumers trust the certificate with <code>trust-publisher --cert &lt;cert.json&gt;</code></li>
+  <li>On import, packages signed by trusted publishers show as <b>TRUSTED</b></li>
+</ol>
+
+<h2>Related</h2>
+<ul>
+  <li><a href="CLITrustPublisher.html">CLI: trust-publisher</a></li>
+  <li><a href="CLIListPublishers.html">CLI: list-publishers</a></li>
+  <li><a href="CLICreatePackage.html">CLI: create-package</a> (code signing options)</li>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a></li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

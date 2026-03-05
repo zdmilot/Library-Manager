@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>REST API: POST /api/libraries/export-archive</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">REST API: POST /api/libraries/export-archive</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="RESTAPIReference.html">REST API Reference</a> &raquo; Export Archive</div>
+
+<h2>Endpoint</h2>
+<div class="code"><pre>POST /api/libraries/export-archive</pre></div>
+
+<h2>Description</h2>
+<p>Exports one or more installed libraries as a downloadable binary <code>.hxlibarch</code> archive file. Equivalent to the CLI command <code>export-archive</code>. You can export all non-system libraries, or specify specific libraries by name or ID. The response is streamed as <code>application/octet-stream</code>.</p>
+
+<h2>Parameters</h2>
+
+<h3>Request Body (<code>application/json</code>)</h3>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>all</code></td><td>boolean</td><td>No</td><td>Export all non-system libraries. Overrides <code>names</code> and <code>ids</code>.</td></tr>
+<tr><td><code>names</code></td><td>string[]</td><td>No</td><td>Array of library names to export</td></tr>
+<tr><td><code>ids</code></td><td>string[]</td><td>No</td><td>Array of library database IDs to export</td></tr>
+</tbody>
+</table>
+<p>At least one of <code>all</code>, <code>names</code>, or <code>ids</code> must be provided.</p>
+
+<h2>Response</h2>
+<p>On success, the response is a binary <code>.hxlibarch</code> file with the following headers:</p>
+<table>
+<thead><tr><th>Header</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td><code>Content-Type</code></td><td><code>application/octet-stream</code></td></tr>
+<tr><td><code>Content-Disposition</code></td><td><code>attachment; filename="libraries.hxlibarch"</code></td></tr>
+</tbody>
+</table>
+<p>On error, returns a JSON error response.</p>
+
+<h3>Error Response</h3>
+<div class="code"><pre>{
+  "success": false,
+  "error": "No libraries specified for export"
+}</pre></div>
+
+<h2>Examples</h2>
+
+<h3>cURL</h3>
+<div class="code"><pre># Export all libraries
+curl -X POST http://localhost:5555/api/libraries/export-archive \
+  -H "Content-Type: application/json" \
+  -d '{"all": true}' \
+  --output all_libraries.hxlibarch
+
+# Export specific libraries by name
+curl -X POST http://localhost:5555/api/libraries/export-archive \
+  -H "Content-Type: application/json" \
+  -d '{"names": ["LibraryA", "LibraryB"]}' \
+  --output selected_libraries.hxlibarch
+
+# Export by IDs
+curl -X POST http://localhost:5555/api/libraries/export-archive \
+  -H "Content-Type: application/json" \
+  -d '{"ids": ["abc123", "def456"]}' \
+  --output selected_libraries.hxlibarch</pre></div>
+
+<h3>PowerShell</h3>
+<div class="code"><pre># Export all libraries
+$body = @{ all = $true } | ConvertTo-Json
+Invoke-WebRequest -Uri http://localhost:5555/api/libraries/export-archive `
+  -Method POST -ContentType "application/json" -Body $body `
+  -OutFile ".\all_libraries.hxlibarch"
+
+# Export specific libraries by name
+$body = @{ names = @("LibraryA", "LibraryB") } | ConvertTo-Json
+Invoke-WebRequest -Uri http://localhost:5555/api/libraries/export-archive `
+  -Method POST -ContentType "application/json" -Body $body `
+  -OutFile ".\selected_libraries.hxlibarch"</pre></div>
+
+<h2>Error Conditions</h2>
+<ul>
+  <li>No libraries specified (<code>all</code>, <code>names</code>, and <code>ids</code> all absent) &rarr; <code>400</code></li>
+  <li>Named or ID-referenced library not found &rarr; <code>400</code></li>
+  <li>Archive creation failure &rarr; <code>400</code></li>
+</ul>
+
+<h2>Related</h2>
+<ul>
+  <li><a href="RESTExportLibrary.html">REST API: GET /api/libraries/:nameOrId/export</a></li>
+  <li><a href="RESTImportArchive.html">REST API: POST /api/libraries/import-archive</a></li>
+  <li><a href="CLIExportArchive.html">CLI: export-archive</a></li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

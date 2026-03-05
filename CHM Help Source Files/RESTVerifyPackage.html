@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>REST API: POST /api/packages/verify</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">REST API: POST /api/packages/verify</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="RESTAPIReference.html">REST API Reference</a> &raquo; Verify Package</div>
+
+<h2>Endpoint</h2>
+<div class="code"><pre>POST /api/packages/verify</pre></div>
+
+<h2>Description</h2>
+<p>Verifies the integrity and signature of a <code>.hxlibpkg</code> or <code>.hxlibarch</code> package without importing it. Equivalent to the CLI command <code>verify-package</code>. Accepts either a file upload (multipart) or a server-side file path.</p>
+
+<h2>Parameters</h2>
+
+<h3>Request Body (<code>multipart/form-data</code>)</h3>
+<p>You can provide either a file upload or a server-side path, but not both:</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>package</code></td><td>file</td><td>No*</td><td>The <code>.hxlibpkg</code> or <code>.hxlibarch</code> file to verify</td></tr>
+<tr><td><code>filePath</code></td><td>string</td><td>No*</td><td>Server-side path to the package file</td></tr>
+</tbody>
+</table>
+<p>* Either <code>package</code> (file upload) or <code>filePath</code> (server path) must be provided.</p>
+
+<h2>Response</h2>
+<p>Returns the standard envelope with <code>data</code> containing an array of VerificationResult objects (one per package in the file; archives may contain multiple):</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>package</code></td><td>string</td><td>Package filename</td></tr>
+<tr><td><code>signed</code></td><td>boolean</td><td>Whether the package contains a signature</td></tr>
+<tr><td><code>valid</code></td><td>boolean</td><td>Whether the HMAC-SHA256 signature is valid</td></tr>
+<tr><td><code>code_signed</code></td><td>boolean</td><td>Whether the package has an Ed25519 code signature</td></tr>
+<tr><td><code>publisher_cert</code></td><td>object|null</td><td>Publisher certificate details (if code-signed)</td></tr>
+<tr><td><code>trust_status</code></td><td>string</td><td>Publisher trust status (<code>"trusted"</code>, <code>"untrusted"</code>, <code>"unknown"</code>)</td></tr>
+<tr><td><code>errors</code></td><td>string[]</td><td>Verification errors</td></tr>
+<tr><td><code>warnings</code></td><td>string[]</td><td>Verification warnings</td></tr>
+</tbody>
+</table>
+
+<h3>Example Response</h3>
+<div class="code"><pre>{
+  "success": true,
+  "data": [
+    {
+      "package": "MyLibrary.hxlibpkg",
+      "signed": true,
+      "valid": true,
+      "code_signed": true,
+      "publisher_cert": {
+        "publisher": "John Doe",
+        "organization": "Acme Labs",
+        "key_id": "abc123def456",
+        "fingerprint": "SHA256:abcdef...",
+        "trusted": true
+      },
+      "trust_status": "trusted",
+      "errors": [],
+      "warnings": []
+    }
+  ]
+}</pre></div>
+
+<h2>Examples</h2>
+
+<h3>cURL</h3>
+<div class="code"><pre># Verify via file upload
+curl -X POST http://localhost:5555/api/packages/verify \
+  -F "package=@MyLibrary.hxlibpkg"
+
+# Verify via server-side path
+curl -X POST http://localhost:5555/api/packages/verify \
+  -F "filePath=C:\\Packages\\MyLibrary.hxlibpkg"</pre></div>
+
+<h3>PowerShell</h3>
+<div class="code"><pre># Verify via file upload
+$form = @{ package = Get-Item ".\MyLibrary.hxlibpkg" }
+Invoke-RestMethod -Uri http://localhost:5555/api/packages/verify `
+  -Method POST -Form $form
+
+# Verify via server-side path
+$form = @{ filePath = "C:\Packages\MyLibrary.hxlibpkg" }
+Invoke-RestMethod -Uri http://localhost:5555/api/packages/verify `
+  -Method POST -Form $form</pre></div>
+
+<h2>Error Conditions</h2>
+<ul>
+  <li>Neither <code>package</code> nor <code>filePath</code> provided &rarr; <code>400</code></li>
+  <li>Server-side file not found &rarr; <code>400</code></li>
+  <li>Invalid package format (not a valid ZIP) &rarr; <code>400</code></li>
+</ul>
+
+<h2>Related</h2>
+<ul>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a></li>
+  <li><a href="RESTCreatePackage.html">REST API: POST /api/packages/create</a></li>
+  <li><a href="RESTImportLibrary.html">REST API: POST /api/libraries/import</a></li>
+  <li><a href="CLIVerifyPackage.html">CLI: verify-package</a></li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

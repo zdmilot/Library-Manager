@@ -11,16 +11,21 @@
  *   node cli.js <command> [options]
  *
  * Commands:
- *   list-libs        List installed libraries
- *   import-lib       Import a single .hxlibpkg
- *   import-archive   Import a .hxlibarch (multiple libraries)
- *   export-lib       Export a single installed library as .hxlibpkg
- *   export-archive   Export installed libraries as .hxlibarch
- *   delete-lib       Delete an installed library
- *   create-package   Create a .hxlibpkg from a JSON spec file
- *   list-versions    List cached package versions for a library
- *   rollback-lib     Reinstall a previously cached version of a library
- *   verify-package   Verify integrity signature of a .hxlibpkg or .hxlibarch
+ *   list-libs              List installed libraries
+ *   import-lib             Import a single .hxlibpkg
+ *   import-archive         Import a .hxlibarch (multiple libraries)
+ *   export-lib             Export a single installed library as .hxlibpkg
+ *   export-archive         Export installed libraries as .hxlibarch
+ *   delete-lib             Delete an installed library
+ *   create-package         Create a .hxlibpkg from a JSON spec file
+ *   list-versions          List cached package versions for a library
+ *   rollback-lib           Reinstall a previously cached version of a library
+ *   verify-package         Verify integrity signature of a .hxlibpkg or .hxlibarch
+ *   generate-syslib-hashes Generate integrity baseline for system libraries
+ *   verify-syslib-hashes   Verify system libraries against baseline
+ *   generate-keypair       Generate an Ed25519 signing key pair for code signing
+ *   trust-publisher        Trust or revoke a publisher signing certificate
+ *   list-publishers        List registered publisher certificates
  *
  * Run `node cli.js help` for full usage.
  */
@@ -886,9 +891,9 @@ function cmdImportLib(args) {
 
     console.log('Importing: ' + filePath);
 
-    let zip, manifest;
+    let zip, manifest, rawPkgBuf;
     try {
-        const rawPkgBuf = fs.readFileSync(filePath);
+        rawPkgBuf = fs.readFileSync(filePath);
         const zipBuf = unpackContainer(rawPkgBuf, CONTAINER_MAGIC_PKG);
         zip = new AdmZip(zipBuf);
         const me = zip.getEntry('manifest.json');

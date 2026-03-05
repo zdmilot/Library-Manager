@@ -23,8 +23,8 @@
       <li><b>Author</b> (required) - Your name or team name</li>
       <li><b>Organization</b> (optional) - Your company or institution</li>
       <li><b>Library Version</b> (required) - A version string (e.g., <code>1.0.0</code>)</li>
-      <li><b>VENUS Compatibility</b> (optional) - Target VENUS version range (e.g., <code>4.7+</code>)</li>
-      <li><b>Description</b> (optional) - A human-readable summary of the library</li>
+      <li><b>VENUS Compatibility</b> (optional in GUI, <b>required by CLI</b>) - Target VENUS version range (e.g., <code>4.7+</code>)</li>
+      <li><b>Description</b> (optional in GUI, <b>required by CLI</b>) - A human-readable summary of the library</li>
       <li><b>GitHub Repository</b> (optional) - URL to the library's source repository on GitHub. Must be a valid <code>/{owner}/{repo}</code> URL; see <a href="GitHubRepository.html">GitHub Repository Link</a> for validation rules.</li>
       <li><b>Tags</b> (optional) - Searchable keywords. <b>Note:</b> Over 60 tag keywords are <b>reserved</b> (case-insensitive) and cannot be used, including <code>System</code>, <code>Hamilton</code>, <code>OEM</code>, and laboratory automation company names. If entered, they are automatically removed and an error message is displayed. See <a href="PackageSpecSchema.html">Package Spec JSON Schema</a> for the complete reserved list.</li>
     </ul>
@@ -72,6 +72,8 @@
 <div class="code"><pre>{
   "author": "Jane Smith",
   "version": "1.0.0",
+  "venus_compatibility": "4.7+",
+  "description": "A brief description of the library.",
   "library_files": [
     "MyLibrary.hsl",
     "MyLibrary.hs_",
@@ -112,11 +114,18 @@
 <p>The packaging process validates the following before building:</p>
 <ul>
   <li><code>author</code> is present and non-empty</li>
+  <li><code>author</code> length must be between 3 and 29 characters</li>
+  <li><code>organization</code> length (if provided) must be between 3 and 29 characters</li>
   <li><code>version</code> is present and non-empty</li>
+  <li><code>venus_compatibility</code> is required (CLI only)</li>
+  <li><code>description</code> is required (CLI only)</li>
   <li><code>library_files</code> contains at least one entry</li>
   <li>All referenced files exist on disk at the resolved paths</li>
   <li>All referenced help files exist on disk</li>
   <li>COM DLL basenames match entries in <code>library_files</code></li>
+  <li>Restricted OEM author or organization names require password authorization</li>
+  <li>Tags must not contain any of the 60+ reserved keywords (case-insensitive)</li>
+  <li>Library name (explicit or auto-detected) must be valid (no path separators, reserved characters, <code>..</code>, trailing dots/spaces)</li>
 </ul>
 <p>If any validation fails, the build is aborted with a descriptive error message.</p>
 

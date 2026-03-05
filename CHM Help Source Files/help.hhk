@@ -777,5 +777,121 @@
 		<param name="Name" value="format version 2.0">
 		<param name="Local" value="PackageFormats.html">
 		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="REST API">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="REST API reference">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Swagger">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="OpenAPI">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="API">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="REST endpoints">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="API authentication">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="API key">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="rest-api.js">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="COM object">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="COM reference">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="COM registration">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="RegAsm">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="VenusLibraryManager">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="LibraryManager">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="CreateObject">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="ProgID">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="VBScript">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="HSL integration">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="32-bit">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="x86">
+		<param name="Local" value="COMReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="server health">
+		<param name="Local" value="RESTHealth.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="health check">
+		<param name="Local" value="RESTHealth.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="cURL examples">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="PowerShell examples">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="service layer">
+		<param name="Local" value="SystemArchitecture.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="concurrency">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="mutex">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="port 5555">
+		<param name="Local" value="RESTAPIReference.html">
+		</OBJECT>
 </UL>
 </BODY></HTML>

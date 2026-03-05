@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>REST API: GET /api/audit</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">REST API: GET /api/audit</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="RESTAPIReference.html">REST API Reference</a> &raquo; Get Audit Trail</div>
+
+<h2>Endpoint</h2>
+<div class="code"><pre>GET /api/audit</pre></div>
+
+<h2>Description</h2>
+<p>Retrieves the library management audit trail log. All import, export, delete, rollback, and other management operations are recorded with timestamps, usernames, and system information. The audit trail is shared across CLI, REST API, and COM interfaces.</p>
+
+<h2>Parameters</h2>
+
+<h3>Query Parameters</h3>
+<table>
+<thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>limit</code></td><td>integer</td><td>No</td><td>All entries</td><td>Return only the last N entries</td></tr>
+</tbody>
+</table>
+
+<h2>Response</h2>
+<p>Returns the standard envelope with <code>data</code> containing an array of AuditEntry objects:</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>event</code></td><td>string</td><td>Event type (e.g. <code>"import"</code>, <code>"delete"</code>, <code>"rollback"</code>, <code>"export"</code>)</td></tr>
+<tr><td><code>timestamp</code></td><td>string</td><td>ISO 8601 event timestamp</td></tr>
+<tr><td><code>username</code></td><td>string</td><td>Windows username that performed the operation</td></tr>
+<tr><td><code>windows_version</code></td><td>string</td><td>Windows version at time of operation</td></tr>
+<tr><td><code>venus_version</code></td><td>string</td><td>VENUS version (if detected)</td></tr>
+<tr><td><code>hostname</code></td><td>string</td><td>Machine hostname</td></tr>
+<tr><td><code>details</code></td><td>object</td><td>Event-specific details (library name, version, paths, etc.)</td></tr>
+</tbody>
+</table>
+
+<h3>Example Response</h3>
+<div class="code"><pre>{
+  "success": true,
+  "data": [
+    {
+      "event": "import",
+      "timestamp": "2026-02-15T14:30:00.000Z",
+      "username": "admin",
+      "windows_version": "10.0.19045",
+      "venus_version": "6.3",
+      "hostname": "LAB-PC-01",
+      "details": {
+        "libraryName": "MyLibrary",
+        "version": "2.1.0",
+        "author": "John Doe",
+        "signatureStatus": "valid"
+      }
+    },
+    {
+      "event": "delete",
+      "timestamp": "2026-02-10T09:15:00.000Z",
+      "username": "admin",
+      "windows_version": "10.0.19045",
+      "venus_version": "6.3",
+      "hostname": "LAB-PC-01",
+      "details": {
+        "libraryName": "OldLibrary",
+        "deleteType": "soft"
+      }
+    }
+  ]
+}</pre></div>
+
+<h2>Examples</h2>
+
+<h3>cURL</h3>
+<div class="code"><pre># Get full audit trail
+curl http://localhost:5555/api/audit
+
+# Get last 10 entries
+curl "http://localhost:5555/api/audit?limit=10"</pre></div>
+
+<h3>PowerShell</h3>
+<div class="code"><pre># Get full audit trail
+Invoke-RestMethod http://localhost:5555/api/audit
+
+# Get last 10 entries
+Invoke-RestMethod "http://localhost:5555/api/audit?limit=10"</pre></div>
+
+<h2>Related</h2>
+<ul>
+  <li><a href="LibraryAuditLog.html">Library Audit Log</a></li>
+  <li><a href="RegulatedEnvironment.html">Regulated Environment</a></li>
+  <li><a href="RESTAPIReference.html">REST API Reference</a></li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

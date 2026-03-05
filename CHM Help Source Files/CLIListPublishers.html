@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CLI: list-publishers</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">CLI: list-publishers</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; list-publishers</div>
+
+<h2>Description</h2>
+<p>Lists all registered publisher certificates in the local publisher registry, showing their trust status, key ID, fingerprint, organization, and creation date.</p>
+
+<h2>Usage</h2>
+<div class="code"><pre>node cli.js list-publishers [--json]</pre></div>
+
+<h2>Options</h2>
+<table>
+<thead><tr><th>Flag</th><th>Required</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>--json</code></td><td><span class="badge badge-optional">Optional</span></td><td>Output raw JSON for scripting/CI integration</td></tr>
+</tbody>
+</table>
+
+<h2>Output</h2>
+<p>For each registered certificate, the following information is displayed:</p>
+<ul>
+  <li><b>Trust status</b> &mdash; <code>[TRUSTED]</code> or <code>[REVOKED]</code></li>
+  <li><b>Publisher name</b></li>
+  <li><b>Organization</b> (if set)</li>
+  <li><b>Key ID</b> &mdash; first 16 characters of the fingerprint (short identifier)</li>
+  <li><b>Fingerprint</b> &mdash; full SHA-256 hex of the Ed25519 public key</li>
+  <li><b>Created date</b> &mdash; ISO 8601 timestamp of certificate generation</li>
+</ul>
+
+<h2>Examples</h2>
+<div class="code"><pre>:: List all publishers (human-readable)
+node cli.js list-publishers
+
+:: List as JSON for scripting
+node cli.js list-publishers --json</pre></div>
+
+<h3>Sample Output</h3>
+<div class="code"><pre>Registered publisher certificates:
+
+  [TRUSTED]  Jane Smith
+           Org: Acme Pharma
+           Key ID: a7e3f9d1c6b24e92
+           Fingerprint: a7e3f9d1c6b24e92b516a30de768f42c598b31ca750e96afd243bc1a67e05884
+           Created: 2026-01-15T10:30:00.000Z</pre></div>
+
+<h2>Related</h2>
+<ul>
+  <li><a href="CLIGenerateKeypair.html">CLI: generate-keypair</a></li>
+  <li><a href="CLITrustPublisher.html">CLI: trust-publisher</a></li>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a></li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

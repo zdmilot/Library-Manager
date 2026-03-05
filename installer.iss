@@ -835,6 +835,15 @@ Source: "cli.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "cli-schema.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "cli-spec-example.json"; DestDir: "{app}"; Flags: ignoreversion
 
+; REST API server
+Source: "rest-api.js"; DestDir: "{app}"; Flags: ignoreversion
+
+; COM object (32-bit DLL for VENUS x86 interop)
+Source: "com\bin\VenusLibraryManager.dll"; DestDir: "{app}\com"; Flags: ignoreversion
+Source: "com\register-com.bat"; DestDir: "{app}\com"; Flags: ignoreversion
+Source: "com\unregister-com.bat"; DestDir: "{app}\com"; Flags: ignoreversion
+Source: "com\verify-com.bat"; DestDir: "{app}\com"; Flags: ignoreversion
+
 ; Shared library module
 Source: "lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs
 
@@ -918,4 +927,11 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppIcon}"; Tasks: desktopicon
 
 [Run]
+; Register COM DLL with 32-bit RegAsm during install (silent, requires admin)
+Filename: "C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe"; Parameters: "/codebase ""{app}\com\VenusLibraryManager.dll"""; StatusMsg: "Registering COM object..."; Flags: runhidden waituntilterminated
+
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[UninstallRun]
+; Unregister COM DLL with 32-bit RegAsm during uninstall
+Filename: "C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe"; Parameters: "/unregister ""{app}\com\VenusLibraryManager.dll"""; Flags: runhidden waituntilterminated

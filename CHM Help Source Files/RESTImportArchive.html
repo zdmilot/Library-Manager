@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>REST API: POST /api/libraries/import-archive</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">REST API: POST /api/libraries/import-archive</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="RESTAPIReference.html">REST API Reference</a> &raquo; Import Archive</div>
+
+<h2>Endpoint</h2>
+<div class="code"><pre>POST /api/libraries/import-archive</pre></div>
+
+<h2>Description</h2>
+<p>Imports a multi-library <code>.hxlibarch</code> archive file via multipart file upload. Equivalent to the CLI command <code>import-archive</code>. The archive contains one or more <code>.hxlibpkg</code> packages that are each extracted and imported individually.</p>
+<p>This endpoint is serialized by an internal mutex to prevent concurrent database writes.</p>
+
+<h2>Parameters</h2>
+
+<h3>Request Body (<code>multipart/form-data</code>)</h3>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>archive</code></td><td>file</td><td><span class="badge badge-required">Required</span></td><td>The <code>.hxlibarch</code> archive file to import (max 500 MB)</td></tr>
+<tr><td><code>force</code></td><td>string</td><td>No</td><td><code>"true"</code> to overwrite already-installed libraries</td></tr>
+<tr><td><code>noGroup</code></td><td>string</td><td>No</td><td><code>"true"</code> to skip auto-assigning libraries to groups</td></tr>
+<tr><td><code>noCache</code></td><td>string</td><td>No</td><td><code>"true"</code> to skip caching packages in the package store</td></tr>
+<tr><td><code>authorPassword</code></td><td>string</td><td>No</td><td>Password to authorize importing packages with restricted OEM author names</td></tr>
+</tbody>
+</table>
+
+<h2>Response</h2>
+<p>Returns the standard envelope with <code>data</code> containing import results for each library in the archive:</p>
+
+<h3>Example Response</h3>
+<div class="code"><pre>{
+  "success": true,
+  "data": {
+    "archiveFile": "AllLibraries.hxlibarch",
+    "totalPackages": 3,
+    "imported": 3,
+    "failed": 0,
+    "results": [
+      {
+        "libraryName": "LibraryA",
+        "version": "1.0.0",
+        "success": true,
+        "signatureStatus": "valid"
+      },
+      {
+        "libraryName": "LibraryB",
+        "version": "2.3.1",
+        "success": true,
+        "signatureStatus": "unsigned"
+      },
+      {
+        "libraryName": "LibraryC",
+        "version": "1.2.0",
+        "success": true,
+        "signatureStatus": "valid"
+      }
+    ]
+  }
+}</pre></div>
+
+<h2>Examples</h2>
+
+<h3>cURL</h3>
+<div class="code"><pre># Basic archive import
+curl -X POST http://localhost:5555/api/libraries/import-archive \
+  -F "archive=@AllLibraries.hxlibarch"
+
+# Force overwrite all
+curl -X POST http://localhost:5555/api/libraries/import-archive \
+  -F "archive=@AllLibraries.hxlibarch" \
+  -F "force=true"</pre></div>
+
+<h3>PowerShell</h3>
+<div class="code"><pre># Basic archive import
+$form = @{ archive = Get-Item ".\AllLibraries.hxlibarch" }
+Invoke-RestMethod -Uri http://localhost:5555/api/libraries/import-archive `
+  -Method POST -Form $form
+
+# Force overwrite all
+$form = @{
+    archive = Get-Item ".\AllLibraries.hxlibarch"
+    force   = "true"
+}
+Invoke-RestMethod -Uri http://localhost:5555/api/libraries/import-archive `
+  -Method POST -Form $form</pre></div>
+
+<h2>Error Conditions</h2>
+<ul>
+  <li>No <code>archive</code> file uploaded &rarr; <code>400</code></li>
+  <li>Invalid archive file format &rarr; <code>400</code></li>
+  <li>One or more packages fail to import &rarr; partial results returned with per-library error details</li>
+</ul>
+
+<h2>Related</h2>
+<ul>
+  <li><a href="RESTImportLibrary.html">REST API: POST /api/libraries/import</a></li>
+  <li><a href="RESTExportArchive.html">REST API: POST /api/libraries/export-archive</a></li>
+  <li><a href="CLIImportArchive.html">CLI: import-archive</a></li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

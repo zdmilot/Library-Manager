@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>REST API Reference</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">REST API Reference</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; REST API Reference</div>
+
+<h2>Overview</h2>
+<p>Library Manager for Venus 6 ships a fully-featured REST API server (<code>rest-api.js</code>) with OpenAPI 3.0 (Swagger) documentation. The REST API provides complete 1:1 parity with the CLI commands and is also the transport used by the .NET COM object.</p>
+
+<h2>Prerequisites</h2>
+<ul>
+  <li><b>Node.js</b> must be installed (or use the NW.js runtime from the application directory)</li>
+  <li>All Node.js dependencies (<code>express</code>, <code>swagger-ui-express</code>, <code>multer</code>, <code>adm-zip</code>, <code>diskdb</code>) are satisfied by the project's <code>node_modules</code></li>
+</ul>
+
+<h2>Starting the Server</h2>
+<div class="code"><pre>cd "C:\Program Files (x86)\Library Manager for Venus 6"
+node rest-api.js</pre></div>
+
+<h3>Command-Line Options</h3>
+<table>
+<thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+<tbody>
+<tr><td><code>--port &lt;number&gt;</code></td><td>HTTP port to listen on</td><td>5555</td></tr>
+<tr><td><code>--host &lt;address&gt;</code></td><td>Bind address</td><td>127.0.0.1 (localhost only)</td></tr>
+<tr><td><code>--api-key &lt;key&gt;</code></td><td>Require API key authentication via <code>X-API-Key</code> header</td><td><i>disabled</i></td></tr>
+</tbody>
+</table>
+
+<h3>Examples</h3>
+<div class="code"><pre>REM Start on default port 5555
+node rest-api.js
+
+REM Start on custom port with API key
+node rest-api.js --port 8080 --api-key my-secret-key
+
+REM Listen on all interfaces (for network access)
+node rest-api.js --host 0.0.0.0 --port 5555</pre></div>
+
+<h2>Swagger UI</h2>
+<p>Once the server is running, open a browser to:</p>
+<ul>
+  <li><b>Swagger UI:</b> <code>http://localhost:5555/docs</code> &mdash; Interactive API explorer with "Try it out" buttons</li>
+  <li><b>OpenAPI JSON:</b> <code>http://localhost:5555/api-docs</code> &mdash; Raw OpenAPI 3.0 specification</li>
+</ul>
+<p>The Swagger UI lets you test every endpoint interactively, view request/response schemas, and generate client code.</p>
+
+<h2>Authentication</h2>
+<p>If the server is started with <code>--api-key</code>, all <code>/api/*</code> requests must include the header:</p>
+<div class="code"><pre>X-API-Key: &lt;your-key-here&gt;</pre></div>
+<p>Requests without a valid key receive a <code>401 Unauthorized</code> response.</p>
+
+<h2>Concurrency</h2>
+<div class="warning">
+<p><b>Important:</b> The underlying database (diskdb) uses flat JSON files without file-level locking. The REST API implements an internal mutex to serialize mutating operations (import, delete, rollback). Read operations (list, get, export) are safe to call concurrently.</p>
+</div>
+
+<h2>Available Endpoints</h2>
+<table>
+<thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td><code>GET</code></td><td><code>/api/health</code></td><td>Server health check</td><td><a href="RESTHealth.html">Details</a></td></tr>
+<tr><td><code>GET</code></td><td><code>/api/libraries</code></td><td>List installed libraries</td><td><a href="RESTListLibraries.html">Details</a></td></tr>
+<tr><td><code>GET</code></td><td><code>/api/libraries/:nameOrId</code></td><td>Get a single library</td><td><a href="RESTGetLibrary.html">Details</a></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/libraries/import</code></td><td>Import .hxlibpkg (multipart upload)</td><td><a href="RESTImportLibrary.html">Details</a></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/libraries/import-archive</code></td><td>Import .hxlibarch (multipart upload)</td><td><a href="RESTImportArchive.html">Details</a></td></tr>
+<tr><td><code>GET</code></td><td><code>/api/libraries/:nameOrId/export</code></td><td>Export library as binary download</td><td><a href="RESTExportLibrary.html">Details</a></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/libraries/export-archive</code></td><td>Export archive as binary download</td><td><a href="RESTExportArchive.html">Details</a></td></tr>
+<tr><td><code>DELETE</code></td><td><code>/api/libraries/:nameOrId</code></td><td>Delete a library</td><td><a href="RESTDeleteLibrary.html">Details</a></td></tr>
+<tr><td><code>GET</code></td><td><code>/api/libraries/:name/versions</code></td><td>List cached versions</td><td><a href="RESTListVersions.html">Details</a></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/libraries/:name/rollback</code></td><td>Rollback to cached version</td><td><a href="RESTRollbackLibrary.html">Details</a></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/packages/create</code></td><td>Create .hxlibpkg from spec</td><td><a href="RESTCreatePackage.html">Details</a></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/packages/verify</code></td><td>Verify package integrity</td><td><a href="RESTVerifyPackage.html">Details</a></td></tr>
+<tr><td><code>GET</code></td><td><code>/api/publishers</code></td><td>List publishers</td><td><a href="RESTListPublishers.html">Details</a></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/publishers/generate-keypair</code></td><td>Generate Ed25519 keypair</td><td><a href="RESTGenerateKeypair.html">Details</a></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/publishers/trust</code></td><td>Trust/revoke publisher</td><td><a href="RESTTrustPublisher.html">Details</a></td></tr>
+<tr><td><code>GET</code></td><td><code>/api/system-libraries</code></td><td>List system libraries</td><td><a href="RESTSystemLibraries.html">Details</a></td></tr>
+<tr><td><code>GET</code></td><td><code>/api/system-libraries/verify</code></td><td>Verify system library hashes</td><td><a href="RESTVerifySyslibHashes.html">Details</a></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/system-libraries/generate-hashes</code></td><td>Generate baseline hashes</td><td><a href="RESTGenerateSyslibHashes.html">Details</a></td></tr>
+<tr><td><code>GET</code></td><td><code>/api/audit</code></td><td>Get audit trail</td><td><a href="RESTGetAuditTrail.html">Details</a></td></tr>
+<tr><td><code>GET</code></td><td><code>/api/settings</code></td><td>Get application settings</td><td><a href="RESTGetSettings.html">Details</a></td></tr>
+</tbody>
+</table>
+
+<h2>Response Format</h2>
+<p>All JSON responses share a common envelope:</p>
+<div class="code"><pre>{
+  "success": true,
+  "data": { ... },
+  "warnings": ["optional warning messages"]
+}</pre></div>
+<p>Error responses:</p>
+<div class="code"><pre>{
+  "success": false,
+  "error": "Description of the error"
+}</pre></div>
+
+<h2>HTTP Status Codes</h2>
+<table>
+<thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>200</code></td><td>Success</td></tr>
+<tr><td><code>400</code></td><td>Bad request or validation error</td></tr>
+<tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
+<tr><td><code>404</code></td><td>Resource not found</td></tr>
+<tr><td><code>500</code></td><td>Internal server error</td></tr>
+</tbody>
+</table>
+
+<h2>Quick Start Examples (cURL)</h2>
+
+<h3>List all libraries</h3>
+<div class="code"><pre>curl http://localhost:5555/api/libraries</pre></div>
+
+<h3>Import a package</h3>
+<div class="code"><pre>curl -X POST http://localhost:5555/api/libraries/import \
+  -F "package=@MyLibrary.hxlibpkg"</pre></div>
+
+<h3>Export a library</h3>
+<div class="code"><pre>curl http://localhost:5555/api/libraries/MyLibrary/export \
+  --output MyLibrary.hxlibpkg</pre></div>
+
+<h3>Delete a library</h3>
+<div class="code"><pre>curl -X DELETE http://localhost:5555/api/libraries/MyLibrary</pre></div>
+
+<h3>Verify a package</h3>
+<div class="code"><pre>curl -X POST http://localhost:5555/api/packages/verify \
+  -F "package=@MyLibrary.hxlibpkg"</pre></div>
+
+<h2>Quick Start Examples (PowerShell)</h2>
+
+<h3>List all libraries</h3>
+<div class="code"><pre>Invoke-RestMethod http://localhost:5555/api/libraries</pre></div>
+
+<h3>Import a package</h3>
+<div class="code"><pre>$form = @{ package = Get-Item ".\MyLibrary.hxlibpkg" }
+Invoke-RestMethod -Uri http://localhost:5555/api/libraries/import `
+  -Method POST -Form $form</pre></div>
+
+<h3>Health check</h3>
+<div class="code"><pre>Invoke-RestMethod http://localhost:5555/api/health</pre></div>
+
+<h2>CLI / REST API / COM Parity</h2>
+<p>All three interfaces (CLI, REST API, COM object) share the same underlying <b>service layer</b> and produce identical results for the same inputs. The mapping is:</p>
+<table>
+<thead><tr><th>CLI Command</th><th>REST Endpoint</th><th>COM Method</th></tr></thead>
+<tbody>
+<tr><td><code>list-libs</code></td><td><code>GET /api/libraries</code></td><td><code>ListLibraries()</code></td></tr>
+<tr><td><code>import-lib</code></td><td><code>POST /api/libraries/import</code></td><td><code>ImportLibrary(path)</code></td></tr>
+<tr><td><code>import-archive</code></td><td><code>POST /api/libraries/import-archive</code></td><td><code>ImportArchive(path)</code></td></tr>
+<tr><td><code>export-lib</code></td><td><code>GET /api/libraries/:name/export</code></td><td><code>ExportLibrary(name, output)</code></td></tr>
+<tr><td><code>export-archive</code></td><td><code>POST /api/libraries/export-archive</code></td><td><code>ExportArchiveAll(output)</code></td></tr>
+<tr><td><code>delete-lib</code></td><td><code>DELETE /api/libraries/:name</code></td><td><code>DeleteLibrary(name)</code></td></tr>
+<tr><td><code>create-package</code></td><td><code>POST /api/packages/create</code></td><td><code>CreatePackage(spec, output)</code></td></tr>
+<tr><td><code>list-versions</code></td><td><code>GET /api/libraries/:name/versions</code></td><td><code>ListVersions(name)</code></td></tr>
+<tr><td><code>rollback-lib</code></td><td><code>POST /api/libraries/:name/rollback</code></td><td><code>RollbackLibrary(name, ver)</code></td></tr>
+<tr><td><code>verify-package</code></td><td><code>POST /api/packages/verify</code></td><td><code>VerifyPackage(path)</code></td></tr>
+<tr><td><code>generate-syslib-hashes</code></td><td><code>POST /api/system-libraries/generate-hashes</code></td><td><code>GenerateSyslibHashes(dir, out)</code></td></tr>
+<tr><td><code>verify-syslib-hashes</code></td><td><code>GET /api/system-libraries/verify</code></td><td><code>VerifySyslibHashes()</code></td></tr>
+<tr><td><code>generate-keypair</code></td><td><code>POST /api/publishers/generate-keypair</code></td><td><code>GenerateKeypair(publisher, org, outDir)</code></td></tr>
+<tr><td><code>trust-publisher</code></td><td><code>POST /api/publishers/trust</code></td><td><code>TrustPublisher(certPath)</code> / <code>RevokePublisher(certPath)</code></td></tr>
+<tr><td><code>list-publishers</code></td><td><code>GET /api/publishers</code></td><td><code>ListPublishers()</code></td></tr>
+</tbody>
+</table>
+
+<h2>Security Considerations</h2>
+<div class="warning">
+<p><b>Network Binding:</b> By default the server only listens on <code>127.0.0.1</code> (localhost). If you bind to <code>0.0.0.0</code> with <code>--host</code> to allow remote access, you <b>must</b> also use <code>--api-key</code> to prevent unauthorized access to library management operations.</p>
+</div>
+<ul>
+  <li>Package signing and integrity verification are enforced identically across CLI, REST, and COM</li>
+  <li>OEM author restrictions and publisher trust are checked on every import</li>
+  <li>The audit trail records all operations regardless of which interface is used</li>
+</ul>
+
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

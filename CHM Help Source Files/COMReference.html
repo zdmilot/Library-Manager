@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>COM Object Reference</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">COM Object Reference</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; COM Object Reference</div>
+
+<h2>Overview</h2>
+<p>Library Manager for Venus 6 includes a .NET COM object (<code>VenusLibraryManager.dll</code>) that enables integration with Hamilton VENUS HSL methods, VBScript, and any COM-capable language. The COM object provides complete 1:1 parity with the CLI commands and REST API endpoints.</p>
+
+<div class="warning">
+<p><b>32-bit Only:</b> The COM DLL is compiled as <b>x86</b> (32-bit) and <b>must</b> be registered using the 32-bit <code>RegAsm.exe</code>. Hamilton VENUS is a 32-bit application &mdash; using the 64-bit RegAsm will make the COM object invisible to VENUS, causing "Class not registered" errors.</p>
+</div>
+
+<h2>ProgID &amp; Class Details</h2>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>ProgID</td><td><code>VenusLibraryManager.LibraryManager</code></td></tr>
+<tr><td>Class GUID</td><td><code>{A2D6E8F0-3B1C-4D5E-8F0A-2C4D6E8F0A2C}</code></td></tr>
+<tr><td>Interface GUID</td><td><code>{C4F8A9B2-5D3E-4F70-AB2C-4E6F8A0B2C4E}</code></td></tr>
+<tr><td>Interface Type</td><td>IDispatch (Dual) &mdash; supports both early and late binding</td></tr>
+<tr><td>Platform</td><td>x86 (32-bit)</td></tr>
+<tr><td>.NET Framework</td><td>4.8</td></tr>
+</tbody>
+</table>
+
+<h2>Registration</h2>
+<h3>Automatic (Installer)</h3>
+<p>The installer automatically registers the COM DLL during installation and unregisters it during uninstallation. No manual action is required.</p>
+
+<h3>Manual Registration</h3>
+<div class="code"><pre>REM Register (requires Administrator)
+C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /codebase "C:\Program Files (x86)\Library Manager for Venus 6\com\VenusLibraryManager.dll"
+
+REM Unregister
+C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister "C:\Program Files (x86)\Library Manager for Venus 6\com\VenusLibraryManager.dll"</pre></div>
+
+<div class="warning">
+<p><b>Do NOT use <code>Framework64</code>.</b> Always use <code>C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe</code> (the 32-bit version).</p>
+</div>
+
+<h3>Verify Registration</h3>
+<p>Run the included verification script:</p>
+<div class="code"><pre>"C:\Program Files (x86)\Library Manager for Venus 6\com\verify-com.bat"</pre></div>
+
+<h2>Architecture</h2>
+<p>The COM object communicates with the REST API server over HTTP on localhost. When you call a COM method, it:</p>
+<ol>
+  <li>Checks if the REST API server is running (auto-starts if not)</li>
+  <li>Sends the appropriate HTTP request to <code>http://127.0.0.1:5555</code></li>
+  <li>Returns the JSON response string to the caller</li>
+</ol>
+<p>This architecture ensures all three interfaces (CLI, REST, COM) share identical business logic and security enforcement.</p>
+
+<h2>Return Format</h2>
+<p>All methods return JSON strings. Successful operations return:</p>
+<div class="code"><pre>{"success":true,"data":{...}}</pre></div>
+<p>Failed operations return:</p>
+<div class="code"><pre>{"success":false,"error":"Description of error"}</pre></div>
+
+<h2>Properties</h2>
+<table>
+<thead><tr><th>Property</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>Port</code></td><td>Integer</td><td>Read/Write</td><td>REST API server port (default: 5555)</td></tr>
+<tr><td><code>ApiKey</code></td><td>String</td><td>Read/Write</td><td>API key for authenticated access (default: empty)</td></tr>
+<tr><td><code>LastError</code></td><td>String</td><td>Read Only</td><td>Last error message from a failed operation</td></tr>
+</tbody>
+</table>
+
+<h2>Methods</h2>
+
+<h3>Server Management</h3>
+<table>
+<thead><tr><th>Method</th><th>Parameters</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>StartServer(port)</code></td><td>port: Integer</td><td>Start the REST API server on the specified port. Returns server URL.</td></tr>
+<tr><td><code>StopServer()</code></td><td><i>none</i></td><td>Stop the REST API server background process.</td></tr>
+<tr><td><code>IsServerRunning()</code></td><td><i>none</i></td><td>Returns Boolean indicating if the server is active.</td></tr>
+<tr><td><code>GetServerUrl()</code></td><td><i>none</i></td><td>Returns the server URL string (e.g., <code>http://127.0.0.1:5555</code>).</td></tr>
+</tbody>
+</table>
+
+<h3>Library Operations</h3>
+<table>
+<thead><tr><th>Method</th><th>Parameters</th><th>CLI Equivalent</th></tr></thead>
+<tbody>
+<tr><td><code>ListLibraries()</code></td><td><i>none</i></td><td><code>list-libs</code></td></tr>
+<tr><td><code>ListLibrariesIncludeDeleted()</code></td><td><i>none</i></td><td><code>list-libs</code> (with deleted)</td></tr>
+<tr><td><code>GetLibrary(nameOrId)</code></td><td>nameOrId: String</td><td><i>n/a</i></td></tr>
+<tr><td><code>ImportLibrary(packagePath)</code></td><td>packagePath: String</td><td><code>import-lib --file &lt;path&gt;</code></td></tr>
+<tr><td><code>ImportLibraryEx(packagePath, force, noGroup, noCache, authorPassword, requireTrust)</code></td><td>All options</td><td><code>import-lib</code> (full)</td></tr>
+<tr><td><code>ImportArchive(archivePath)</code></td><td>archivePath: String</td><td><code>import-archive --file &lt;path&gt;</code></td></tr>
+<tr><td><code>ImportArchiveEx(archivePath, force, noGroup, noCache, authorPassword)</code></td><td>All options</td><td><code>import-archive</code> (full)</td></tr>
+<tr><td><code>ExportLibrary(nameOrId, outputPath)</code></td><td>name + output</td><td><code>export-lib</code></td></tr>
+<tr><td><code>ExportArchiveAll(outputPath)</code></td><td>outputPath: String</td><td><code>export-archive --all</code></td></tr>
+<tr><td><code>ExportArchiveByNames(namesJson, outputPath)</code></td><td>JSON array + path</td><td><code>export-archive --names</code></td></tr>
+<tr><td><code>DeleteLibrary(nameOrId)</code></td><td>nameOrId: String</td><td><code>delete-lib --yes</code></td></tr>
+<tr><td><code>DeleteLibraryEx(nameOrId, hard, keepFiles)</code></td><td>All options</td><td><code>delete-lib</code> (full)</td></tr>
+</tbody>
+</table>
+
+<h3>Package Operations</h3>
+<table>
+<thead><tr><th>Method</th><th>Parameters</th><th>CLI Equivalent</th></tr></thead>
+<tbody>
+<tr><td><code>CreatePackage(specPath, outputPath)</code></td><td>spec + output</td><td><code>create-package</code></td></tr>
+<tr><td><code>CreatePackageEx(specPath, outputPath, signKeyPath, signCertPath, authorPassword)</code></td><td>All options</td><td><code>create-package</code> (full)</td></tr>
+<tr><td><code>VerifyPackage(packagePath)</code></td><td>packagePath: String</td><td><code>verify-package</code></td></tr>
+</tbody>
+</table>
+
+<h3>Version Operations</h3>
+<table>
+<thead><tr><th>Method</th><th>Parameters</th><th>CLI Equivalent</th></tr></thead>
+<tbody>
+<tr><td><code>ListVersions(libraryName)</code></td><td>name: String</td><td><code>list-versions</code></td></tr>
+<tr><td><code>RollbackLibrary(libraryName, version)</code></td><td>name + version</td><td><code>rollback-lib --version</code></td></tr>
+<tr><td><code>RollbackLibraryByIndex(libraryName, index)</code></td><td>name + index (1-based)</td><td><code>rollback-lib --index</code></td></tr>
+</tbody>
+</table>
+
+<h3>Publisher Operations</h3>
+<table>
+<thead><tr><th>Method</th><th>Parameters</th><th>CLI Equivalent</th></tr></thead>
+<tbody>
+<tr><td><code>ListPublishers()</code></td><td><i>none</i></td><td><code>list-publishers</code></td></tr>
+<tr><td><code>GenerateKeypair(publisher, organization, outputDir)</code></td><td>3 strings</td><td><code>generate-keypair</code></td></tr>
+<tr><td><code>TrustPublisher(certPath)</code></td><td>certPath: String</td><td><code>trust-publisher</code></td></tr>
+<tr><td><code>RevokePublisher(certPath)</code></td><td>certPath: String</td><td><code>trust-publisher --revoke</code></td></tr>
+</tbody>
+</table>
+
+<h3>System Library Operations</h3>
+<table>
+<thead><tr><th>Method</th><th>Parameters</th><th>CLI Equivalent</th></tr></thead>
+<tbody>
+<tr><td><code>GetSystemLibraries()</code></td><td><i>none</i></td><td><i>n/a</i></td></tr>
+<tr><td><code>VerifySyslibHashes()</code></td><td><i>none</i></td><td><code>verify-syslib-hashes</code></td></tr>
+<tr><td><code>GenerateSyslibHashes(sourceDir, outputPath)</code></td><td>dir + output</td><td><code>generate-syslib-hashes</code></td></tr>
+</tbody>
+</table>
+
+<h3>Audit &amp; Settings</h3>
+<table>
+<thead><tr><th>Method</th><th>Parameters</th><th>CLI Equivalent</th></tr></thead>
+<tbody>
+<tr><td><code>GetAuditTrail()</code></td><td><i>none</i></td><td><i>n/a</i></td></tr>
+<tr><td><code>GetAuditTrailLast(count)</code></td><td>count: Integer</td><td><i>n/a</i></td></tr>
+<tr><td><code>GetSettings()</code></td><td><i>none</i></td><td><i>n/a</i></td></tr>
+<tr><td><code>HealthCheck()</code></td><td><i>none</i></td><td><i>n/a</i></td></tr>
+</tbody>
+</table>
+
+<h2>Usage Examples</h2>
+
+<h3>VBScript</h3>
+<div class="code"><pre>' Create the COM object
+Set mgr = CreateObject("VenusLibraryManager.LibraryManager")
+
+' Optional: set port (default is 5555)
+mgr.Port = 5555
+
+' List all installed libraries
+WScript.Echo mgr.ListLibraries()
+
+' Import a library package
+result = mgr.ImportLibrary("C:\Packages\MyLibrary.hxlibpkg")
+WScript.Echo result
+
+' Delete a library (soft delete)
+result = mgr.DeleteLibrary("MyLibrary")
+WScript.Echo result
+
+' Check the last error
+WScript.Echo "Last error: " &amp; mgr.LastError
+
+' Clean up
+Set mgr = Nothing</pre></div>
+
+<h3>Hamilton VENUS HSL</h3>
+<div class="code"><pre>// Declare the COM object variable
+variable libMgr;
+variable result;
+
+// Create the Library Manager COM object
+libMgr = CreateObject("VenusLibraryManager.LibraryManager");
+
+// List installed libraries
+result = libMgr.ListLibraries();
+Trace(result);
+
+// Import a package
+result = libMgr.ImportLibrary("C:\\Packages\\MyLib.hxlibpkg");
+Trace(result);
+
+// Verify a package before import
+result = libMgr.VerifyPackage("C:\\Packages\\MyLib.hxlibpkg");
+Trace(result);
+
+// Check server health
+result = libMgr.HealthCheck();
+Trace(result);</pre></div>
+
+<h3>C# (.NET)</h3>
+<div class="code"><pre>// Late binding via COM ProgID
+Type t = Type.GetTypeFromProgID("VenusLibraryManager.LibraryManager");
+dynamic mgr = Activator.CreateInstance(t);
+
+// Set port
+mgr.Port = 5555;
+
+// List libraries
+string json = mgr.ListLibraries();
+Console.WriteLine(json);
+
+// Import a package with all options
+string result = mgr.ImportLibraryEx(
+    @"C:\Packages\MyLib.hxlibpkg",
+    true,   // force overwrite
+    false,  // noGroup
+    false,  // noCache
+    null,   // authorPassword
+    false   // requireTrust
+);
+Console.WriteLine(result);</pre></div>
+
+<h3>PowerShell (via COM)</h3>
+<div class="code"><pre># Create the COM object
+$mgr = New-Object -ComObject VenusLibraryManager.LibraryManager
+
+# List libraries
+$json = $mgr.ListLibraries()
+$json | ConvertFrom-Json | Format-Table
+
+# Import a package
+$result = $mgr.ImportLibrary("C:\Packages\MyLib.hxlibpkg")
+Write-Host $result
+
+# Clean up
+[System.Runtime.InteropServices.Marshal]::ReleaseComObject($mgr) | Out-Null</pre></div>
+
+<h2>Events</h2>
+<p>The COM object fires the following events for clients that support COM event sinking:</p>
+<table>
+<thead><tr><th>Event</th><th>Parameters</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>ServerStarted</code></td><td>url: String</td><td>Fired when the REST server starts</td></tr>
+<tr><td><code>ServerStopped</code></td><td><i>none</i></td><td>Fired when the REST server stops</td></tr>
+<tr><td><code>OperationCompleted</code></td><td>operation, success, resultJson</td><td>Fired after each HTTP operation</td></tr>
+<tr><td><code>ErrorOccurred</code></td><td>operation, errorMessage</td><td>Fired when an error occurs</td></tr>
+</tbody>
+</table>
+
+<h2>Auto-Start Behavior</h2>
+<p>The COM object automatically starts the REST API server when the first library operation is called. You can also explicitly control the server lifecycle:</p>
+<div class="code"><pre>Set mgr = CreateObject("VenusLibraryManager.LibraryManager")
+mgr.Port = 8080
+mgr.StartServer(8080)   ' Explicitly start
+' ... perform operations ...
+mgr.StopServer()        ' Explicitly stop</pre></div>
+
+<h2>Error Handling</h2>
+<p>Check the <code>LastError</code> property after any operation, or parse the JSON result for the <code>"success"</code> field:</p>
+<div class="code"><pre>result = mgr.ImportLibrary("C:\bad\path.hxlibpkg")
+' Parse result JSON to check success
+If InStr(result, """success"":false") > 0 Then
+    WScript.Echo "Error: " &amp; mgr.LastError
+End If</pre></div>
+
+<h2>Troubleshooting</h2>
+<table>
+<thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+<tbody>
+<tr><td>"Class not registered" error</td><td>Register with 32-bit <code>RegAsm.exe</code> as Administrator. Never use <code>Framework64</code>.</td></tr>
+<tr><td>"Cannot find node.exe"</td><td>Install Node.js, or ensure the NW.js runtime is in the application directory.</td></tr>
+<tr><td>Server won't start</td><td>Check port availability. Another process may be using port 5555. Set <code>mgr.Port = 8080</code> to use alternate port.</td></tr>
+<tr><td>Operations timeout</td><td>Large imports/exports may take time. The default timeout is 5 minutes per request.</td></tr>
+<tr><td>API key mismatch</td><td>Ensure <code>mgr.ApiKey</code> matches the value passed to <code>rest-api.js --api-key</code>.</td></tr>
+</tbody>
+</table>
+
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

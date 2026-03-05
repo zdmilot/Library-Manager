@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>REST API: GET /api/settings</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">REST API: GET /api/settings</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="RESTAPIReference.html">REST API Reference</a> &raquo; Get Settings</div>
+
+<h2>Endpoint</h2>
+<div class="code"><pre>GET /api/settings</pre></div>
+
+<h2>Description</h2>
+<p>Retrieves the current application settings. Returns configuration values such as file paths, directory overrides, and application preferences.</p>
+
+<h2>Parameters</h2>
+<p>This endpoint takes no parameters.</p>
+
+<h2>Response</h2>
+<p>Returns the standard envelope with <code>data</code> containing the application settings object. The exact shape depends on the current configuration:</p>
+
+<h3>Example Response</h3>
+<div class="code"><pre>{
+  "success": true,
+  "data": {
+    "lib_dir": "C:\\Program Files (x86)\\HAMILTON\\Library",
+    "met_dir": "C:\\Program Files (x86)\\HAMILTON\\Methods",
+    "store_dir": "C:\\ProgramData\\Library Manager\\packages",
+    "db_path": "C:\\ProgramData\\Library Manager",
+    "venus_version": "6.3",
+    "theme": "light",
+    "show_deleted": false,
+    "auto_group": true
+  }
+}</pre></div>
+
+<h2>Examples</h2>
+
+<h3>cURL</h3>
+<div class="code"><pre>curl http://localhost:5555/api/settings</pre></div>
+
+<h3>PowerShell</h3>
+<div class="code"><pre>Invoke-RestMethod http://localhost:5555/api/settings</pre></div>
+
+<h2>Related</h2>
+<ul>
+  <li><a href="RESTHealth.html">REST API: GET /api/health</a></li>
+  <li><a href="RESTAPIReference.html">REST API Reference</a></li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

@@ -10,10 +10,10 @@
 <div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; create-package</div>
 
 <h2>Description</h2>
-<p>Creates a <code>.hxlibpkg</code> from library source files and metadata defined in a JSON specification file. This is the CLI equivalent of the GUI Library Packager, ideal for automated builds and CI/CD pipelines. The resulting package is automatically signed with an HMAC-SHA256 integrity signature (see <a href="IntegrityVerification.html">Integrity Verification</a>).</p>
+<p>Creates a <code>.hxlibpkg</code> from library source files and metadata defined in a JSON specification file. This is the CLI equivalent of the GUI Library Packager, ideal for automated builds and CI/CD pipelines. The resulting package is automatically signed with an HMAC-SHA256 integrity signature (see <a href="IntegrityVerification.html">Integrity Verification</a>). Optionally, the package can be code-signed with an Ed25519 publisher certificate for cryptographic origin verification.</p>
 
 <h2>Usage</h2>
-<div class="code"><pre>node cli.js create-package --spec &lt;spec.json&gt; --output &lt;output.hxlibpkg&gt;</pre></div>
+<div class="code"><pre>node cli.js create-package --spec &lt;spec.json&gt; --output &lt;output.hxlibpkg&gt; [--sign-key &lt;key.pem&gt;]</pre></div>
 
 <h2>Options</h2>
 <table>
@@ -21,6 +21,8 @@
 <tbody>
 <tr><td><code>--spec &lt;path&gt;</code></td><td><span class="badge badge-required">Required</span></td><td>Path to the JSON specification file (see <a href="PackageSpecSchema.html">Package Spec JSON Schema</a>)</td></tr>
 <tr><td><code>--output &lt;path&gt;</code></td><td><span class="badge badge-required">Required</span></td><td>Output <code>.hxlibpkg</code> file path</td></tr>
+<tr><td><code>--sign-key &lt;path&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Path to an Ed25519 private key PEM file for code signing. When provided, the package receives both HMAC and Ed25519 digital signatures. The matching <code>.cert.json</code> is auto-detected from the key filename unless <code>--sign-cert</code> is specified.</td></tr>
+<tr><td><code>--sign-cert &lt;path&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Path to the publisher <code>.cert.json</code> certificate. Only needed if the certificate filename does not match the key filename. Requires <code>--sign-key</code>.</td></tr>
 <tr><td><code>--author-password &lt;pw&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Required when the author is a restricted OEM or laboratory automation company name. Authorizes use of the restricted author name.</td></tr>
 </tbody>
 </table>
@@ -73,7 +75,13 @@
 node cli.js create-package --spec MyLib.spec.json --output MyLib.hxlibpkg
 
 :: Output to a subdirectory
-node cli.js create-package --spec specs/proj.json --output dist/proj.hxlibpkg</pre></div>
+node cli.js create-package --spec specs/proj.json --output dist/proj.hxlibpkg
+
+:: Code-signed package (Ed25519)
+node cli.js create-package --spec MyLib.spec.json --output MyLib.hxlibpkg --sign-key publisher.key.pem
+
+:: Code-signed with explicit certificate path
+node cli.js create-package --spec MyLib.spec.json --output MyLib.hxlibpkg --sign-key keys/publisher.key.pem --sign-cert certs/publisher.cert.json</pre></div>
 
 <h2>Validation</h2>
 <p>The command validates before building:</p>

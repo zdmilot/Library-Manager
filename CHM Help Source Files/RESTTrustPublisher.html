@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>REST API: POST /api/publishers/trust</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">REST API: POST /api/publishers/trust</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="RESTAPIReference.html">REST API Reference</a> &raquo; Trust Publisher</div>
+
+<h2>Endpoint</h2>
+<div class="code"><pre>POST /api/publishers/trust</pre></div>
+
+<h2>Description</h2>
+<p>Trusts or revokes a publisher certificate. Equivalent to the CLI command <code>trust-publisher</code>. When trusted, packages signed by this publisher will pass trust verification during import. When revoked, the certificate is marked as untrusted.</p>
+
+<h2>Parameters</h2>
+
+<h3>Request Body (<code>application/json</code>)</h3>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>certPath</code></td><td>string</td><td><span class="badge badge-required">Required</span></td><td>&mdash;</td><td>Path to the <code>.cert.json</code> file on the server filesystem</td></tr>
+<tr><td><code>revoke</code></td><td>boolean</td><td>No</td><td><code>false</code></td><td>Set to <code>true</code> to revoke trust instead of granting it</td></tr>
+</tbody>
+</table>
+
+<h2>Response</h2>
+<p>Returns the standard envelope with <code>data</code> containing the trust operation result:</p>
+
+<h3>Example Response (Trust)</h3>
+<div class="code"><pre>{
+  "success": true,
+  "data": {
+    "publisher": "John Doe",
+    "organization": "Acme Labs",
+    "keyId": "abc123def456",
+    "action": "trusted"
+  }
+}</pre></div>
+
+<h3>Example Response (Revoke)</h3>
+<div class="code"><pre>{
+  "success": true,
+  "data": {
+    "publisher": "John Doe",
+    "organization": "Acme Labs",
+    "keyId": "abc123def456",
+    "action": "revoked"
+  }
+}</pre></div>
+
+<h2>Examples</h2>
+
+<h3>cURL</h3>
+<div class="code"><pre># Trust a publisher certificate
+curl -X POST http://localhost:5555/api/publishers/trust \
+  -H "Content-Type: application/json" \
+  -d '{"certPath": "C:\\Keys\\JohnDoe.cert.json"}'
+
+# Revoke a publisher certificate
+curl -X POST http://localhost:5555/api/publishers/trust \
+  -H "Content-Type: application/json" \
+  -d '{"certPath": "C:\\Keys\\JohnDoe.cert.json", "revoke": true}'</pre></div>
+
+<h3>PowerShell</h3>
+<div class="code"><pre># Trust a publisher certificate
+$body = @{ certPath = "C:\Keys\JohnDoe.cert.json" } | ConvertTo-Json
+Invoke-RestMethod -Uri http://localhost:5555/api/publishers/trust `
+  -Method POST -ContentType "application/json" -Body $body
+
+# Revoke a publisher certificate
+$body = @{
+    certPath = "C:\Keys\JohnDoe.cert.json"
+    revoke   = $true
+} | ConvertTo-Json
+Invoke-RestMethod -Uri http://localhost:5555/api/publishers/trust `
+  -Method POST -ContentType "application/json" -Body $body</pre></div>
+
+<h2>Error Conditions</h2>
+<ul>
+  <li><code>certPath</code> not provided &rarr; <code>400</code></li>
+  <li>Certificate file not found &rarr; <code>400</code></li>
+  <li>Invalid certificate file format &rarr; <code>400</code></li>
+</ul>
+
+<h2>Related</h2>
+<ul>
+  <li><a href="RESTListPublishers.html">REST API: GET /api/publishers</a></li>
+  <li><a href="RESTGenerateKeypair.html">REST API: POST /api/publishers/generate-keypair</a></li>
+  <li><a href="RESTVerifyPackage.html">REST API: POST /api/packages/verify</a></li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>
