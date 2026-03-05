@@ -13,7 +13,7 @@
 <div class="code"><pre>GET /api/publishers</pre></div>
 
 <h2>Description</h2>
-<p>Returns an array of registered publisher signing certificates. Each publisher entry includes its name and an array of associated certificates with trust status, key identifiers, and fingerprints.</p>
+<p>Returns an array of registered publisher signing certificates. Each publisher entry includes its name and an array of associated certificates with key identifiers and fingerprints.</p>
 
 <h2>Parameters</h2>
 <p>This endpoint takes no parameters.</p>
@@ -36,7 +36,6 @@
 <tr><td><code>organization</code></td><td>string</td><td>Organization name</td></tr>
 <tr><td><code>key_id</code></td><td>string</td><td>Ed25519 key identifier</td></tr>
 <tr><td><code>fingerprint</code></td><td>string</td><td>Certificate fingerprint</td></tr>
-<tr><td><code>trusted</code></td><td>boolean</td><td>Whether this certificate is trusted</td></tr>
 <tr><td><code>created_date</code></td><td>string</td><td>ISO 8601 certificate creation date</td></tr>
 </tbody>
 </table>
@@ -53,7 +52,6 @@
           "organization": "Acme Labs",
           "key_id": "abc123def456",
           "fingerprint": "SHA256:abcdef1234567890...",
-          "trusted": true,
           "created_date": "2026-01-01T00:00:00.000Z"
         }
       ]

@@ -1,6 +1,6 @@
 # Code Map: lib/service.js
 
-**File**: `lib/service.js` | **Lines**: 1543 | **Purpose**: Service layer used by REST API
+**File**: `lib/service.js` | **Lines**: 1736 | **Purpose**: Service layer used by REST API
 
 ## Imports
 
@@ -9,8 +9,7 @@
 | L28  | `fs` | `fs` |
 | L29  | `path` | `path` |
 | L30  | `os` | `os` |
-| L31  | `crypto` | `crypto` |
-| L32  | `adm-zip` | `AdmZip` |
+| L31  | `adm-zip` | `AdmZip` |
 | L33  | `./shared` | `shared` |
 | L68  | `child_process` (lazy) | `execSync` |
 | L121 | `diskdb` (lazy) | `diskdb` |
@@ -76,11 +75,10 @@
 | 12 | `generateSyslibHashes` | L1310 | `ctx, opts{sourceDir,output}` | Generate system lib baseline |
 | 13 | `verifySyslibHashes` | L1368 | `ctx, opts{hashFile,libDir}` | Verify system lib integrity |
 | 14 | `generateKeypair` | L1399 | `ctx, opts{publisher,org,outputDir,...}` | Generate Ed25519 keypair |
-| 15 | `trustPublisher` | L1439 | `ctx, opts{certPath,revoke}` | Trust/revoke publisher cert |
-| 16 | `listPublishers` | L1462 | `ctx` | List publisher certs |
-| 17 | `getAuditTrail` | L1477 | `ctx, opts{limit}` | Read audit trail |
-| 18 | `getSettings` | L1491 | `ctx` | Get app settings |
-| 19 | `getSystemLibraries` | L1500 | — | Read system_libraries.json |
+| 15 | `listPublishers` | L1462 | `ctx` | List publisher certs |
+| 16 | `getAuditTrail` | L1477 | `ctx, opts{limit}` | Read audit trail |
+| 17 | `getSettings` | L1491 | `ctx` | Get app settings |
+| 18 | `getSystemLibraries` | L1500 | — | Read system_libraries.json |
 
 ## Call Graph
 
@@ -90,7 +88,7 @@ createContext ──► resolveDBPath ──► ensureLocalDataDir
              ──► getInstallPaths
 
 importLibrary ──► shared.unpackContainer
-              ──► shared.verifyPackageSignature (with trusted certs)
+              ──► shared.verifyPackageSignature
               ──► shared.isRestrictedAuthor / validateAuthorPassword
               ──► shared.validateOemCertificateMatch
               ──► installPackage ──► computeLibraryHashes

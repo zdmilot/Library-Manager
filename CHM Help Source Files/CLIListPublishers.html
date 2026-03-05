@@ -10,7 +10,7 @@
 <div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; list-publishers</div>
 
 <h2>Description</h2>
-<p>Lists all registered publisher certificates in the local publisher registry, showing their trust status, key ID, fingerprint, organization, and creation date.</p>
+<p>Lists all registered publisher certificates in the local publisher registry, showing their key ID, fingerprint, organization, and creation date.</p>
 
 <h2>Usage</h2>
 <div class="code"><pre>node cli.js list-publishers [--json]</pre></div>
@@ -26,7 +26,6 @@
 <h2>Output</h2>
 <p>For each registered certificate, the following information is displayed:</p>
 <ul>
-  <li><b>Trust status</b> &mdash; <code>[TRUSTED]</code> or <code>[REVOKED]</code></li>
   <li><b>Publisher name</b></li>
   <li><b>Organization</b> (if set)</li>
   <li><b>Key ID</b> &mdash; first 16 characters of the fingerprint (short identifier)</li>
@@ -44,7 +43,7 @@ node cli.js list-publishers --json</pre></div>
 <h3>Sample Output</h3>
 <div class="code"><pre>Registered publisher certificates:
 
-  [TRUSTED]  Jane Smith
+  Jane Smith
            Org: Acme Pharma
            Key ID: a7e3f9d1c6b24e92
            Fingerprint: a7e3f9d1c6b24e92b516a30de768f42c598b31ca750e96afd243bc1a67e05884

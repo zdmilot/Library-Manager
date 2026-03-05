@@ -5,15 +5,15 @@
 ```
 Library-Manager-for-Venus-6/
 ├── package.json              # NW.js manifest + npm config (v1.6.5)
-├── cli.js                    # CLI entry point (2827 lines)
-├── rest-api.js               # REST API server w/ Swagger (928 lines)
+├── cli.js                    # CLI entry point (2815 lines)
+├── rest-api.js               # REST API server w/ Swagger (1017 lines)
 ├── lib/
-│   ├── shared.js             # Shared crypto, validation, signing (1915 lines)
-│   └── service.js            # Service layer — CLI/REST backend (1543 lines)
+│   ├── shared.js             # Shared crypto, validation, signing (1848 lines)
+│   └── service.js            # Service layer — CLI/REST backend (1736 lines)
 ├── html/
 │   ├── index.html            # GUI shell (NW.js main window)
 │   ├── js/
-│   │   ├── main.js           # GUI logic (13523 lines)
+│   │   ├── main.js           # GUI logic (13673 lines)
 │   │   ├── syscheck-worker.js# System library check web worker
 │   │   ├── bootstrap.min.js  # Bootstrap 4 JS
 │   │   ├── jquery-2.1.3.min.js
@@ -130,7 +130,7 @@ Library-Manager-for-Venus-6/
 
 6. VERIFY:
    File → detect magic → unpackContainer() → verifyPackageSignature()
-   → check HMAC + Ed25519 signature + trusted certificates → report
+   → check HMAC + Ed25519 signature → report (OEM verified badge)
 ```
 
 ### Binary Container Format
@@ -148,7 +148,7 @@ Offset   Size    Field
 
 1. **Binary container**: XOR scramble + HMAC-SHA256 (tamper detection, not encryption)
 2. **Package signing (v1.0)**: HMAC-SHA256 of ZIP entry hashes (tamper detection only)
-3. **Code signing (v2.0)**: Ed25519 publisher certificate + digital signature (authenticity)
+3. **Code signing (v2.0)**: Ed25519 publisher certificate + digital signature (OEM verified badge)
 4. **OEM author protection**: Restricted author names require password + matching certificate
 5. **Access control (GUI)**: Windows security group membership (ALLOW/DENY lists)
 6. **Audit trail**: JSON event log with HMAC-SHA256 integrity signatures

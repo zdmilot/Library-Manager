@@ -1,6 +1,6 @@
 # Code Map: html/js/main.js
 
-**File**: `html/js/main.js` | **Lines**: 13,523 | **Purpose**: NW.js GUI application logic
+**File**: `html/js/main.js` | **Lines**: 13,673 | **Purpose**: NW.js GUI application logic
 
 ## Imports
 

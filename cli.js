@@ -40,7 +40,6 @@ const shared = require('./lib/shared');
 // Re-export shared helpers so the rest of the file can use short names
 const safeZipExtractPath     = shared.safeZipExtractPath;
 const isValidLibraryName     = shared.isValidLibraryName;
-const computeZipEntryHashes  = shared.computeZipEntryHashes;
 const signPackageZip         = shared.signPackageZip;
 const signPackageZipWithCert = shared.signPackageZipWithCert;
 const verifyPackageSignature = shared.verifyPackageSignature;
@@ -392,33 +391,9 @@ function getInstallPaths(db, libDirOverride, metDirOverride) {
 // Integrity hashing
 // ---------------------------------------------------------------------------
 
-// parseHslMetadataFooter is imported from shared module above
-
-
-
-// computeLibraryHashes is imported from shared module
-const computeLibraryHashes = shared.computeLibraryHashes;
-
-// ---------------------------------------------------------------------------
-// Package signing - HMAC-SHA256 integrity signatures for .hxlibpkg files
-// ---------------------------------------------------------------------------
-
-// computeZipEntryHashes, signPackageZip, verifyPackageSignature are
-// imported from the shared module above.
-
-// ---------------------------------------------------------------------------
-// HSL function parser - extracts public function signatures from .hsl files
-// Ported from the VS Code HSL IntelliSense extension.
-// ---------------------------------------------------------------------------
-
-// HSL parser functions - delegated to shared.js
-const sanitizeHslForParsing = shared.sanitizeHslForParsing;
-const splitHslArgs          = shared.splitHslArgs;
-const parseHslParameter     = shared.parseHslParameter;
-const extractHslDocComment  = shared.extractHslDocComment;
-const parseHslFunctions     = shared.parseHslFunctions;
+const computeLibraryHashes   = shared.computeLibraryHashes;
 const extractPublicFunctions = shared.extractPublicFunctions;
-const extractHslIncludes    = shared.extractHslIncludes;
+const extractHslIncludes     = shared.extractHslIncludes;
 
 /**
  * Extract required dependencies from a library's .hsl files.
@@ -2476,7 +2451,7 @@ verify-syslib-hashes
 verify-package
   Verify the integrity and code signing signature of a .hxlibpkg or .hxlibarch.
   Checks HMAC-SHA256 integrity AND Ed25519 publisher certificate signatures.
-  Reports publisher identity and trust status for code-signed packages.
+  Reports publisher identity and OEM verification status for code-signed packages.
   Unsigned (legacy) packages are reported but not treated as errors.
 
   --file <path>   [required]  Path to the .hxlibpkg or .hxlibarch file

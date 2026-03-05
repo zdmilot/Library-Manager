@@ -58,11 +58,9 @@ node cli.js generate-keypair --publisher "Jane Smith" --force</pre></div>
 <h2>Code Signing Workflow</h2>
 <ol>
   <li>Generate a key pair with <code>generate-keypair</code></li>
-  <li>Trust the certificate in <b>Settings &rarr; Trusted Publishers</b></li>
   <li>Create signed packages with <code>create-package --sign-key &lt;key.pem&gt;</code></li>
   <li>Distribute the <code>.cert.json</code> to package consumers</li>
-  <li>Consumers trust the certificate in their Settings</li>
-  <li>On import, packages signed by trusted publishers show as <b>TRUSTED</b></li>
+  <li>On import, packages signed with a known OEM publisher name display an <b>OEM Verified</b> badge</li>
 </ol>
 
 <h2>Related</h2>

@@ -11129,7 +11129,6 @@
 
 				// Package signature status
 				var $sigStatus = $modal.find(".imp-preview-signature-status");
-				$modal.removeData("importPublisherCert");
 				if ($sigStatus.length > 0) {
 					$sigStatus.empty();
 					if (sigResult.code_signed && sigResult.valid && sigResult.publisher_cert) {

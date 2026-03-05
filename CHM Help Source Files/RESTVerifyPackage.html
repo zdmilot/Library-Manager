@@ -38,7 +38,7 @@
 <tr><td><code>valid</code></td><td>boolean</td><td>Whether the HMAC-SHA256 signature is valid</td></tr>
 <tr><td><code>code_signed</code></td><td>boolean</td><td>Whether the package has an Ed25519 code signature</td></tr>
 <tr><td><code>publisher_cert</code></td><td>object|null</td><td>Publisher certificate details (if code-signed)</td></tr>
-<tr><td><code>trust_status</code></td><td>string</td><td>Publisher trust status (<code>"trusted"</code>, <code>"untrusted"</code>, <code>"unknown"</code>)</td></tr>
+<tr><td><code>oem_verified</code></td><td>boolean</td><td>Whether the publisher matches a known OEM or laboratory automation company name</td></tr>
 <tr><td><code>errors</code></td><td>string[]</td><td>Verification errors</td></tr>
 <tr><td><code>warnings</code></td><td>string[]</td><td>Verification warnings</td></tr>
 </tbody>
@@ -57,10 +57,9 @@
         "publisher": "John Doe",
         "organization": "Acme Labs",
         "key_id": "abc123def456",
-        "fingerprint": "SHA256:abcdef...",
-        "trusted": true
+        "fingerprint": "SHA256:abcdef..."
       },
-      "trust_status": "trusted",
+      "oem_verified": false,
       "errors": [],
       "warnings": []
     }

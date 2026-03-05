@@ -1,6 +1,6 @@
 # Code Map: rest-api.js
 
-**File**: `rest-api.js` | **Lines**: 928 | **Purpose**: REST API server with Swagger UI
+**File**: `rest-api.js` | **Lines**: 1017 | **Purpose**: REST API server with Swagger UI
 
 ## Imports
 
@@ -33,7 +33,9 @@
 | L69  | `acquireMutex()` | Promise-based mutex for diskdb concurrency |
 | L76  | `releaseMutex()` | Release mutex, dequeue next waiter |
 | L585 | `checkApiKey(req, res, next)` | Express middleware — timing-safe API key check |
-| L605 | `sanitizeFilename(name)` | Strip unsafe chars for Content-Disposition |
+| L605 | `validatePath(p, paramName)` | Validate user-supplied filesystem path (null-byte, type) |
+| L615 | `validatePaths(paths)` | Batch path validation for multiple params |
+| L630 | `sanitizeFilename(name)` | Strip unsafe chars for Content-Disposition |
 | L613 | `sanitizeErrorMessage(msg)` | Strip filesystem paths from error messages |
 | L620 | `sendResult(res, result, successStatus, errorStatus)` | Standardized JSON response |
 
@@ -79,7 +81,7 @@ Inline at L86. Defines schemas: `Error`, `Library`, `CachedVersion`, `Verificati
 
 ## Notes
 
-- `trustPublisher` is exported from service.js but NOT exposed via REST
 - `crypto` is imported but only used indirectly via `checkApiKey` (timing-safe compare)
 - Uploaded temp files are cleaned up in a `finally` block after import operations
 - Export routes stream the binary file directly as `application/octet-stream`
+- Path validation (null-byte rejection, type checks) applied to all filesystem path parameters

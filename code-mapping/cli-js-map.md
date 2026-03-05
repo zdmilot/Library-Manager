@@ -1,6 +1,6 @@
 # Code Map: cli.js
 
-**File**: `cli.js` | **Lines**: 2827 | **Purpose**: CLI entry point for library management commands
+**File**: `cli.js` | **Lines**: 2815 | **Purpose**: CLI entry point for library management commands
 
 ## Imports
 
@@ -13,18 +13,14 @@
 | L39  | `crypto` |
 | L40  | `./lib/shared` |
 
-### Shared Module Re-exports (L43–62)
-`safeZipExtractPath`, `isValidLibraryName`, `computeZipEntryHashes`*,
+### Shared Module Re-exports (L41–60)
+`safeZipExtractPath`, `isValidLibraryName`,
 `signPackageZip`, `signPackageZipWithCert`, `verifyPackageSignature`,
 `parseHslMetadataFooter`, `generateSigningKeyPair`, `buildPublisherCertificate`,
-`validatePublisherCertificate`, `loadTrustedCertificates`, `saveTrustedCertificate`*,
+`validatePublisherCertificate`,
 `CONTAINER_MAGIC_PKG`, `CONTAINER_MAGIC_ARC`, `packContainer`, `unpackContainer`,
-`OEM_AUTHOR_PASSWORD_HASH`*, `isRestrictedAuthor`, `validateAuthorPassword`,
-`sanitizeHslForParsing`*, `splitHslArgs`*, `parseHslParameter`*,
-`extractHslDocComment`*, `parseHslFunctions`*, `extractPublicFunctions`,
-`extractHslIncludes`, `computeLibraryHashes`
-
-\* = Dead imports (never used directly)
+`isRestrictedAuthor`, `validateAuthorPassword`,
+`extractPublicFunctions`, `extractHslIncludes`, `computeLibraryHashes`
 
 ## Constants
 
@@ -101,12 +97,6 @@
 
 | Line | Issue | Severity |
 |------|-------|----------|
-| L44  | `computeZipEntryHashes` imported but never used | Dead code |
-| L55  | `saveTrustedCertificate` imported but never used | Dead code |
-| L135 | `OEM_AUTHOR_PASSWORD_HASH` imported but never used | Dead code |
-| L435-439 | 5 HSL parser functions imported but never used | Dead code |
 | L199 | `execSync('reg query "' + sk + '"')` — command injection risk | HIGH |
 | L1582 | `execSync(\`"${regasmPath}" /unregister "${dllPath}"\`)` — command injection risk | MEDIUM |
 | L341 | `gStarred` in seed data but not in DEFAULT_GROUPS | Bug |
-| L1101 | `import-archive` missing trustedCerts arg to verifyPackageSignature | Bug |
-| L2184 | `rollback-lib` missing trustedCerts arg to verifyPackageSignature | Bug |

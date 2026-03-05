@@ -27,7 +27,6 @@
 <tr><td><code>noGroup</code></td><td>string</td><td>No</td><td><code>"true"</code> to skip auto-assigning the library to a group</td></tr>
 <tr><td><code>noCache</code></td><td>string</td><td>No</td><td><code>"true"</code> to skip caching the package in the package store</td></tr>
 <tr><td><code>authorPassword</code></td><td>string</td><td>No</td><td>Password to authorize importing packages with a restricted OEM or laboratory automation company author name</td></tr>
-<tr><td><code>requireTrust</code></td><td>string</td><td>No</td><td><code>"true"</code> to require the package publisher to be trusted</td></tr>
 </tbody>
 </table>
 
@@ -105,7 +104,6 @@ Invoke-RestMethod -Uri http://localhost:5555/api/libraries/import `
   <li>Library already installed without <code>force=true</code> &rarr; <code>400</code></li>
   <li>Signature verification failed without <code>force=true</code> &rarr; <code>400</code></li>
   <li>Restricted OEM author without <code>authorPassword</code> &rarr; <code>400</code></li>
-  <li>Untrusted publisher with <code>requireTrust=true</code> &rarr; <code>400</code></li>
 </ul>
 
 <h2>Related</h2>

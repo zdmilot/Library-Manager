@@ -94,7 +94,7 @@ C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister "C:\Program
 <tr><td><code>ListLibrariesIncludeDeleted()</code></td><td><i>none</i></td><td><code>list-libs</code> (with deleted)</td></tr>
 <tr><td><code>GetLibrary(nameOrId)</code></td><td>nameOrId: String</td><td><i>n/a</i></td></tr>
 <tr><td><code>ImportLibrary(packagePath)</code></td><td>packagePath: String</td><td><code>import-lib --file &lt;path&gt;</code></td></tr>
-<tr><td><code>ImportLibraryEx(packagePath, force, noGroup, noCache, authorPassword, requireTrust)</code></td><td>All options</td><td><code>import-lib</code> (full)</td></tr>
+<tr><td><code>ImportLibraryEx(packagePath, force, noGroup, noCache, authorPassword)</code></td><td>All options</td><td><code>import-lib</code> (full)</td></tr>
 <tr><td><code>ImportArchive(archivePath)</code></td><td>archivePath: String</td><td><code>import-archive --file &lt;path&gt;</code></td></tr>
 <tr><td><code>ImportArchiveEx(archivePath, force, noGroup, noCache, authorPassword)</code></td><td>All options</td><td><code>import-archive</code> (full)</td></tr>
 <tr><td><code>ExportLibrary(nameOrId, outputPath)</code></td><td>name + output</td><td><code>export-lib</code></td></tr>
@@ -223,8 +223,7 @@ string result = mgr.ImportLibraryEx(
     true,   // force overwrite
     false,  // noGroup
     false,  // noCache
-    null,   // authorPassword
-    false   // requireTrust
+    null    // authorPassword
 );
 Console.WriteLine(result);</pre></div>
 

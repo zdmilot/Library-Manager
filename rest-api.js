@@ -273,7 +273,9 @@ var openApiSpec = {
                         status: { type: 'string', example: 'ok' },
                         version: { type: 'string', example: '1.6.5' },
                         uptime: { type: 'number' },
-                        hostname: { type: 'string' }
+                        hostname: { type: 'string' },
+                        platform: { type: 'string' },
+                        nodeVersion: { type: 'string' }
                     }
                 }}}}}
             }
@@ -606,8 +608,45 @@ app.use('/docs', checkApiKey, swaggerUi.serve, swaggerUi.setup(openApiSpec, {
 app.get('/api-docs', checkApiKey, function(req, res) { res.json(openApiSpec); });
 
 // ---------------------------------------------------------------------------
-// Helper: wrap service calls with mutex for mutating operations
+// Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Validate a user-supplied filesystem path parameter.
+ * Rejects null bytes, non-string types, and empty strings.
+ * @param {*} p - The path value to validate.
+ * @param {string} paramName - Name of the parameter (for error messages).
+ * @returns {{ valid: boolean, error?: string, resolved?: string }}
+ */
+function validatePath(p, paramName) {
+    if (p === undefined || p === null || p === '') {
+        return { valid: false, error: paramName + ' is required' };
+    }
+    if (typeof p !== 'string') {
+        return { valid: false, error: paramName + ' must be a string' };
+    }
+    if (p.indexOf('\0') !== -1) {
+        return { valid: false, error: paramName + ' contains invalid characters' };
+    }
+    return { valid: true, resolved: path.resolve(p) };
+}
+
+/**
+ * Validate multiple path parameters at once. Returns the first error found,
+ * or null if all paths are valid. Skips validation for falsy optional values.
+ * @param {Array<{ value: *, name: string, required?: boolean }>} paths
+ * @returns {string|null} Error message or null.
+ */
+function validatePaths(paths) {
+    for (var i = 0; i < paths.length; i++) {
+        var p = paths[i];
+        if (!p.required && (p.value === undefined || p.value === null || p.value === '')) continue;
+        var result = validatePath(p.value, p.name);
+        if (!result.valid) return result.error;
+    }
+    return null;
+}
+
 /**
  * Sanitize a string for use in Content-Disposition header filenames.
  * Strips characters that could enable HTTP header injection.
@@ -655,7 +694,10 @@ function sendResult(res, result, successStatus, errorStatus) {
 app.get('/api/health', function(req, res) {
     res.json({
         status: 'ok', version: '1.6.5',
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        hostname: os.hostname(),
+        platform: process.platform,
+        nodeVersion: process.version
     });
 });
 
@@ -812,10 +854,17 @@ app.post('/api/libraries/:name/rollback', function(req, res) {
 
 // Create package
 app.post('/api/packages/create', function(req, res) {
+    var body = req.body || {};
+    var pathErr = validatePaths([
+        { value: body.specPath, name: 'specPath', required: true },
+        { value: body.output,   name: 'output',   required: true },
+        { value: body.signKey,  name: 'signKey',  required: false },
+        { value: body.signCert, name: 'signCert', required: false }
+    ]);
+    if (pathErr) return res.status(400).json({ success: false, error: pathErr });
     acquireMutex().then(function() {
         try {
             var ctx = service.createContext();
-            var body = req.body || {};
             var result = service.createPackage(ctx, {
                 specPath:       body.specPath,
                 output:         body.output,
@@ -834,11 +883,20 @@ app.post('/api/packages/verify', upload.single('package'), function(req, res) {
     try {
         var filePath = (req.body && req.body.filePath) ? req.body.filePath : (req.file ? req.file.path : null);
         if (!filePath) return res.status(400).json({ success: false, error: 'No package file provided' });
+        // Validate user-supplied path (skip for uploaded files managed by multer)
+        if (!req.file) {
+            var pv = validatePath(filePath, 'filePath');
+            if (!pv.valid) return res.status(400).json({ success: false, error: pv.error });
+        }
         var ctx = service.createContext();
         var result = service.verifyPackage(ctx, { filePath: filePath });
         if (req.file) { try { fs.unlinkSync(req.file.path); } catch(_){} }
         sendResult(res, result);
-    } catch(e) { res.status(500).json({ success: false, error: sanitizeErrorMessage(e.message) }); }
+    } catch(e) {
+        // Clean up uploaded file on error
+        if (req.file) { try { fs.unlinkSync(req.file.path); } catch(_){} }
+        res.status(500).json({ success: false, error: sanitizeErrorMessage(e.message) });
+    }
 });
 
 // List publishers
@@ -852,10 +910,17 @@ app.get('/api/publishers', function(req, res) {
 
 // Generate keypair (mutex-protected; involves state mutation)
 app.post('/api/publishers/generate-keypair', function(req, res) {
+    var body = req.body || {};
+    if (!body.publisher || typeof body.publisher !== 'string') {
+        return res.status(400).json({ success: false, error: 'publisher is required' });
+    }
+    var pathErr = validatePaths([
+        { value: body.outputDir, name: 'outputDir', required: false }
+    ]);
+    if (pathErr) return res.status(400).json({ success: false, error: pathErr });
     acquireMutex().then(function() {
         try {
             var ctx = service.createContext();
-            var body = req.body || {};
             var result = service.generateKeypair(ctx, {
                 publisher:      body.publisher,
                 organization:   body.organization,
@@ -880,6 +945,11 @@ app.get('/api/system-libraries', function(req, res) {
 // Verify system library hashes
 app.get('/api/system-libraries/verify', function(req, res) {
     try {
+        var pathErr = validatePaths([
+            { value: req.query.hashFile, name: 'hashFile', required: false },
+            { value: req.query.libDir,   name: 'libDir',   required: false }
+        ]);
+        if (pathErr) return res.status(400).json({ success: false, error: pathErr });
         var ctx = service.createContext();
         var result = service.verifySyslibHashes(ctx, { hashFile: req.query.hashFile, libDir: req.query.libDir });
         sendResult(res, result);
@@ -888,10 +958,15 @@ app.get('/api/system-libraries/verify', function(req, res) {
 
 // Generate system library hashes (mutex-protected; writes baseline file)
 app.post('/api/system-libraries/generate-hashes', function(req, res) {
+    var body = req.body || {};
+    var pathErr = validatePaths([
+        { value: body.sourceDir, name: 'sourceDir', required: true },
+        { value: body.output,    name: 'output',    required: true }
+    ]);
+    if (pathErr) return res.status(400).json({ success: false, error: pathErr });
     acquireMutex().then(function() {
         try {
             var ctx = service.createContext();
-            var body = req.body || {};
             var result = service.generateSyslibHashes(ctx, { sourceDir: body.sourceDir, output: body.output });
             releaseMutex();
             sendResult(res, result);

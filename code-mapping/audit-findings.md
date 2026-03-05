@@ -21,16 +21,6 @@ execSync(`"${regasmPath}" /unregister "${dllPath}"`, { ... });
 **Issue**: `dllPath` includes manifest-supplied DLL names. A malicious package could inject shell commands.
 **Fix**: Use `execFileSync(regasmPath, ['/unregister', dllPath], ...)`.
 
-### 3. Missing `trustedCerts` in `import-archive` — cli.js L1101
-```js
-const sigResult = verifyPackageSignature(innerZip);  // missing trustedCerts!
-```
-**Issue**: Archive-imported packages never have `trust_status === 'trusted'`. Publisher trust evaluation is skipped entirely.
-**Fix**: Load trusted certs before the loop and pass: `verifyPackageSignature(innerZip, trustedCerts)`.
-
-### 4. Missing `trustedCerts` in `rollback-lib` — cli.js L2184
-Same issue as #3 — rollback verification doesn't load trusted certificates.
-
 ---
 
 ## MEDIUM Severity
@@ -44,9 +34,8 @@ function validateAuthorPassword(password) {
 **Issue**: Plain SHA-256, no salt, no key-stretching. Hash embedded in source. Trivially brute-forceable.
 **Fix**: Use PBKDF2 or scrypt with salt. Stop exporting the raw hash constant.
 
-### 6. Sensitive Constants Exported — shared.js L1836, L1843
-`PKG_SIGNING_KEY` and `OEM_AUTHOR_PASSWORD_HASH` are exported. No consumer uses them directly.
-**Fix**: Remove from exports; route all usage through wrapper functions.
+### 6. ~~Sensitive Constants Exported — shared.js~~ (RESOLVED)
+`PKG_SIGNING_KEY` and `OEM_AUTHOR_PASSWORD_HASH` are no longer exported.
 
 ### 7. Container Payload Size Overflow — shared.js L308
 ```js
@@ -69,17 +58,8 @@ var resolved = path.resolve(baseDir, fname);
 
 ## LOW Severity / Dead Code
 
-### 10. Dead Imports in cli.js
-| Line | Import | Status |
-|------|--------|--------|
-| L44  | `computeZipEntryHashes` | Never used |
-| L55  | `saveTrustedCertificate` | Never used |
-| L135 | `OEM_AUTHOR_PASSWORD_HASH` | Never used |
-| L435 | `sanitizeHslForParsing` | Never used |
-| L436 | `splitHslArgs` | Never used |
-| L437 | `parseHslParameter` | Never used |
-| L438 | `extractHslDocComment` | Never used |
-| L439 | `parseHslFunctions` | Never used |
+### 10. ~~Dead Imports in cli.js~~ (RESOLVED)
+All dead imports have been removed from cli.js.
 
 ### 11. Dead Function in shared.js
 | Line | Function | Status |
@@ -129,10 +109,7 @@ Names like `.hidden` are allowed. Could be unexpected.
 ## Feature Gaps (Not Bugs)
 
 ### 20. No `--require-signature` flag in CLI
-Unsigned packages are silently accepted. Only `--require-trust` exists.
+Unsigned packages are silently accepted. Consider adding `--require-signature`.
 
 ### 21. No `--reject-legacy` flag in CLI
 Old-format packages are detected but always accepted.
-
-### 22. `trustPublisher` not exposed via REST API
-Available in service.js but no REST route exists.

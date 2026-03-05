@@ -1,6 +1,6 @@
 # Code Map: lib/shared.js
 
-**File**: `lib/shared.js` | **Lines**: 1915 | **Purpose**: Shared crypto, validation, signing, HSL parsing
+**File**: `lib/shared.js` | **Lines**: 1848 | **Purpose**: Shared crypto, validation, signing, HSL parsing
 
 ## Imports
 
@@ -76,13 +76,7 @@
 | L535 | `computeZipEntryHashes(zip)` | SHA-256 hashes of all ZIP entries → sorted JSON |
 | L551 | `signPackageZip(zip)` | HMAC-SHA256 signature (v1.0 legacy) |
 | L575 | `signPackageZipWithCert(zip, privateKeyPem, certObj)` | Ed25519 + HMAC signature (v2.0) |
-| L625 | `verifyPackageSignature(zip, trustedCerts)` | Full verification (HMAC + Ed25519 + trust) |
-
-### Certificate Trust Store
-| Line | Function | Purpose |
-|------|----------|---------|
-| L764 | `loadTrustedCertificates(registryPath)` | Load trusted certs from publisher_registry.json |
-| L797 | `saveTrustedCertificate(registryPath, cert, opts)` | Save/revoke certificate in registry |
+| L625 | `verifyPackageSignature(zip)` | Full verification (HMAC + Ed25519 + OEM badge) |
 
 ### HSL Parsing
 | Line | Function | Purpose |
@@ -126,17 +120,19 @@
 
 All of the above functions and constants are exported. Key exports:
 `FORMAT_VERSION`, `VALID_LINEAGE_EVENTS`, `KNOWN_MANIFEST_KEYS`, `KNOWN_LIB_DB_KEYS`,
-`HASH_EXTENSIONS`, `HSL_METADATA_EXTS`, `IMAGE_MIME_MAP`, `PKG_SIGNING_KEY`,
-`OEM_AUTHOR_PASSWORD_HASH`, `CONTAINER_MAGIC_PKG`, `CONTAINER_MAGIC_ARC`,
+`HASH_EXTENSIONS`, `HSL_METADATA_EXTS`, `IMAGE_MIME_MAP`,
+`CONTAINER_MAGIC_PKG`, `CONTAINER_MAGIC_ARC`,
 `packContainer`, `unpackContainer`, `escapeHtml`, `safeZipExtractPath`,
 `isValidLibraryName`, `computeFileHash`, `computeLibraryHashes`,
 `parseHslMetadataFooter`, `computeZipEntryHashes`, `signPackageZip`,
-`signPackageZipWithCert`, `verifyPackageSignature`, `loadTrustedCertificates`,
-`saveTrustedCertificate`, `validatePublisherCertificate`, `generateSigningKeyPair`,
+`signPackageZipWithCert`, `verifyPackageSignature`,
+`validatePublisherCertificate`, `generateSigningKeyPair`,
 `buildPublisherCertificate`, `computeKeyFingerprint`, `ed25519Sign`, `ed25519Verify`,
 `sanitizeHslForParsing`, `splitHslArgs`, `parseHslParameter`, `extractHslDocComment`,
 `parseHslFunctions`, `extractPublicFunctions`, `extractHslIncludes`,
 `isRestrictedAuthor`, `getMatchedRestrictedKeywords`, `validateAuthorPassword`,
 `validateOemCertificateMatch`, `sanitizeTag`, `sanitizeTagDetailed`, `sanitizeTags`,
-`filterReservedTags`, `isReservedGroupName`, `getAppVersion`, `getWindowsVersion`,
-`buildLineageEvent`
+`filterReservedTags`, `isReservedGroupName`, `sanitizeTagsWithFeedback`,
+`isReservedTag`, `validateGitHubRepoUrl`,
+`AUTHOR_MIN_LENGTH`, `AUTHOR_MAX_LENGTH`, `RESERVED_GROUP_NAMES`,
+`getAppVersion`, `getWindowsVersion`, `buildLineageEvent`

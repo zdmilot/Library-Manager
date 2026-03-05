@@ -65,7 +65,7 @@ namespace VenusLibraryManager
         [DispId(11)] string ListLibrariesIncludeDeleted();
         [DispId(12)] string GetLibrary(string nameOrId);
         [DispId(13)] string ImportLibrary(string packagePath);
-        [DispId(14)] string ImportLibraryEx(string packagePath, bool force, bool noGroup, bool noCache, string authorPassword, bool requireTrust);
+        [DispId(14)] string ImportLibraryEx(string packagePath, bool force, bool noGroup, bool noCache, string authorPassword);
         [DispId(15)] string ImportArchive(string archivePath);
         [DispId(16)] string ImportArchiveEx(string archivePath, bool force, bool noGroup, bool noCache, string authorPassword);
         [DispId(17)] string ExportLibrary(string nameOrId, string outputPath);
@@ -312,18 +312,17 @@ namespace VenusLibraryManager
 
         public string ImportLibrary(string packagePath)
         {
-            return ImportLibraryEx(packagePath, false, false, false, null, false);
+            return ImportLibraryEx(packagePath, false, false, false, null);
         }
 
-        public string ImportLibraryEx(string packagePath, bool force, bool noGroup, bool noCache, string authorPassword, bool requireTrust)
+        public string ImportLibraryEx(string packagePath, bool force, bool noGroup, bool noCache, string authorPassword)
         {
             return HttpUpload("/api/libraries/import", "package", packagePath,
                 new string[] {
                     "force", force.ToString().ToLower(),
                     "noGroup", noGroup.ToString().ToLower(),
                     "noCache", noCache.ToString().ToLower(),
-                    "authorPassword", authorPassword ?? "",
-                    "requireTrust", requireTrust.ToString().ToLower()
+                    "authorPassword", authorPassword ?? ""
                 });
         }
 
