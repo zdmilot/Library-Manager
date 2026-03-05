@@ -407,6 +407,27 @@
 <p><b>Note:</b> System libraries (those listed in <code>system_libraries.json</code>) are exempt from this check as they are distributed with the VENUS installation itself.</p>
 </div>
 
+<h3>OEM Verified Badge</h3>
+
+<p>Libraries published by a recognized OEM author display a <b>blue verified checkmark</b>
+<span style="display:inline-flex; align-items:center; gap:2px; color:#0a84ff; font-weight:600; vertical-align:middle;">
+<span style="display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:#0a84ff; color:#fff; font-size:8px;">&#10003;</span>
+</span>
+next to the author name. This badge appears across the application:</p>
+
+<ul>
+  <li><b>Library cards</b> &mdash; both user-installed and system library cards</li>
+  <li><b>Library detail modals</b> &mdash; next to the author and organization fields</li>
+  <li><b>Import preview</b> &mdash; shown when previewing a package before import</li>
+  <li><b>Settings library list</b> &mdash; in the accordion list under Settings</li>
+</ul>
+
+<p>The badge is a visual indicator only &mdash; it communicates that the library author matches a protected OEM identity. The actual enforcement (blocking packages that fail certificate verification) is handled by the certificate matching logic described above.</p>
+
+<div class="note">
+<p><b>Note:</b> A standalone HTML demonstration of the badge is available in the <code>blueCheck/</code> directory for documentation and screenshot purposes.</p>
+</div>
+
 <!-- ================================================================== -->
 <h2>End-to-End Integrity Lifecycle</h2>
 <!-- ================================================================== -->

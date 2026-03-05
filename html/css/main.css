@@ -1865,6 +1865,43 @@ body {
 	font-size: 0.6rem;
 }
 
+/* ---- OEM Verified Blue Checkmark Badge ---- */
+.oem-verified-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: #0a84ff;
+	vertical-align: middle;
+	cursor: default;
+	user-select: none;
+}
+
+.oem-verified-badge .oem-check-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: #0a84ff;
+	color: #fff;
+	font-size: 8px;
+	flex-shrink: 0;
+}
+
+/* Slightly larger variant for detail modals */
+.oem-verified-badge-lg {
+	font-size: 0.82rem;
+}
+
+.oem-verified-badge-lg .oem-check-icon {
+	width: 16px;
+	height: 16px;
+	font-size: 9px;
+}
+
 /* System section headers in All view */
 .imp-system-section-header {
 	font-size: 0.75rem;

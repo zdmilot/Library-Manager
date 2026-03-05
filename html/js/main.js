@@ -1279,6 +1279,21 @@
 		var isRestrictedAuthor = shared.isRestrictedAuthor;
 
 		/**
+		 * Build the OEM verified blue checkmark badge HTML for a given author name.
+		 * Returns an empty string if the author is not a restricted OEM name.
+		 * @param {string} author - Author or organization name
+		 * @param {boolean} [large=false] - Use the larger variant for detail modals
+		 * @returns {string} HTML string
+		 */
+		function buildOemVerifiedBadge(author, large) {
+			if (!isRestrictedAuthor(author)) return '';
+			var sizeClass = large ? ' oem-verified-badge-lg' : '';
+			return '<span class="oem-verified-badge' + sizeClass + '" title="Verified OEM publisher">' +
+				'<span class="oem-check-icon"><i class="fas fa-check"></i></span>' +
+			'</span>';
+		}
+
+		/**
 		 * Add a library ID to the gOEM tree group entry. Creates the entry if missing.
 		 * Uses raw file I/O to safely update tree.json (diskdb update may replace entire record).
 		 * @param {string} libId - The library _id to add to the OEM group
@@ -3511,6 +3526,8 @@
 				cardTooltipAttr = ' title="' + warnTooltip.replace(/"/g, '&quot;') + '"';
 			}
 
+			var oemBadge = buildOemVerifiedBadge(lib.author || '');
+
 			return '<div class="col-md-4 col-xl-3 d-flex align-items-stretch imp-lib-card-container" data-lib-id="' + lib._id + '">' +
 				'<div class="m-2 pl-3 pr-3 pt-3 pb-2 link-card imp-lib-card w-100' + cardExtraClass + '"' + cardTooltipAttr + '>' +
 					'<div class="d-flex align-items-start">' +
@@ -3518,7 +3535,7 @@
 						'<div class="flex-grow-1" style="min-width:0;">' +
 							'<h6 class="mb-0 imp-lib-card-name cursor-pointer" style="color:var(--medium2);">' + libName + comWarningBadge + deletedBadge + '</h6>' +
 							(version ? '<span class="text-muted text-sm">v' + version + '</span>' : '') +
-							(author ? '<div class="text-muted text-sm">' + author + '</div>' : '') +
+							(author ? '<div class="text-muted text-sm">' + author + ' ' + oemBadge + '</div>' : '') +
 						'</div>' +
 					'</div>' +
 					(shortDesc ? '<p class="text-muted mt-2 mb-1" style="font-size:0.85em;">' + shortDesc + '</p>' : '') +
@@ -4337,11 +4354,13 @@
 								libIcon = '<img src="data:' + libMime + ';base64,' + lib.library_image_base64 + '" class="ml-2 mr-2 mb-2 align-top pt-2" style="max-width:20px; max-height:20px; border-radius:3px;">';
 							}
 
+							var libSettingsOemBadge = buildOemVerifiedBadge(lib.author || '');
+
 							var libItemStr = '<div class="settings-links-method w-100 pt-2" data-id="'+lib._id+'">' +
 								libIcon +
 								'<div class="d-inline-block pb-2 link-namepath">' +
 									'<div class="name">' + libName + libVersion + '</div>' +
-									'<div class="path">' + (libAuthor ? libAuthor : '') + '</div>' +
+									'<div class="path">' + (libAuthor ? libAuthor + ' ' + libSettingsOemBadge : '') + '</div>' +
 								'</div>' +
 							'</div>';
 							$("#collapse_"+ group_id + " .card-body").append(libItemStr);
@@ -8030,6 +8049,8 @@
 				cardTooltipAttr = ' title="' + warnTooltip.replace(/"/g, '&quot;') + '"';
 			}
 
+			var sysOemBadge = buildOemVerifiedBadge(sLib.author || 'Hamilton');
+
 			var str =
 				'<div class="col-md-4 col-xl-3 d-flex align-items-stretch imp-lib-card-container imp-lib-card-system-container" data-lib-id="' + sLib._id + '" data-system="true">' +
 					'<div class="m-2 pl-3 pr-3 pt-3 pb-2 link-card imp-lib-card imp-lib-card-system w-100' + cardExtraClass + '"' + cardTooltipAttr + '>' +
@@ -8037,7 +8058,7 @@
 							'<div class="mr-3 mt-1 imp-lib-card-icon">' + iconHtml + '</div>' +
 							'<div class="flex-grow-1" style="min-width:0;">' +
 								'<h6 class="mb-0 imp-lib-card-name imp-lib-card-name-system" style="color:#6c757d;" title="' + libName.replace(/"/g, '&quot;') + '">' + libName + '</h6>' +
-								'<div class="text-muted text-sm">' + author + '</div>' +
+								'<div class="text-muted text-sm">' + author + ' ' + sysOemBadge + '</div>' +
 								'<span class="badge badge-secondary mt-1" style="font-size:0.6rem;"><i class="fas fa-lock mr-1"></i>Read-Only</span>' +
 							'</div>' +
 						'</div>' +
@@ -8083,8 +8104,19 @@
 			// Metadata
 			$("#libDetailModal .lib-detail-name").text(lib.library_name || "Unknown");
 			$("#libDetailModal .lib-detail-version").text(lib.version ? "v" + lib.version : "");
-			$("#libDetailModal .lib-detail-author").text(lib.author || "\u2014");
-			$("#libDetailModal .lib-detail-organization").text(lib.organization || "\u2014");
+			var detailAuthorText = lib.author || "\u2014";
+			var detailAuthorBadge = buildOemVerifiedBadge(lib.author || '', true);
+			if (detailAuthorBadge) {
+				$("#libDetailModal .lib-detail-author").html(escapeHtml(detailAuthorText) + ' ' + detailAuthorBadge);
+			} else {
+				$("#libDetailModal .lib-detail-author").text(detailAuthorText);
+			}
+			var detailOrgBadge = buildOemVerifiedBadge(lib.organization || '', true);
+			if (detailOrgBadge) {
+				$("#libDetailModal .lib-detail-organization").html(escapeHtml(lib.organization || "\u2014") + ' ' + detailOrgBadge);
+			} else {
+				$("#libDetailModal .lib-detail-organization").text(lib.organization || "\u2014");
+			}
 			$("#libDetailModal .lib-detail-venus").text(lib.venus_compatibility || "\u2014");
 			$("#libDetailModal .lib-detail-installed-date").text(lib.installed_date ? new Date(lib.installed_date).toLocaleString() : "\u2014");
 			$("#libDetailModal .lib-detail-created-date").text(lib.created_date ? new Date(lib.created_date).toLocaleString() : "\u2014");
@@ -8715,8 +8747,20 @@
 			$("#libDetailModal .lib-detail-name").text(sLib.display_name || sLib.canonical_name || "Unknown");
 			var sysVerText = sLib.venus_version ? "System Library (VENUS " + sLib.venus_version + ")" : "System Library";
 			$("#libDetailModal .lib-detail-version").text(sysVerText);
-			$("#libDetailModal .lib-detail-author").text(sLib.author || "Hamilton");
-			$("#libDetailModal .lib-detail-organization").text(sLib.organization || "Hamilton");
+			var sysAuthor = sLib.author || "Hamilton";
+			var sysAuthorOemBadge = buildOemVerifiedBadge(sysAuthor, true);
+			if (sysAuthorOemBadge) {
+				$("#libDetailModal .lib-detail-author").html(escapeHtml(sysAuthor) + ' ' + sysAuthorOemBadge);
+			} else {
+				$("#libDetailModal .lib-detail-author").text(sysAuthor);
+			}
+			var sysDetailOrg = sLib.organization || "Hamilton";
+			var sysOrgOemBadge = buildOemVerifiedBadge(sysDetailOrg, true);
+			if (sysOrgOemBadge) {
+				$("#libDetailModal .lib-detail-organization").html(escapeHtml(sysDetailOrg) + ' ' + sysOrgOemBadge);
+			} else {
+				$("#libDetailModal .lib-detail-organization").text(sysDetailOrg);
+			}
 			$("#libDetailModal .lib-detail-venus").text(sLib.venus_version || "\u2014");
 			$("#libDetailModal .lib-detail-installed-date").text(sLib.installed_date ? new Date(sLib.installed_date).toLocaleString() : "Included with VENUS");
 			$("#libDetailModal .lib-detail-installed-by").text(sLib.installed_by || "System");
@@ -10737,8 +10781,18 @@
 				// Metadata
 				$modal.find(".imp-preview-name").text(libName);
 				$modal.find(".imp-preview-version").text(manifest.version ? "v" + manifest.version : "");
-				$modal.find(".imp-preview-author").text(manifest.author || "\u2014");
-				$modal.find(".imp-preview-organization").text(manifest.organization || "\u2014");
+				var impAuthorBadge = buildOemVerifiedBadge(manifest.author || '', true);
+				if (impAuthorBadge) {
+					$modal.find(".imp-preview-author").html(escapeHtml(manifest.author || "\u2014") + ' ' + impAuthorBadge);
+				} else {
+					$modal.find(".imp-preview-author").text(manifest.author || "\u2014");
+				}
+				var impOrgBadge = buildOemVerifiedBadge(manifest.organization || '', true);
+				if (impOrgBadge) {
+					$modal.find(".imp-preview-organization").html(escapeHtml(manifest.organization || "\u2014") + ' ' + impOrgBadge);
+				} else {
+					$modal.find(".imp-preview-organization").text(manifest.organization || "\u2014");
+				}
 				$modal.find(".imp-preview-venus").text(manifest.venus_compatibility || "\u2014");
 				$modal.find(".imp-preview-created").text(manifest.created_date ? new Date(manifest.created_date).toLocaleString() : "\u2014");
 
