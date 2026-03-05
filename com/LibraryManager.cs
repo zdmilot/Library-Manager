@@ -87,8 +87,6 @@ namespace VenusLibraryManager
         // -- Publishers --
         [DispId(50)] string ListPublishers();
         [DispId(51)] string GenerateKeypair(string publisher, string organization, string outputDir);
-        [DispId(52)] string TrustPublisher(string certPath);
-        [DispId(53)] string RevokePublisher(string certPath);
 
         // -- System Libraries --
         [DispId(60)] string GetSystemLibraries();
@@ -438,18 +436,6 @@ namespace VenusLibraryManager
                         + ",\"organization\":" + JsonEscape(organization)
                         + ",\"outputDir\":" + JsonEscape(outputDir) + "}";
             return HttpPost("/api/publishers/generate-keypair", body);
-        }
-
-        public string TrustPublisher(string certPath)
-        {
-            string body = "{\"certPath\":" + JsonEscape(certPath) + ",\"revoke\":false}";
-            return HttpPost("/api/publishers/trust", body);
-        }
-
-        public string RevokePublisher(string certPath)
-        {
-            string body = "{\"certPath\":" + JsonEscape(certPath) + ",\"revoke\":true}";
-            return HttpPost("/api/publishers/trust", body);
         }
 
         // ================================================================

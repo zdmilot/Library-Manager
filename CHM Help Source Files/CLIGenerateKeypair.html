@@ -10,7 +10,7 @@
 <div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; generate-keypair</div>
 
 <h2>Description</h2>
-<p>Generates an Ed25519 key pair for code signing library packages. The resulting private key (<code>.key.pem</code>) is used to sign packages during creation (with <code>create-package --sign-key</code>), while the publisher certificate (<code>.cert.json</code>) is distributed to package consumers. The certificate is automatically registered as trusted in the local publisher registry unless <code>--no-trust</code> is specified.</p>
+<p>Generates an Ed25519 key pair for code signing library packages. The resulting private key (<code>.key.pem</code>) is used to sign packages during creation (with <code>create-package --sign-key</code>), while the publisher certificate (<code>.cert.json</code>) is distributed to package consumers.</p>
 
 <h2>Usage</h2>
 <div class="code"><pre>node cli.js generate-keypair --publisher &lt;name&gt; [options]</pre></div>
@@ -23,7 +23,6 @@
 <tr><td><code>--organization &lt;name&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Organization name</td></tr>
 <tr><td><code>--output-dir &lt;dir&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Output directory for key files. Default: current working directory</td></tr>
 <tr><td><code>--force</code></td><td><span class="badge badge-optional">Optional</span></td><td>Overwrite existing key/cert files</td></tr>
-<tr><td><code>--no-trust</code></td><td><span class="badge badge-optional">Optional</span></td><td>Do not auto-register the certificate as trusted in the local publisher registry</td></tr>
 <tr><td><code>--author-password &lt;pw&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Required when the publisher name is a restricted OEM name</td></tr>
 </tbody>
 </table>
@@ -59,15 +58,15 @@ node cli.js generate-keypair --publisher "Jane Smith" --force</pre></div>
 <h2>Code Signing Workflow</h2>
 <ol>
   <li>Generate a key pair with <code>generate-keypair</code></li>
+  <li>Trust the certificate in <b>Settings &rarr; Trusted Publishers</b></li>
   <li>Create signed packages with <code>create-package --sign-key &lt;key.pem&gt;</code></li>
   <li>Distribute the <code>.cert.json</code> to package consumers</li>
-  <li>Consumers trust the certificate with <code>trust-publisher --cert &lt;cert.json&gt;</code></li>
+  <li>Consumers trust the certificate in their Settings</li>
   <li>On import, packages signed by trusted publishers show as <b>TRUSTED</b></li>
 </ol>
 
 <h2>Related</h2>
 <ul>
-  <li><a href="CLITrustPublisher.html">CLI: trust-publisher</a></li>
   <li><a href="CLIListPublishers.html">CLI: list-publishers</a></li>
   <li><a href="CLICreatePackage.html">CLI: create-package</a> (code signing options)</li>
   <li><a href="IntegrityVerification.html">Integrity Verification</a></li>

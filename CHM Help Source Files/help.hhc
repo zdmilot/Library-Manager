@@ -255,10 +255,6 @@
 				<param name="Local" value="RESTGenerateKeypair.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="POST /api/publishers/trust">
-				<param name="Local" value="RESTTrustPublisher.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="GET /api/system-libraries">
 				<param name="Local" value="RESTSystemLibraries.html">
 				</OBJECT>

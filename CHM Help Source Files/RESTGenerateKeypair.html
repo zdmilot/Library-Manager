@@ -13,7 +13,7 @@
 <div class="code"><pre>POST /api/publishers/generate-keypair</pre></div>
 
 <h2>Description</h2>
-<p>Generates a new Ed25519 key pair for package code signing. Equivalent to the CLI command <code>generate-keypair</code>. Creates a private key PEM, a public key PEM, and a publisher certificate JSON file. By default, the new certificate is automatically registered as trusted.</p>
+<p>Generates a new Ed25519 key pair for package code signing. Equivalent to the CLI command <code>generate-keypair</code>. Creates a private key PEM and a publisher certificate JSON file.</p>
 
 <h2>Parameters</h2>
 
@@ -25,7 +25,6 @@
 <tr><td><code>organization</code></td><td>string</td><td>No</td><td>&mdash;</td><td>Organization name (3&ndash;29 characters if provided)</td></tr>
 <tr><td><code>outputDir</code></td><td>string</td><td>No</td><td>Current working directory</td><td>Output directory for generated key files</td></tr>
 <tr><td><code>force</code></td><td>boolean</td><td>No</td><td><code>false</code></td><td>Overwrite existing key files</td></tr>
-<tr><td><code>noTrust</code></td><td>boolean</td><td>No</td><td><code>false</code></td><td>Do not automatically register the certificate as trusted</td></tr>
 <tr><td><code>authorPassword</code></td><td>string</td><td>No</td><td>&mdash;</td><td>OEM author password (required for restricted publisher names)</td></tr>
 </tbody>
 </table>
@@ -41,49 +40,29 @@
     "organization": "Acme Labs",
     "keyId": "abc123def456",
     "fingerprint": "SHA256:abcdef1234567890...",
-    "privateKeyPath": "C:\\Keys\\JohnDoe.private.pem",
-    "publicKeyPath": "C:\\Keys\\JohnDoe.public.pem",
-    "certPath": "C:\\Keys\\JohnDoe.cert.json",
-    "trusted": true
+    "privateKeyPath": "C:\\Keys\\john_doe.key.pem",
+    "certPath": "C:\\Keys\\john_doe.cert.json"
   }
 }</pre></div>
 
 <h2>Examples</h2>
 
 <h3>cURL</h3>
-<div class="code"><pre># Generate a keypair with auto-trust
+<div class="code"><pre># Generate a keypair
 curl -X POST http://localhost:5555/api/publishers/generate-keypair \
   -H "Content-Type: application/json" \
   -d '{
     "publisher": "John Doe",
     "organization": "Acme Labs",
     "outputDir": "C:\\Keys"
-  }'
-
-# Generate without auto-trust
-curl -X POST http://localhost:5555/api/publishers/generate-keypair \
-  -H "Content-Type: application/json" \
-  -d '{
-    "publisher": "John Doe",
-    "outputDir": "C:\\Keys",
-    "noTrust": true
   }'</pre></div>
 
 <h3>PowerShell</h3>
-<div class="code"><pre># Generate a keypair with auto-trust
+<div class="code"><pre># Generate a keypair
 $body = @{
     publisher    = "John Doe"
     organization = "Acme Labs"
     outputDir    = "C:\Keys"
-} | ConvertTo-Json
-Invoke-RestMethod -Uri http://localhost:5555/api/publishers/generate-keypair `
-  -Method POST -ContentType "application/json" -Body $body
-
-# Generate without auto-trust
-$body = @{
-    publisher = "John Doe"
-    outputDir = "C:\Keys"
-    noTrust   = $true
 } | ConvertTo-Json
 Invoke-RestMethod -Uri http://localhost:5555/api/publishers/generate-keypair `
   -Method POST -ContentType "application/json" -Body $body</pre></div>
@@ -101,7 +80,6 @@ Invoke-RestMethod -Uri http://localhost:5555/api/publishers/generate-keypair `
 <h2>Related</h2>
 <ul>
   <li><a href="RESTListPublishers.html">REST API: GET /api/publishers</a></li>
-  <li><a href="RESTTrustPublisher.html">REST API: POST /api/publishers/trust</a></li>
   <li><a href="RESTCreatePackage.html">REST API: POST /api/packages/create</a></li>
 </ul>
 </div>

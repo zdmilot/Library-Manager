@@ -473,7 +473,7 @@ var openApiSpec = {
         '/api/publishers/generate-keypair': {
             post: {
                 tags: ['Publishers'], summary: 'Generate Ed25519 signing keypair', operationId: 'generateKeypair',
-                description: 'Generate a new Ed25519 key pair for package code signing. Equivalent to CLI `generate-keypair`.',
+                description: 'Generate a new Ed25519 key pair for package code signing.',
                 requestBody: { required: true, content: { 'application/json': { schema: {
                     type: 'object', required: ['publisher'],
                     properties: {
@@ -481,30 +481,12 @@ var openApiSpec = {
                         organization:   { type: 'string', description: 'Organization name' },
                         outputDir:      { type: 'string', description: 'Output directory for key files' },
                         force:          { type: 'boolean', default: false },
-                        noTrust:        { type: 'boolean', default: false, description: 'Do not auto-register as trusted' },
                         authorPassword: { type: 'string', description: 'OEM author password' }
                     }
                 }}}},
                 responses: {
                     '200': { description: 'Keypair generated', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } } },
                     '400': { description: 'Generation failed', content: { 'application/json': { schema: { '$ref': '#/components/schemas/Error' } } } }
-                }
-            }
-        },
-        '/api/publishers/trust': {
-            post: {
-                tags: ['Publishers'], summary: 'Trust or revoke a publisher', operationId: 'trustPublisher',
-                description: 'Trust or revoke a publisher certificate. Equivalent to CLI `trust-publisher`.',
-                requestBody: { required: true, content: { 'application/json': { schema: {
-                    type: 'object', required: ['certPath'],
-                    properties: {
-                        certPath: { type: 'string', description: 'Path to .cert.json file on server' },
-                        revoke:   { type: 'boolean', default: false, description: 'Revoke instead of trust' }
-                    }
-                }}}},
-                responses: {
-                    '200': { description: 'Publisher trust updated', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } } },
-                    '400': { description: 'Operation failed', content: { 'application/json': { schema: { '$ref': '#/components/schemas/Error' } } } }
                 }
             }
         },
@@ -864,22 +846,9 @@ app.post('/api/publishers/generate-keypair', function(req, res) {
                 organization:   body.organization,
                 outputDir:      body.outputDir,
                 force:          body.force === true,
-                noTrust:        body.noTrust === true,
+                noTrust:        true,
                 authorPassword: body.authorPassword
             });
-            releaseMutex();
-            sendResult(res, result);
-        } catch(e) { releaseMutex(); res.status(500).json({ success: false, error: sanitizeErrorMessage(e.message) }); }
-    });
-});
-
-// Trust/revoke publisher (mutex-protected; modifies trust registry)
-app.post('/api/publishers/trust', function(req, res) {
-    acquireMutex().then(function() {
-        try {
-            var ctx = service.createContext();
-            var body = req.body || {};
-            var result = service.trustPublisher(ctx, { certPath: body.certPath, revoke: body.revoke === true });
             releaseMutex();
             sendResult(res, result);
         } catch(e) { releaseMutex(); res.status(500).json({ success: false, error: sanitizeErrorMessage(e.message) }); }

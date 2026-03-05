@@ -78,7 +78,6 @@ node rest-api.js --host 0.0.0.0 --port 5555</pre></div>
 <tr><td><code>POST</code></td><td><code>/api/packages/verify</code></td><td>Verify package integrity</td><td><a href="RESTVerifyPackage.html">Details</a></td></tr>
 <tr><td><code>GET</code></td><td><code>/api/publishers</code></td><td>List publishers</td><td><a href="RESTListPublishers.html">Details</a></td></tr>
 <tr><td><code>POST</code></td><td><code>/api/publishers/generate-keypair</code></td><td>Generate Ed25519 keypair</td><td><a href="RESTGenerateKeypair.html">Details</a></td></tr>
-<tr><td><code>POST</code></td><td><code>/api/publishers/trust</code></td><td>Trust/revoke publisher</td><td><a href="RESTTrustPublisher.html">Details</a></td></tr>
 <tr><td><code>GET</code></td><td><code>/api/system-libraries</code></td><td>List system libraries</td><td><a href="RESTSystemLibraries.html">Details</a></td></tr>
 <tr><td><code>GET</code></td><td><code>/api/system-libraries/verify</code></td><td>Verify system library hashes</td><td><a href="RESTVerifySyslibHashes.html">Details</a></td></tr>
 <tr><td><code>POST</code></td><td><code>/api/system-libraries/generate-hashes</code></td><td>Generate baseline hashes</td><td><a href="RESTGenerateSyslibHashes.html">Details</a></td></tr>
@@ -163,7 +162,6 @@ Invoke-RestMethod -Uri http://localhost:5555/api/libraries/import `
 <tr><td><code>generate-syslib-hashes</code></td><td><code>POST /api/system-libraries/generate-hashes</code></td><td><code>GenerateSyslibHashes(dir, out)</code></td></tr>
 <tr><td><code>verify-syslib-hashes</code></td><td><code>GET /api/system-libraries/verify</code></td><td><code>VerifySyslibHashes()</code></td></tr>
 <tr><td><code>generate-keypair</code></td><td><code>POST /api/publishers/generate-keypair</code></td><td><code>GenerateKeypair(publisher, org, outDir)</code></td></tr>
-<tr><td><code>trust-publisher</code></td><td><code>POST /api/publishers/trust</code></td><td><code>TrustPublisher(certPath)</code> / <code>RevokePublisher(certPath)</code></td></tr>
 <tr><td><code>list-publishers</code></td><td><code>GET /api/publishers</code></td><td><code>ListPublishers()</code></td></tr>
 </tbody>
 </table>

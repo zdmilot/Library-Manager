@@ -68,7 +68,6 @@ RESTCreatePackage.html
 RESTVerifyPackage.html
 RESTListPublishers.html
 RESTGenerateKeypair.html
-RESTTrustPublisher.html
 RESTSystemLibraries.html
 RESTVerifySyslibHashes.html
 RESTGenerateSyslibHashes.html

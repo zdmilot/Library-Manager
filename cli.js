@@ -24,7 +24,6 @@
  *   generate-syslib-hashes Generate integrity baseline for system libraries
  *   verify-syslib-hashes   Verify system libraries against baseline
  *   generate-keypair       Generate an Ed25519 signing key pair for code signing
- *   trust-publisher        Trust or revoke a publisher signing certificate
  *   list-publishers        List registered publisher certificates
  *
  * Run `node cli.js help` for full usage.
@@ -918,7 +917,7 @@ function cmdImportLib(args) {
                 } else {
                     console.log('  Publisher trust: UNTRUSTED (publisher not in trusted registry)');
                     if (!args['force'] && args['require-trust']) {
-                        die('Package publisher is not trusted. Use --force to import anyway, or trust the publisher with "trust-publisher".');
+                        die('Package publisher is not trusted. Use --force to import anyway, or trust the publisher in Settings.');
                     }
                 }
             }
@@ -2244,7 +2243,6 @@ COMMANDS
   verify-syslib-hashes     Verify system libraries against baseline
   verify-package     Verify integrity signature of a .hxlibpkg or .hxlibarch
   generate-keypair   Generate an Ed25519 signing key pair for code signing
-  trust-publisher    Trust or revoke a publisher's signing certificate
   list-publishers    List registered publisher certificates
   help               Show this help text
 
@@ -2463,31 +2461,16 @@ generate-keypair
   Generate an Ed25519 signing key pair for code signing packages.
   The private key (.key.pem) must be kept SECRET.
   The certificate (.cert.json) can be freely distributed to package consumers.
-
   --publisher <name>    [required]  Publisher name (appears in signed packages)
   --organization <name>             Organization or company name
   --output-dir <dir>                Directory for output files (default: current dir)
   --force                           Overwrite existing key files
-  --no-trust                        Don't auto-register cert in local trust store
   --author-password <pw>            Required for restricted OEM publisher names
 
   Examples:
     node cli.js generate-keypair --publisher "Jane Smith"
     node cli.js generate-keypair --publisher "Lab Team" --organization "Acme Pharma"
     node cli.js generate-keypair --publisher "Builder" --output-dir ./keys
-
-──────────────────────────────────────────────────────────────────────────────
-trust-publisher
-  Add or revoke trust for a publisher's signing certificate.
-  Trusted publisher certificates are stored in the local publisher registry.
-  Packages signed by trusted publishers show a verified trust badge.
-
-  --cert <path>   [required]  Path to publisher certificate (.cert.json)
-  --revoke                    Revoke trust instead of granting it
-
-  Examples:
-    node cli.js trust-publisher --cert publisher.cert.json
-    node cli.js trust-publisher --cert publisher.cert.json --revoke
 
 ──────────────────────────────────────────────────────────────────────────────
 list-publishers
@@ -2732,58 +2715,6 @@ function cmdGenerateKeypair(args) {
     console.log('  Fingerprint : ' + cert.fingerprint);
     console.log('\n  IMPORTANT: Keep the private key (.key.pem) SECRET.');
     console.log('  Distribute the certificate (.cert.json) to package consumers.');
-
-    // Auto-trust the certificate in the local publisher registry
-    if (!args['no-trust']) {
-        const regPath = resolvePublisherRegistryPath();
-        if (saveTrustedCertificate(regPath, cert, true)) {
-            console.log('\n  Certificate auto-registered as trusted in local publisher registry.');
-        }
-    }
-}
-
-// ===========================================================================
-// COMMAND: trust-publisher
-// ===========================================================================
-function cmdTrustPublisher(args) {
-    const certPath = args['cert'];
-    if (!certPath)                  die('--cert <path> is required (path to .cert.json)');
-    if (!fs.existsSync(certPath))   die('Certificate file not found: ' + certPath);
-
-    let cert;
-    try {
-        cert = JSON.parse(fs.readFileSync(certPath, 'utf8'));
-    } catch (e) {
-        die('Failed to parse certificate: ' + e.message);
-    }
-
-    const certCheck = validatePublisherCertificate(cert);
-    if (!certCheck.valid) {
-        die('Invalid certificate:\n  ' + certCheck.errors.join('\n  '));
-    }
-
-    const regPath = resolvePublisherRegistryPath();
-    const revoke = !!args['revoke'];
-
-    if (revoke) {
-        if (saveTrustedCertificate(regPath, cert, false)) {
-            console.log('Publisher certificate revoked:');
-        } else {
-            die('Failed to update publisher registry.');
-        }
-    } else {
-        if (saveTrustedCertificate(regPath, cert, true)) {
-            console.log('Publisher certificate trusted:');
-        } else {
-            die('Failed to update publisher registry.');
-        }
-    }
-
-    console.log('  Publisher    : ' + cert.publisher);
-    if (cert.organization) console.log('  Organization : ' + cert.organization);
-    console.log('  Key ID      : ' + cert.key_id);
-    console.log('  Fingerprint : ' + cert.fingerprint);
-    console.log('  Status      : ' + (revoke ? 'REVOKED' : 'TRUSTED'));
 }
 
 // ===========================================================================
@@ -2812,8 +2743,8 @@ function cmdListPublishers(args) {
 
     if (publishersWithCerts.length === 0) {
         console.log('No publishers with signing certificates registered.');
-        console.log('Use "generate-keypair" to create a signing key pair, or');
-        console.log('"trust-publisher" to trust an existing publisher certificate.');
+        console.log('Use "generate-keypair" to create a signing key pair, then');
+        console.log('trust the certificate in Settings.');
         return;
     }
 
@@ -2859,7 +2790,6 @@ switch (command) {
     case 'verify-syslib-hashes':    cmdVerifySyslibHashes(args);    break;
     case 'verify-package':          cmdVerifyPackage(args);          break;
     case 'generate-keypair':        cmdGenerateKeypair(args);        break;
-    case 'trust-publisher':         cmdTrustPublisher(args);         break;
     case 'list-publishers':         cmdListPublishers(args);         break;
     case 'help':
     case '--help':
