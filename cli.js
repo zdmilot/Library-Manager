@@ -78,6 +78,7 @@ const PACKAGE_STORE_DIR = path.join(LOCAL_DATA_DIR, 'packages');
 const DEFAULT_GROUPS = {
     gAll:      { _id: 'gAll',      name: 'All',      'icon-class': 'fa-home',         'default': true, navbar: 'left',  favorite: true  },
     gRecent:   { _id: 'gRecent',   name: 'Recent',   'icon-class': 'fa-history',      'default': true, navbar: 'left',  favorite: true  },
+    gStarred:  { _id: 'gStarred',  name: 'Starred',  'icon-class': 'fa-star',         'default': true, navbar: 'left',  favorite: true, 'protected': true },
     gFolders:  { _id: 'gFolders',  name: 'Import',   'icon-class': 'fa-download',     'default': true, navbar: 'right', favorite: false },
     gEditors:  { _id: 'gEditors',  name: 'Export',   'icon-class': 'fa-upload',       'default': true, navbar: 'right', favorite: true  },
     gHistory:  { _id: 'gHistory',  name: 'History',  'icon-class': 'fa-list',         'default': true, navbar: 'right', favorite: true  },
@@ -332,7 +333,7 @@ function ensureLocalDataDir(dirPath) {
         'settings.json': '[{"_id":"0"}]',
         'installed_libs.json': '[]',
         'groups.json': '[]',
-        'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gOEM","method-ids":[],"locked":true}]',
+        'tree.json': '[{"group-id":"gAll","method-ids":[],"locked":false},{"group-id":"gRecent","method-ids":[],"locked":false},{"group-id":"gStarred","method-ids":[],"locked":false},{"group-id":"gFolders","method-ids":[],"locked":false},{"group-id":"gEditors","method-ids":[],"locked":false},{"group-id":"gHistory","method-ids":[],"locked":false},{"group-id":"gOEM","method-ids":[],"locked":true}]',
         'links.json': '[]'
     };
     for (const [fname, content] of Object.entries(seeds)) {
@@ -2713,7 +2714,7 @@ function cmdGenerateKeypair(args) {
         fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    fs.writeFileSync(keyFilePath, keypair.privateKeyPem, 'utf8');
+    fs.writeFileSync(keyFilePath, keypair.privateKeyPem, { encoding: 'utf8', mode: 0o600 });
     fs.writeFileSync(certFilePath, JSON.stringify(cert, null, 2), 'utf8');
 
     console.log('\nKey pair generated successfully:');

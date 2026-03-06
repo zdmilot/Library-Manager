@@ -1,234 +1,239 @@
 # Code Map: html/js/main.js
 
-**File**: `html/js/main.js` | **Lines**: 13,673 | **Purpose**: NW.js GUI application logic
+**File**: `html/js/main.js` | **Lines**: 13,474 | **Purpose**: NW.js GUI application logic
 
 ## Imports
 
 | Line | Module | Purpose |
 |------|--------|---------|
-| L4   | `nw.gui` | NW.js GUI API |
-| L6   | `path` | Node.js path utilities |
-| L7   | `child_process.spawn` | Process spawning |
-| L37  | `fs` | Filesystem |
-| L39  | `os` | OS info |
-| L40  | `crypto` | Hashing |
-| L41  | `../lib/shared` | Shared utilities |
-| L755 | `diskdb` | JSON database |
-| L5676| `adm-zip` | ZIP handling |
-| L5677| `child_process.execSync` | Synchronous command execution |
+| L5   | `nw.gui` | NW.js GUI API |
+| L7   | `path` | Node.js path utilities |
+| L8   | `child_process.spawn` | Process spawning |
+| L111 | `fs` | Filesystem |
+| L113 | `os` | OS info |
+| L114 | `crypto` | Hashing |
+| L115 | `../lib/shared` | Shared utilities |
+| L824 | `diskdb` | JSON database |
+| L5727| `adm-zip` | ZIP handling |
+| L5728| `child_process.execSync` | Synchronous command execution |
 
 ## Global State Variables
 
 | Line | Name | Purpose |
 |------|------|---------|
-| L108 | `_cachedGroups` | Windows security group cache |
-| L380 | `_isImporting` | Import concurrency guard |
-| L388 | `_cachedVENUSVersion` | Cached VENUS version |
-| L484 | `_evtHistoryEntries` | Loaded audit trail events |
-| L800 | `APP_ROOT` | Application root directory |
-| L813 | `LOCAL_DATA_DIR` | Data storage directory |
-| L854 | `db_*` | DiskDB collection handles (6 collections) |
-| L997 | `_publisherRegistryPath` | Publisher registry file path |
-| L1225| `systemLibraries` | System library definitions |
-| L1805| `bool_treeChanged` | Navigation tree dirty flag |
-| L2330| `_searchTimeout` | Search debounce timer |
-| L5678| `pkg_*` | Package creator form state (7 vars) |
-| L7148| `imp_*` | Importer state (3 vars) |
-| L7667| `_integrityCache`, `_depCache` | Verification caches |
-| L11422| `AUDIT_SIGNING_KEY` | Audit log HMAC key |
-| L12308| `ulib_*` | Unsigned library modal state (7 vars) |
+| L176 | `_cachedGroups` | Windows security group cache |
+| L441 | `_isImporting` | Import concurrency guard |
+| L448 | `_cachedVENUSVersion` | Cached VENUS version |
+| L555 | `_evtHistoryEntries` | Loaded audit trail events |
+| L869 | `APP_ROOT` | Application root directory |
+| L887 | `LOCAL_DATA_DIR` | Data storage directory |
+| L923 | `db_settings` | DiskDB settings handle |
+| L1057| `db_links` | DiskDB links handle |
+| L1058| `db_groups` | DiskDB groups handle |
+| L1059| `db_tree` | DiskDB tree handle |
+| L1060| `db_installed_libs` | DiskDB installed libs handle |
+| L1061| `db_unsigned_libs` | DiskDB unsigned libs handle |
+| L1070| `_publisherRegistryPath` | Publisher registry file path |
+| L1290| `systemLibraries` | System library definitions |
+| L1866| `bool_treeChanged` | Navigation tree dirty flag |
+| L2399| `_searchTimeout` | Search debounce timer |
+| L5729| `pkg_*` | Package creator form state (7+ vars) |
+| L6985| `imp_*` | Importer state (3 vars) |
+| L7643| `_integrityCache`, `_depCache` | Verification caches |
+| L11335| `AUDIT_SIGNING_KEY` | Audit log HMAC key |
+| L12215| `ulib_*` | Unsigned library modal state (6+ vars) |
 
 ## Function Sections
 
-### Error Handling & Security (L13–256)
+### Error Handling & Security (L1–330)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L13  | `window.onerror` | Global error handler |
-| L58  | `getWindowsUsername()` | Get Windows username |
-| L88  | `isWindowsAdmin()` | Check admin status |
-| L110 | `getWindowsGroups()` | Get user's Windows groups |
-| L151 | `isInAnyGroup(targets)` | Group membership check |
-| L177 | `canManageLibraries()` | Access control gate |
-| L243 | `showAccessDeniedModal(action, reason)` | Show access denied dialog |
+| L133 | `getWindowsUsername()` | Get Windows username |
+| L163 | `isWindowsAdmin()` | Check admin status |
+| L185 | `getWindowsGroups()` | Get user's Windows groups |
+| L222 | `isInAnyGroup(targets)` | Group membership check |
+| L252 | `canManageLibraries()` | Access control gate |
+| L318 | `showAccessDeniedModal(action, reason)` | Show access denied dialog |
 
-### VENUS Integration (L258–378)
+### VENUS Integration (L333–455)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L258 | `getVENUSInstallInfo()` | Query registry for VENUS install |
-| L328 | `ensureSystemLibraryMetadata()` | First-run system lib metadata |
+| L333 | `getVENUSInstallInfo()` | Query registry for VENUS install |
+| L403 | `ensureSystemLibraryMetadata()` | First-run system lib metadata |
 
-### Audit Trail (L384–735)
+### Audit Trail (L459–815)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L384 | `appendAuditTrailEntry(entry)` | Write audit entry |
-| L423 | `buildAuditTrailEntry(type, details)` | Build audit entry |
-| L486 | `loadAuditTrail()` | Read audit trail |
-| L521 | `buildEventDetailHtml(entry)` | Render event detail HTML |
-| L544 | `renderEventRow(entry)` | Render event row |
-| L592 | `filterEventHistory()` | Filter events by search/category |
-| L626 | `openEventHistoryModal()` | Open event history dialog |
-| L685 | `exportEventHistoryCsv()` | Export events to CSV |
+| L459 | `appendAuditTrailEntry(entry)` | Write audit entry |
+| L498 | `buildAuditTrailEntry(type, details)` | Build audit entry |
+| L561 | `loadAuditTrail()` | Read audit trail |
+| L596 | `buildEventDetailHtml(entry)` | Render event detail HTML |
+| L619 | `renderEventRow(entry)` | Render event row |
+| L667 | `filterEventHistory()` | Filter events by search/category |
+| L701 | `openEventHistoryModal()` | Open event history dialog |
+| L760 | `exportEventHistoryCsv()` | Export events to CSV |
 
-### Data Layer & Migration (L766–1190)
+### Data Layer & Migration (L824–1290)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L766 | `getGroupById(id)` | Look up group by ID |
-| L816 | `ensureLocalDataDir(dirPath)` | Create/seed data directory |
-| L858 | `migrateToLocalDir()` | Legacy data migration (IIFE) |
-| L999 | `loadPublisherRegistry()` | Load publisher/tag registry |
-| L1027| `registerPublisher(name)` | Register a publisher name |
-| L1047| `registerTags(tags)` | Register tag names |
-| L1103| `rebuildPublisherRegistry()` | Full registry rebuild |
-| L1148| `migrateDefaultGroups()` | Remove defaults from DB (IIFE) |
+| L841 | `getGroupById(id)` | Look up group by ID |
+| L890 | `ensureLocalDataDir(dirPath)` | Create/seed data directory |
+| L932 | `migrateToLocalDir()` | Legacy data migration (IIFE) |
+| L1073| `loadPublisherRegistry()` | Load publisher/tag registry |
+| L1101| `registerPublisher(name)` | Register a publisher name |
+| L1121| `registerTags(tags)` | Register tag names |
+| L1169| `rebuildPublisherRegistry()` | Full registry rebuild |
+| L1214| `migrateDefaultGroups()` | Remove defaults from DB (IIFE) |
 
-### System Libraries (L1225–1700)
+### System Libraries (L1290–1866)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L1291| `buildOemVerifiedBadge(author, large, cert)` | OEM badge HTML |
-| L1350| `addToOemTreeGroup(libId)` | Add lib to OEM group |
-| L1387| `promptAuthorPassword()` | Password prompt (Promise) |
-| L1427| `isSystemLibrary(libId)` | Check system lib |
-| L1454| `getPackageStoreDir()` | Get package cache dir |
-| L1484| `cachePackageToStore(buf, name, ver)` | Cache package |
-| L1501| `listCachedVersions(libName)` | List cached versions |
-| L1554| `backupSystemLibrary(sLib)` | Backup single system lib |
-| L1663| `backupAllSystemLibraries()` | Backup all system libs |
-| L1711| `repairSystemLibraryFromCache(name, silent)` | Repair from cache |
+| L1356| `buildOemVerifiedBadge(author, large, cert)` | OEM badge HTML |
+| L1416| `addToOemTreeGroup(libId)` | Add lib to OEM group |
+| L1453| `promptAuthorPassword()` | Password prompt (Promise) |
+| L1493| `isSystemLibrary(libId)` | Check system lib |
+| L1520| `getPackageStoreDir()` | Get package cache dir |
+| L1550| `cachePackageToStore(buf, name, ver)` | Cache package |
+| L1567| `listCachedVersions(libName)` | List cached versions |
+| L1620| `backupSystemLibrary(sLib)` | Backup single system lib |
+| L1729| `backupAllSystemLibraries()` | Backup all system libs |
+| L1777| `repairSystemLibraryFromCache(name, silent)` | Repair from cache |
 
-### Window & Layout (L1838–4260)
+### Window & Layout (L1907–4290)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L1838| `_windowLoadInit()` | Window initialization (IIFE) |
-| L4236| `waitForFinalEvent` | Debounce utility |
-| L4249| `fitMainDivHeight()` | Adjust content height |
-| L4260| `fitNavBarItems()` | Responsive navbar |
+| L1907| `_windowLoadInit()` | Window initialization (IIFE) |
+| L4249| `waitForFinalEvent` | Debounce utility |
+| L4265| `fitMainDivHeight()` | Adjust content height |
+| L4279| `fitNavBarItems()` | Responsive navbar |
 
-### Search System (L2336–3500)
+### Search System (L2399–3570)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L2350| `_buildSysLibFnCache()` | Build function name cache |
-| L2378| `renderSearchInlineTokens()` | Render search chips |
-| L2469| `insertSearchTagToken(tag, opts)` | Insert #tag token |
-| L2482| `insertSearchAuthorToken(author, opts)` | Insert @author token |
-| L2672| `getSearchStateFromInput()` | Parse search state |
-| L2781| `refreshLibrarySearchFromInput()` | Refresh search results |
-| L2819| `updateSearchAutocomplete()` | Update autocomplete |
-| L3344| `impEnterSearchMode(query, opts)` | Enter search mode |
-| L3480| `impExitSearchMode()` | Exit search mode |
+| L2419| `_buildSysLibFnCache()` | Build function name cache |
+| L2447| `renderSearchInlineTokens()` | Render search chips |
+| L2538| `insertSearchTagToken(tag, opts)` | Insert #tag token |
+| L2551| `insertSearchAuthorToken(author, opts)` | Insert @author token |
+| L2741| `getSearchStateFromInput()` | Parse search state |
+| L2850| `refreshLibrarySearchFromInput()` | Refresh search results |
+| L2888| `updateSearchAutocomplete()` | Update autocomplete |
+| L3413| `impEnterSearchMode(query, opts)` | Enter search mode |
+| L3549| `impExitSearchMode()` | Exit search mode |
 
-### Library Cards (L3501–3620, L7675–8100)
+### Library Cards (L3572–3700, L7648–8095)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L3501| `impBuildSingleCardHtml(lib)` | Build single card HTML |
-| L7675| `impBuildLibraryCards(groupId, ...)` | Build all cards from DB |
-| L7926| `resolveSystemLibIcon(sLib, size)` | Resolve system lib icon |
-| L8057| `buildSystemLibraryCard(sLib)` | Build system lib card |
+| L3572| `impBuildSingleCardHtml(lib)` | Build single card HTML |
+| L7648| `impBuildLibraryCards(groupId, ...)` | Build all cards from DB |
+| L7938| `resolveSystemLibIcon(sLib, size)` | Resolve system lib icon |
+| L8030| `buildSystemLibraryCard(sLib)` | Build system lib card |
 
-### Navigation & Groups (L4334–4920)
+### Navigation & Groups (L4348–5000)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L4340| `createGroups()` | Build navbar tabs |
-| L4681| `updateSortableDivs()` | Init jQuery UI sortable |
-| L4702| `saveTree()` | Save nav tree |
-| L4842| `groupNew()` | Create new group |
-| L4845| `groupEdit(id)` | Edit group |
-| L4848| `groupDelete(id)` | Delete group |
-| L4920| `saveModalData()` | Save modal form data |
+| L4348| `createGroups()` | Build navbar tabs |
+| L4735| `updateSortableDivs()` | Init jQuery UI sortable |
+| L4758| `saveTree()` | Save nav tree |
+| L4912| `groupNew()` | Create new group |
+| L4915| `groupEdit(id)` | Edit group |
+| L4918| `groupDelete(id)` | Delete group |
+| L4993| `saveModalData()` | Save modal form data |
 
-### Settings & Utilities (L5231–5684)
+### Settings & Utilities (L5364–5727)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L5297| `loadSettings()` | Load + apply all settings |
-| L5443| `saveSetting(key, val)` | Save single setting |
-| L5461| `getStarredLibIds()` | Get starred library IDs |
-| L5471| `toggleStarLib(libId)` | Toggle star status |
-| L5521| `historyCleanup()` | Clean up VENUS log files |
-| L5627| `initVENUSData()` | Initialize VENUS paths |
+| L5364| `loadSettings()` | Load + apply all settings |
+| L5495| `saveSetting(key, val)` | Save single setting |
+| L5515| `getStarredLibIds()` | Get starred library IDs |
+| L5523| `toggleStarLib(libId)` | Toggle star status |
+| L5572| `historyCleanup()` | Clean up VENUS log files |
+| L5674| `initVENUSData()` | Initialize VENUS paths |
 
-### Packager (L5688–6650)
+### Packager (L5727–6740)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L6028| `pkgDetectLibraryName()` | Auto-detect library name |
-| L6057| `pkgAutoDetectBmpImage()` | Auto-detect BMP icon |
-| L6152| `pkgUpdateLibFileList()` | Render lib file list |
-| L6377| `pkgCompositeLibraryIcon(b64, mime)` | Composite icon overlay |
-| L6441| `pkgCreatePackageFile(savePath)` | Core packaging function |
+| L6099| `pkgDetectLibraryName()` | Auto-detect library name |
+| L6127| `pkgAutoDetectBmpImage()` | Auto-detect BMP icon |
+| L6220| `pkgUpdateLibFileList()` | Render lib file list |
+| L6463| `pkgCompositeLibraryIcon(b64, mime)` | Composite icon overlay |
+| L6538| `pkgCreatePackageFile(savePath)` | Core packaging function |
 
-### COM Registration (L6650–6900)
+### COM Registration (L6740–6985)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L6660| `findRegAsmPath()` | Find 32-bit RegAsm.exe |
-| L6699| `comRegisterDll(dllPath, register)` | Register/unregister DLL |
-| L6780| `comRegisterMultipleDlls(paths, reg)` | Register multiple DLLs |
-| L6800| `checkCOMRegistrationStatus(path)` | Check COM status |
+| L6740| `findRegAsmPath()` | Find 32-bit RegAsm.exe |
+| L6780| `comRegisterDll(dllPath, register)` | Register/unregister DLL |
+| L6853| `comRegisterMultipleDlls(paths, reg)` | Register multiple DLLs |
+| L6876| `checkCOMRegistrationStatus(path)` | Check COM status |
 
-### Code Signing (L7400–7660)
+### Code Signing (L7295–7640)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L7401| `getSigningConfig()` | Read key/cert from settings |
-| L7416| `loadDefaultSigningCredentials()` | Load signing credentials |
-| L7462| `refreshSigningUI()` | Update signing UI |
-| L7502| `applyPackageSigning(zip, useCert)` | Sign ZIP package |
+| L7295| `getSigningConfig()` | Read key/cert from settings |
+| L7307| `loadDefaultSigningCredentials()` | Load signing credentials |
+| L7350| `refreshSigningUI()` | Update signing UI |
+| L7393| `applyPackageSigning(zip, useCert)` | Sign ZIP package |
 
-### Integrity (L7327–7670)
+### Integrity (L7227–7645)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L7335| `verifySystemLibraryIntegrity(sLib)` | Verify system lib |
-| L7637| `verifyLibraryIntegrity(lib)` | Verify installed lib hashes |
-| L7669| `invalidateLibCaches()` | Clear caches |
+| L7227| `verifySystemLibraryIntegrity(sLib)` | Verify system lib |
+| L7588| `verifyLibraryIntegrity(lib)` | Verify installed lib hashes |
+| L7645| `invalidateLibCaches()` | Clear caches |
 
-### Detail Modals (L8120–8800)
+### Detail Modals (L8095–8770)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L8126| `impShowLibDetail(libId)` | Library detail modal |
-| L8801| `impShowSystemLibDetail(libId)` | System lib detail modal |
+| L8095| `impShowLibDetail(libId)` | Library detail modal |
+| L8773| `impShowSystemLibDetail(libId)` | System lib detail modal |
 
-### Export (L9143–9800)
+### Export (L9177–9905)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L9240| `exportSingleLibrary(id, path, sign)` | Export single .hxlibpkg |
-| L9360| `resolveAllDependencyLibIds(rootId)` | Resolve dependency tree |
-| L9415| `exportLibraryWithDependencies(id, path, sign)` | Export with deps |
-| L9600| `expArchPopulateModal()` | Populate archive export modal |
-| L9777| `expArchCreateArchive(ids, path, sign)` | Create .hxlibarch |
+| L9177| `exportSingleLibrary(id, path, sign)` | Export single .hxlibpkg |
+| L9309| `resolveAllDependencyLibIds(rootId)` | Resolve dependency tree |
+| L9357| `exportLibraryWithDependencies(id, path, sign)` | Export with deps |
+| L9566| `expArchPopulateModal()` | Populate archive export modal |
+| L9713| `expArchCreateArchive(ids, path, sign)` | Create .hxlibarch |
 
-### Archive Import (L9950–10200)
+### Archive Import (L9905–10360)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L9955| `impArchImportArchive(archivePath)` | Import .hxlibarch |
+| L9905| `impArchImportArchive(archivePath)` | Import .hxlibarch |
 
-### Delete & Rollback (L10370–10700)
+### Delete & Rollback (L10360–10668)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L10371| `showDeleteConfirmModal(name, dlls)` | Delete confirmation |
-| L10446| `showRegulatedModeConfirmModal(enabling)` | Regulated mode confirm |
+| L10360| `showDeleteConfirmModal(name, dlls)` | Delete confirmation |
+| L10413| `showRegulatedModeConfirmModal(enabling)` | Regulated mode confirm |
 
-### Import (L10700–11200)
+### Import (L10668–11335)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L10707| `impLoadAndInstall(filePath)` | Load + preview .hxlibpkg |
+| L10668| `impLoadAndInstall(filePath)` | Load + preview .hxlibpkg |
 
-### Audit Log (L11422–11730)
+### Audit Log (L11335–11730)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L11460| `generateLibraryAuditLog(savePath)` | Generate full audit log |
-| L11683| `verifyAuditLogIntegrity(filePath)` | Verify audit HMAC |
+| L11369| `generateLibraryAuditLog(savePath)` | Generate full audit log |
+| L11648| `verifyAuditLogIntegrity(filePath)` | Verify audit HMAC |
 
-### Verify & Repair (L11740–12100)
+### Verify & Repair (L11731–12169)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L11795| `repairPopulateModal()` | Populate repair modal |
-| L12059| `repairLibraryFromCache(name, silent)` | Repair from cache |
-| L12199| `showGenericSuccessModal(opts)` | Success result modal |
+| L11731| `repairPopulateModal()` | Populate repair modal |
+| L12019| `repairLibraryFromCache(name, silent)` | Repair from cache |
+| L12169| `showGenericSuccessModal(opts)` | Success result modal |
 
-### Unsigned Libraries (L12300–13500)
+### Unsigned Libraries (L12215–13474)
 | Line | Function | Purpose |
 |------|----------|---------|
-| L12405| `scanUnsignedLibraries(showFeedback)` | Scan for unsigned libs |
-| L12596| `buildUnsignedLibraryCard(uLib)` | Build unsigned lib card |
-| L12658| `showUnsignedLibDetail(ulibId)` | Unsigned lib detail modal |
-| L13246| `registerUnsignedLibrary(ulibId, opts)` | Register unsigned lib |
-| L13402| `exportUnsignedLibrary(ulibId, path)` | Export unsigned lib |
+| L12301| `scanUnsignedLibraries(showFeedback)` | Scan for unsigned libs |
+| L12563| `buildUnsignedLibraryCard(uLib)` | Build unsigned lib card |
+| L12624| `showUnsignedLibDetail(ulibId)` | Unsigned lib detail modal |
+| L13111| `registerUnsignedLibrary(ulibId, opts)` | Register unsigned lib |
+| L13287| `exportUnsignedLibrary(ulibId, path)` | Export unsigned lib |
 
 ## Event Handler Summary
 
