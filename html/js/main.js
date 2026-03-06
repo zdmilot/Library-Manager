@@ -1,5 +1,5 @@
 ﻿
-		// main.js v1.8.6
+		// main.js v1.9.8
 		// Author: Zachary Milot
 
 		var gui = require('nw.gui');
