@@ -1,4 +1,4 @@
-# Pre-Release Audit Summary — Library Manager for Venus 6 v1.6.5
+# Pre-Release Audit Summary — Library Manager for Venus 6 v1.7.4
 
 ## Audit Scope
 
