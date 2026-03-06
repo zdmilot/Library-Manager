@@ -368,7 +368,7 @@
 
 <h3>How It Works</h3>
 <ol>
-  <li>When a package is imported (via GUI, CLI, REST API, or archive import), the author and organization fields are checked against the <b>restricted OEM keywords</b> list.</li>
+  <li>When a package is imported (via GUI, CLI, COM, or archive import), the author and organization fields are checked against the <b>restricted OEM keywords</b> list.</li>
   <li>If a restricted keyword is matched (e.g., "hamilton" in "Hamilton Company"), the package <b>must</b> be code-signed with an Ed25519 publisher certificate (signature format version 2.0).</li>
   <li>The certificate holder name (publisher and/or organization fields in the certificate) must <b>encompass</b> the triggered OEM keyword. Matching is case-insensitive with all non-alphanumeric characters stripped.</li>
   <li>If the certificate does not match, the import is blocked with a clear error message identifying the mismatch.</li>
@@ -396,8 +396,7 @@
   <li><b>CLI <code>import-lib</code></b> &mdash; after <code>--author-password</code> validation</li>
   <li><b>CLI <code>import-archive</code></b> &mdash; for each package within the archive</li>
   <li><b>CLI <code>rollback-lib</code></b> &mdash; when rolling back to a cached OEM package</li>
-  <li><b>REST API <code>POST /api/import</code></b> &mdash; via the service layer</li>
-  <li><b>REST API <code>POST /api/import-archive</code></b> &mdash; via the service layer</li>
+  <li><b>COM object</b> &mdash; via the service layer</li>
 </ul>
 
 <h3>Why Both Password and Certificate?</h3>

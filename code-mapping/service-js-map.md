@@ -1,6 +1,6 @@
 # Code Map: lib/service.js
 
-**File**: `lib/service.js` | **Lines**: 1736 | **Purpose**: Service layer used by REST API
+**File**: `lib/service.js` | **Lines**: 1736 | **Purpose**: Service layer used by COM bridge
 
 ## Imports
 

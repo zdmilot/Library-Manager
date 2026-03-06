@@ -832,11 +832,11 @@ Source: "package.json"; DestDir: "{app}"; Flags: ignoreversion
 
 ; CLI
 Source: "cli.js"; DestDir: "{app}"; Flags: ignoreversion
+
+; COM Bridge (stdin/stdout dispatcher for COM object)
+Source: "com-bridge.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "cli-schema.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "cli-spec-example.json"; DestDir: "{app}"; Flags: ignoreversion
-
-; REST API server
-Source: "rest-api.js"; DestDir: "{app}"; Flags: ignoreversion
 
 ; COM object (32-bit DLL for VENUS x86 interop)
 Source: "com\bin\VenusLibraryManager.dll"; DestDir: "{app}\com"; Flags: ignoreversion

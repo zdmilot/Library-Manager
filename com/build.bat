@@ -38,7 +38,6 @@ if not exist "%OUTDIR%" mkdir "%OUTDIR%"
 echo Compiling LibraryManager.cs ...
 "%CSC%" /target:library /out:"%OUTDIR%\%DLLNAME%" /platform:x86 ^
     /reference:System.dll ^
-    /reference:System.Net.dll ^
     /reference:System.Runtime.InteropServices.dll ^
     /warn:4 /optimize+ ^
     LibraryManager.cs

@@ -10,7 +10,7 @@
 <div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; COM Object Reference</div>
 
 <h2>Overview</h2>
-<p>Library Manager for Venus 6 includes a .NET COM object (<code>VenusLibraryManager.dll</code>) that enables integration with Hamilton VENUS HSL methods, VBScript, and any COM-capable language. The COM object provides complete 1:1 parity with the CLI commands and REST API endpoints.</p>
+<p>Library Manager for Venus 6 includes a .NET COM object (<code>VenusLibraryManager.dll</code>) that enables integration with Hamilton VENUS HSL methods, VBScript, and any COM-capable language. The COM object provides complete 1:1 parity with the CLI commands.</p>
 
 <div class="warning">
 <p><b>32-bit Only:</b> The COM DLL is compiled as <b>x86</b> (32-bit) and <b>must</b> be registered using the 32-bit <code>RegAsm.exe</code>. Hamilton VENUS is a 32-bit application &mdash; using the 64-bit RegAsm will make the COM object invisible to VENUS, causing "Class not registered" errors.</p>
@@ -49,13 +49,13 @@ C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister "C:\Program
 <div class="code"><pre>"C:\Program Files (x86)\Library Manager for Venus 6\com\verify-com.bat"</pre></div>
 
 <h2>Architecture</h2>
-<p>The COM object communicates with the REST API server over HTTP on localhost. When you call a COM method, it:</p>
+<p>The COM object communicates with the application&rsquo;s service layer via a lightweight bridge process (<code>com-bridge.js</code>). When you call a COM method, it:</p>
 <ol>
-  <li>Checks if the REST API server is running (auto-starts if not)</li>
-  <li>Sends the appropriate HTTP request to <code>http://127.0.0.1:5555</code></li>
+  <li>Spawns <code>com-bridge.js</code> with the command name and JSON arguments</li>
+  <li>Waits for the bridge to execute the operation via the shared service layer</li>
   <li>Returns the JSON response string to the caller</li>
 </ol>
-<p>This architecture ensures all three interfaces (CLI, REST, COM) share identical business logic and security enforcement.</p>
+<p>This architecture ensures both interfaces (CLI and COM) share identical business logic and security enforcement.</p>
 
 <h2>Return Format</h2>
 <p>All methods return JSON strings. Successful operations return:</p>
@@ -67,24 +67,11 @@ C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister "C:\Program
 <table>
 <thead><tr><th>Property</th><th>Type</th><th>Access</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td><code>Port</code></td><td>Integer</td><td>Read/Write</td><td>REST API server port (default: 5555)</td></tr>
-<tr><td><code>ApiKey</code></td><td>String</td><td>Read/Write</td><td>API key for authenticated access (default: empty)</td></tr>
 <tr><td><code>LastError</code></td><td>String</td><td>Read Only</td><td>Last error message from a failed operation</td></tr>
 </tbody>
 </table>
 
 <h2>Methods</h2>
-
-<h3>Server Management</h3>
-<table>
-<thead><tr><th>Method</th><th>Parameters</th><th>Description</th></tr></thead>
-<tbody>
-<tr><td><code>StartServer(port)</code></td><td>port: Integer</td><td>Start the REST API server on the specified port. Returns server URL.</td></tr>
-<tr><td><code>StopServer()</code></td><td><i>none</i></td><td>Stop the REST API server background process.</td></tr>
-<tr><td><code>IsServerRunning()</code></td><td><i>none</i></td><td>Returns Boolean indicating if the server is active.</td></tr>
-<tr><td><code>GetServerUrl()</code></td><td><i>none</i></td><td>Returns the server URL string (e.g., <code>http://127.0.0.1:5555</code>).</td></tr>
-</tbody>
-</table>
 
 <h3>Library Operations</h3>
 <table>
@@ -151,7 +138,6 @@ C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister "C:\Program
 <tr><td><code>GetAuditTrail()</code></td><td><i>none</i></td><td><i>n/a</i></td></tr>
 <tr><td><code>GetAuditTrailLast(count)</code></td><td>count: Integer</td><td><i>n/a</i></td></tr>
 <tr><td><code>GetSettings()</code></td><td><i>none</i></td><td><i>n/a</i></td></tr>
-<tr><td><code>HealthCheck()</code></td><td><i>none</i></td><td><i>n/a</i></td></tr>
 </tbody>
 </table>
 
@@ -160,9 +146,6 @@ C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /unregister "C:\Program
 <h3>VBScript</h3>
 <div class="code"><pre>' Create the COM object
 Set mgr = CreateObject("VenusLibraryManager.LibraryManager")
-
-' Optional: set port (default is 5555)
-mgr.Port = 5555
 
 ' List all installed libraries
 WScript.Echo mgr.ListLibraries()
@@ -199,19 +182,12 @@ Trace(result);
 
 // Verify a package before import
 result = libMgr.VerifyPackage("C:\\Packages\\MyLib.hxlibpkg");
-Trace(result);
-
-// Check server health
-result = libMgr.HealthCheck();
 Trace(result);</pre></div>
 
 <h3>C# (.NET)</h3>
 <div class="code"><pre>// Late binding via COM ProgID
 Type t = Type.GetTypeFromProgID("VenusLibraryManager.LibraryManager");
 dynamic mgr = Activator.CreateInstance(t);
-
-// Set port
-mgr.Port = 5555;
 
 // List libraries
 string json = mgr.ListLibraries();
@@ -247,20 +223,10 @@ Write-Host $result
 <table>
 <thead><tr><th>Event</th><th>Parameters</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td><code>ServerStarted</code></td><td>url: String</td><td>Fired when the REST server starts</td></tr>
-<tr><td><code>ServerStopped</code></td><td><i>none</i></td><td>Fired when the REST server stops</td></tr>
-<tr><td><code>OperationCompleted</code></td><td>operation, success, resultJson</td><td>Fired after each HTTP operation</td></tr>
+<tr><td><code>OperationCompleted</code></td><td>operation, success, resultJson</td><td>Fired after each operation completes</td></tr>
 <tr><td><code>ErrorOccurred</code></td><td>operation, errorMessage</td><td>Fired when an error occurs</td></tr>
 </tbody>
 </table>
-
-<h2>Auto-Start Behavior</h2>
-<p>The COM object automatically starts the REST API server when the first library operation is called. You can also explicitly control the server lifecycle:</p>
-<div class="code"><pre>Set mgr = CreateObject("VenusLibraryManager.LibraryManager")
-mgr.Port = 8080
-mgr.StartServer(8080)   ' Explicitly start
-' ... perform operations ...
-mgr.StopServer()        ' Explicitly stop</pre></div>
 
 <h2>Error Handling</h2>
 <p>Check the <code>LastError</code> property after any operation, or parse the JSON result for the <code>"success"</code> field:</p>
@@ -276,9 +242,7 @@ End If</pre></div>
 <tbody>
 <tr><td>"Class not registered" error</td><td>Register with 32-bit <code>RegAsm.exe</code> as Administrator. Never use <code>Framework64</code>.</td></tr>
 <tr><td>"Cannot find node.exe"</td><td>Install Node.js, or ensure the NW.js runtime is in the application directory.</td></tr>
-<tr><td>Server won't start</td><td>Check port availability. Another process may be using port 5555. Set <code>mgr.Port = 8080</code> to use alternate port.</td></tr>
-<tr><td>Operations timeout</td><td>Large imports/exports may take time. The default timeout is 5 minutes per request.</td></tr>
-<tr><td>API key mismatch</td><td>Ensure <code>mgr.ApiKey</code> matches the value passed to <code>rest-api.js --api-key</code>.</td></tr>
+<tr><td>Operations timeout</td><td>Large imports/exports may take time. The default timeout is 5 minutes per operation.</td></tr>
 </tbody>
 </table>
 

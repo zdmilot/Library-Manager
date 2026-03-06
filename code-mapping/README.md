@@ -12,7 +12,6 @@ function locations, cross-references, and audit findings.
 | `shared-js-map.md`         | `lib/shared.js` — all functions, constants, exports |
 | `service-js-map.md`        | `lib/service.js` — service layer API |
 | `cli-js-map.md`            | `cli.js` — CLI entry point |
-| `rest-api-js-map.md`       | `rest-api.js` — REST API server |
 | `main-js-map.md`           | `html/js/main.js` — GUI (NW.js) |
 | `audit-findings.md`        | Security, dead code, logic issues found during audit |
 | `update-code-map.js`       | Script to regenerate code maps without an AI agent |

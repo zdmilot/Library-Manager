@@ -6,10 +6,10 @@
 Library-Manager-for-Venus-6/
 ├── package.json              # NW.js manifest + npm config (v1.6.5)
 ├── cli.js                    # CLI entry point (2815 lines)
-├── rest-api.js               # REST API server w/ Swagger (1017 lines)
+├── com-bridge.js             # COM bridge dispatcher (service layer)
 ├── lib/
 │   ├── shared.js             # Shared crypto, validation, signing (1848 lines)
-│   └── service.js            # Service layer — CLI/REST backend (1736 lines)
+│   └── service.js            # Service layer — COM bridge backend (1736 lines)
 ├── html/
 │   ├── index.html            # GUI shell (NW.js main window)
 │   ├── js/
@@ -69,8 +69,8 @@ Library-Manager-for-Venus-6/
               ┌────────────┼────────────┐
               │            │            │
        ┌──────▼──────┐ ┌──▼────────┐ ┌─▼──────────┐
-       │  cli.js     │ │ rest-api.js│ │html/index   │
-       │  (CLI)      │ │ (REST API) │ │ (GUI)       │
+       │  cli.js     │ │com-bridge │ │html/index   │
+       │  (CLI)      │ │    .js    │ │ (GUI)       │
        └──────┬──────┘ └──┬────────┘ └─┬──────────┘
               │            │            │
               │      ┌─────▼──────┐    │
@@ -88,8 +88,6 @@ Library-Manager-for-Venus-6/
                     ┌──────▼──────┐
                     │   diskdb    │
                     │   adm-zip   │
-                    │   express   │
-                    │   multer    │
                     │   crypto    │
                     └─────────────┘
 ```
@@ -100,8 +98,8 @@ Library-Manager-for-Venus-6/
 |-------------|----------|---------|
 | `html/index.html` → `html/js/main.js` | NW.js GUI | Desktop application |
 | `cli.js` | `node cli.js <command>` | Command-line interface |
-| `rest-api.js` | `node rest-api.js` | REST API server (port 5555) |
-| `lib/service.js` | `rest-api.js` only | Service layer (shared backend) |
+| `com-bridge.js` | `node com-bridge.js <cmd> <json>` | COM object bridge dispatcher |
+| `lib/service.js` | `com-bridge.js` only | Service layer (shared backend) |
 | `lib/shared.js` | All three above | Crypto, validation, signing |
 
 ### Data Flow

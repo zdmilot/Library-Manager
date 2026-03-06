@@ -53,26 +53,6 @@ RegulatedEnvironment.html
 FileStorage.html
 Installation.html
 Uninstallation.html
-RESTAPIReference.html
-RESTHealth.html
-RESTListLibraries.html
-RESTGetLibrary.html
-RESTImportLibrary.html
-RESTImportArchive.html
-RESTExportLibrary.html
-RESTExportArchive.html
-RESTDeleteLibrary.html
-RESTListVersions.html
-RESTRollbackLibrary.html
-RESTCreatePackage.html
-RESTVerifyPackage.html
-RESTListPublishers.html
-RESTGenerateKeypair.html
-RESTSystemLibraries.html
-RESTVerifySyslibHashes.html
-RESTGenerateSyslibHashes.html
-RESTGetAuditTrail.html
-RESTGetSettings.html
 COMReference.html
 
 [INFOTYPES]

@@ -24,9 +24,7 @@ echo     WScript.Echo "Code:  " ^& Err.Number
 echo     WScript.Quit 1
 echo End If
 echo WScript.Echo "OK: COM object created successfully."
-echo WScript.Echo "Server URL: " ^& mgr.GetServerUrl^(^)
-echo WScript.Echo "Port: " ^& mgr.Port
-echo WScript.Echo "Is Running: " ^& mgr.IsServerRunning^(^)
+echo WScript.Echo "Last Error: " ^& mgr.LastError
 echo Set mgr = Nothing
 echo WScript.Quit 0
 ) > "%VBSFILE%"

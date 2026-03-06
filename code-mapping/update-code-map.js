@@ -28,7 +28,7 @@ const OUTPUT_FILE  = path.join(__dirname, 'generated-map.json');
 
 const SOURCE_FILES = [
     'cli.js',
-    'rest-api.js',
+    'com-bridge.js',
     'lib/shared.js',
     'lib/service.js',
     'html/js/main.js',
