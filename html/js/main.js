@@ -2584,12 +2584,12 @@
 		function consumeCompletedTagTokens() {
 			var $input = $("#imp-search-input");
 			var raw = $input.val() || '';
-			if (raw.indexOf('#') === -1 || raw.search(/\s/) === -1) return;
+			if (raw.indexOf('#') === -1) return;
 			var pending = raw;
 			var consumedAny = false;
 
 			while (true) {
-				var match = pending.match(/(^|\s)#([^\s#]+)(?=\s)/);
+				var match = pending.match(/(^|\s)#([^#@]+?)(?=\s*[#@])/);
 				if (!match) break;
 
 				var marker = '#' + match[2];
@@ -2625,7 +2625,7 @@
 			options = options || {};
 			var $input = $("#imp-search-input");
 			var raw = $input.val() || '';
-			var match = raw.match(/(^|\s)#([^\s#]+)\s*$/);
+			var match = raw.match(/(^|\s)#([^#@]+?)\s*$/);
 			if (!match) return false;
 
 			var candidate = match[2] || '';
@@ -2757,7 +2757,8 @@
 			});
 
 			if (rawInput) {
-				rawInput.split(/\s+/).forEach(function(token) {
+				rawInput.split(/(?=\s*[#@])/).forEach(function(part) {
+					var token = part.trim();
 					if (!token) return;
 					if (token.charAt(0) === '#' && token.length > 1) {
 						var tag = shared.sanitizeTag(token.substring(1));
@@ -2807,7 +2808,8 @@
 
 			// Append any trailing input (uncommitted text, tags, authors)
 			if (rawInput) {
-				rawInput.split(/\s+/).forEach(function(ri) {
+				rawInput.split(/(?=\s*[#@])/).forEach(function(part) {
+					var ri = part.trim();
 					if (!ri) return;
 					if (ri.charAt(0) === '#' && ri.length > 1) {
 						var rt = shared.sanitizeTag(ri.substring(1));
@@ -2875,7 +2877,7 @@
 				return { type: 'author', prefix: (authorMatch[2] || '').toLowerCase() };
 			}
 			// Check for trailing #partial (tag autocomplete)
-			var tagMatch = raw.match(/(^|.*\s)#([^\s#]*)$/);
+			var tagMatch = raw.match(/(^|.*\s)#([^#@]*)$/);
 			if (tagMatch) {
 				return { type: 'tag', prefix: (tagMatch[2] || '').toLowerCase() };
 			}
@@ -3236,8 +3238,7 @@
 		});
 
 		$(document).on("keydown", ".imp-search-chip-input", function(e) {
-			var isAuthorChip = $(this).closest('.imp-search-chip').attr('data-chip-type') === 'author';
-			if (e.key === 'Enter' || e.key === 'Tab' || (!isAuthorChip && e.key === ' ')) {
+			if (e.key === 'Enter' || e.key === 'Tab') {
 				e.preventDefault();
 				$(this).data('focus-main-input', true);
 				$(this).blur();
