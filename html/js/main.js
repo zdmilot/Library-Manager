@@ -2249,6 +2249,42 @@
 			$("#aboutModal").modal("show");
 		});
 
+		// ---- Secret flask icon click handler: 8 clicks to toggle OEM/developer settings ----
+		var _flaskClickCount = 0;
+		var _flaskClickTimer = null;
+		$(document).on("click", "#about-flask-icon", function () {
+			_flaskClickCount++;
+			if (_flaskClickTimer) clearTimeout(_flaskClickTimer);
+			_flaskClickTimer = setTimeout(function () { _flaskClickCount = 0; }, 3000);
+			if (_flaskClickCount >= 8) {
+				_flaskClickCount = 0;
+				if (_flaskClickTimer) { clearTimeout(_flaskClickTimer); _flaskClickTimer = null; }
+				var current = !!getSettingValue('_oemSettingsUnlocked');
+				var newVal = !current;
+				saveSetting('_oemSettingsUnlocked', newVal);
+				applyOemSettingsVisibility(newVal);
+				// If disabling, also turn off OEM keywords
+				if (!newVal) {
+					$("#chk_oemKeywordsEnabled").prop("checked", false);
+					saveSetting('chk_oemKeywordsEnabled', false);
+					$(".oem-keywords-status").html('');
+				}
+				var msg = newVal ? 'Developer settings enabled.' : 'Developer settings disabled.';
+				alert(msg);
+			}
+		});
+
+		/** Show or hide OEM/developer settings sections */
+		function applyOemSettingsVisibility(unlocked) {
+			if (unlocked) {
+				$("#settings-oem-keywords-section").show();
+				$("#settings-make-pretty-section").show();
+			} else {
+				$("#settings-oem-keywords-section").hide();
+				$("#settings-make-pretty-section").hide();
+			}
+		}
+
 		//Click privacy policy link inside About modal.
 		$(document).on("click", ".about-privacy-link", function (e) {
 			e.preventDefault();
@@ -5727,6 +5763,19 @@
 			refreshSettingsSigningStatus();
 			refreshSigningUI();
 
+			// OEM/developer settings visibility
+			var oemUnlocked = !!settings['_oemSettingsUnlocked'];
+			applyOemSettingsVisibility(oemUnlocked);
+
+			// OEM keywords enabled toggle
+			var oemKwEnabled = !!settings['chk_oemKeywordsEnabled'];
+			$("#chk_oemKeywordsEnabled").prop("checked", oemKwEnabled);
+			if (oemKwEnabled) {
+				$(".oem-keywords-status").html('<i class="fas fa-check-circle text-success mr-1"></i>OEM keywords authorized. Password prompt is bypassed.');
+			} else {
+				$(".oem-keywords-status").html('');
+			}
+
 			// Initialize system tray icon (always present when app is running)
 			initTrayIcon();
 		}
@@ -5743,6 +5792,31 @@
 			//  console.log(dataToSave);
 			//  console.log(updated);
 		}
+
+		/** Check if OEM keywords bypass is enabled in settings */
+		function isOemKeywordsEnabled() {
+			return !!getSettingValue('chk_oemKeywordsEnabled') && !!getSettingValue('_oemSettingsUnlocked');
+		}
+
+		// ---- OEM Keywords toggle handler: require password to enable ----
+		$(document).on("click", "#chk_oemKeywordsEnabled", async function () {
+			var isChecked = $(this).is(":checked");
+			if (isChecked) {
+				// Require OEM password to enable
+				var pwOk = await promptAuthorPassword();
+				if (pwOk) {
+					saveSetting('chk_oemKeywordsEnabled', true);
+					$(".oem-keywords-status").html('<i class="fas fa-check-circle text-success mr-1"></i>OEM keywords authorized. Password prompt is bypassed.');
+				} else {
+					$(this).prop("checked", false);
+					$(".oem-keywords-status").html('<i class="fas fa-times-circle text-danger mr-1"></i>Authorization failed.');
+					setTimeout(function() { $(".oem-keywords-status").html(''); }, 3000);
+				}
+			} else {
+				saveSetting('chk_oemKeywordsEnabled', false);
+				$(".oem-keywords-status").html('');
+			}
+		});
 
 		/** Read a single setting value from the settings DB */
 		function getSettingValue(key) {
@@ -6536,7 +6610,7 @@
 		// ---- Author/Organization field restriction: prompt for password when a restricted OEM name is entered ----
 		$(document).on("blur", "#pkg-author, #pkg-organization", async function() {
 			var fieldVal = $(this).val().trim();
-			if (isRestrictedAuthor(fieldVal) && !pkg_oemAuthorized) {
+			if (isRestrictedAuthor(fieldVal) && !pkg_oemAuthorized && !isOemKeywordsEnabled()) {
 				var pwOk = await promptAuthorPassword();
 				if (pwOk) {
 					pkg_oemAuthorized = true;
@@ -6545,6 +6619,8 @@
 					$(this).focus();
 					pkg_oemAuthorized = false;
 				}
+			} else if (isRestrictedAuthor(fieldVal) && isOemKeywordsEnabled()) {
+				pkg_oemAuthorized = true;
 			} else if (!isRestrictedAuthor(fieldVal) && !isRestrictedAuthor($('#pkg-author').val().trim()) && !isRestrictedAuthor($('#pkg-organization').val().trim())) {
 				pkg_oemAuthorized = false;
 			}
@@ -6780,7 +6856,7 @@
 				var organization = $("#pkg-organization").val().trim();
 
 				// Check restricted author/organization name
-				if (isRestrictedAuthor(author) || isRestrictedAuthor(organization)) {
+				if ((isRestrictedAuthor(author) || isRestrictedAuthor(organization)) && !isOemKeywordsEnabled()) {
 					var pwOk = await promptAuthorPassword();
 					if (!pwOk) {
 						alert('Package creation cancelled. Using a restricted OEM author or organization name requires authorization.');
@@ -10208,7 +10284,7 @@
 						}
 					} catch (_) { /* scan failure is non-fatal; will be caught during install */ }
 				}
-				if (hasRestrictedPackage) {
+				if (hasRestrictedPackage && !isOemKeywordsEnabled()) {
 					var pwOk = await promptAuthorPassword();
 					if (!pwOk) {
 						alert('Import cancelled. One or more packages in this archive use a restricted OEM author/organization name.');
@@ -10990,7 +11066,7 @@
 					var isKnownSysLib = systemLibraries.some(function(s) {
 						return s.canonical_name === manifest.library_name || s.library_name === manifest.library_name;
 					});
-					if (!isKnownSysLib) {
+					if (!isKnownSysLib && !isOemKeywordsEnabled()) {
 						var pwOk = await promptAuthorPassword();
 						if (!pwOk) {
 							alert('Import cancelled. The package uses a restricted OEM author/organization name that requires authorization.');
@@ -13144,7 +13220,7 @@
 
 		$(document).on("blur", "#ulib-author, #ulib-organization", async function() {
 			var fieldVal = $(this).val().trim();
-			if (isRestrictedAuthor(fieldVal) && !ulib_oemAuthorized) {
+			if (isRestrictedAuthor(fieldVal) && !ulib_oemAuthorized && !isOemKeywordsEnabled()) {
 				var pwOk = await promptAuthorPassword();
 				if (pwOk) {
 					ulib_oemAuthorized = true;
@@ -13153,6 +13229,8 @@
 					$(this).focus();
 					ulib_oemAuthorized = false;
 				}
+			} else if (isRestrictedAuthor(fieldVal) && isOemKeywordsEnabled()) {
+				ulib_oemAuthorized = true;
 			} else if (!isRestrictedAuthor(fieldVal) && !isRestrictedAuthor($('#ulib-author').val().trim()) && !isRestrictedAuthor($('#ulib-organization').val().trim())) {
 				ulib_oemAuthorized = false;
 			}
@@ -13195,7 +13273,7 @@
 
 			// Check restricted OEM author on save
 			if (isRestrictedAuthor(author) || isRestrictedAuthor(organization)) {
-				if (!ulib_oemAuthorized) {
+				if (!ulib_oemAuthorized && !isOemKeywordsEnabled()) {
 					var pwOk = await promptAuthorPassword();
 					if (pwOk) {
 						ulib_oemAuthorized = true;
