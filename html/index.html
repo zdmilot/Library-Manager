@@ -1795,6 +1795,50 @@
 	</div>
 	<!---- Modal Unsigned Library Detail end --->
 
+	<!---- Modal Demo Method Location Prompt start --->
+	<div class="modal" tabindex="-1" role="dialog" id="ulibDemoLocationModal">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<h5 class="modal-title"><i class="fas fa-flask mr-2 color-medium"></i>Demo Method File Location</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<p class="mb-3">This library includes <strong id="ulib-demo-location-count">0</strong> demo method file(s). Where would you like them to be stored?</p>
+					<div class="card mb-2 exporter-card cursor-pointer ulib-demo-location-option" data-choice="move" style="border:2px solid transparent;">
+						<div class="card-body py-2 px-3">
+							<div class="d-flex align-items-center">
+								<i class="fas fa-folder-open mr-3" style="font-size:1.4rem; color:var(--medium);"></i>
+								<div>
+									<strong>Move to Library Demo Methods</strong>
+									<div class="text-muted text-sm" id="ulib-demo-location-move-path">...\Hamilton\Methods\Library Demo Methods\&lt;libraryname&gt;</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="card mb-0 exporter-card cursor-pointer ulib-demo-location-option" data-choice="keep" style="border:2px solid transparent;">
+						<div class="card-body py-2 px-3">
+							<div class="d-flex align-items-center">
+								<i class="fas fa-book mr-3" style="font-size:1.4rem; color:var(--medium);"></i>
+								<div>
+									<strong>Keep in library area</strong>
+									<div class="text-muted text-sm">Demo files will remain in their current location alongside the library files</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn solid-button" id="ulib-demo-location-confirm" disabled><i class="fas fa-check mr-1"></i>Continue</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Demo Method Location Prompt end --->
+
 	<!---- Modal Import Preview start --->
 	<div class="modal" tabindex="-1" role="dialog" id="importPreviewModal">
 		<div class="modal-dialog modal-lg modal-dialog-centered" role="document">

@@ -13034,7 +13034,48 @@
 			$("#ulib-save-btn").trigger("click");
 			await new Promise(function(r) { setTimeout(r, 300); });
 
-			var result = await registerUnsignedLibrary(ulibId);
+			// If demo method files exist, prompt the user for placement preference
+			if (ulib_demoMethodFiles.length > 0) {
+				var uLib = db_unsigned_libs.unsigned_libs.findOne({"_id": ulibId});
+				var libName = uLib ? (uLib.library_name || "Unknown") : "Unknown";
+				var methodFolderRec = db_links.links.findOne({"_id":"met-folder"});
+				var sysMethodDir = (methodFolderRec && methodFolderRec.path) ? methodFolderRec.path : 'C:\\Program Files (x86)\\HAMILTON\\Methods';
+				var demoDestPreview = path.join(sysMethodDir, 'Library Demo Methods', libName);
+
+				var $dlm = $("#ulibDemoLocationModal");
+				$dlm.attr("data-ulib-id", ulibId);
+				$("#ulib-demo-location-count").text(ulib_demoMethodFiles.length);
+				$("#ulib-demo-location-move-path").text(demoDestPreview);
+				$dlm.find(".ulib-demo-location-option").css("border-color", "transparent");
+				$dlm.removeData("demo-choice");
+				$("#ulib-demo-location-confirm").prop("disabled", true);
+				$dlm.modal("show");
+			} else {
+				var result = await registerUnsignedLibrary(ulibId);
+				if (result) {
+					$("#unsignedLibDetailModal").modal("hide");
+				}
+			}
+		});
+
+		// ---- Demo location modal: option selection ----
+		$(document).on("click", ".ulib-demo-location-option", function() {
+			$(".ulib-demo-location-option").css("border-color", "transparent");
+			$(this).css("border-color", "var(--medium)");
+			$("#ulibDemoLocationModal").data("demo-choice", $(this).attr("data-choice"));
+			$("#ulib-demo-location-confirm").prop("disabled", false);
+		});
+
+		// ---- Demo location modal: confirm ----
+		$(document).on("click", "#ulib-demo-location-confirm", async function() {
+			var $dlm = $("#ulibDemoLocationModal");
+			var ulibId = $dlm.attr("data-ulib-id");
+			var choice = $dlm.data("demo-choice");
+			if (!ulibId || !choice) return;
+
+			$dlm.modal("hide");
+
+			var result = await registerUnsignedLibrary(ulibId, { demoLocation: choice });
 			if (result) {
 				$("#unsignedLibDetailModal").modal("hide");
 			}
@@ -13141,6 +13182,31 @@
 				var methodFolderRec = db_links.links.findOne({"_id":"met-folder"});
 				var sysMethodDir = (methodFolderRec && methodFolderRec.path) ? methodFolderRec.path : 'C:\\Program Files (x86)\\HAMILTON\\Methods';
 				var demoDestDir = path.join(sysMethodDir, 'Library Demo Methods', libName);
+
+				// Handle demo method file location based on user's choice
+				var demoLocation = opts.demoLocation || 'move'; // 'move' = Library Demo Methods, 'keep' = library area
+				if (demoLocation === 'keep') {
+					// Keep demo files in their current location (library area)
+					demoDestDir = libDestDir;
+				} else if (demoLocation === 'move' && demoFiles.length > 0) {
+					// Copy demo files to the Library Demo Methods folder
+					try {
+						if (!fs.existsSync(demoDestDir)) {
+							fs.mkdirSync(demoDestDir, { recursive: true });
+						}
+						for (var di = 0; di < demoFiles.length; di++) {
+							var srcDemo = demoFiles[di];
+							var dstDemo = path.join(demoDestDir, path.basename(srcDemo));
+							if (fs.existsSync(srcDemo)) {
+								fs.copyFileSync(srcDemo, dstDemo);
+							}
+						}
+					} catch(copyErr) {
+						console.warn('Could not copy demo files to Library Demo Methods: ' + copyErr.message);
+						// Fall back to keeping them in place
+						demoDestDir = libDestDir;
+					}
+				}
 
 				// Check for existing installed lib with same name
 				var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
@@ -13250,13 +13316,17 @@
 				invalidateNavBar();
 
 				if (!opts.silent) {
+					var successPaths = [
+						{ label: "Library Path", value: libDestDir }
+					];
+					if (demoFiles.length > 0 && demoDestDir !== libDestDir) {
+						successPaths.push({ label: "Demo Methods Path", value: demoDestDir });
+					}
 					showGenericSuccessModal({
 						title: "Library Registered!",
 						name: libName,
 						detail: libFileBasenames.length + " file" + (libFileBasenames.length !== 1 ? "s" : "") + " registered" + (demoFiles.length > 0 ? " (incl. " + demoFiles.length + " demo)" : ""),
-						paths: [
-							{ label: "Library Path", value: libDestDir }
-						],
+						paths: successPaths,
 						statusHtml: '<i class="fas fa-check-circle mr-1"></i>Library is now signed and tracked by Library Manager',
 						statusClass: 'com-ok'
 					});
