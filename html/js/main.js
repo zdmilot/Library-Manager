@@ -6041,11 +6041,38 @@
 		var execSync = require('child_process').execSync;
 		var pkg_libraryFiles = [];
 		var pkg_demoMethodFiles = [];
+		var pkg_fileRelPaths = {};    // absolutePath -> relative path within package (preserves subfolder structure)
 		var pkg_iconFilePath = null;   // custom icon/image path chosen by user
 		var pkg_iconAutoDetected = false;     // true if current preview is from auto-detected BMP
 		var pkg_iconAutoDetectedPath = null;  // file path of the auto-detected BMP
 		var pkg_iconDismissedAuto = false;    // true if user explicitly dismissed the auto-detected image
 		var pkg_comRegisterDlls = [];  // DLL filenames selected for COM registration via RegAsm
+
+		/**
+		 * Recursively collects all files under a directory.
+		 * Returns an array of { absolutePath, relativePath } objects where
+		 * relativePath is relative to baseDir (the folder the user selected).
+		 */
+		function getFilesRecursive(dir, baseDir) {
+			var results = [];
+			var items;
+			try { items = fs.readdirSync(dir); } catch(e) { return results; }
+			items.forEach(function(item) {
+				var fullPath = path.join(dir, item);
+				try {
+					var stat = fs.statSync(fullPath);
+					if (stat.isFile()) {
+						results.push({
+							absolutePath: fullPath,
+							relativePath: path.relative(baseDir, fullPath)
+						});
+					} else if (stat.isDirectory()) {
+						results = results.concat(getFilesRecursive(fullPath, baseDir));
+					}
+				} catch(e) {}
+			});
+			return results;
+		}
 
 		// Fit exporter container height to window
 		function fitExporterHeight() {
@@ -6236,22 +6263,22 @@
 			var folderPath = $(this).val();
 			if (folderPath) {
 				try {
-					var files = fs.readdirSync(folderPath);
+					var allFiles = getFilesRecursive(folderPath, folderPath);
 					var newDlls = [];
 					var medFiles = [];
-					files.forEach(function(file) {
-						var filePath = path.join(folderPath, file);
-						try {
-							if (fs.statSync(filePath).isFile() && pkg_libraryFiles.indexOf(filePath) === -1) {
-								pkg_libraryFiles.push(filePath);
-								if (file.toLowerCase().endsWith('.dll')) {
-									newDlls.push(file);
-								}
-								if (file.toLowerCase().endsWith('.med')) {
-									medFiles.push(filePath);
-								}
+					allFiles.forEach(function(fileInfo) {
+						var filePath = fileInfo.absolutePath;
+						var file = path.basename(filePath);
+						if (pkg_libraryFiles.indexOf(filePath) === -1) {
+							pkg_libraryFiles.push(filePath);
+							pkg_fileRelPaths[filePath] = fileInfo.relativePath;
+							if (file.toLowerCase().endsWith('.dll')) {
+								newDlls.push(file);
 							}
-						} catch(e) {}
+							if (file.toLowerCase().endsWith('.med')) {
+								medFiles.push(filePath);
+							}
+						}
 					});
 					// Auto-check for COM registration if exactly one DLL was added in this batch
 					if (newDlls.length === 1 && pkg_comRegisterDlls.indexOf(newDlls[0]) === -1) {
@@ -6328,18 +6355,17 @@
 			var folderPath = $(this).val();
 			if (folderPath) {
 				try {
-					var files = fs.readdirSync(folderPath);
+					var allFiles = getFilesRecursive(folderPath, folderPath);
 					var dllFiles = [];
-					files.forEach(function(file) {
-						var filePath = path.join(folderPath, file);
-						try {
-							if (fs.statSync(filePath).isFile() && pkg_demoMethodFiles.indexOf(filePath) === -1) {
-								pkg_demoMethodFiles.push(filePath);
-								if (file.toLowerCase().endsWith('.dll')) {
-									dllFiles.push(filePath);
-								}
+					allFiles.forEach(function(fileInfo) {
+						var filePath = fileInfo.absolutePath;
+						if (pkg_demoMethodFiles.indexOf(filePath) === -1) {
+							pkg_demoMethodFiles.push(filePath);
+							pkg_fileRelPaths[filePath] = fileInfo.relativePath;
+							if (path.basename(filePath).toLowerCase().endsWith('.dll')) {
+								dllFiles.push(filePath);
 							}
-						} catch(e) {}
+						}
 					});
 					pkgUpdateDemoFileList();
 
@@ -6642,6 +6668,7 @@
 			pkg_oemAuthorized = false;
 			pkg_libraryFiles = [];
 			pkg_demoMethodFiles = [];
+			pkg_fileRelPaths = {};
 			pkg_iconFilePath = null;
 			pkg_iconAutoDetected = false;
 			pkg_iconAutoDetectedPath = null;
@@ -6964,8 +6991,8 @@
 					library_image: libImageFilename,
 					library_image_base64: libImageBase64,
 					library_image_mime: libImageMime,
-					library_files: pkg_libraryFiles.map(function(f) { return path.basename(f); }),
-					demo_method_files: pkg_demoMethodFiles.map(function(f) { return path.basename(f); }),
+					library_files: pkg_libraryFiles.map(function(f) { return pkg_fileRelPaths[f] || path.basename(f); }),
+					demo_method_files: pkg_demoMethodFiles.map(function(f) { return pkg_fileRelPaths[f] || path.basename(f); }),
 					com_register_dlls: pkg_comRegisterDlls.slice(),
 					app_version: shared.getAppVersion(),
 					windows_version: shared.getWindowsVersion(),
@@ -6984,9 +7011,12 @@
 				// Add manifest.json
 				zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2), "utf8"));
 
-				// Add library files under library/ directory
+				// Add library files under library/ directory (preserving subfolder structure)
 				pkg_libraryFiles.forEach(function(fpath) {
-					zip.addLocalFile(fpath, "library");
+					var relPath = pkg_fileRelPaths[fpath] || path.basename(fpath);
+					var relDir = path.dirname(relPath);
+					var zipDir = relDir && relDir !== '.' ? 'library/' + relDir.replace(/\\/g, '/') : 'library';
+					zip.addLocalFile(fpath, zipDir);
 				});
 
 				// Add composited icon under icon/ directory (for Windows file system display)
@@ -6996,9 +7026,12 @@
 					zip.addFile("icon/" + iconFilename, Buffer.from(iconDataForZip, 'base64'));
 				}
 
-				// Add demo method files under demo_methods/ directory
+				// Add demo method files under demo_methods/ directory (preserving subfolder structure)
 				pkg_demoMethodFiles.forEach(function(fpath) {
-					zip.addLocalFile(fpath, "demo_methods");
+					var relPath = pkg_fileRelPaths[fpath] || path.basename(fpath);
+					var relDir = path.dirname(relPath);
+					var zipDir = relDir && relDir !== '.' ? 'demo_methods/' + relDir.replace(/\\/g, '/') : 'demo_methods';
+					zip.addLocalFile(fpath, zipDir);
 				});
 
 				// Sign the package for integrity verification

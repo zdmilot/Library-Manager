@@ -25,6 +25,7 @@ DisableProgramGroupPage=yes
 OutputBaseFilename=LibraryManagerForVenus6_v{#MyAppVersion}_Setup
 SetupIconFile={#MyAppIcon}
 UninstallDisplayIcon={app}\{#MyAppIcon}
+UninstallFilesDir={app}
 WizardImageFile=WizardImage.bmp
 WizardSmallImageFile=WizardSmallImage.bmp
 Compression=lzma2/ultra64
@@ -548,6 +549,19 @@ begin
     Exec('icacls.exe',
       '"' + ExpandConstant('{app}\local') + '" /grant *S-1-5-32-545:(OI)(CI)M /T /Q',
       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+    // Rename the default uninstaller to a friendly name
+    if FileExists(ExpandConstant('{app}\unins000.exe')) then
+    begin
+      RenameFile(ExpandConstant('{app}\unins000.exe'), ExpandConstant('{app}\Uninstall Library Manager.exe'));
+      RenameFile(ExpandConstant('{app}\unins000.dat'), ExpandConstant('{app}\Uninstall Library Manager.dat'));
+      RegWriteStringValue(HKEY_LOCAL_MACHINE,
+        ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1'),
+        'UninstallString', '"' + ExpandConstant('{app}\Uninstall Library Manager.exe') + '"');
+      RegWriteStringValue(HKEY_LOCAL_MACHINE,
+        ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1'),
+        'QuietUninstallString', '"' + ExpandConstant('{app}\Uninstall Library Manager.exe') + '" /SILENT');
+    end;
   end;
 end;
 

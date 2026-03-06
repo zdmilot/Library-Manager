@@ -1698,10 +1698,11 @@ function cmdCreatePackage(args) {
     }
 
     // Build manifest - include help_files and keep CHMs in library_files for backward compat
-    const libBasenames = resolvedLibFiles.map(f => path.basename(f));
-    const helpBasenames = resolvedHelpFiles.map(f => path.basename(f));
-    const manifestLibFiles = libBasenames.slice();
-    helpBasenames.forEach(hf => {
+    const libRelPaths = (spec.library_files || []).map(f => f.replace(/\\/g, '/'));
+    const helpRelPaths = (spec.help_files || []).map(f => f.replace(/\\/g, '/'));
+    const demoRelPaths = (spec.demo_method_files || []).map(f => f.replace(/\\/g, '/'));
+    const manifestLibFiles = libRelPaths.slice();
+    helpRelPaths.forEach(hf => {
         if (manifestLibFiles.indexOf(hf) === -1) manifestLibFiles.push(hf);
     });
 
@@ -1720,8 +1721,8 @@ function cmdCreatePackage(args) {
         library_image_base64:libraryImageBase64,
         library_image_mime:  libraryImageMime,
         library_files:       manifestLibFiles,
-        demo_method_files:   resolvedDemoFiles.map(f => path.basename(f)),
-        help_files:          helpBasenames,
+        demo_method_files:   demoRelPaths,
+        help_files:          helpRelPaths,
         com_register_dlls:   comDlls,
         app_version:         shared.getAppVersion(),
         windows_version:     shared.getWindowsVersion(),
@@ -1745,9 +1746,24 @@ function cmdCreatePackage(args) {
 
     const zip = new AdmZip();
     zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
-    resolvedLibFiles.forEach(f  => zip.addLocalFile(f, 'library'));
-    resolvedHelpFiles.forEach(f => zip.addLocalFile(f, 'library'));
-    resolvedDemoFiles.forEach(f => zip.addLocalFile(f, 'demo_methods'));
+    resolvedLibFiles.forEach(function(f, i) {
+        var relPath = libRelPaths[i] || path.basename(f);
+        var relDir = path.dirname(relPath).replace(/\\/g, '/');
+        var zipDir = relDir && relDir !== '.' ? 'library/' + relDir : 'library';
+        zip.addLocalFile(f, zipDir);
+    });
+    resolvedHelpFiles.forEach(function(f, i) {
+        var relPath = helpRelPaths[i] || path.basename(f);
+        var relDir = path.dirname(relPath).replace(/\\/g, '/');
+        var zipDir = relDir && relDir !== '.' ? 'library/' + relDir : 'library';
+        zip.addLocalFile(f, zipDir);
+    });
+    resolvedDemoFiles.forEach(function(f, i) {
+        var relPath = demoRelPaths[i] || path.basename(f);
+        var relDir = path.dirname(relPath).replace(/\\/g, '/');
+        var zipDir = relDir && relDir !== '.' ? 'demo_methods/' + relDir : 'demo_methods';
+        zip.addLocalFile(f, zipDir);
+    });
     if (iconSourcePath) zip.addLocalFile(iconSourcePath, 'icon');
 
     // Sign the package (Ed25519 code signing required)
