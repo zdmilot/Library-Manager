@@ -1327,7 +1327,7 @@
 		}
 
 		// ---- System Library Baseline (integrity baseline from clean VENUS install) ----
-		// Uses Hamilton's built-in $$valid$$ / $$checksum$$ metadata footer instead of SHA-256.
+		// Uses Hamilton's built-in $$valid$$ (read-only) metadata footer flag.
 		var systemLibraryBaseline = {};
 		try {
 			var _sysHashRaw = fs.readFileSync(path.join('db', 'system_library_hashes.json'), 'utf8');
@@ -7215,7 +7215,7 @@
 
 		/**
 		 * Verifies the integrity of a system library by checking Hamilton's
-		 * built-in $$valid$$ flag and $$checksum$$ in the metadata footer.
+		 * built-in $$valid$$ (read-only) flag in the metadata footer.
 		 * Only HSL-type files (.hsl, .hs_, .smt) with footers are tracked.
 		 *
 		 * @param {Object} sLib - system library record from system_libraries.json
@@ -7263,10 +7263,6 @@
 					result.valid = false;
 					result.errors.push('Valid flag changed (1\u21920): ' + fname);
 					return;
-				}
-				if (stored.checksum && footer.checksum !== stored.checksum) {
-					result.valid = false;
-					result.errors.push('Checksum changed: ' + fname);
 				}
 			});
 
@@ -11566,11 +11562,11 @@
 
 							if (storedInfo && exists) {
 								var footer = parseHslMetadataFooter(fullPath);
-								lines.push("      Method:       Hamilton Footer ($$valid$$, $$checksum$$)");
-								lines.push("      Stored Valid: " + storedInfo.valid + "  Checksum: " + (storedInfo.checksum || "N/A"));
+								lines.push("      Method:       Hamilton Footer ($$valid$$ read-only flag)");
+								lines.push("      Stored Valid: " + storedInfo.valid);
 								if (footer) {
-									lines.push("      Current Valid:" + footer.valid + "  Checksum: " + footer.checksum);
-									var footerMatch = (storedInfo.valid === footer.valid && storedInfo.checksum === footer.checksum) ? "MATCH" : "MISMATCH";
+									lines.push("      Current Valid:" + footer.valid);
+									var footerMatch = (storedInfo.valid === footer.valid) ? "MATCH" : "MISMATCH";
 									lines.push("      Status:       " + footerMatch);
 								} else {
 									lines.push("      Current:      No footer found");

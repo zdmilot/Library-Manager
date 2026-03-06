@@ -1983,17 +1983,8 @@ function cmdVerifySyslibHashes(args) {
                     results.tampered.push({
                         library: libName, file: fname,
                         reason:  'Valid flag changed (1\u21920)',
-                        expected: `valid=1 checksum=${stored.checksum}`,
-                        actual:   `valid=${footer.valid} checksum=${footer.checksum}`
-                    });
-                    return;
-                }
-                if (stored.checksum && footer.checksum !== stored.checksum) {
-                    results.tampered.push({
-                        library: libName, file: fname,
-                        reason:  'Checksum changed',
-                        expected: `checksum=${stored.checksum}`,
-                        actual:   `checksum=${footer.checksum}`
+                        expected: `valid=1`,
+                        actual:   `valid=${footer.valid}`
                     });
                     return;
                 }
