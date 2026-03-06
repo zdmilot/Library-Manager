@@ -1217,12 +1217,17 @@ body {
 .pkg-file-link .pkg-file-name {
 	color: var(--medium);
 	text-decoration: underline;
-	text-decoration-color: transparent;
+	text-decoration-color: rgba(var(--medium-rgb), 0.4);
 	transition: text-decoration-color 0.15s;
 }
 
 .pkg-file-link:hover .pkg-file-name {
 	text-decoration-color: var(--medium);
+}
+
+.detail-path-link:hover {
+	color: var(--medium) !important;
+	text-decoration: underline;
 }
 
 .pkg-file-item .pkg-file-dir {

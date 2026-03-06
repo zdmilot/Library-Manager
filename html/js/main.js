@@ -1,5 +1,5 @@
 ﻿
-		// main.js v1.7.5
+		// main.js v1.8.6
 		// Author: Zachary Milot
 
 		var gui = require('nw.gui');
@@ -8373,11 +8373,11 @@
 			}
 
 			// Install paths
-			$("#libDetailModal .lib-detail-lib-path").text("Library: " + (lib.lib_install_path || "\u2014"));
+			$("#libDetailModal .lib-detail-lib-path").text("Library: " + (lib.lib_install_path || "\u2014")).attr("data-folderpath", lib.lib_install_path || "");
 			if (lib.demo_install_path) {
-				$("#libDetailModal .lib-detail-demo-path").text("Demo Methods: " + lib.demo_install_path).show();
+				$("#libDetailModal .lib-detail-demo-path").text("Demo Methods: " + lib.demo_install_path).attr("data-folderpath", lib.demo_install_path).show();
 			} else {
-				$("#libDetailModal .lib-detail-demo-path").text("").hide();
+				$("#libDetailModal .lib-detail-demo-path").text("").attr("data-folderpath", "").hide();
 			}
 
 			// Required dependencies section
@@ -10455,6 +10455,15 @@
 			var filePath = $(this).attr("data-filepath");
 			if (filePath) {
 				safeOpenItem(filePath);
+			}
+		});
+
+		// ---- Open install path folder when clicking in the detail modal ----
+		$(document).on("click", ".detail-path-link", function(e) {
+			e.preventDefault();
+			var folderPath = $(this).attr("data-folderpath");
+			if (folderPath && fs.existsSync(folderPath)) {
+				nw.Shell.openItem(folderPath);
 			}
 		});
 
