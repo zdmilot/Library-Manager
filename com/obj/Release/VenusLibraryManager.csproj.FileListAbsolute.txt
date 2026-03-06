@@ -1,0 +1,8 @@
+C:\Users\admin\Desktop\Library-Manager-for-Venus-6\com\bin\VenusLibraryManager.dll
+C:\Users\admin\Desktop\Library-Manager-for-Venus-6\com\bin\VenusLibraryManager.pdb
+C:\Users\admin\Desktop\Library-Manager-for-Venus-6\com\obj\Release\VenusLibraryManager.csproj.AssemblyReference.cache
+C:\Users\admin\Desktop\Library-Manager-for-Venus-6\com\obj\Release\VenusLibraryManager.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\admin\Desktop\Library-Manager-for-Venus-6\com\obj\Release\VenusLibraryManager.csproj.CoreCompileInputs.cache
+C:\Users\admin\Desktop\Library-Manager-for-Venus-6\com\obj\Release\VenusLibraryManager.sourcelink.json
+C:\Users\admin\Desktop\Library-Manager-for-Venus-6\com\obj\Release\VenusLibraryManager.dll
+C:\Users\admin\Desktop\Library-Manager-for-Venus-6\com\obj\Release\VenusLibraryManager.pdb
