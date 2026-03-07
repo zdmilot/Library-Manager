@@ -6483,10 +6483,14 @@
 		}
 
 		function pkgUpdatePathPlaceholders(name) {
-			if(name){
+			var installToRoot = $("#chk-pkg-install-to-root").is(":checked");
+			if (installToRoot) {
+				$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\');
+			} else if(name){
+				$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="pkg-path-libname"></span>');
 				$(".pkg-path-libname").text(name);
 			} else {
-				$(".pkg-path-libname").html("&lt;libraryname&gt;");
+				$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="pkg-path-libname">&lt;libraryname&gt;</span>');
 			}
 		}
 
@@ -6702,6 +6706,7 @@
 			pkg_iconAutoDetectedPath = null;
 			pkg_iconDismissedAuto = false;
 			pkg_comRegisterDlls = [];
+			$("#chk-pkg-install-to-root").prop("checked", false);
 			pkgUpdateLibFileList();
 			pkgUpdateDemoFileList();
 			$("#pkg-icon-preview").html('<i class="fas fa-image fa-2x" style="color:#ccc;"></i>').removeClass('has-image');
@@ -6805,6 +6810,12 @@
 			// Set default filename and trigger save dialog
 			$("#pkg-save-dialog").attr("nwsaveas", libName + ".hxlibpkg");
 			$("#pkg-save-dialog").trigger("click");
+		});
+
+		// Toggle install-to-library-root path hint (normal packager)
+		$(document).on("change", "#chk-pkg-install-to-root", function() {
+			var libName = $("#pkg-library-name").val().trim();
+			pkgUpdatePathPlaceholders(libName);
 		});
 
 		// Clear red styling when user types in required fields
@@ -7032,6 +7043,7 @@
 					})]
 				};
 				if (githubUrl) manifest.github_url = githubUrl;
+				if ($("#chk-pkg-install-to-root").is(":checked")) manifest.install_to_library_root = true;
 
 				// Create ZIP package using adm-zip
 				var zip = new AdmZip();
@@ -12847,6 +12859,21 @@
 		var ulib_iconFilePath = null;     // path of the user-picked icon file (null if from DB)
 
 		/**
+		 * Update the install path hint in the unsigned library detail modal header
+		 * based on the install-to-root checkbox state.
+		 */
+		function ulibUpdateInstallPathHint() {
+			var installToRoot = $("#chk-ulib-install-to-root").is(":checked");
+			var libName = $("#ulib-name").val().trim() || "libraryname";
+			if (installToRoot) {
+				$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\');
+			} else {
+				$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="ulib-path-libname"></span>');
+				$(".ulib-path-libname").text(libName);
+			}
+		}
+
+		/**
 		 * Render the library file list in the unsigned library detail modal.
 		 * Mirrors pkgUpdateLibFileList() from the Create Package form.
 		 */
@@ -13306,6 +13333,10 @@
 				$("#ulib-removeIcon").hide();
 			}
 
+			// Populate install-to-root checkbox
+			$("#chk-ulib-install-to-root").prop("checked", !!uLib.install_to_library_root);
+			ulibUpdateInstallPathHint();
+
 			// Render file lists using the shared update functions
 			ulibUpdateLibFileList();
 			ulibUpdateDemoFileList();
@@ -13322,6 +13353,11 @@
 		$(document).on("click", "#ulib-addLibFolder", function() { $("#ulib-input-libfolder").trigger("click"); });
 		$(document).on("click", "#ulib-addDemoFiles", function() { $("#ulib-input-demofiles").trigger("click"); });
 		$(document).on("click", "#ulib-addDemoFolder", function() { $("#ulib-input-demofolder").trigger("click"); });
+
+		// Toggle install-to-library-root path hint (unsigned modal)
+		$(document).on("change", "#chk-ulib-install-to-root", function() {
+			ulibUpdateInstallPathHint();
+		});
 
 		// ---- Unsigned lib: icon / image picker (mirrors pkg icon picker) ----
 		$(document).on("click", "#ulib-pickIcon", function() {
@@ -13639,7 +13675,8 @@
 				com_register_dlls: ulib_comRegisterDlls.slice(),
 				library_image: ulib_iconFilename,
 				library_image_base64: ulib_iconBase64,
-				library_image_mime: ulib_iconMime
+				library_image_mime: ulib_iconMime,
+				install_to_library_root: $("#chk-ulib-install-to-root").is(":checked")
 			};
 
 			// Update in DB
@@ -14067,6 +14104,7 @@
 					help_files: manifestHelpFiles,
 					com_register_dlls: comDlls
 				};
+				if (uLib.install_to_library_root) manifest.install_to_library_root = true;
 
 				// Create ZIP package
 				var zip = new AdmZip();
