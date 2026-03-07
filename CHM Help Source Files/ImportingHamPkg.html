@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Importing from VENUS Package Files (.pkg)</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">Importing from VENUS Package Files (.pkg)</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; Importing from VENUS Package Files</div>
+
+<h2>Overview</h2>
+<p>Hamilton VENUS software distributes libraries, labware definitions, configuration files, and method examples inside proprietary <code>.pkg</code> package files. These binary packages are used by the VENUS installer and update system to deploy content to the Hamilton system directories. Library Manager for Venus 6 can open, explore, and selectively import library content from these <code>.pkg</code> files.</p>
+
+<p>This feature is especially useful for:</p>
+<ul>
+  <li>Extracting individual libraries from large VENUS installation packages</li>
+  <li>Merging multiple HSL and help files from a <code>.pkg</code> into a single managed library entity (e.g., frameworks like HSL Framework that bundle multiple <code>.hsl</code> and <code>.chm</code> files)</li>
+  <li>Exploring package contents before deciding what to import</li>
+  <li>Bringing legacy VENUS libraries under Library Manager control</li>
+</ul>
+
+<p><b>Note:</b> This is different from importing <code>.hxlibpkg</code> files. VENUS <code>.pkg</code> files use a completely different binary format and do not contain Library Manager metadata. When importing from a <code>.pkg</code>, the user provides the library metadata (name, author, version, etc.) manually.</p>
+
+<h2>PKG File Format</h2>
+<p>Hamilton <code>.pkg</code> files use a binary container format with the following structure:</p>
+<ul>
+  <li><b>Header:</b> 46 bytes beginning with the magic string <code>HamPkg</code>, containing the entry count, creation timestamp (Windows FILETIME), and VENUS version string</li>
+  <li><b>Entry Table:</b> N &times; 36-byte entries, each with an entry ID, flags, data offset, and data size</li>
+  <li><b>Data Blocks:</b> Zlib-compressed data for each entry (8-byte header + deflate stream)</li>
+  <li><b>Manifest:</b> An <code>HxPars</code>-format entry (flags=0) mapping entry IDs to absolute installation paths</li>
+  <li><b>Trailer:</b> <code>$$key=value$$</code> pairs with package metadata (author, description, etc.)</li>
+</ul>
+
+<h2>GUI Workflow</h2>
+
+<h3>Step 1: Select a Package File</h3>
+<ol>
+  <li>Click the <b>overflow menu</b> (three-dot button) in the toolbar</li>
+  <li>Select <b>Import HamPkg</b></li>
+  <li>In the modal that appears, either:
+    <ul>
+      <li><b>Click</b> the drop zone to browse for a <code>.pkg</code> file</li>
+      <li><b>Drag and drop</b> a <code>.pkg</code> file onto the drop zone</li>
+    </ul>
+  </li>
+</ol>
+
+<h3>Step 2: Explore and Select Files</h3>
+<p>After loading the package, the modal displays:</p>
+<ul>
+  <li><b>Package Information:</b> File name, VENUS version, author, creation date, file count, and format version</li>
+  <li><b>Category Filters:</b> Tabs to filter by All, Library, Help, Labware, Config, or Methods</li>
+  <li><b>File List:</b> Every file in the package with its name, category, relative path, and size. Click a file to toggle its selection. Use <b>All</b> / <b>None</b> buttons to bulk-select or deselect.</li>
+</ul>
+<p>Library (<code>.hsl</code>, <code>.hs_</code>, <code>.sub</code>) and help (<code>.chm</code>, <code>.pdf</code>) files are auto-selected by default. You can add or remove files from the selection as needed.</p>
+
+<h3>Step 3: Configure Library Metadata</h3>
+<p>Below the file list, fill in the library details:</p>
+<table class="doc-table">
+  <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+  <tr><td>Library Name</td><td>Yes</td><td>Name for the library entity. Auto-detected from HSL file names when possible.</td></tr>
+  <tr><td>Version</td><td>Yes</td><td>Version string (e.g., <code>1.0.0</code>). Defaults to <code>1.0.0</code>.</td></tr>
+  <tr><td>Author</td><td>Yes</td><td>Library author (minimum 3 characters). Auto-filled from the package trailer if available.</td></tr>
+  <tr><td>Organization</td><td>No</td><td>Publisher organization.</td></tr>
+  <tr><td>VENUS Compatibility</td><td>Yes</td><td>Compatible VENUS versions (e.g., <code>6.1+</code>). Auto-filled from the package header.</td></tr>
+  <tr><td>Tags</td><td>No</td><td>Comma-separated tags for categorization.</td></tr>
+  <tr><td>Description</td><td>Yes</td><td>Brief description of the library.</td></tr>
+</table>
+
+<p><b>Install Path:</b> By default, files are installed to <code>&lt;Library Root&gt;\&lt;LibraryName&gt;</code>. Check the <b>Install to root</b> option to place files directly in the Library root directory (useful for libraries that VENUS expects at a specific path).</p>
+
+<h3>Step 4: Import</h3>
+<p>Click <b>Import as Library</b> to install the selected files. The import process:</p>
+<ol>
+  <li>Creates the library directory (and demo methods directory if method files are selected)</li>
+  <li>Writes the selected files from the package to their destination directories</li>
+  <li>Computes SHA-256 integrity hashes for tracked file types</li>
+  <li>Parses public function signatures from HSL files</li>
+  <li>Creates a database record in the <code>installed_libs</code> collection with full metadata and <code>package_lineage</code> tracking the <code>.pkg</code> source</li>
+  <li>Assigns the library to the appropriate group</li>
+  <li>Records an audit trail entry</li>
+</ol>
+
+<h2>Merging Files into a Single Library</h2>
+<p>One of the most powerful uses of HamPkg import is creating a single library entity from multiple files spread across a package. For example, the <b>HSL Framework</b> ships as part of a VENUS installation package and contains multiple <code>.hsl</code> files and <code>.chm</code> help files. With this feature, you can:</p>
+<ol>
+  <li>Open the VENUS <code>.pkg</code> file</li>
+  <li>Filter to <b>Library</b> and <b>Help</b> categories</li>
+  <li>Select all the <code>.hsl</code> and <code>.chm</code> files that belong to the framework</li>
+  <li>Enter a library name like <code>HSLFramework</code></li>
+  <li>Import them as a single managed library</li>
+</ol>
+<p>The resulting library appears as one entity in Library Manager, with all files tracked together for versioning, export, and integrity verification.</p>
+
+<h2>File Categories</h2>
+<p>Files within a <code>.pkg</code> are automatically categorized based on their original installation path and file extension:</p>
+<table class="doc-table">
+  <tr><th>Category</th><th>Description</th><th>Typical Extensions</th></tr>
+  <tr><td>Library</td><td>HSL source files and compiled libraries</td><td><code>.hsl</code>, <code>.hs_</code>, <code>.sub</code></td></tr>
+  <tr><td>Help</td><td>Help files and documentation</td><td><code>.chm</code>, <code>.pdf</code>, <code>.htm</code>, <code>.html</code></td></tr>
+  <tr><td>Labware</td><td>Labware definitions and rack files</td><td><code>.rck</code>, <code>.tml</code>, <code>.ctr</code></td></tr>
+  <tr><td>Config</td><td>Configuration and system files</td><td><code>.cfg</code>, <code>.xml</code>, <code>.ini</code></td></tr>
+  <tr><td>Methods</td><td>Method files and examples</td><td><code>.med</code>, <code>.met</code>, <code>.hsl</code> (in Methods path)</td></tr>
+</table>
+
+<h2>OEM Restrictions</h2>
+<p>When the author or organization name matches a <a href="ImportingLibraries.html#oem">restricted OEM keyword</a>, the same protections apply as with regular library imports:</p>
+<ul>
+  <li>An OEM authorization password is required to proceed</li>
+  <li>The library is automatically assigned to the protected OEM group</li>
+</ul>
+
+<h2>Limitations</h2>
+<ul>
+  <li><code>.pkg</code> files do not contain Library Manager metadata, so the user must provide all library information manually</li>
+  <li>COM DLL registration is not supported for HamPkg imports &mdash; DLLs can be extracted but are not registered automatically</li>
+  <li>Code signing and package caching are not available for <code>.pkg</code> imports since they are not Library Manager packages</li>
+  <li>Labware and configuration files can be selected for import but are placed in the library directory, not in their original VENUS system locations</li>
+</ul>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="ImportingLibraries.html">Importing Libraries</a> &mdash; Standard <code>.hxlibpkg</code> and <code>.hxlibarch</code> import</li>
+  <li><a href="DataModel.html">Data Model</a> &mdash; Database record structure</li>
+  <li><a href="LibraryAuditLog.html">Library Audit Log</a> &mdash; Audit trail entries</li>
+</ul>
+
+</div>
+</body>
+</html>

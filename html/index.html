@@ -167,6 +167,7 @@
 								</button>
 								<div class="dropdown-menu dropdown-menu-right">
 									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
+									<a class="dropdown-item overflow-import-hampkg" href="#"><i class="fas fa-file-import mr-2"></i>Import HamPkg</a>
 									<a class="dropdown-item overflow-repair" href="#"><i class="fas fa-tools mr-2"></i>Verify &amp; Repair</a>
 									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group mr-2"></i>Library Groups</a>
 									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list mr-2"></i>History</a>
@@ -2547,6 +2548,239 @@
 		</div>
 	</div>
 	<!---- Modal Terms of Use end --->
+
+	<!---- Modal Import HamPkg start --->
+	<div class="modal" tabindex="-1" role="dialog" id="importHamPkgModal">
+		<div class="modal-dialog modal-xl modal-dialog-centered" role="document" style="max-width:900px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<div class="d-flex align-items-center">
+						<div class="detail-modal-icon mr-3">
+							<i class="fas fa-file-import fa-2x" style="color:var(--medium);"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Import HamPkg</h5>
+							<small class="text-muted hampkg-subtitle">Extract and import libraries from Hamilton VENUS .pkg packages</small>
+						</div>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body hampkg-modal-body">
+
+					<!-- Step 1: File Selection -->
+					<div class="hampkg-step hampkg-step-select">
+						<div class="hampkg-drop-zone" id="hampkg-drop-zone">
+							<div class="hampkg-drop-icon">
+								<i class="fas fa-file-archive fa-3x" style="color:var(--medium);"></i>
+							</div>
+							<p class="mb-1"><strong>Drop a .pkg file here</strong> or click to browse</p>
+							<p class="text-muted text-sm mb-0">Hamilton VENUS package files (.pkg)</p>
+						</div>
+						<input type="file" class="d-none" id="hampkg-input-file" accept=".pkg">
+					</div>
+
+					<!-- Step 2: Package Info + File Explorer -->
+					<div class="hampkg-step hampkg-step-explore d-none">
+						<!-- Package header info -->
+						<div class="hampkg-pkg-info mb-3">
+							<div class="row">
+								<div class="col-md-4">
+									<div class="detail-section">
+										<h6 class="detail-section-label">Package</h6>
+										<p class="hampkg-pkg-name text-muted mb-0"></p>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="detail-section">
+										<h6 class="detail-section-label">VENUS Version</h6>
+										<p class="hampkg-venus-ver text-muted mb-0"></p>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="detail-section">
+										<h6 class="detail-section-label">Author</h6>
+										<p class="hampkg-pkg-author text-muted mb-0"></p>
+									</div>
+								</div>
+							</div>
+							<div class="row mt-2">
+								<div class="col-md-4">
+									<div class="detail-section">
+										<h6 class="detail-section-label">Created</h6>
+										<p class="hampkg-pkg-created text-muted mb-0"></p>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="detail-section">
+										<h6 class="detail-section-label">Total Files</h6>
+										<p class="hampkg-pkg-filecount text-muted mb-0"></p>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="detail-section">
+										<h6 class="detail-section-label">Format Version</h6>
+										<p class="hampkg-pkg-format text-muted mb-0"></p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<hr class="mt-2 mb-3">
+
+						<!-- Category filter tabs -->
+						<div class="d-flex align-items-center mb-2">
+							<div class="hampkg-category-tabs flex-grow-1">
+								<button class="btn btn-sm hampkg-cat-btn active" data-cat="all">All</button>
+								<button class="btn btn-sm hampkg-cat-btn" data-cat="library"><i class="fas fa-code mr-1"></i>Library</button>
+								<button class="btn btn-sm hampkg-cat-btn" data-cat="help"><i class="fas fa-question-circle mr-1"></i>Help</button>
+								<button class="btn btn-sm hampkg-cat-btn" data-cat="labware"><i class="fas fa-th mr-1"></i>Labware</button>
+								<button class="btn btn-sm hampkg-cat-btn" data-cat="config"><i class="fas fa-sliders-h mr-1"></i>Config</button>
+								<button class="btn btn-sm hampkg-cat-btn" data-cat="demo"><i class="fas fa-project-diagram mr-1"></i>Methods</button>
+							</div>
+							<div class="hampkg-select-controls ml-2">
+								<button class="btn btn-sm btn-outlined hampkg-select-all" title="Select All Visible"><i class="fas fa-check-double mr-1"></i>All</button>
+								<button class="btn btn-sm btn-outlined hampkg-select-none" title="Deselect All"><i class="fas fa-times mr-1"></i>None</button>
+							</div>
+						</div>
+
+						<!-- File list with checkboxes -->
+						<div class="hampkg-file-list" id="hampkg-file-list">
+							<!-- Populated dynamically -->
+						</div>
+
+						<!-- Selection summary -->
+						<div class="hampkg-selection-summary mt-2">
+							<span class="hampkg-selected-count text-muted">0 files selected</span>
+						</div>
+
+						<hr class="mt-2 mb-3">
+
+						<!-- Step 3: Library Metadata (inline) -->
+						<div class="hampkg-metadata">
+							<h6 class="detail-section-label mb-2"><i class="fas fa-book mr-1" style="color:var(--medium);"></i>Library Configuration</h6>
+							<p class="text-muted text-sm mb-3">Configure how the selected files will be imported as a library. You can merge multiple HSL files, help files, and supporting files into a single library entity.</p>
+
+							<div class="row">
+								<div class="col-md-6">
+									<div class="form-group">
+										<label for="hampkg-lib-name">Library Name <span class="text-danger">*</span></label>
+										<input type="text" class="form-control form-control-sm" id="hampkg-lib-name" placeholder="e.g. HSLFramework" maxlength="60">
+										<small class="form-text text-muted">Auto-detected from selected files. You can override it.</small>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="form-group">
+										<label for="hampkg-lib-version">Version <span class="text-danger">*</span></label>
+										<input type="text" class="form-control form-control-sm" id="hampkg-lib-version" placeholder="e.g. 1.0.0" value="1.0.0">
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-md-6">
+									<div class="form-group">
+										<label for="hampkg-lib-author">Author <span class="text-danger">*</span></label>
+										<input type="text" class="form-control form-control-sm" id="hampkg-lib-author" placeholder="Author name" minlength="3" maxlength="29">
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="form-group">
+										<label for="hampkg-lib-org">Organization</label>
+										<input type="text" class="form-control form-control-sm" id="hampkg-lib-org" placeholder="Organization (optional)" maxlength="29">
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-md-6">
+									<div class="form-group">
+										<label for="hampkg-lib-venus">VENUS Compatibility <span class="text-danger">*</span></label>
+										<input type="text" class="form-control form-control-sm" id="hampkg-lib-venus" placeholder="e.g. 4.7+">
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="form-group">
+										<label for="hampkg-lib-tags">Tags</label>
+										<input type="text" class="form-control form-control-sm" id="hampkg-lib-tags" placeholder="Comma separated tags">
+									</div>
+								</div>
+							</div>
+							<div class="form-group">
+								<label for="hampkg-lib-desc">Description <span class="text-danger">*</span></label>
+								<textarea class="form-control form-control-sm" id="hampkg-lib-desc" rows="2" placeholder="Brief description of the library"></textarea>
+							</div>
+
+							<!-- Install path preview -->
+							<div class="detail-section mt-2">
+								<h6 class="detail-section-label">Install Path</h6>
+								<div class="custom-control custom-checkbox mb-2">
+									<input type="checkbox" class="custom-control-input" id="chk_hampkg_installToRoot">
+									<label class="custom-control-label" for="chk_hampkg_installToRoot">Install files to Library root directory (no subdirectory)</label>
+								</div>
+								<p class="hampkg-install-path text-muted text-sm mb-0" style="font-family:Consolas,monospace; background:var(--body-background); padding:6px 10px; border-radius:6px;"></p>
+							</div>
+
+							<!-- Files that will be imported summary -->
+							<div class="detail-section mt-3">
+								<h6 class="detail-section-label">Files to Import</h6>
+								<div class="row">
+									<div class="col-md-6">
+										<div class="detail-section">
+											<h6 class="detail-section-label text-sm">Library Files</h6>
+											<div class="hampkg-summary-lib-files pkg-file-list" style="min-height:40px; max-height:120px;"></div>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="detail-section">
+											<h6 class="detail-section-label text-sm">Help Files</h6>
+											<div class="hampkg-summary-help-files pkg-file-list" style="min-height:40px; max-height:120px;"></div>
+										</div>
+									</div>
+								</div>
+								<div class="row mt-2">
+									<div class="col-md-6">
+										<div class="detail-section hampkg-demo-section d-none">
+											<h6 class="detail-section-label text-sm">Demo Methods</h6>
+											<div class="hampkg-summary-demo-files pkg-file-list" style="min-height:40px; max-height:120px;"></div>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="detail-section hampkg-labware-section d-none">
+											<h6 class="detail-section-label text-sm">Labware / Config</h6>
+											<div class="hampkg-summary-other-files pkg-file-list" style="min-height:40px; max-height:120px;"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Loading overlay -->
+					<div class="hampkg-loading d-none">
+						<div class="text-center py-5">
+							<div class="spinner-border text-primary mb-3" role="status">
+								<span class="sr-only">Loading...</span>
+							</div>
+							<p class="text-muted">Extracting package contents...</p>
+						</div>
+					</div>
+
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
+					<div>
+						<button type="button" class="btn btn-outlined hampkg-btn-back d-none"><i class="fas fa-arrow-left mr-1"></i>Back</button>
+					</div>
+					<div>
+						<button type="button" class="btn btn-outlined mr-2" data-dismiss="modal">Cancel</button>
+						<button type="button" class="btn solid-button hampkg-btn-import" disabled><i class="fas fa-file-import mr-2"></i>Import as Library</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Hidden file input for HamPkg browsing -->
+	<input type="file" class="d-none" id="hampkg-browse-input" accept=".pkg">
+	<!---- Modal Import HamPkg end --->
 
 	<!-- Hidden open dialog for Check Audit File -->
 	<input type="file" class="d-none" id="audit-open-dialog" accept=".txt">

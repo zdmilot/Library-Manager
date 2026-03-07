@@ -3361,6 +3361,214 @@ body.dark-mode .btn-dark-mode-toggle .fa-sun {
 	box-shadow: none;
 }
 
+/* ── Import HamPkg Modal ──────────────────────────────────────────────────── */
+
+.hampkg-modal-body {
+	max-height: 70vh;
+	overflow-y: auto;
+	padding: 20px 24px;
+}
+
+.hampkg-subtitle {
+	font-size: 0.8rem;
+}
+
+/* Drop zone */
+.hampkg-drop-zone {
+	border: 2px dashed #ccc;
+	border-radius: 12px;
+	padding: 48px 24px;
+	text-align: center;
+	cursor: pointer;
+	transition: border-color 0.2s, background 0.2s;
+	background: var(--body-background, #f8f9fa);
+}
+.hampkg-drop-zone:hover,
+.hampkg-drop-zone.drag-over {
+	border-color: var(--medium, #3498db);
+	background: rgba(52,152,219,0.05);
+}
+.hampkg-drop-icon {
+	margin-bottom: 12px;
+}
+
+/* Category filter tabs */
+.hampkg-category-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+.hampkg-cat-btn {
+	font-size: 0.78rem;
+	padding: 3px 10px;
+	border-radius: 14px;
+	border: 1px solid #dee2e6;
+	background: transparent;
+	color: var(--font-color, #333);
+	transition: all 0.15s;
+}
+.hampkg-cat-btn:hover {
+	background: rgba(52,152,219,0.08);
+	border-color: var(--medium, #3498db);
+}
+.hampkg-cat-btn.active {
+	background: var(--medium, #3498db);
+	color: #fff;
+	border-color: var(--medium, #3498db);
+}
+
+/* File list */
+.hampkg-file-list {
+	border: 1px solid #dee2e6;
+	border-radius: 6px;
+	max-height: 280px;
+	overflow-y: auto;
+	background: var(--body-background, #f8f9fa);
+}
+.hampkg-file-item {
+	display: flex;
+	align-items: center;
+	padding: 6px 12px;
+	border-bottom: 1px solid #eee;
+	font-size: 0.82rem;
+	cursor: pointer;
+	transition: background 0.12s;
+	user-select: none;
+}
+.hampkg-file-item:last-child {
+	border-bottom: none;
+}
+.hampkg-file-item:hover {
+	background: rgba(52,152,219,0.06);
+}
+.hampkg-file-item.selected {
+	background: rgba(52,152,219,0.10);
+}
+.hampkg-file-item .hampkg-file-check {
+	width: 18px;
+	flex-shrink: 0;
+	margin-right: 8px;
+	color: #ccc;
+}
+.hampkg-file-item.selected .hampkg-file-check {
+	color: var(--medium, #3498db);
+}
+.hampkg-file-item .hampkg-file-icon {
+	width: 20px;
+	flex-shrink: 0;
+	margin-right: 8px;
+	text-align: center;
+	color: var(--medium, #3498db);
+	font-size: 0.85rem;
+}
+.hampkg-file-item .hampkg-file-name {
+	flex-grow: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.hampkg-file-item .hampkg-file-path {
+	flex-shrink: 0;
+	margin-left: 8px;
+	font-size: 0.72rem;
+	color: #999;
+	max-width: 250px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.hampkg-file-item .hampkg-file-size {
+	flex-shrink: 0;
+	margin-left: 8px;
+	font-size: 0.72rem;
+	color: #999;
+	min-width: 55px;
+	text-align: right;
+}
+
+/* Category badge in file list */
+.hampkg-file-cat {
+	font-size: 0.68rem;
+	padding: 1px 6px;
+	border-radius: 8px;
+	margin-left: 6px;
+	flex-shrink: 0;
+	background: #e9ecef;
+	color: #666;
+}
+
+/* Selection summary */
+.hampkg-selection-summary {
+	font-size: 0.82rem;
+}
+
+/* Package info grid */
+.hampkg-pkg-info .detail-section {
+	margin-bottom: 0;
+}
+.hampkg-pkg-info .detail-section-label {
+	font-size: 0.72rem;
+	margin-bottom: 2px;
+}
+.hampkg-pkg-info p {
+	font-size: 0.85rem;
+}
+
+/* Metadata form */
+.hampkg-metadata .form-group {
+	margin-bottom: 10px;
+}
+.hampkg-metadata label {
+	font-size: 0.82rem;
+	font-weight: 600;
+	margin-bottom: 3px;
+}
+.hampkg-metadata .form-text {
+	font-size: 0.72rem;
+}
+
+/* ── Import HamPkg Dark Mode ──────────────────────────────────────────────── */
+
+body.dark-mode .hampkg-drop-zone {
+	border-color: #2a3a5c;
+	background: #0f0f23;
+}
+body.dark-mode .hampkg-drop-zone:hover,
+body.dark-mode .hampkg-drop-zone.drag-over {
+	border-color: #3498db;
+	background: rgba(52,152,219,0.08);
+}
+body.dark-mode .hampkg-cat-btn {
+	border-color: #2a3a5c;
+	color: #c8d6e5;
+}
+body.dark-mode .hampkg-cat-btn:hover {
+	background: rgba(52,152,219,0.12);
+}
+body.dark-mode .hampkg-file-list {
+	border-color: #2a3a5c;
+	background: #0f0f23;
+}
+body.dark-mode .hampkg-file-item {
+	border-bottom-color: #1a2744;
+}
+body.dark-mode .hampkg-file-item:hover {
+	background: rgba(52,152,219,0.08);
+}
+body.dark-mode .hampkg-file-item.selected {
+	background: rgba(52,152,219,0.14);
+}
+body.dark-mode .hampkg-file-cat {
+	background: #1a2744;
+	color: #8899aa;
+}
+body.dark-mode .hampkg-file-item .hampkg-file-check {
+	color: #2a3a5c;
+}
+body.dark-mode .hampkg-file-item.selected .hampkg-file-check {
+	color: #3498db;
+}
+
 
 
 

@@ -14169,6 +14169,721 @@
 			return db_unsigned_libs.unsigned_libs.find() || [];
 		}
 
+		//**************************************************************************************
+		//****** IMPORT HAMPKG (VENUS .pkg) ****************************************************
+		//**************************************************************************************
+
+		var pkgExtractor = require('../lib/pkg-extractor');
+
+		/** State for the HamPkg import workflow */
+		var _hampkgFiles = [];      // Array of extracted file entries from pkg-extractor
+		var _hampkgPkgInfo = null;   // Parsed package info from parsePkg()
+		var _hampkgBuffer = null;    // Raw .pkg file buffer
+		var _hampkgFilePath = '';    // Path to the .pkg file
+
+		/**
+		 * Format a byte count as a human-readable string.
+		 */
+		function formatFileSize(bytes) {
+			if (bytes < 1024) return bytes + ' B';
+			if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+			return (bytes / 1048576).toFixed(1) + ' MB';
+		}
+
+		/**
+		 * Reset the HamPkg modal to its initial state (step 1: file selection).
+		 */
+		function hampkgReset() {
+			_hampkgFiles = [];
+			_hampkgPkgInfo = null;
+			_hampkgBuffer = null;
+			_hampkgFilePath = '';
+
+			var $modal = $("#importHamPkgModal");
+			$modal.find(".hampkg-step-select").removeClass("d-none");
+			$modal.find(".hampkg-step-explore").addClass("d-none");
+			$modal.find(".hampkg-loading").addClass("d-none");
+			$modal.find(".hampkg-btn-back").addClass("d-none");
+			$modal.find(".hampkg-btn-import").prop("disabled", true);
+			$modal.find("#hampkg-file-list").empty();
+			$modal.find("#hampkg-lib-name").val("");
+			$modal.find("#hampkg-lib-version").val("1.0.0");
+			$modal.find("#hampkg-lib-author").val("");
+			$modal.find("#hampkg-lib-org").val("");
+			$modal.find("#hampkg-lib-venus").val("");
+			$modal.find("#hampkg-lib-tags").val("");
+			$modal.find("#hampkg-lib-desc").val("");
+			$modal.find("#chk_hampkg_installToRoot").prop("checked", false);
+			$modal.find(".hampkg-cat-btn").removeClass("active");
+			$modal.find('.hampkg-cat-btn[data-cat="all"]').addClass("active");
+		}
+
+		/**
+		 * Load a .pkg file buffer and populate the explore view.
+		 */
+		function hampkgLoadFile(filePath) {
+			var $modal = $("#importHamPkgModal");
+
+			// Show loading state
+			$modal.find(".hampkg-step-select").addClass("d-none");
+			$modal.find(".hampkg-loading").removeClass("d-none");
+
+			try {
+				_hampkgFilePath = filePath;
+				_hampkgBuffer = fs.readFileSync(filePath);
+				_hampkgPkgInfo = pkgExtractor.parsePkg(_hampkgBuffer);
+				_hampkgFiles = pkgExtractor.extractAllFiles(_hampkgBuffer, _hampkgPkgInfo);
+
+				// Populate package info header
+				$modal.find(".hampkg-pkg-name").text(path.basename(filePath));
+				$modal.find(".hampkg-venus-ver").text(_hampkgPkgInfo.venusVersion || "\u2014");
+				$modal.find(".hampkg-pkg-author").text(
+					_hampkgPkgInfo.trailer ? _hampkgPkgInfo.trailer.author : "\u2014"
+				);
+				$modal.find(".hampkg-pkg-created").text(
+					_hampkgPkgInfo.created ? _hampkgPkgInfo.created.toLocaleString() : "\u2014"
+				);
+				var fileDataCount = 0;
+				for (var ec = 0; ec < _hampkgPkgInfo.entries.length; ec++) {
+					if (_hampkgPkgInfo.entries[ec].flags === 1) fileDataCount++;
+				}
+				$modal.find(".hampkg-pkg-filecount").text(fileDataCount + " files");
+				$modal.find(".hampkg-pkg-format").text(_hampkgPkgInfo.formatVersion);
+
+				// Auto-fill VENUS compatibility from package
+				if (_hampkgPkgInfo.venusVersion) {
+					var venMajMin = _hampkgPkgInfo.venusVersion.split('.').slice(0, 2).join('.');
+					$modal.find("#hampkg-lib-venus").val(venMajMin + "+");
+				}
+
+				// Auto-fill author from trailer
+				if (_hampkgPkgInfo.trailer && _hampkgPkgInfo.trailer.author) {
+					$modal.find("#hampkg-lib-author").val(_hampkgPkgInfo.trailer.author);
+				}
+
+				// Build file list
+				hampkgBuildFileList();
+
+				// Auto-detect library name from the files
+				var detectedName = pkgExtractor.detectLibraryName(_hampkgFiles);
+				if (detectedName) {
+					$modal.find("#hampkg-lib-name").val(detectedName);
+				}
+
+				// Auto-select library and help files by default
+				for (var af = 0; af < _hampkgFiles.length; af++) {
+					var f = _hampkgFiles[af];
+					if (f.pathCategory === 'library' || f.category.group === 'library' || f.category.group === 'help') {
+						f.selected = true;
+					}
+				}
+				hampkgBuildFileList();
+				hampkgUpdateSummary();
+				hampkgUpdateInstallPath();
+
+				// Show explore view
+				$modal.find(".hampkg-loading").addClass("d-none");
+				$modal.find(".hampkg-step-explore").removeClass("d-none");
+				$modal.find(".hampkg-btn-back").removeClass("d-none");
+
+			} catch (e) {
+				$modal.find(".hampkg-loading").addClass("d-none");
+				$modal.find(".hampkg-step-select").removeClass("d-none");
+				alert("Error reading .pkg file:\n" + e.message);
+			}
+		}
+
+		/**
+		 * Build the file list HTML from _hampkgFiles, respecting the active category filter.
+		 */
+		function hampkgBuildFileList() {
+			var $list = $("#hampkg-file-list");
+			$list.empty();
+
+			var activeCat = $(".hampkg-cat-btn.active").data("cat") || "all";
+
+			var visibleCount = 0;
+			for (var i = 0; i < _hampkgFiles.length; i++) {
+				var f = _hampkgFiles[i];
+
+				// Filter by category
+				if (activeCat !== "all") {
+					var matchesCat = false;
+					if (activeCat === 'library' && (f.pathCategory === 'library' && f.category.group !== 'help')) matchesCat = true;
+					else if (activeCat === 'help' && f.category.group === 'help') matchesCat = true;
+					else if (activeCat === 'labware' && f.pathCategory === 'labware') matchesCat = true;
+					else if (activeCat === 'config' && (f.pathCategory === 'config' || f.pathCategory === 'system')) matchesCat = true;
+					else if (activeCat === 'demo' && (f.pathCategory === 'methods' || f.category.group === 'demo')) matchesCat = true;
+					if (!matchesCat) continue;
+				}
+
+				visibleCount++;
+				var selectedClass = f.selected ? ' selected' : '';
+				var checkIcon = f.selected ? 'fa-check-square' : 'fa-square';
+				var relDisplay = f.relPath.length > 50 ? '...' + f.relPath.slice(-47) : f.relPath;
+
+				var html = '<div class="hampkg-file-item' + selectedClass + '" data-idx="' + i + '">'
+					+ '<span class="hampkg-file-check"><i class="far ' + checkIcon + '"></i></span>'
+					+ '<span class="hampkg-file-icon"><i class="fas ' + escapeHtml(f.category.icon) + '"></i></span>'
+					+ '<span class="hampkg-file-name">' + escapeHtml(f.fileName) + '</span>'
+					+ '<span class="hampkg-file-cat">' + escapeHtml(f.category.label) + '</span>'
+					+ '<span class="hampkg-file-path" title="' + escapeHtml(f.relPath) + '">' + escapeHtml(relDisplay) + '</span>'
+					+ '<span class="hampkg-file-size">' + formatFileSize(f.size) + '</span>'
+					+ '</div>';
+				$list.append(html);
+			}
+
+			if (visibleCount === 0) {
+				$list.append('<div class="text-center text-muted py-4"><i class="fas fa-inbox mr-2"></i>No files in this category</div>');
+			}
+
+			// Update category counts in button labels
+			var counts = { all: _hampkgFiles.length, library: 0, help: 0, labware: 0, config: 0, demo: 0 };
+			for (var j = 0; j < _hampkgFiles.length; j++) {
+				var fc = _hampkgFiles[j];
+				if (fc.pathCategory === 'library' && fc.category.group !== 'help') counts.library++;
+				if (fc.category.group === 'help') counts.help++;
+				if (fc.pathCategory === 'labware') counts.labware++;
+				if (fc.pathCategory === 'config' || fc.pathCategory === 'system') counts.config++;
+				if (fc.pathCategory === 'methods' || fc.category.group === 'demo') counts.demo++;
+			}
+
+			hampkgUpdateSelectionCount();
+		}
+
+		/**
+		 * Update the selection count text and import button state.
+		 */
+		function hampkgUpdateSelectionCount() {
+			var selectedCount = 0;
+			for (var i = 0; i < _hampkgFiles.length; i++) {
+				if (_hampkgFiles[i].selected) selectedCount++;
+			}
+			$(".hampkg-selected-count").text(selectedCount + " of " + _hampkgFiles.length + " files selected");
+
+			// Enable import button only if at least one file is selected and required fields are filled
+			hampkgValidateForm();
+		}
+
+		/**
+		 * Validate the import form and enable/disable the import button.
+		 */
+		function hampkgValidateForm() {
+			var selectedCount = 0;
+			for (var i = 0; i < _hampkgFiles.length; i++) {
+				if (_hampkgFiles[i].selected) selectedCount++;
+			}
+
+			var libName = $("#hampkg-lib-name").val().trim();
+			var author = $("#hampkg-lib-author").val().trim();
+			var version = $("#hampkg-lib-version").val().trim();
+			var venus = $("#hampkg-lib-venus").val().trim();
+			var desc = $("#hampkg-lib-desc").val().trim();
+
+			var valid = selectedCount > 0 && libName.length > 0 && author.length >= 3 && version.length > 0 && venus.length > 0 && desc.length > 0;
+			$(".hampkg-btn-import").prop("disabled", !valid);
+		}
+
+		/**
+		 * Update the file summary panels showing which files will go where.
+		 */
+		function hampkgUpdateSummary() {
+			var libFiles = [];
+			var helpFiles = [];
+			var demoFiles = [];
+			var otherFiles = [];
+
+			for (var i = 0; i < _hampkgFiles.length; i++) {
+				var f = _hampkgFiles[i];
+				if (!f.selected) continue;
+
+				if (f.category.group === 'help') {
+					helpFiles.push(f);
+				} else if (f.pathCategory === 'methods' || f.category.group === 'demo') {
+					demoFiles.push(f);
+				} else if (f.pathCategory === 'labware' || f.pathCategory === 'config' || f.pathCategory === 'system') {
+					otherFiles.push(f);
+				} else {
+					libFiles.push(f);
+				}
+			}
+
+			// Library files
+			var $libList = $(".hampkg-summary-lib-files");
+			$libList.empty();
+			if (libFiles.length === 0) {
+				$libList.html('<div class="text-muted text-center py-2" style="font-size:0.78rem;">No library files selected</div>');
+			} else {
+				for (var li = 0; li < libFiles.length; li++) {
+					$libList.append('<div class="pkg-file-item"><i class="fas ' + escapeHtml(libFiles[li].category.icon) + ' mr-2" style="color:var(--medium);"></i>' + escapeHtml(libFiles[li].fileName) + '</div>');
+				}
+			}
+
+			// Help files
+			var $helpList = $(".hampkg-summary-help-files");
+			$helpList.empty();
+			if (helpFiles.length === 0) {
+				$helpList.html('<div class="text-muted text-center py-2" style="font-size:0.78rem;">No help files selected</div>');
+			} else {
+				for (var hi = 0; hi < helpFiles.length; hi++) {
+					$helpList.append('<div class="pkg-file-item"><i class="fas fa-question-circle mr-2" style="color:var(--medium);"></i>' + escapeHtml(helpFiles[hi].fileName) + '</div>');
+				}
+			}
+
+			// Demo files
+			var $demoList = $(".hampkg-summary-demo-files");
+			$demoList.empty();
+			if (demoFiles.length > 0) {
+				$(".hampkg-demo-section").removeClass("d-none");
+				for (var di = 0; di < demoFiles.length; di++) {
+					$demoList.append('<div class="pkg-file-item"><i class="fas fa-project-diagram mr-2" style="color:var(--medium);"></i>' + escapeHtml(demoFiles[di].fileName) + '</div>');
+				}
+			} else {
+				$(".hampkg-demo-section").addClass("d-none");
+			}
+
+			// Labware/Config/Other files
+			var $otherList = $(".hampkg-summary-other-files");
+			$otherList.empty();
+			if (otherFiles.length > 0) {
+				$(".hampkg-labware-section").removeClass("d-none");
+				for (var oi = 0; oi < otherFiles.length; oi++) {
+					$otherList.append('<div class="pkg-file-item"><i class="fas ' + escapeHtml(otherFiles[oi].category.icon) + ' mr-2" style="color:var(--medium);"></i>' + escapeHtml(otherFiles[oi].fileName) + '</div>');
+				}
+			} else {
+				$(".hampkg-labware-section").addClass("d-none");
+			}
+		}
+
+		/**
+		 * Update the install path preview based on library name and root-install checkbox.
+		 */
+		function hampkgUpdateInstallPath() {
+			var libFolder = db_links.links.findOne({"_id":"lib-folder"});
+			var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+			var libName = $("#hampkg-lib-name").val().trim() || "LibraryName";
+			var installToRoot = $("#chk_hampkg_installToRoot").is(":checked");
+			var destPath = installToRoot ? libBasePath : path.join(libBasePath, libName);
+			$(".hampkg-install-path").text(destPath);
+		}
+
+		// ---- Overflow menu: Import HamPkg ----
+		$(document).on("click", ".overflow-import-hampkg", function(e) {
+			e.preventDefault();
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
+			hampkgReset();
+			$("#importHamPkgModal").modal("show");
+			return false;
+		});
+
+		// ---- Drop zone click -> trigger file input ----
+		$(document).on("click", "#hampkg-drop-zone", function() {
+			$("#hampkg-input-file").trigger("click");
+		});
+
+		// ---- Drop zone drag and drop ----
+		$(document).on("dragover", "#hampkg-drop-zone", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			$(this).addClass("drag-over");
+		});
+		$(document).on("dragleave", "#hampkg-drop-zone", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			$(this).removeClass("drag-over");
+		});
+		$(document).on("drop", "#hampkg-drop-zone", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			$(this).removeClass("drag-over");
+			var files = e.originalEvent.dataTransfer.files;
+			if (files && files.length > 0) {
+				var droppedPath = files[0].path;
+				if (path.extname(droppedPath).toLowerCase() === '.pkg') {
+					hampkgLoadFile(droppedPath);
+				} else {
+					alert("Please drop a Hamilton VENUS .pkg file.");
+				}
+			}
+		});
+
+		// ---- File input change ----
+		$(document).on("change", "#hampkg-input-file", function() {
+			var fileInput = this;
+			var filePath = "";
+			if (fileInput.files && fileInput.files.length > 0) {
+				filePath = fileInput.files[0].path;
+			}
+			$(this).val('');
+			if (!filePath) return;
+			hampkgLoadFile(filePath);
+		});
+
+		// ---- Back button ----
+		$(document).on("click", ".hampkg-btn-back", function() {
+			hampkgReset();
+		});
+
+		// ---- Category filter tabs ----
+		$(document).on("click", ".hampkg-cat-btn", function() {
+			$(".hampkg-cat-btn").removeClass("active");
+			$(this).addClass("active");
+			hampkgBuildFileList();
+		});
+
+		// ---- File item click (toggle selection) ----
+		$(document).on("click", ".hampkg-file-item", function() {
+			var idx = parseInt($(this).data("idx"), 10);
+			if (isNaN(idx) || idx < 0 || idx >= _hampkgFiles.length) return;
+			_hampkgFiles[idx].selected = !_hampkgFiles[idx].selected;
+			hampkgBuildFileList();
+			hampkgUpdateSummary();
+			hampkgUpdateInstallPath();
+		});
+
+		// ---- Select All / None ----
+		$(document).on("click", ".hampkg-select-all", function() {
+			var activeCat = $(".hampkg-cat-btn.active").data("cat") || "all";
+			for (var i = 0; i < _hampkgFiles.length; i++) {
+				var f = _hampkgFiles[i];
+				if (activeCat === "all") {
+					f.selected = true;
+				} else {
+					var matches = false;
+					if (activeCat === 'library' && f.pathCategory === 'library' && f.category.group !== 'help') matches = true;
+					else if (activeCat === 'help' && f.category.group === 'help') matches = true;
+					else if (activeCat === 'labware' && f.pathCategory === 'labware') matches = true;
+					else if (activeCat === 'config' && (f.pathCategory === 'config' || f.pathCategory === 'system')) matches = true;
+					else if (activeCat === 'demo' && (f.pathCategory === 'methods' || f.category.group === 'demo')) matches = true;
+					if (matches) f.selected = true;
+				}
+			}
+			hampkgBuildFileList();
+			hampkgUpdateSummary();
+			hampkgUpdateInstallPath();
+		});
+
+		$(document).on("click", ".hampkg-select-none", function() {
+			for (var i = 0; i < _hampkgFiles.length; i++) {
+				_hampkgFiles[i].selected = false;
+			}
+			hampkgBuildFileList();
+			hampkgUpdateSummary();
+			hampkgUpdateInstallPath();
+		});
+
+		// ---- Form field changes -> revalidate and update ----
+		$(document).on("input", "#hampkg-lib-name, #hampkg-lib-author, #hampkg-lib-version, #hampkg-lib-venus, #hampkg-lib-desc", function() {
+			hampkgValidateForm();
+			hampkgUpdateInstallPath();
+		});
+		$(document).on("change", "#chk_hampkg_installToRoot", function() {
+			hampkgUpdateInstallPath();
+		});
+
+		// ---- Modal reset on close ----
+		$(document).on("hidden.bs.modal", "#importHamPkgModal", function() {
+			hampkgReset();
+		});
+
+		// ---- IMPORT BUTTON: Install selected files as a library ----
+		$(document).on("click", ".hampkg-btn-import", async function() {
+			var $btn = $(this);
+			if ($btn.prop("disabled")) return;
+			$btn.prop("disabled", true);
+
+			// ---- Access control check ----
+			var accessCheck = canManageLibraries();
+			if (!accessCheck.allowed) {
+				showAccessDeniedModal('Import HamPkg', accessCheck.reason);
+				$btn.prop("disabled", false);
+				return;
+			}
+
+			try {
+				var libName = $("#hampkg-lib-name").val().trim();
+				var author = $("#hampkg-lib-author").val().trim();
+				var organization = $("#hampkg-lib-org").val().trim();
+				var version = $("#hampkg-lib-version").val().trim();
+				var venusCompat = $("#hampkg-lib-venus").val().trim();
+				var description = $("#hampkg-lib-desc").val().trim();
+				var tagsRaw = $("#hampkg-lib-tags").val().trim();
+				var installToRoot = $("#chk_hampkg_installToRoot").is(":checked");
+
+				// Validate required fields
+				if (!libName) { alert("Library name is required."); $btn.prop("disabled", false); return; }
+				if (!isValidLibraryName(libName)) { alert("Invalid library name. Use letters, numbers, spaces, hyphens, and underscores only."); $btn.prop("disabled", false); return; }
+				if (author.length < shared.AUTHOR_MIN_LENGTH) { alert("Author must be at least " + shared.AUTHOR_MIN_LENGTH + " characters."); $btn.prop("disabled", false); return; }
+				if (author.length > shared.AUTHOR_MAX_LENGTH) { alert("Author must be at most " + shared.AUTHOR_MAX_LENGTH + " characters."); $btn.prop("disabled", false); return; }
+
+				// Check restricted author
+				if ((isRestrictedAuthor(author) || isRestrictedAuthor(organization)) && !isOemKeywordsEnabled()) {
+					var pwOk = await promptAuthorPassword();
+					if (!pwOk) {
+						alert('Import cancelled. Using a restricted OEM author or organization name requires authorization.');
+						$btn.prop("disabled", false);
+						return;
+					}
+				}
+
+				// Parse tags
+				var tags = [];
+				if (tagsRaw) {
+					tagsRaw.split(",").forEach(function(t) {
+						var s = shared.sanitizeTag(t);
+						if (s) tags.push(s);
+					});
+				}
+				var tagCheck = shared.filterReservedTags(tags);
+				tags = tagCheck.filtered;
+
+				// Collect selected files, categorized
+				var selectedLibFiles = [];
+				var selectedHelpFiles = [];
+				var selectedDemoFiles = [];
+				var selectedOtherFiles = [];
+
+				for (var i = 0; i < _hampkgFiles.length; i++) {
+					var f = _hampkgFiles[i];
+					if (!f.selected) continue;
+
+					if (f.category.group === 'help') {
+						selectedHelpFiles.push(f);
+					} else if (f.pathCategory === 'methods' || f.category.group === 'demo') {
+						selectedDemoFiles.push(f);
+					} else if (f.pathCategory === 'labware' || f.pathCategory === 'config' || f.pathCategory === 'system') {
+						selectedOtherFiles.push(f);
+					} else {
+						selectedLibFiles.push(f);
+					}
+				}
+
+				if (selectedLibFiles.length === 0 && selectedHelpFiles.length === 0 && selectedDemoFiles.length === 0 && selectedOtherFiles.length === 0) {
+					alert("No files selected for import.");
+					$btn.prop("disabled", false);
+					return;
+				}
+
+				// Determine install paths
+				var libFolder = db_links.links.findOne({"_id":"lib-folder"});
+				var metFolder = db_links.links.findOne({"_id":"met-folder"});
+				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
+				var libDestDir = installToRoot ? libBasePath : path.join(libBasePath, libName);
+				var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
+
+				// Check if library already exists
+				var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
+				if (existing) {
+					if (!confirm('A library named "' + libName + '" is already installed.\n\nDo you want to overwrite it?')) {
+						$btn.prop("disabled", false);
+						return;
+					}
+					db_installed_libs.installed_libs.remove({"_id": existing._id});
+				}
+
+				// Create directories
+				if (selectedLibFiles.length > 0 || selectedHelpFiles.length > 0 || selectedOtherFiles.length > 0) {
+					if (!fs.existsSync(libDestDir)) {
+						fs.mkdirSync(libDestDir, { recursive: true });
+					}
+				}
+				if (selectedDemoFiles.length > 0) {
+					if (!fs.existsSync(demoDestDir)) {
+						fs.mkdirSync(demoDestDir, { recursive: true });
+					}
+				}
+
+				var extractedCount = 0;
+				var libFileNames = [];
+				var helpFileNames = [];
+				var demoFileNames = [];
+
+				// Extract library files (including other/labware/config - all go to library dir)
+				var allLibEntries = selectedLibFiles.concat(selectedHelpFiles).concat(selectedOtherFiles);
+				for (var li = 0; li < allLibEntries.length; li++) {
+					var lf = allLibEntries[li];
+					var outPath = path.join(libDestDir, lf.fileName);
+					var parentDir = path.dirname(outPath);
+					if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+					fs.writeFileSync(outPath, lf.data);
+					extractedCount++;
+
+					if (lf.category.group === 'help') {
+						helpFileNames.push(lf.fileName);
+					} else {
+						libFileNames.push(lf.fileName);
+					}
+				}
+
+				// Extract demo files
+				for (var di = 0; di < selectedDemoFiles.length; di++) {
+					var df = selectedDemoFiles[di];
+					var demoOutPath = path.join(demoDestDir, df.fileName);
+					var demoParentDir = path.dirname(demoOutPath);
+					if (!fs.existsSync(demoParentDir)) fs.mkdirSync(demoParentDir, { recursive: true });
+					fs.writeFileSync(demoOutPath, df.data);
+					extractedCount++;
+					demoFileNames.push(df.fileName);
+				}
+
+				// Compute integrity hashes
+				var fileHashes = {};
+				try {
+					fileHashes = computeLibraryHashes(libFileNames, libDestDir, []);
+				} catch (e) {
+					console.warn('Could not compute integrity hashes: ' + e.message);
+				}
+
+				// Build DB record
+				var dbRecord = {
+					library_name: libName,
+					author: author,
+					organization: organization,
+					installed_by: getWindowsUsername(),
+					version: version,
+					venus_compatibility: venusCompat,
+					description: description,
+					github_url: "",
+					tags: tags,
+					created_date: new Date().toISOString(),
+					app_version: shared.getAppVersion(),
+					format_version: shared.FORMAT_VERSION,
+					windows_version: shared.getWindowsVersion(),
+					venus_version: _cachedVENUSVersion || '',
+					package_lineage: [{
+						event: 'imported_from_hampkg',
+						timestamp: new Date().toISOString(),
+						source_file: path.basename(_hampkgFilePath),
+						venus_version: _hampkgPkgInfo ? _hampkgPkgInfo.venusVersion : '',
+						pkg_author: _hampkgPkgInfo && _hampkgPkgInfo.trailer ? _hampkgPkgInfo.trailer.author : '',
+						files_selected: extractedCount,
+						files_total: _hampkgFiles.length
+					}],
+					library_image: null,
+					library_image_base64: null,
+					library_image_mime: null,
+					library_files: libFileNames,
+					demo_method_files: demoFileNames,
+					help_files: helpFileNames,
+					com_register_dlls: [],
+					com_warning: false,
+					com_registered: false,
+					lib_install_path: libDestDir,
+					demo_install_path: demoDestDir,
+					installed_date: new Date().toISOString(),
+					source_package: path.basename(_hampkgFilePath),
+					file_hashes: fileHashes,
+					public_functions: extractPublicFunctions(libFileNames, libDestDir),
+					required_dependencies: extractRequiredDependencies(libFileNames, libDestDir),
+					publisher_cert: null
+				};
+
+				// Auto-detect a BMP icon from extracted library files
+				for (var bi = 0; bi < selectedLibFiles.length; bi++) {
+					var bf = selectedLibFiles[bi];
+					if (bf.extension === 'bmp' || bf.extension === 'png') {
+						var iconBaseName = path.basename(bf.fileName, path.extname(bf.fileName)).toLowerCase();
+						var libBaseName = libName.toLowerCase();
+						if (iconBaseName === libBaseName || selectedLibFiles.length === 1) {
+							try {
+								dbRecord.library_image = bf.fileName;
+								dbRecord.library_image_base64 = bf.data.toString('base64');
+								dbRecord.library_image_mime = bf.extension === 'png' ? 'image/png' : 'image/bmp';
+							} catch(_) {}
+							break;
+						}
+					}
+				}
+
+				var saved = db_installed_libs.installed_libs.save(dbRecord);
+
+				// Update publisher registry
+				registerPublisher(author);
+				registerPublisher(organization);
+				registerTags(tags);
+
+				// Auto-assign to group
+				var savedAuthor = author;
+				var savedOrg = organization;
+				if (isRestrictedAuthor(savedAuthor) || isRestrictedAuthor(savedOrg)) {
+					addToOemTreeGroup(saved._id);
+				} else {
+					var navtree = db_tree.tree.find();
+					var targetGroupId = null;
+					for (var ti = 0; ti < navtree.length; ti++) {
+						var gEntry = getGroupById(navtree[ti]["group-id"]);
+						if (gEntry && !gEntry["default"]) {
+							targetGroupId = navtree[ti]["group-id"];
+							var existingIds = (navtree[ti]["method-ids"] || []).slice();
+							existingIds.push(saved._id);
+							db_tree.tree.update({"group-id": targetGroupId}, {"method-ids": existingIds}, {multi: false, upsert: false});
+							break;
+						}
+					}
+					if (!targetGroupId) {
+						var newGroup = db_groups.groups.save({
+							"name": "Libraries",
+							"icon-class": "fa-book",
+							"default": false,
+							"navbar": "left",
+							"favorite": true
+						});
+						db_tree.tree.save({
+							"group-id": newGroup._id,
+							"method-ids": [saved._id],
+							"locked": false
+						});
+					}
+				}
+
+				// Close modal and refresh
+				$("#importHamPkgModal").modal("hide");
+				impBuildLibraryCards();
+
+				// Show success via the existing import success modal
+				var $sm = $("#importSuccessModal");
+				$sm.find(".import-success-libname").text(libName);
+				$sm.find(".import-success-filecount").text(extractedCount + " file" + (extractedCount !== 1 ? "s" : "") + " installed from .pkg");
+
+				var pathsHtml = "";
+				if (libFileNames.length > 0 || helpFileNames.length > 0) {
+					pathsHtml += '<div class="path-label">Library Files</div>';
+					pathsHtml += '<div class="path-value">' + escapeHtml(libDestDir) + '</div>';
+				}
+				if (demoFileNames.length > 0) {
+					pathsHtml += '<div class="path-label">Demo Methods</div>';
+					pathsHtml += '<div class="path-value">' + escapeHtml(demoDestDir) + '</div>';
+				}
+				$sm.find(".import-success-paths").html(pathsHtml);
+				if (!pathsHtml) $sm.find(".import-success-paths").addClass("d-none"); else $sm.find(".import-success-paths").removeClass("d-none");
+				$sm.find(".import-success-com-status").addClass("d-none");
+				$sm.modal("show");
+
+				// Audit trail entry
+				try {
+					appendAuditTrailEntry(buildAuditTrailEntry('hampkg_imported', {
+						library_name:     libName,
+						version:          version,
+						author:           author,
+						organization:     organization,
+						source_file:      _hampkgFilePath,
+						lib_install_path: libDestDir,
+						demo_install_path: demoDestDir,
+						files_extracted:  extractedCount,
+						total_pkg_files:  _hampkgFiles.length,
+						venus_pkg_version: _hampkgPkgInfo ? _hampkgPkgInfo.venusVersion : ''
+					}));
+				} catch(_) { /* non-critical */ }
+
+			} catch (e) {
+				alert("Error importing from .pkg:\n" + e.message);
+			} finally {
+				$btn.prop("disabled", false);
+			}
+		});
+
         //**************************************************************************************
         //******  FUNCTION DECLARATIONS END ****************************************************
         //**************************************************************************************

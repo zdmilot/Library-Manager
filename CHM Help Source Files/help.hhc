@@ -95,6 +95,10 @@
 				<param name="Local" value="ImportingLibraries.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Importing from VENUS Packages (.pkg)">
+				<param name="Local" value="ImportingHamPkg.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Exporting Libraries">
 				<param name="Local" value="ExportingLibraries.html">
 				</OBJECT>

@@ -302,6 +302,18 @@
 		<param name="Local" value="ImportingLibraries.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="importing from VENUS packages">
+		<param name="Local" value="ImportingHamPkg.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="HamPkg">
+		<param name="Local" value="ImportingHamPkg.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value=".pkg files">
+		<param name="Local" value="ImportingHamPkg.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="inline editing">
 		<param name="Local" value="SearchFeatures.html">
 		</OBJECT>
