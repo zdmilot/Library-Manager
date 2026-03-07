@@ -1,4 +1,4 @@
-# Code Map: cli.js
+﻿# Code Map: cli.js
 
 **File**: `cli.js` | **Lines**: 2810 | **Purpose**: CLI entry point for library management commands
 
@@ -12,7 +12,7 @@
 | L37  | `adm-zip` |
 | L38  | `./lib/shared` |
 
-### Shared Module Re-exports (L41–56)
+### Shared Module Re-exports (L41-56)
 `safeZipExtractPath`, `isValidLibraryName`,
 `signPackageZipWithCert`, `verifyPackageSignature`,
 `parseHslMetadataFooter`, `generateSigningKeyPair`, `buildPublisherCertificate`,
@@ -99,9 +99,9 @@
 
 | Line | Purpose |
 |------|---------|
-| L2774 | `die(msg)` — exit with error |
+| L2774 | `die(msg)` - exit with error |
 | L2781 | Main dispatcher switch on `process.argv[2]` |
 
-## Known Issues — None Remaining
+## Known Issues - None Remaining
 
 All previously identified issues in cli.js have been resolved.

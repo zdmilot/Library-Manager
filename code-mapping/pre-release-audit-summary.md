@@ -1,4 +1,4 @@
-# Pre-Release Audit Summary — Library Manager for Venus 6 v1.8.6
+﻿# Pre-Release Audit Summary - Library Manager for Venus 6 v1.8.6
 
 ## Audit Scope
 
@@ -39,14 +39,14 @@ default filesystem permissions (world-readable on many systems).
 
 **Problem**: The legacy `signPackageZip()` function created v1.0 HMAC-only signatures with
 no publisher identity (no Ed25519 digital signature). These packages were accepted on import
-with only a warning. There should be no legacy signing support — Ed25519 code-signed
+with only a warning. There should be no legacy signing support - Ed25519 code-signed
 packages (v2.0) are the only accepted signed format.
 
 **Changes**:
 - `lib/shared.js`: Removed `signPackageZip()` function and its `module.exports` entry
 - `lib/shared.js`: `verifyPackageSignature()` now rejects v1.0 signatures as invalid
   (`result.valid = false` with explicit error message)
-- `lib/shared.js`: Updated comments/JSDoc — HMAC is "tamper-detection hash", not "legacy"
+- `lib/shared.js`: Updated comments/JSDoc - HMAC is "tamper-detection hash", not "legacy"
 - `cli.js`: Removed `signPackageZip` import; 3 callers (`cmdExportLib`, `cmdExportArchive`,
   `cmdCreatePackage`) now leave packages unsigned when no `--sign-key` is provided (with
   WARNING message) instead of falling back to v1.0 signing
@@ -68,7 +68,7 @@ packages (v2.0) are the only accepted signed format.
 | File | Changes |
 |------|---------|
 | `code-mapping/generated-map.json` | Regenerated via companion script (post-code-fix, post-legacy-removal) |
-| `code-mapping/audit-findings.md` | Complete rewrite — 21 findings with status tracking |
+| `code-mapping/audit-findings.md` | Complete rewrite - 21 findings with status tracking |
 | `code-mapping/cli-js-map.md` | All line numbers corrected; gStarred added to DEFAULT_GROUPS listing |
 | `code-mapping/service-js-map.md` | All line numbers corrected; gStarred added to DEFAULT_GROUPS listing |
 | `code-mapping/shared-js-map.md` | All line numbers corrected; removed phantom entries and `signPackageZip`; fixed incorrect constant values |
@@ -95,14 +95,14 @@ No changes required. `DataModel.html` already correctly documents:
 | 6 | Sensitive constants exported | No longer in `module.exports` |
 | 7 | Container payload size overflow | Guard added before `writeUInt32LE` |
 | 8 | `safeZipExtractPath` absolute path bypass | Strips drive letters and leading slashes |
-| 9 | Private key default permissions | **Fixed this audit** — `mode: 0o600` |
+| 9 | Private key default permissions | **Fixed this audit** - `mode: 0o600` |
 | 10 | Dead imports in cli.js | Removed |
 | 11 | Dead function `isTagSegmentValid` | Removed from shared.js |
-| 12 | gStarred divergence | **Fixed this audit** — added to cli.js & service.js |
+| 12 | gStarred divergence | **Fixed this audit** - added to cli.js & service.js |
 | 13 | Orphaned JSDoc comments | Cleaned up |
 | 14 | Legacy `install_path` fallback | All properly prefixed |
 | 19 | No HMAC format validation | Regex check added |
-| 21 | Legacy v1.0 signatures accepted | **Fixed this audit** — v1.0 rejected; `signPackageZip()` removed |
+| 21 | Legacy v1.0 signatures accepted | **Fixed this audit** - v1.0 rejected; `signPackageZip()` removed |
 
 ### Accepted Risks (2 items)
 
@@ -111,7 +111,7 @@ No changes required. `DataModel.html` already correctly documents:
 | 5 | OEM password hash without salt | Protects namespace reservation only (not auth); requires matching Ed25519 cert |
 | 15 | Export duplicates help files | Intentional backward compatibility (comment at cli.js L1704) |
 
-### Open — Low Priority (3 items)
+### Open - Low Priority (3 items)
 
 | # | Finding | Impact |
 |---|---------|--------|
@@ -119,17 +119,17 @@ No changes required. `DataModel.html` already correctly documents:
 | 17 | `computeFileHash` single-line edge case | Single-line HSL files with metadata footer are near-impossible in practice |
 | 18 | `isValidLibraryName` allows leading dots | Cosmetic on Windows; creates hidden dirs on Unix (not a supported platform) |
 
-### Feature Gaps (1 item — not a bug)
+### Feature Gaps (1 item - not a bug)
 
 | # | Finding | Description |
 |---|---------|-------------|
 | 20 | No `--require-signature` CLI flag | Unsigned packages are silently accepted on import |
 
-### Security Audit Summary — exec/execSync in main.js
+### Security Audit Summary - exec/execSync in main.js
 
 All 5 `child_process` call sites in the GUI audited:
-- **2 hardcoded** (whoami, reg query) — no user input, safe
-- **3 with user-derived paths** (COM registration) — validated with character filter
+- **2 hardcoded** (whoami, reg query) - no user input, safe
+- **3 with user-derived paths** (COM registration) - validated with character filter
   (`/[&|><\`%\r\n]/` + single-quote rejection) and CLSID regex (`/\{[0-9A-Fa-f\-]+\}/`)
 - No unmitigated injection vectors found
 

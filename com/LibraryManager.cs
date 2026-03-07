@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+﻿// SPDX-License-Identifier: Apache-2.0
 // ============================================================================
 // VenusLibraryManager COM Object  v1.9.8
 //
@@ -10,7 +10,7 @@
 // command dispatcher via a child process, passing JSON arguments and receiving
 // JSON results on stdout.
 //
-// Registration (32-bit ONLY — VENUS is x86):
+// Registration (32-bit ONLY - VENUS is x86):
 //   C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe /codebase VenusLibraryManager.dll
 //
 // Deregistration:
@@ -46,7 +46,7 @@ using System.Diagnostics;
 namespace VenusLibraryManager
 {
     // ======================================================================
-    // COM Interface — defines the public contract visible to COM clients
+    // COM Interface - defines the public contract visible to COM clients
     // ======================================================================
     [Guid("C4F8A9B2-5D3E-4F70-AB2C-4E6F8A0B2C4E")]
     [ComVisible(true)]
@@ -108,7 +108,7 @@ namespace VenusLibraryManager
     }
 
     // ======================================================================
-    // COM Class — the main coclass
+    // COM Class - the main coclass
     // ======================================================================
     [Guid("A2D6E8F0-3B1C-4D5E-8F0A-2C4D6E8F0A2C")]
     [ComVisible(true)]

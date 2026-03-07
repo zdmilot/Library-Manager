@@ -1,4 +1,4 @@
-# Code Map: lib/service.js
+﻿# Code Map: lib/service.js
 
 **File**: `lib/service.js` | **Lines**: 1732 | **Purpose**: Service layer used by COM bridge
 
@@ -28,16 +28,16 @@
 
 | Line | Function | Parameters | Purpose |
 |------|----------|------------|---------|
-| L60  | `getVENUSVersion()` | — | Detect VENUS version from registry (cached, `execFileSync`) |
-| L98  | `loadSystemLibIds()` | — | Load system library ID set from db/system_libraries.json |
-| L116 | `loadSystemLibNames()` | — | Load system library name set |
+| L60  | `getVENUSVersion()` | - | Detect VENUS version from registry (cached, `execFileSync`) |
+| L98  | `loadSystemLibIds()` | - | Load system library ID set from db/system_libraries.json |
+| L116 | `loadSystemLibNames()` | - | Load system library name set |
 | L122 | `isSystemLibrary(libId)` | `libId` | Check if ID is a system library |
 | L124 | `isSystemLibraryByName(libName)` | `libName` | Check if name is a system library |
 | L133 | `ensureLocalDataDir(dirPath)` | `dirPath` | Create data dir + seed files |
 | L157 | `connectDB(dbDir)` | `dbDir` | Connect diskdb to 5 collections |
 | L167 | `resolveDBPath(dbPathOverride)` | `dbPathOverride` | Resolve + ensure DB path |
-| L177 | `resolvePublisherRegistryPath()` | — | Return publisher_registry.json path |
-| L188 | `getWindowsUsername()` | — | Get current OS username |
+| L177 | `resolvePublisherRegistryPath()` | - | Return publisher_registry.json path |
+| L188 | `getWindowsUsername()` | - | Get current OS username |
 | L205 | `buildAuditTrailEntry(eventType, details)` | `eventType, details` | Build audit entry with environment fields |
 | L222 | `appendAuditTrailEntry(userDataDir, entry)` | `userDataDir, entry` | Append and rotate audit trail |
 | L251 | `getInstallPaths(db, libDirOvr, metDirOvr)` | `db, libDirOverride, metDirOverride` | Resolve install base paths |
@@ -58,7 +58,7 @@
 
 | # | Function | Line | Parameters | Purpose |
 |---|----------|------|------------|---------|
-| — | `createContext` | L611 | `opts?{dbPath,storeDir,libDir,metDir}` | Create service context (DB + paths) |
+| - | `createContext` | L611 | `opts?{dbPath,storeDir,libDir,metDir}` | Create service context (DB + paths) |
 | 1 | `listLibraries` | L635 | `ctx, opts?{includeDeleted}` | List all installed libraries |
 | 2 | `getLibrary` | L651 | `ctx, nameOrId` | Get single library by name/ID |
 | 3 | `importLibrary` | L671 | `ctx, opts{filePath,force,noGroup,noCache,...}` | Import .hxlibpkg |
@@ -76,7 +76,7 @@
 | 15 | `listPublishers` | L1641 | `ctx` | List publisher certs |
 | 16 | `getAuditTrail` | L1663 | `ctx, opts{limit}` | Read audit trail |
 | 17 | `getSettings` | L1683 | `ctx` | Get app settings |
-| 18 | `getSystemLibraries` | L1697 | — | Read system_libraries.json |
+| 18 | `getSystemLibraries` | L1697 | - | Read system_libraries.json |
 
 ## Call Graph
 

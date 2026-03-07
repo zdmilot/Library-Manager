@@ -1,4 +1,4 @@
-# Code Map: html/js/main.js
+﻿# Code Map: html/js/main.js
 
 **File**: `html/js/main.js` | **Lines**: 13,469 | **Purpose**: NW.js GUI application logic
 
@@ -45,7 +45,7 @@
 
 ## Function Sections
 
-### Error Handling & Security (L1–330)
+### Error Handling & Security (L1-330)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L13  | `window.onerror` | Global error handler |
@@ -56,13 +56,13 @@
 | L252 | `canManageLibraries()` | Access control gate |
 | L318 | `showAccessDeniedModal(action, reason)` | Show access denied dialog |
 
-### VENUS Integration (L333–455)
+### VENUS Integration (L333-455)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L333 | `getVENUSInstallInfo()` | Query registry for VENUS install |
 | L403 | `ensureSystemLibraryMetadata()` | First-run system lib metadata |
 
-### Audit Trail (L459–815)
+### Audit Trail (L459-815)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L459 | `appendAuditTrailEntry(entry)` | Write audit entry |
@@ -74,7 +74,7 @@
 | L701 | `openEventHistoryModal()` | Open event history dialog |
 | L760 | `exportEventHistoryCsv()` | Export events to CSV |
 
-### Data Layer & Migration (L824–1290)
+### Data Layer & Migration (L824-1290)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L841 | `getGroupById(id)` | Look up group by ID |
@@ -86,7 +86,7 @@
 | L1169| `rebuildPublisherRegistry()` | Full registry rebuild |
 | L1214| `migrateDefaultGroups()` | Remove defaults from DB (IIFE) |
 
-### System Libraries (L1290–1866)
+### System Libraries (L1290-1866)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L1356| `buildOemVerifiedBadge(author, large, cert)` | OEM badge HTML |
@@ -100,7 +100,7 @@
 | L1726| `backupAllSystemLibraries()` | Backup all system libs |
 | L1774| `repairSystemLibraryFromCache(name, silent)` | Repair from cache |
 
-### Window & Layout (L1904–4290)
+### Window & Layout (L1904-4290)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L1904| `_windowLoadInit()` | Window initialization (IIFE) |
@@ -108,7 +108,7 @@
 | L4265| `fitMainDivHeight()` | Adjust content height |
 | L4279| `fitNavBarItems()` | Responsive navbar |
 
-### Search System (L2399–3570)
+### Search System (L2399-3570)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L2419| `_buildSysLibFnCache()` | Build function name cache |
@@ -121,7 +121,7 @@
 | L3413| `impEnterSearchMode(query, opts)` | Enter search mode |
 | L3549| `impExitSearchMode()` | Exit search mode |
 
-### Library Cards (L3572–3700, L7643–8090)
+### Library Cards (L3572-3700, L7643-8090)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L3572| `impBuildSingleCardHtml(lib)` | Build single card HTML |
@@ -129,7 +129,7 @@
 | L7933| `resolveSystemLibIcon(sLib, size)` | Resolve system lib icon |
 | L8025| `buildSystemLibraryCard(sLib)` | Build system lib card |
 
-### Navigation & Groups (L4348–5000)
+### Navigation & Groups (L4348-5000)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L4348| `createGroups()` | Build navbar tabs |
@@ -140,7 +140,7 @@
 | L4918| `groupDelete(id)` | Delete group |
 | L4993| `saveModalData()` | Save modal form data |
 
-### Settings & Utilities (L5364–5727)
+### Settings & Utilities (L5364-5727)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L5364| `loadSettings()` | Load + apply all settings |
@@ -150,7 +150,7 @@
 | L5572| `historyCleanup()` | Clean up VENUS log files |
 | L5674| `initVENUSData()` | Initialize VENUS paths |
 
-### Packager (L5727–6740)
+### Packager (L5727-6740)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L6099| `pkgDetectLibraryName()` | Auto-detect library name |
@@ -159,7 +159,7 @@
 | L6463| `pkgCompositeLibraryIcon(b64, mime)` | Composite icon overlay |
 | L6538| `pkgCreatePackageFile(savePath)` | Core packaging function |
 
-### COM Registration (L6740–6985)
+### COM Registration (L6740-6985)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L6740| `findRegAsmPath()` | Find 32-bit RegAsm.exe |
@@ -167,7 +167,7 @@
 | L6853| `comRegisterMultipleDlls(paths, reg)` | Register multiple DLLs |
 | L6876| `checkCOMRegistrationStatus(path)` | Check COM status |
 
-### Code Signing (L7291–7640)
+### Code Signing (L7291-7640)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L7291| `getSigningConfig()` | Read key/cert from settings |
@@ -175,20 +175,20 @@
 | L7346| `refreshSigningUI()` | Update signing UI |
 | L7389| `applyPackageSigning(zip, useCert)` | Sign ZIP package |
 
-### Integrity (L7224–7645)
+### Integrity (L7224-7645)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L7224| `verifySystemLibraryIntegrity(sLib)` | Verify system lib |
 | L7583| `verifyLibraryIntegrity(lib)` | Verify installed lib hashes |
 | L7640| `invalidateLibCaches()` | Clear caches |
 
-### Detail Modals (L8090–8770)
+### Detail Modals (L8090-8770)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L8090| `impShowLibDetail(libId)` | Library detail modal |
 | L8768| `impShowSystemLibDetail(libId)` | System lib detail modal |
 
-### Export (L9172–9900)
+### Export (L9172-9900)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L9172| `exportSingleLibrary(id, path, sign)` | Export single .hxlibpkg |
@@ -197,36 +197,36 @@
 | L9566| `expArchPopulateModal()` | Populate archive export modal |
 | L9713| `expArchCreateArchive(ids, path, sign)` | Create .hxlibarch |
 
-### Archive Import (L9900–10360)
+### Archive Import (L9900-10360)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L9900| `impArchImportArchive(archivePath)` | Import .hxlibarch |
 
-### Delete & Rollback (L10360–10668)
+### Delete & Rollback (L10360-10668)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L10360| `showDeleteConfirmModal(name, dlls)` | Delete confirmation |
 | L10413| `showRegulatedModeConfirmModal(enabling)` | Regulated mode confirm |
 
-### Import (L10663–11335)
+### Import (L10663-11335)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L10663| `impLoadAndInstall(filePath)` | Load + preview .hxlibpkg |
 
-### Audit Log (L11335–11730)
+### Audit Log (L11335-11730)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L11369| `generateLibraryAuditLog(savePath)` | Generate full audit log |
 | L11648| `verifyAuditLogIntegrity(filePath)` | Verify audit HMAC |
 
-### Verify & Repair (L11731–12169)
+### Verify & Repair (L11731-12169)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L11731| `repairPopulateModal()` | Populate repair modal |
 | L12019| `repairLibraryFromCache(name, silent)` | Repair from cache |
 | L12169| `showGenericSuccessModal(opts)` | Success result modal |
 
-### Unsigned Libraries (L12215–13469)
+### Unsigned Libraries (L12215-13469)
 | Line | Function | Purpose |
 |------|----------|---------|
 | L12296| `scanUnsignedLibraries(showFeedback)` | Scan for unsigned libs |

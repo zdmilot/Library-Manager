@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Library Manager for Venus 6 CLI  v1.9.8
@@ -1228,6 +1228,7 @@ function cmdExportLib(args) {
     });
 
     const zip = new AdmZip();
+    zip.addZipComment([manifest.library_name, 'v' + manifest.version, manifest.author, manifest.organization, manifest.description].filter(Boolean).join(' | '));
     zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
 
     // Pack all library files + help files into library/ (CHMs live in the library folder)
@@ -1249,6 +1250,17 @@ function cmdExportLib(args) {
 
     ensureOutDir(args['output']);
     fs.writeFileSync(args['output'], packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
+
+    // Write package metadata to NTFS Alternate Data Stream
+    try {
+        fs.writeFileSync(args['output'] + ':package.metadata',
+            'Library: ' + manifest.library_name + '\r\n' +
+            'Version: ' + manifest.version + '\r\n' +
+            'Author: ' + manifest.author + '\r\n' +
+            (manifest.organization ? 'Organization: ' + manifest.organization + '\r\n' : '') +
+            'Description: ' + (manifest.description || '') + '\r\n' +
+            'Created: ' + manifest.created_date);
+    } catch (_) { /* ADS write not critical */ }
 
     console.log(`\nSuccess: exported to ${args['output']}`);
     console.log(`  Library files    : ${libraryFiles.length}`);
@@ -1574,7 +1586,7 @@ function cmdDeleteLib(args) {
                     console.log(`  Deregistered: ${dll}`);
                 } catch (e) {
                     deregFail++;
-                    console.log(`  FAILED to deregister: ${dll} – ${(e.message || '').substring(0, 100)}`);
+                    console.log(`  FAILED to deregister: ${dll} - ${(e.message || '').substring(0, 100)}`);
                     console.log(`  You may need to run this CLI as Administrator for COM deregistration.`);
                 }
             });
@@ -1759,6 +1771,7 @@ function cmdCreatePackage(args) {
     });
 
     const zip = new AdmZip();
+    zip.addZipComment([libName, 'v' + spec.version, spec.author, spec.organization, spec.description].filter(Boolean).join(' | '));
     zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
     resolvedLibFiles.forEach(function(f, i) {
         var relPath = libRelPaths[i] || path.basename(f);
@@ -1791,6 +1804,17 @@ function cmdCreatePackage(args) {
 
     ensureOutDir(args['output']);
     fs.writeFileSync(args['output'], packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
+
+    // Write package metadata to NTFS Alternate Data Stream
+    try {
+        fs.writeFileSync(args['output'] + ':package.metadata',
+            'Library: ' + libName + '\r\n' +
+            'Version: ' + spec.version + '\r\n' +
+            'Author: ' + spec.author + '\r\n' +
+            (spec.organization ? 'Organization: ' + spec.organization + '\r\n' : '') +
+            'Description: ' + (spec.description || '') + '\r\n' +
+            'Created: ' + manifest.created_date);
+    } catch (_) { /* ADS write not critical */ }
 
     console.log(`\nSuccess: ${args['output']}`);
     console.log(`  Library name      : ${libName}`);

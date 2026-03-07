@@ -1,4 +1,4 @@
-
+﻿
 
    
 
@@ -93,8 +93,8 @@ signtool verify /pa /v "Output\LibraryManagerForVenus6_v1.9.8_Setup.exe"
 
 ### Key Points
 
-- **Always timestamp** (`/tr` + `/td SHA256`) — without it, the signature expires when the certificate does
-- **SHA-256** (`/fd SHA256`) — SHA-1 is deprecated and rejected by modern Windows
+- **Always timestamp** (`/tr` + `/td SHA256`) - without it, the signature expires when the certificate does
+- **SHA-256** (`/fd SHA256`) - SHA-1 is deprecated and rejected by modern Windows
 - Sign the EXE **before** packaging it into the installer
 - EV certificates give **immediate** SmartScreen reputation (no "unknown publisher" warnings on first download)
-- `signtool.exe` comes with the Windows SDK — install via Visual Studio Installer or standalone SDK
+- `signtool.exe` comes with the Windows SDK - install via Visual Studio Installer or standalone SDK

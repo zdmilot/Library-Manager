@@ -1,4 +1,4 @@
-# Code Map: lib/shared.js
+﻿# Code Map: lib/shared.js
 
 **File**: `lib/shared.js` | **Lines**: 1821 | **Purpose**: Shared crypto, validation, signing, HSL parsing
 
@@ -15,7 +15,7 @@
 
 | Line | Name | Value/Purpose |
 |------|------|---------------|
-| L29  | `FORMAT_VERSION` | `'2.0'` — current manifest format version |
+| L29  | `FORMAT_VERSION` | `'2.0'` - current manifest format version |
 | L32  | `VALID_LINEAGE_EVENTS` | `['created', 'exported', 'repackaged']` |
 | L38  | `KNOWN_MANIFEST_KEYS` | Array of known manifest fields |
 | L51  | `KNOWN_LIB_DB_KEYS` | Array of known DB record fields |

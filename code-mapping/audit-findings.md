@@ -1,4 +1,4 @@
-# Audit Findings
+﻿# Audit Findings
 
 Comprehensive audit findings for Library Manager for Venus 6 v1.8.6.
 Last updated after full pre-release audit.
@@ -19,7 +19,7 @@ Last updated after full pre-release audit.
 
 ### 1. ~~Command Injection in `getVENUSVersion()`~~ (RESOLVED)
 - **File**: cli.js L199, service.js L60, main.js L347
-- All three entry points now use `execFileSync('reg', ['query', ...], ...)` — no shell interpolation.
+- All three entry points now use `execFileSync('reg', ['query', ...], ...)` - no shell interpolation.
 
 ### 2. ~~Command Injection in COM Deregistration~~ (RESOLVED)
 - **File**: cli.js
@@ -29,7 +29,7 @@ Last updated after full pre-release audit.
 
 ## MEDIUM Severity
 
-### 5. OEM Password Hash Without Salt — shared.js (ACCEPTED)
+### 5. OEM Password Hash Without Salt - shared.js (ACCEPTED)
 ```js
 const OEM_AUTHOR_PASSWORD_HASH = 'bbdc...';
 crypto.createHash('sha256').update(password).digest();
@@ -70,7 +70,7 @@ Function has been removed from the codebase.
 ### 12. ~~`gStarred` Divergence Between Entry Points~~ (RESOLVED)
 - **Previous finding**: Incorrectly identified `gStarred` as dead/phantom code.
 - **Corrected analysis**: `gStarred` is a **fully active GUI feature** in main.js
-  (DEFAULT_GROUPS L828, seed data L908, nav rendering L4492–4607, star toggle
+  (DEFAULT_GROUPS L828, seed data L908, nav rendering L4492-4607, star toggle
   L10306, starred card filtering L5523). It was **missing** from cli.js
   `DEFAULT_GROUPS` and seed data, and from service.js `DEFAULT_GROUPS`.
 - **Fix applied**: Added `gStarred` to `DEFAULT_GROUPS` in both cli.js (L83)
@@ -82,23 +82,23 @@ Previously orphaned JSDoc blocks have been cleaned up.
 ### 14. ~~Legacy `install_path` Fallback in cli.js~~ (RESOLVED)
 No bare `install_path` references remain; all use `lib_install_path` / `demo_install_path`.
 
-### 15. Export Duplicates Help Files in Manifest (ACCEPTED — intentional)
+### 15. Export Duplicates Help Files in Manifest (ACCEPTED - intentional)
 - **File**: cli.js L1704
 - Help files (.chm) appear in both `library_files` and `help_files` in the manifest.
 - Comment at L1704: "keep CHMs in library_files for backward compat".
 - **Accepted**: Intentional backward-compatibility behavior.
 
-### 16. Silent Error Swallowing — shared.js (OPEN — low priority)
+### 16. Silent Error Swallowing - shared.js (OPEN - low priority)
 Multiple `catch (_) { return false/null; }` patterns silently discard errors.
 - **Recommendation**: Add `console.warn` before returning failure for diagnostic use.
 
-### 17. `computeFileHash` Single-Line Edge Case — shared.js (OPEN — low priority)
+### 17. `computeFileHash` Single-Line Edge Case - shared.js (OPEN - low priority)
 Single-line HSL files include the metadata footer in the hash because the
 line-split logic skips `pop()` for single-element arrays.
-- **Impact**: Minimal — single-line HSL files with a metadata footer are
+- **Impact**: Minimal - single-line HSL files with a metadata footer are
   extremely unlikely in practice.
 
-### 18. `isValidLibraryName` Allows Leading Dots — shared.js (OPEN — low priority)
+### 18. `isValidLibraryName` Allows Leading Dots - shared.js (OPEN - low priority)
 Names like `.hidden` pass validation.
 - **Impact**: Cosmetic only; library names starting with `.` would create
   hidden directories on Unix but are visible on Windows.
@@ -109,17 +109,17 @@ Names like `.hidden` pass validation.
 
 ---
 
-## `execSync` / `exec` Usage Audit — main.js
+## `execSync` / `exec` Usage Audit - main.js
 
 The GUI (main.js) uses `child_process` calls in five contexts:
 
 | Line | Call | Input Source | Mitigation |
 |------|------|-------------|------------|
-| L192 | `execSync('whoami /groups ...')` | Hardcoded command | Safe — no user input |
-| L2227 | `execSync('reg query ...')` | Hardcoded reg path | Safe — no user input |
+| L192 | `execSync('whoami /groups ...')` | Hardcoded command | Safe - no user input |
+| L2227 | `execSync('reg query ...')` | Hardcoded reg path | Safe - no user input |
 | L6794 | `exec(fullCmd)` for COM registration | `dllPath` from manifest | Validated: `/[&\|><\`%\r\n]/` + single-quote check (L6794) |
 | L6893 | `execSync('"regasm" "dllPath"')` | `dllPath` from manifest | Validated: same char filter (L6882) |
-| L6929–6939 | `execSync('reg query ...')` | CLSIDs from RegAsm /regfile | Validated: CLSID regex `/\{[0-9A-Fa-f\-]+\}/` |
+| L6929-6939 | `execSync('reg query ...')` | CLSIDs from RegAsm /regfile | Validated: CLSID regex `/\{[0-9A-Fa-f\-]+\}/` |
 
 All command execution paths are either hardcoded or have character-level input
 validation. Windows filename rules prevent `"` in file paths, covering the
@@ -146,19 +146,19 @@ Unsigned packages are silently accepted on import. A strict mode would reject th
 |---|---------|--------|
 | 1 | cmd injection getVENUSVersion | Verified RESOLVED |
 | 2 | cmd injection COM deregistration | Verified RESOLVED |
-| 5 | OEM password unsalted | Accepted risk — documented rationale |
+| 5 | OEM password unsalted | Accepted risk - documented rationale |
 | 6 | Constants exported | Verified RESOLVED |
 | 7 | Container overflow | Verified RESOLVED |
 | 8 | safeZipExtractPath | Verified RESOLVED |
-| 9 | Private key permissions | **FIXED** — added `mode: 0o600` to cli.js |
+| 9 | Private key permissions | **FIXED** - added `mode: 0o600` to cli.js |
 | 10 | Dead imports | Verified RESOLVED |
-| 11 | Dead isTagSegmentValid | Verified RESOLVED — function removed |
-| 12 | gStarred divergence | **FIXED** — added to cli.js & service.js DEFAULT_GROUPS + seed |
+| 11 | Dead isTagSegmentValid | Verified RESOLVED - function removed |
+| 12 | gStarred divergence | **FIXED** - added to cli.js & service.js DEFAULT_GROUPS + seed |
 | 13 | Orphaned JSDoc | Verified RESOLVED |
 | 14 | Legacy install_path | Verified RESOLVED |
-| 15 | Help file duplication | Accepted — intentional backward compat |
-| 16 | Silent error swallowing | OPEN — low priority |
-| 17 | computeFileHash edge case | OPEN — low priority |
-| 18 | isValidLibraryName dots | OPEN — low priority |
+| 15 | Help file duplication | Accepted - intentional backward compat |
+| 16 | Silent error swallowing | OPEN - low priority |
+| 17 | computeFileHash edge case | OPEN - low priority |
+| 18 | isValidLibraryName dots | OPEN - low priority |
 | 19 | HMAC format validation | Verified RESOLVED |
-| 21 | Legacy v1.0 signatures accepted | **FIXED** — v1.0 rejected, `signPackageZip()` removed |
+| 21 | Legacy v1.0 signatures accepted | **FIXED** - v1.0 rejected, `signPackageZip()` removed |

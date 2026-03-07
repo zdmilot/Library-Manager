@@ -1,4 +1,4 @@
-# Architecture Overview
+﻿# Architecture Overview
 
 ## Project Structure
 
@@ -9,7 +9,7 @@ Library-Manager-for-Venus-6/
 ├── com-bridge.js             # COM bridge dispatcher (164 lines)
 ├── lib/
 │   ├── shared.js             # Shared crypto, validation, signing (1821 lines)
-│   └── service.js            # Service layer — COM bridge backend (1732 lines)
+│   └── service.js            # Service layer - COM bridge backend (1732 lines)
 ├── html/
 │   ├── index.html            # GUI shell (NW.js main window)
 │   ├── js/

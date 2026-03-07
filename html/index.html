@@ -212,11 +212,12 @@
 									<div class="form-group row mb-2">
 										<label class="col-sm-4 col-form-label col-form-label-sm">Library Name</label>
 										<div class="col-sm-8">
-											<div class="input-group input-group-sm">
-												<input type="text" class="form-control form-control-sm" id="pkg-library-name" readonly style="background-color:#e9ecef; cursor:default;" title="Based on library file name" placeholder="Detected from library files (.hsl, .hs_, .smt)">
+											<div class="input-group input-group-sm" style="position:relative;">
+												<input type="text" class="form-control form-control-sm" id="pkg-library-name" readonly style="background-color:#e9ecef; cursor:default;" title="Based on library file name" placeholder="Detected from library files (.hsl, .hs_, .smt)" autocomplete="off">
 												<div class="input-group-append">
 													<button class="btn btn-outlined btn-sm" type="button" id="pkg-toggle-name-edit" title="Override auto-detected name"><i class="fas fa-pencil-alt"></i></button>
 												</div>
+												<div class="pkg-name-autocomplete d-none" id="pkg-name-autocomplete"></div>
 											</div>
 											<small class="form-text text-muted" id="pkg-name-hint">Updated when a .hsl, .hs_, or .smt file is added to Library Files</small>
 											<small class="form-text text-warning d-none" id="pkg-name-warning"><i class="fas fa-exclamation-triangle mr-1"></i>Manual override - using a name that doesn't match the library files may cause incorrect behavior during import.</small>
@@ -238,6 +239,7 @@
 										<label class="col-sm-4 col-form-label col-form-label-sm">Library Version <span class="text-danger">*</span></label>
 										<div class="col-sm-8">
 											<input type="text" class="form-control form-control-sm" id="pkg-version" placeholder="e.g. 1.0.0 (required)">
+											<small class="form-text text-danger d-none" id="pkg-version-warning"><i class="fas fa-exclamation-circle mr-1"></i><span id="pkg-version-warning-text"></span></small>
 										</div>
 									</div>
 									<div class="form-group row mb-2">
@@ -264,6 +266,15 @@
 											<input type="text" class="form-control form-control-sm" id="pkg-tags" placeholder="Default tags (comma-separated, e.g. pipetting, assay, pcr)">
 										</div>
 									</div>
+								</div>
+							</div>
+
+							<!-- Changelog Section (visible only when library name matches an existing library) -->
+							<div class="card mb-3 exporter-card pkg-changelog-card d-none">
+								<div class="card-header"><i class="fas fa-clipboard-list mr-2 color-medium"></i>Changelog <span class="text-muted font-weight-normal text-sm ml-2">(What changed in this version?)</span></div>
+								<div class="card-body">
+									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>Describe what is new, changed, or fixed in this version. This is recorded in the package manifest and the audit trail for traceability.</p>
+									<textarea class="form-control form-control-sm" id="pkg-changelog" rows="4" placeholder="e.g.&#10;- Added support for new plate types&#10;- Fixed pipetting volume calculation bug&#10;- Updated error handling for edge cases"></textarea>
 								</div>
 							</div>
 
@@ -360,7 +371,7 @@
 
 							<!-- Actions -->
 							<div class="text-center mt-4 mb-5">
-								<button class="btn solid-button btn-lg" id="pkg-create"><i class="fas fa-box mr-2"></i>Create Package (.hxlibpkg)</button>
+								<span id="pkg-create-wrapper" style="display:inline-block;"><button class="btn solid-button btn-lg" id="pkg-create" style="pointer-events:auto;"><i class="fas fa-box mr-2"></i>Create Package (.hxlibpkg)</button></span>
 								<div class="mt-2">
 									<button class="btn btn-sm btn-link text-muted" id="pkg-reset"><i class="fas fa-undo mr-1"></i>Reset form</button>
 								</div>

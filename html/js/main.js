@@ -3684,7 +3684,7 @@
 			if (chmFiles.length === 1) {
 				return '<a href="#" class="text-sm imp-lib-card-help-link" style="color:var(--medium);" data-lib-id="' + libId + '">Help</a>';
 			}
-			// Multiple CHM files — render a dropdown
+			// Multiple CHM files - render a dropdown
 			var html = '<div class="dropdown imp-help-dropdown" style="display:inline-block;">';
 			html += '<a href="#" class="text-sm dropdown-toggle imp-lib-card-help-link" style="color:var(--medium);" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-lib-id="' + libId + '">Help</a>';
 			html += '<div class="dropdown-menu imp-help-dropdown-menu">';
@@ -5874,7 +5874,7 @@
 			refreshSettingsSigningStatus();
 			refreshSigningUI();
 
-			// OEM/developer settings visibility — always start hidden (session-only)
+			// OEM/developer settings visibility - always start hidden (session-only)
 			applyOemSettingsVisibility(false);
 			$("#chk_oemKeywordsEnabled").prop("checked", false);
 			$(".oem-keywords-status").html('');
@@ -6564,6 +6564,7 @@
 			if(!pkg_nameOverridden){
 				$("#pkg-library-name").val(libName);
 				pkgUpdatePathPlaceholders(libName);
+				pkgToggleChangelogVisibility(libName);
 			}
 		}
 
@@ -6648,6 +6649,8 @@
 					$("#pkg-name-warning").removeClass("d-none");
 					$("#pkg-name-hint").addClass("d-none");
 				}
+				// Show autocomplete on focus
+				pkgShowNameAutocomplete($input.val().trim());
 			} else {
 				// Revert to auto-detected
 				$input.val(pkg_autoDetectedName).prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
@@ -6655,7 +6658,11 @@
 				pkg_nameOverridden = false;
 				$("#pkg-name-warning").addClass("d-none");
 				$("#pkg-name-hint").removeClass("d-none");
+				$("#pkg-name-autocomplete").addClass("d-none").empty();
+				pkg_autocompleteActive = false;
 				pkgUpdatePathPlaceholders(pkg_autoDetectedName);
+				pkgCheckVersionDuplicate();
+				pkgToggleChangelogVisibility(pkg_autoDetectedName);
 			}
 		});
 
@@ -6670,6 +6677,322 @@
 				$("#pkg-name-warning").addClass("d-none");
 				$("#pkg-name-hint").removeClass("d-none");
 			}
+			// Show autocomplete suggestions
+			pkgShowNameAutocomplete(val);
+			// Re-check version duplicate when name changes
+			pkgCheckVersionDuplicate();
+			// Show/hide changelog based on whether this is an existing library
+			pkgToggleChangelogVisibility(val);
+		});
+
+		// ---- Show/hide changelog card when library name matches an existing library ----
+		function pkgToggleChangelogVisibility(libName) {
+			if (!libName) {
+				$(".pkg-changelog-card").addClass("d-none");
+				return;
+			}
+			var index = pkgBuildLibraryIndex();
+			var lowerName = libName.toLowerCase();
+			var found = false;
+			for (var i = 0; i < index.length; i++) {
+				if (index[i].name.toLowerCase() === lowerName) {
+					found = true;
+					break;
+				}
+			}
+			if (found) {
+				$(".pkg-changelog-card").removeClass("d-none");
+			} else {
+				$(".pkg-changelog-card").addClass("d-none");
+			}
+		}
+
+		// ---- Library name autocomplete from installed + system libraries ----
+		var pkg_autocompleteActive = false;
+
+		function pkgBuildLibraryIndex() {
+			// Build a deduplicated list of all known library names with latest version info
+			var map = {}; // name -> { name, version, type, lib }
+			var installedLibs = db_installed_libs.installed_libs.find() || [];
+			for (var i = 0; i < installedLibs.length; i++) {
+				var lib = installedLibs[i];
+				if (lib.deleted) continue;
+				var key = (lib.library_name || '').toLowerCase();
+				if (!key) continue;
+				if (!map[key] || (lib.installed_date && (!map[key].installed_date || lib.installed_date > map[key].installed_date))) {
+					map[key] = { name: lib.library_name, version: lib.version || '', type: 'installed', lib: lib };
+				}
+			}
+			var sysLibs = getAllSystemLibraries();
+			for (var s = 0; s < sysLibs.length; s++) {
+				var sLib = sysLibs[s];
+				var sKey = (sLib.canonical_name || sLib.library_name || sLib.display_name || '').toLowerCase();
+				if (!sKey) continue;
+				if (!map[sKey]) {
+					map[sKey] = { name: sLib.canonical_name || sLib.library_name || sLib.display_name, version: '', type: 'system', lib: sLib };
+				}
+			}
+			var results = [];
+			for (var k in map) { results.push(map[k]); }
+			results.sort(function(a, b) { return a.name.localeCompare(b.name); });
+			return results;
+		}
+
+		function pkgShowNameAutocomplete(query) {
+			var $dropdown = $("#pkg-name-autocomplete");
+			var $input = $("#pkg-library-name");
+			// Only show when the field is editable
+			if ($input.prop("readonly")) {
+				$dropdown.addClass("d-none").empty();
+				pkg_autocompleteActive = false;
+				return;
+			}
+			var index = pkgBuildLibraryIndex();
+			var matches;
+			if (!query || query.length < 1) {
+				// Show all libraries when field is empty
+				matches = index.slice(0, 30);
+			} else {
+				var lowerQuery = query.toLowerCase();
+				matches = index.filter(function(item) {
+					return item.name.toLowerCase().indexOf(lowerQuery) !== -1;
+				}).slice(0, 20);
+			}
+
+			if (matches.length === 0) {
+				$dropdown.html('<div class="pkg-name-autocomplete-empty">No matching libraries found</div>');
+				$dropdown.removeClass("d-none");
+				pkg_autocompleteActive = true;
+				return;
+			}
+
+			$dropdown.empty();
+			matches.forEach(function(item) {
+				var versionText = item.version ? 'v' + item.version : '';
+				var badgeClass = item.type === 'system' ? 'badge-system' : 'badge-installed';
+				var badgeLabel = item.type === 'system' ? 'System' : 'Installed';
+				$dropdown.append(
+					'<div class="pkg-name-autocomplete-item" data-name="' + escapeHtml(item.name) + '" data-type="' + item.type + '">' +
+					'<span class="autocomplete-name">' + escapeHtml(item.name) + '</span>' +
+					(versionText ? '<span class="autocomplete-version">' + escapeHtml(versionText) + '</span>' : '') +
+					'<span class="autocomplete-badge ' + badgeClass + '">' + badgeLabel + '</span>' +
+					'</div>'
+				);
+			});
+			$dropdown.removeClass("d-none");
+			pkg_autocompleteActive = true;
+		}
+
+		// Show autocomplete on focus (when editable)
+		$(document).on("focus", "#pkg-library-name", function() {
+			if (!$(this).prop("readonly")) {
+				pkgShowNameAutocomplete($(this).val().trim());
+			}
+		});
+
+		// Handle autocomplete item click - populate form from existing library
+		$(document).on("click", ".pkg-name-autocomplete-item", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var selectedName = $(this).attr("data-name");
+			var selectedType = $(this).attr("data-type");
+			$("#pkg-library-name").val(selectedName);
+			$("#pkg-name-autocomplete").addClass("d-none").empty();
+			pkg_autocompleteActive = false;
+			pkgUpdatePathPlaceholders(selectedName);
+
+			// Load metadata and files from the latest version of this library
+			pkgPopulateFromExistingLibrary(selectedName, selectedType);
+			pkgCheckVersionDuplicate();
+			pkgToggleChangelogVisibility(selectedName);
+		});
+
+		// Close autocomplete when clicking outside
+		$(document).on("mousedown", function(e) {
+			if (pkg_autocompleteActive && !$(e.target).closest("#pkg-library-name, #pkg-name-autocomplete").length) {
+				$("#pkg-name-autocomplete").addClass("d-none").empty();
+				pkg_autocompleteActive = false;
+			}
+		});
+
+		// Keyboard navigation for autocomplete
+		$(document).on("keydown", "#pkg-library-name", function(e) {
+			if (!pkg_autocompleteActive) return;
+			var $items = $(".pkg-name-autocomplete-item");
+			var $active = $items.filter(".active");
+			var idx = $items.index($active);
+
+			if (e.key === "ArrowDown") {
+				e.preventDefault();
+				$items.removeClass("active");
+				$items.eq(Math.min(idx + 1, $items.length - 1)).addClass("active");
+			} else if (e.key === "ArrowUp") {
+				e.preventDefault();
+				$items.removeClass("active");
+				if (idx > 0) $items.eq(idx - 1).addClass("active");
+			} else if (e.key === "Enter" && $active.length) {
+				e.preventDefault();
+				$active.trigger("click");
+			} else if (e.key === "Escape") {
+				$("#pkg-name-autocomplete").addClass("d-none").empty();
+				pkg_autocompleteActive = false;
+			}
+		});
+
+		/**
+		 * Populate the package form from an existing library's latest version.
+		 * Loads metadata (author, org, description, tags, etc.) and adds the
+		 * library files from the installed location to the file lists.
+		 */
+		function pkgPopulateFromExistingLibrary(libName, libType) {
+			if (libType === 'installed') {
+				// Find the latest version of this library
+				var installedLibs = db_installed_libs.installed_libs.find() || [];
+				var candidates = installedLibs.filter(function(l) {
+					return l.library_name === libName && !l.deleted;
+				});
+				if (candidates.length === 0) return;
+				// Sort by installed_date descending to get latest
+				candidates.sort(function(a, b) {
+					return (b.installed_date || '').localeCompare(a.installed_date || '');
+				});
+				var latest = candidates[0];
+
+				// Populate metadata fields
+				if (latest.author) $("#pkg-author").val(latest.author);
+				if (latest.organization) $("#pkg-organization").val(latest.organization);
+				if (latest.venus_compatibility) $("#pkg-venus-compat").val(latest.venus_compatibility);
+				if (latest.description) $("#pkg-description").val(latest.description);
+				if (latest.github_url) $("#pkg-github-url").val(latest.github_url);
+				if (latest.tags && latest.tags.length > 0) $("#pkg-tags").val(latest.tags.join(", "));
+				if (latest.install_to_library_root) $("#chk-pkg-install-to-root").prop("checked", true);
+
+				// Populate version with current version (user should change it)
+				if (latest.version) {
+					$("#pkg-version").val(latest.version);
+				}
+
+				// Load library files from install path
+				var libBasePath = latest.lib_install_path || "";
+				var libFiles = latest.library_files || [];
+				if (libBasePath && libFiles.length > 0) {
+					pkg_libraryFiles = [];
+					pkg_fileRelPaths = {};
+					for (var i = 0; i < libFiles.length; i++) {
+						var fullPath = path.join(libBasePath, libFiles[i]);
+						if (fs.existsSync(fullPath)) {
+							pkg_libraryFiles.push(fullPath);
+							pkg_fileRelPaths[fullPath] = libFiles[i];
+						}
+					}
+					// Restore COM DLL selections
+					pkg_comRegisterDlls = (latest.com_register_dlls || []).slice();
+					pkgUpdateLibFileList();
+				}
+
+				// Load demo method files from install path
+				var demoBasePath = latest.demo_install_path || "";
+				var demoFiles = latest.demo_method_files || [];
+				if (demoBasePath && demoFiles.length > 0) {
+					pkg_demoMethodFiles = [];
+					for (var d = 0; d < demoFiles.length; d++) {
+						var demoFullPath = path.join(demoBasePath, demoFiles[d]);
+						if (fs.existsSync(demoFullPath)) {
+							pkg_demoMethodFiles.push(demoFullPath);
+							pkg_fileRelPaths[demoFullPath] = demoFiles[d];
+						}
+					}
+					pkgUpdateDemoFileList();
+				}
+
+				// Load icon from library image if available
+				if (latest.library_image_base64 && latest.library_image_mime) {
+					$("#pkg-icon-preview").html('<img src="data:' + latest.library_image_mime + ';base64,' + latest.library_image_base64 + '">').addClass('has-image');
+					$("#pkg-icon-name").text((latest.library_image || "library icon") + " (from previous version)");
+					$("#pkg-removeIcon").show();
+					pkg_iconAutoDetected = true;
+				}
+
+				// Check version duplicate
+				pkgCheckVersionDuplicate();
+
+			} else if (libType === 'system') {
+				// System libraries have limited metadata - populate what's available
+				var sysLibs = getAllSystemLibraries();
+				var sysLib = null;
+				for (var si = 0; si < sysLibs.length; si++) {
+					var sn = sysLibs[si].canonical_name || sysLibs[si].library_name || sysLibs[si].display_name;
+					if (sn === libName) { sysLib = sysLibs[si]; break; }
+				}
+				if (!sysLib) return;
+
+				if (sysLib.author) $("#pkg-author").val(sysLib.author);
+				if (sysLib.organization) $("#pkg-organization").val(sysLib.organization);
+
+				// Load system library files from discovered_files
+				var libFolderRec = db_links.links.findOne({"_id":"lib-folder"});
+				var sysLibDir = (libFolderRec && libFolderRec.path) ? libFolderRec.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+				var discoveredFiles = sysLib.discovered_files || [];
+				if (discoveredFiles.length > 0) {
+					pkg_libraryFiles = [];
+					pkg_fileRelPaths = {};
+					for (var df = 0; df < discoveredFiles.length; df++) {
+						var relFile = discoveredFiles[df].replace(/^Library[\\\/]/i, '');
+						var sysFullPath = path.join(sysLibDir, relFile);
+						if (fs.existsSync(sysFullPath)) {
+							pkg_libraryFiles.push(sysFullPath);
+							pkg_fileRelPaths[sysFullPath] = relFile;
+						}
+					}
+					pkgUpdateLibFileList();
+				}
+			}
+		}
+
+		// ---- Version duplicate checking ----
+		function pkgCheckVersionDuplicate() {
+			var libName = $("#pkg-library-name").val().trim();
+			var version = $("#pkg-version").val().trim();
+			if (!libName || !version) {
+				$("#pkg-version").removeClass("version-duplicate");
+				$("#pkg-version-warning").addClass("d-none");
+				pkgSetCreateEnabled(true);
+				return;
+			}
+			var installedLibs = db_installed_libs.installed_libs.find() || [];
+			var duplicate = false;
+			for (var i = 0; i < installedLibs.length; i++) {
+				if (installedLibs[i].library_name === libName && installedLibs[i].version === version && !installedLibs[i].deleted) {
+					duplicate = true;
+					break;
+				}
+			}
+			if (duplicate) {
+				$("#pkg-version").addClass("version-duplicate");
+				$("#pkg-version-warning-text").text('Version "' + version + '" already exists for "' + libName + '". Use a different version number.');
+				$("#pkg-version-warning").removeClass("d-none");
+				pkgSetCreateEnabled(false, 'Version "' + version + '" already exists for "' + libName + '". Change the version number to create a package.');
+			} else {
+				$("#pkg-version").removeClass("version-duplicate");
+				$("#pkg-version-warning").addClass("d-none");
+				pkgSetCreateEnabled(true);
+			}
+		}
+
+		function pkgSetCreateEnabled(enabled, reason) {
+			var $btn = $("#pkg-create");
+			var $wrap = $("#pkg-create-wrapper");
+			if (enabled) {
+				$btn.prop("disabled", false).removeClass("pkg-create-disabled");
+				$wrap.removeAttr("title").css("cursor", "");
+			} else {
+				$btn.prop("disabled", true).addClass("pkg-create-disabled");
+				$wrap.attr("title", reason || 'Cannot create package').css("cursor", "not-allowed");
+			}
+		}
+
+		$(document).on("input", "#pkg-version", function() {
+			pkgCheckVersionDuplicate();
 		});
 
 		// ---- Update file list displays ----
@@ -6769,17 +7092,33 @@
 			}
 		});
 
+		// Show popup when user clicks the disabled create button wrapper
+		$(document).on("click", "#pkg-create-wrapper", function() {
+			if ($("#pkg-create").prop("disabled")) {
+				var reason = $(this).attr("title") || 'Cannot create package.';
+				alert(reason);
+				$("#pkg-version").focus();
+			}
+		});
+
 		$(document).on("click", "#pkg-reset", function() {
 			$("#pkg-author").val('');
 			$("#pkg-organization").val('');
-			$("#pkg-version").val('');
+			$("#pkg-version").val('').removeClass("version-duplicate");
+			$("#pkg-version-warning").addClass("d-none");
+			pkgSetCreateEnabled(true);
 			$("#pkg-venus-compat").val('');
 			$("#pkg-description").val('');
+			$("#pkg-github-url").val('');
+			$("#pkg-changelog").val('');
+			$(".pkg-changelog-card").addClass("d-none");
 			$("#pkg-tags").val('');
 			$("#pkg-library-name").val('').prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
 			$("#pkg-toggle-name-edit").html('<i class="fas fa-pencil-alt"></i>').attr("title", "Override auto-detected name");
 			$("#pkg-name-warning").addClass("d-none");
 			$("#pkg-name-hint").removeClass("d-none");
+			$("#pkg-name-autocomplete").addClass("d-none").empty();
+			pkg_autocompleteActive = false;
 			pkg_autoDetectedName = "";
 			pkg_nameOverridden = false;
 			pkg_oemAuthorized = false;
@@ -6892,20 +7231,8 @@
 			// Use library name from the detected field
 			var libName = $("#pkg-library-name").val().trim() || "Unknown";
 
-			// Check for version duplicate among installed libraries
-			var installedLibs = db_installed_libs.installed_libs.find() || [];
-			for (var vi = 0; vi < installedLibs.length; vi++) {
-				var vLib = installedLibs[vi];
-				if (vLib.library_name === libName && vLib.version === version && !vLib.deleted) {
-					if (!confirm("A library named \"" + libName + "\" version \"" + version + "\" is already installed.\n\nDo you want to create this package anyway?")) {
-						return;
-					}
-					break;
-				}
-			}
-
 			// Set default filename and trigger save dialog
-			$("#pkg-save-dialog").attr("nwsaveas", libName + ".hxlibpkg");
+			$("#pkg-save-dialog").attr("nwsaveas", libName + "_v" + version + ".hxlibpkg");
 			$("#pkg-save-dialog").trigger("click");
 		});
 
@@ -7141,9 +7468,14 @@
 				};
 				if (githubUrl) manifest.github_url = githubUrl;
 				if ($("#chk-pkg-install-to-root").is(":checked")) manifest.install_to_library_root = true;
+				var changelog = $("#pkg-changelog").val().trim();
+				if (changelog) manifest.changelog = changelog;
 
 				// Create ZIP package using adm-zip
 				var zip = new AdmZip();
+
+				// Add metadata as ZIP archive comment for programmatic identification
+				zip.addZipComment([libName, 'v' + version, author, organization, description].filter(Boolean).join(' | '));
 
 				// Add manifest.json
 				zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2), "utf8"));
@@ -7174,6 +7506,22 @@
 				// Wrap in binary container and write
 				fs.writeFileSync(savePath, packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
 
+				// Write package metadata to NTFS Alternate Data Stream for Windows identification
+				try {
+					var metaSummary = 'Library: ' + libName + '\r\n' +
+						'Version: ' + version + '\r\n' +
+						'Author: ' + author + '\r\n' +
+						(organization ? 'Organization: ' + organization + '\r\n' : '') +
+						'Description: ' + description + '\r\n' +
+						'VENUS Compatibility: ' + venusCompat + '\r\n' +
+						(githubUrl ? 'GitHub: ' + githubUrl + '\r\n' : '') +
+						(tags.length > 0 ? 'Tags: ' + tags.join(', ') + '\r\n' : '') +
+						'Created: ' + manifest.created_date + '\r\n' +
+						'Library Files: ' + pkg_libraryFiles.length + '\r\n' +
+						'Demo Files: ' + pkg_demoMethodFiles.length;
+					fs.writeFileSync(savePath + ':package.metadata', metaSummary);
+				} catch (_) { /* ADS write not critical - may fail on non-NTFS */ }
+
 				// ---- Audit trail entry ----
 				try {
 					var auditData = {
@@ -7181,10 +7529,19 @@
 						version:         version || '',
 						author:          author || '',
 						organization:    organization || '',
+						description:     description || '',
+						venus_compatibility: venusCompat || '',
+						github_url:      githubUrl || '',
+						tags:            tags.length > 0 ? tags.join(', ') : '',
+						changelog:       changelog || '',
 						output_file:     savePath,
 						library_files:   pkg_libraryFiles.length,
+						library_file_names: pkg_libraryFiles.map(function(f) { return path.basename(f); }).join(', '),
 						demo_files:      pkg_demoMethodFiles.length,
-						com_dlls:        (manifest.com_register_dlls || [])
+						demo_file_names: pkg_demoMethodFiles.map(function(f) { return path.basename(f); }).join(', '),
+						com_dlls:        (manifest.com_register_dlls || []),
+						install_to_root: !!manifest.install_to_library_root,
+						icon_file:       libImageFilename || 'None'
 					};
 					if (sigResult.codeSigned) {
 						auditData.code_signing_publisher = sigResult.publisher;
@@ -7395,7 +7752,7 @@
 
 				fs.writeFileSync(scriptFile, batLines.join('\r\n'), 'utf8');
 
-				// Elevate the combined batch script — SINGLE UAC prompt
+				// Elevate the combined batch script - SINGLE UAC prompt
 				var psScript = "try { $p = Start-Process -FilePath '" + scriptFile + "' -Verb RunAs -Wait -PassThru -WindowStyle Hidden; exit $p.ExitCode } catch { exit 1 }";
 				var fullCmd = 'powershell.exe -NoProfile -Command "' + psScript + '"';
 
@@ -7422,7 +7779,7 @@
 						try { fs.unlinkSync(outFiles[ri].exit); } catch(e) {}
 
 						if (error && exitCode === -1) {
-							// UAC was cancelled or elevation failed — no per-DLL files written
+							// UAC was cancelled or elevation failed - no per-DLL files written
 							results.push({dll: outFiles[ri].dll, success: false, error: "The operation was cancelled or requires administrator rights."});
 							allSuccess = false;
 						} else if (exitCode !== 0 && exitCode !== -1) {
@@ -7982,7 +8339,7 @@
 					};
 				}
 			}
-			// No signing credentials available — leave package unsigned
+			// No signing credentials available - leave package unsigned
 			return { codeSigned: false, publisher: null, keyId: null };
 		}
 
@@ -12203,22 +12560,79 @@
 						lines.push("Organization:     " + (lib.organization || "N/A"));
 						lines.push("Description:      " + (lib.description || ""));
 						lines.push("VENUS Compat.:    " + (lib.venus_compatibility || "N/A"));
+						lines.push("GitHub URL:       " + (lib.github_url || "N/A"));
 						lines.push("Tags:             " + ((lib.tags && lib.tags.length > 0) ? lib.tags.join(", ") : "None"));
 						lines.push("Status:           " + (lib.deleted ? "DELETED" : "Active"));
+						lines.push("Format Version:   " + (lib.format_version || "N/A"));
+						lines.push("App Version:      " + (lib.app_version || "N/A"));
+						lines.push("Windows Version:  " + (lib.windows_version || "N/A"));
+						lines.push("VENUS Version:    " + (lib.venus_version || "N/A"));
 						lines.push("Created Date:     " + (lib.created_date || "N/A"));
 						lines.push("Installed Date:   " + (lib.installed_date || "N/A"));
 						lines.push("Installed By:     " + (lib.installed_by || "N/A"));
 						if (lib.deleted && lib.deleted_date) {
 							lines.push("Deleted Date:     " + lib.deleted_date);
+							if (lib.deleted_by) lines.push("Deleted By:       " + lib.deleted_by);
 						}
 						lines.push("Source Package:   " + (lib.source_package || "N/A"));
 						lines.push("Install Path:     " + (lib.lib_install_path || "N/A"));
 						lines.push("Demo Path:        " + (lib.demo_install_path || "N/A"));
+						lines.push("Install To Root:  " + (lib.install_to_library_root ? "Yes" : "No"));
+
+						// Changelog
+						if (lib.changelog) {
+							lines.push("Changelog:");
+							lib.changelog.split(/\r?\n/).forEach(function(cl) {
+								lines.push("  " + cl);
+							});
+						} else {
+							lines.push("Changelog:        N/A");
+						}
 
 						// COM DLLs
 						var comDlls = lib.com_register_dlls || [];
 						lines.push("COM DLLs:         " + (comDlls.length > 0 ? comDlls.join(", ") : "None"));
+						lines.push("COM Registered:   " + (lib.com_registered ? "Yes" : "No"));
 						lines.push("COM Warning:      " + (lib.com_warning ? "YES" : "No"));
+
+						// Conversion source info
+						if (lib.converted_from_executable) {
+							lines.push("Converted From:   Executable");
+							lines.push("Conversion Src:   " + (lib.conversion_source || "N/A"));
+							if (lib.source_certificate && lib.source_certificate.present) {
+								lines.push("Source Cert:      " + (lib.source_certificate.signer_name || "Unknown"));
+								lines.push("Source Cert Status: " + (lib.source_certificate.status || "Unknown"));
+							}
+						}
+
+						// Publisher certificate (code signing)
+						if (lib.publisher_cert) {
+							lines.push("Publisher Cert:   Present");
+							lines.push("  Publisher:      " + (lib.publisher_cert.holder_name || "N/A"));
+							lines.push("  Key ID:         " + (lib.publisher_cert.key_id || "N/A"));
+							lines.push("  Signed Date:    " + (lib.publisher_cert.signed_date || "N/A"));
+							lines.push("  Verified:       " + (lib.publisher_cert.verified ? "Yes" : "No"));
+						} else {
+							lines.push("Publisher Cert:   None (unsigned)");
+						}
+
+						// Package lineage
+						var lineage = lib.package_lineage || [];
+						if (lineage.length > 0) {
+							lines.push("Package Lineage (" + lineage.length + "):");
+							lineage.forEach(function(evt) {
+								lines.push("  - " + (evt.event || "unknown") + " at " + (evt.timestamp || "N/A") + " by " + (evt.username || "N/A") + "@" + (evt.hostname || "N/A") + " (v" + (evt.app_version || "?") + ")");
+							});
+						}
+
+						// Required dependencies
+						var reqDeps = lib.required_dependencies || [];
+						if (reqDeps.length > 0) {
+							lines.push("Required Dependencies (" + reqDeps.length + "):");
+							reqDeps.forEach(function(dep) {
+								lines.push("  - " + dep);
+							});
+						}
 
 						// Integrity status
 						var intStatus = integrity.valid ? "PASS" : "FAIL";
@@ -12259,6 +12673,15 @@
 								var fullPath = path.join(lib.demo_install_path || "", f);
 								var exists = fs.existsSync(fullPath);
 								lines.push("  - " + f + (exists ? "" : "  [MISSING]"));
+							});
+						}
+
+						// Help files
+						var helpFiles = lib.help_files || [];
+						if (helpFiles.length > 0) {
+							lines.push("Help Files (" + helpFiles.length + "):");
+							helpFiles.forEach(function(f) {
+								lines.push("  - " + f);
 							});
 						}
 
