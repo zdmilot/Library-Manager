@@ -8904,7 +8904,9 @@
 				var metFolder = db_links.links.findOne({"_id":"met-folder"});
 				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
 				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
-				var libDestDir = path.join(libBasePath, rLibName);
+				var existingRec = db_installed_libs.installed_libs.findOne({"library_name": rLibName});
+				var rollbackInstallToRoot = (existingRec && existingRec.install_to_library_root) || !!manifest.install_to_library_root;
+				var libDestDir = rollbackInstallToRoot ? libBasePath : path.join(libBasePath, rLibName);
 				var demoDestDir = path.join(metBasePath, "Library Demo Methods", rLibName);
 
 				var origLibFiles = manifest.library_files || [];
@@ -9051,7 +9053,8 @@
 					file_hashes: fileHashes,
 					public_functions: extractPublicFunctions(libFiles, libDestDir),
 					required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
-					publisher_cert: (rollbackSig && rollbackSig.code_signed && rollbackSig.valid && rollbackSig.publisher_cert) ? rollbackSig.publisher_cert : null
+					publisher_cert: (rollbackSig && rollbackSig.code_signed && rollbackSig.valid && rollbackSig.publisher_cert) ? rollbackSig.publisher_cert : null,
+					install_to_library_root: rollbackInstallToRoot
 				};
 				// Forward-compat: preserve unknown manifest fields in DB record
 				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
@@ -10415,7 +10418,8 @@
 							}
 						});
 
-						var libDestDir = path.join(libBasePath, libName);
+						var archInstallToRoot = !!manifest.install_to_library_root;
+						var libDestDir = archInstallToRoot ? libBasePath : path.join(libBasePath, libName);
 						var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
 						var extractedCount = 0;
 
@@ -10506,7 +10510,8 @@
 							file_hashes: fileHashes,
 							public_functions: extractPublicFunctions(libFiles, libDestDir),
 							required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
-							publisher_cert: (innerSig && innerSig.code_signed && innerSig.valid && innerSig.publisher_cert) ? innerSig.publisher_cert : null
+							publisher_cert: (innerSig && innerSig.code_signed && innerSig.valid && innerSig.publisher_cert) ? innerSig.publisher_cert : null,
+							install_to_library_root: archInstallToRoot
 						};
 						// Forward-compat: preserve unknown manifest fields in DB record
 						Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
@@ -11628,7 +11633,8 @@
 					file_hashes: fileHashes,
 					public_functions: extractPublicFunctions(libFiles, libDestDir),
 					required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
-					publisher_cert: (impSigResult && impSigResult.code_signed && impSigResult.valid && impSigResult.publisher_cert) ? impSigResult.publisher_cert : null
+					publisher_cert: (impSigResult && impSigResult.code_signed && impSigResult.valid && impSigResult.publisher_cert) ? impSigResult.publisher_cert : null,
+					install_to_library_root: !!$modal.data("imp-installToRoot")
 				};
 				// Forward-compat: preserve unknown manifest fields in DB record
 				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
