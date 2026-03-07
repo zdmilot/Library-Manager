@@ -7217,20 +7217,124 @@
 		}
 
 		/**
-		 * Registers multiple DLLs sequentially. Returns result summary.
+		 * Registers or unregisters multiple DLLs in a SINGLE elevated session
+		 * (one UAC prompt).  Creates a combined batch script that runs RegAsm
+		 * on each DLL and captures per-DLL exit codes and output so individual
+		 * success/failure can still be reported.
+		 *
+		 * This replaces the previous sequential approach that triggered a
+		 * separate UAC prompt for every DLL via comRegisterDll().
+		 *
 		 * @param {Array<string>} dllPaths - Full paths to DLL files
 		 * @param {boolean} register - true to register, false to unregister
 		 * @returns {Promise<{allSuccess: boolean, results: Array}>}
 		 */
 		async function comRegisterMultipleDlls(dllPaths, register) {
-			var results = [];
-			var allSuccess = true;
-			for (var i = 0; i < dllPaths.length; i++) {
-				var result = await comRegisterDll(dllPaths[i], register);
-				results.push({dll: dllPaths[i], success: result.success, error: result.error});
-				if (!result.success) allSuccess = false;
+			if (!dllPaths || dllPaths.length === 0) {
+				return {allSuccess: true, results: []};
 			}
-			return {allSuccess: allSuccess, results: results};
+
+			// If only one DLL, delegate to the single-DLL function (same UX)
+			if (dllPaths.length === 1) {
+				var single = await comRegisterDll(dllPaths[0], register);
+				return {
+					allSuccess: single.success,
+					results: [{dll: dllPaths[0], success: single.success, error: single.error}]
+				};
+			}
+
+			var regasm = findRegAsmPath();
+			if (!regasm) {
+				var errMsg = "32-bit RegAsm.exe not found in C:\\Windows\\Microsoft.NET\\Framework\\.\nEnsure .NET Framework (x86) is installed. Do NOT use Framework64.";
+				return {allSuccess: false, results: dllPaths.map(function(d) {
+					return {dll: d, success: false, error: errMsg};
+				})};
+			}
+
+			// Validate all DLL paths up-front
+			for (var vi = 0; vi < dllPaths.length; vi++) {
+				if (!fs.existsSync(dllPaths[vi])) {
+					return {allSuccess: false, results: [{dll: dllPaths[vi], success: false, error: "DLL file not found: " + dllPaths[vi]}]};
+				}
+				if (/[&|><`%\r\n]/.test(dllPaths[vi]) || /'/.test(dllPaths[vi])) {
+					return {allSuccess: false, results: [{dll: dllPaths[vi], success: false, error: "DLL path contains unsafe characters: " + path.basename(dllPaths[vi])}]};
+				}
+			}
+
+			return new Promise(function(resolve) {
+				var tmpDir = os.tmpdir();
+				var stamp = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+				var scriptFile = path.join(tmpDir, 'lm_regasm_batch_' + stamp + '.cmd');
+
+				// Build a single batch script that registers ALL DLLs and captures
+				// per-DLL exit codes and RegAsm output to individual temp files.
+				var batLines = ['@echo off'];
+				var outFiles = [];
+				for (var bi = 0; bi < dllPaths.length; bi++) {
+					var outFile = path.join(tmpDir, 'lm_regasm_' + stamp + '_' + bi + '.log');
+					var exitFile = path.join(tmpDir, 'lm_regasm_' + stamp + '_' + bi + '.exit');
+					outFiles.push({log: outFile, exit: exitFile, dll: dllPaths[bi]});
+
+					var regasmArgs = register
+						? '"' + dllPaths[bi] + '" /codebase'
+						: '/u "' + dllPaths[bi] + '" /codebase';
+
+					batLines.push('"' + regasm + '" ' + regasmArgs + ' > "' + outFile + '" 2>&1');
+					batLines.push('echo %errorlevel% > "' + exitFile + '"');
+				}
+				batLines.push('exit /b 0');
+
+				fs.writeFileSync(scriptFile, batLines.join('\r\n'), 'utf8');
+
+				// Elevate the combined batch script — SINGLE UAC prompt
+				var psScript = "try { $p = Start-Process -FilePath '" + scriptFile + "' -Verb RunAs -Wait -PassThru -WindowStyle Hidden; exit $p.ExitCode } catch { exit 1 }";
+				var fullCmd = 'powershell.exe -NoProfile -Command "' + psScript + '"';
+
+				var exec = require('child_process').exec;
+				// Scale timeout: 30s base + 15s per DLL
+				var timeoutMs = 30000 + (dllPaths.length * 15000);
+
+				exec(fullCmd, {timeout: timeoutMs}, function(error) {
+					var results = [];
+					var allSuccess = true;
+
+					// Read per-DLL results from temp files
+					for (var ri = 0; ri < outFiles.length; ri++) {
+						var regasmOutput = '';
+						var exitCode = -1;
+						try { regasmOutput = fs.readFileSync(outFiles[ri].log, 'utf8').trim(); } catch(e) {}
+						try {
+							var exitStr = fs.readFileSync(outFiles[ri].exit, 'utf8').trim();
+							exitCode = parseInt(exitStr, 10);
+						} catch(e) {}
+
+						// Clean up per-DLL temp files
+						try { fs.unlinkSync(outFiles[ri].log); } catch(e) {}
+						try { fs.unlinkSync(outFiles[ri].exit); } catch(e) {}
+
+						if (error && exitCode === -1) {
+							// UAC was cancelled or elevation failed — no per-DLL files written
+							results.push({dll: outFiles[ri].dll, success: false, error: "The operation was cancelled or requires administrator rights."});
+							allSuccess = false;
+						} else if (exitCode !== 0 && exitCode !== -1) {
+							var errDetail = "COM " + (register ? "registration" : "deregistration") + " failed for " + path.basename(outFiles[ri].dll) + ".";
+							if (regasmOutput) errDetail += "\n" + regasmOutput;
+							results.push({dll: outFiles[ri].dll, success: false, error: errDetail});
+							allSuccess = false;
+						} else if (exitCode === 0) {
+							results.push({dll: outFiles[ri].dll, success: true, error: null});
+						} else {
+							results.push({dll: outFiles[ri].dll, success: false, error: "The operation was cancelled or requires administrator rights."});
+							allSuccess = false;
+						}
+					}
+
+					// Clean up the batch script
+					try { fs.unlinkSync(scriptFile); } catch(e) {}
+
+					resolve({allSuccess: allSuccess, results: results});
+				});
+			});
 		}
 
 		/**
@@ -8904,9 +9008,7 @@
 				var metFolder = db_links.links.findOne({"_id":"met-folder"});
 				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
 				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
-				var existingRec = db_installed_libs.installed_libs.findOne({"library_name": rLibName});
-				var rollbackInstallToRoot = (existingRec && existingRec.install_to_library_root) || !!manifest.install_to_library_root;
-				var libDestDir = rollbackInstallToRoot ? libBasePath : path.join(libBasePath, rLibName);
+				var libDestDir = path.join(libBasePath, rLibName);
 				var demoDestDir = path.join(metBasePath, "Library Demo Methods", rLibName);
 
 				var origLibFiles = manifest.library_files || [];
@@ -9053,8 +9155,7 @@
 					file_hashes: fileHashes,
 					public_functions: extractPublicFunctions(libFiles, libDestDir),
 					required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
-					publisher_cert: (rollbackSig && rollbackSig.code_signed && rollbackSig.valid && rollbackSig.publisher_cert) ? rollbackSig.publisher_cert : null,
-					install_to_library_root: rollbackInstallToRoot
+					publisher_cert: (rollbackSig && rollbackSig.code_signed && rollbackSig.valid && rollbackSig.publisher_cert) ? rollbackSig.publisher_cert : null
 				};
 				// Forward-compat: preserve unknown manifest fields in DB record
 				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
@@ -10355,6 +10456,40 @@
 					}
 				}
 
+				// ---- COM DLL pre-scan: detect all COM registrations needed upfront ----
+				// Scan every package in the archive for com_register_dlls so we can
+				// prompt the user for admin rights ONCE and register ALL DLLs in a
+				// single elevated session rather than triggering multiple UAC prompts.
+				var archiveComDllCount = 0;
+				var archiveComPkgNames = [];
+				for (var comScanIdx = 0; comScanIdx < pkgEntries.length; comScanIdx++) {
+					try {
+						var comScanBuf = pkgEntries[comScanIdx].getData();
+						var comScanZipBuf = unpackContainer(comScanBuf, CONTAINER_MAGIC_PKG);
+						var comScanZip = new AdmZip(comScanZipBuf);
+						var comScanManifest = comScanZip.getEntry("manifest.json");
+						if (comScanManifest) {
+							var comScanM = JSON.parse(comScanZip.readAsText(comScanManifest));
+							var comScanDlls = comScanM.com_register_dlls || [];
+							if (comScanDlls.length > 0) {
+								archiveComDllCount += comScanDlls.length;
+								archiveComPkgNames.push(comScanM.library_name || pkgEntries[comScanIdx].entryName);
+							}
+						}
+					} catch (_) { /* scan failure is non-fatal */ }
+				}
+
+				if (archiveComDllCount > 0) {
+					var comPromptMsg = "This archive contains " + archiveComDllCount + " COM DLL" + (archiveComDllCount !== 1 ? "s" : "") +
+						" across " + archiveComPkgNames.length + " package" + (archiveComPkgNames.length !== 1 ? "s" : "") +
+						" that require administrator rights to register:\n\n";
+					archiveComPkgNames.forEach(function(n) { comPromptMsg += "  \u2022 " + n + "\n"; });
+					comPromptMsg += "\nYou will be prompted for administrator rights once to register all COM objects.\n\nDo you want to continue?";
+					if (!confirm(comPromptMsg)) {
+						return;
+					}
+				}
+
 				var results = { success: [], failed: [] };
 
 				// Determine base install paths
@@ -10363,8 +10498,12 @@
 				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
 				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
 
+				// Track all COM DLL paths across all packages for batch registration
+				var allComDllPaths = [];     // { dllPath, libName, savedId }
+				var comDllLibMap = {};        // libName -> [dllPath, ...]
+
 				// Process each package
-				pkgEntries.forEach(function(pkgEntry) {
+				for (var archPkgIdx = 0; archPkgIdx < pkgEntries.length; archPkgIdx++) { (function() { var pkgEntry = pkgEntries[archPkgIdx];
 					try {
 						var pkgBuffer = pkgEntry.getData();
 						var innerZipBuf = unpackContainer(pkgBuffer, CONTAINER_MAGIC_PKG);
@@ -10418,8 +10557,7 @@
 							}
 						});
 
-						var archInstallToRoot = !!manifest.install_to_library_root;
-						var libDestDir = archInstallToRoot ? libBasePath : path.join(libBasePath, libName);
+						var libDestDir = path.join(libBasePath, libName);
 						var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
 						var extractedCount = 0;
 
@@ -10510,8 +10648,7 @@
 							file_hashes: fileHashes,
 							public_functions: extractPublicFunctions(libFiles, libDestDir),
 							required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
-							publisher_cert: (innerSig && innerSig.code_signed && innerSig.valid && innerSig.publisher_cert) ? innerSig.publisher_cert : null,
-							install_to_library_root: archInstallToRoot
+							publisher_cert: (innerSig && innerSig.code_signed && innerSig.valid && innerSig.publisher_cert) ? innerSig.publisher_cert : null
 						};
 						// Forward-compat: preserve unknown manifest fields in DB record
 						Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
@@ -11633,8 +11770,7 @@
 					file_hashes: fileHashes,
 					public_functions: extractPublicFunctions(libFiles, libDestDir),
 					required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
-					publisher_cert: (impSigResult && impSigResult.code_signed && impSigResult.valid && impSigResult.publisher_cert) ? impSigResult.publisher_cert : null,
-					install_to_library_root: !!$modal.data("imp-installToRoot")
+					publisher_cert: (impSigResult && impSigResult.code_signed && impSigResult.valid && impSigResult.publisher_cert) ? impSigResult.publisher_cert : null
 				};
 				// Forward-compat: preserve unknown manifest fields in DB record
 				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
