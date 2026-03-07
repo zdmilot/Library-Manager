@@ -3033,7 +3033,7 @@
 
 			if (type === 'tag') {
 				// Remove the #partial from input
-				var tagMatch = raw.match(/^(.*?)(?:^|\s)#[^\s#]*$/);
+				var tagMatch = raw.match(/^(.*?)(?:^|\s)#[^#@]*$/);
 				var prefix = tagMatch ? tagMatch[1] : '';
 				if (prefix.trim()) {
 					_searchInlineTokens.push({ type: 'text', value: prefix });
@@ -6924,7 +6924,7 @@
 				var githubUrl = $("#pkg-github-url").val().trim();
 				var tagsRaw = $("#pkg-tags").val().trim();
 
-				// Parse and sanitize tags (lowercase, no spaces)
+				// Parse and sanitize tags (lowercase, spaces allowed)
 				var tags = [];
 				if (tagsRaw) {
 					tagsRaw.split(",").forEach(function(t) {
