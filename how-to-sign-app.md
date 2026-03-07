@@ -2,9 +2,9 @@
 
    
 
-Read [](file:///c%3A/Users/admin/Desktop/Library-Manager-for-Venus-6/installer.iss#1-1), lines 1 to 80
+Read [](file:///c%3A/Users/admin/Desktop/Library-Manager/installer.iss#1-1), lines 1 to 80
 
-Read [](file:///c%3A/Users/admin/Desktop/Library-Manager-for-Venus-6/package.json#1-1), lines 1 to 40
+Read [](file:///c%3A/Users/admin/Desktop/Library-Manager/package.json#1-1), lines 1 to 40
 
 Searched for regex `SignTool|signtool|codesign|Authenticode` (`**/installer.iss`), no results
 

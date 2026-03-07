@@ -60,7 +60,7 @@ Any information you enter into the GitHub issue form is submitted by you and may
 
 GitHub processes information you submit according to GitHub's privacy practices.
 
-Repository: https://github.com/zdmilot/Library-Manager-for-Venus-6
+Repository: https://github.com/zdmilot/Library-Manager
 
 Recommendation: Do not include sensitive information (such as usernames, machine names, domain names, file paths, license keys, regulated data, or proprietary method/library contents) in public issue reports.
 

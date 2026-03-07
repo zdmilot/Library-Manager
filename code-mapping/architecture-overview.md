@@ -3,7 +3,7 @@
 ## Project Structure
 
 ```
-Library-Manager-for-Venus-6/
+Library-Manager/
 ├── package.json              # NW.js manifest + npm config (v1.8.6)
 ├── cli.js                    # CLI entry point (2810 lines)
 ├── com-bridge.js             # COM bridge dispatcher (164 lines)

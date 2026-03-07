@@ -54,7 +54,7 @@ SearchTerms4,Text,liquid handling
 SearchTerms5,Text,HSL library
 SearchTerms6,Text,laboratory
 SearchTerms7,Text,regulated environment
-Applicable license terms,Text,https://github.com/zdmilot/Library-Manager-for-Venus-6/blob/main/LICENSE
+Applicable license terms,Text,https://github.com/zdmilot/Library-Manager/blob/main/LICENSE
 Copyright,Text,Copyright (c) 2026 Zachary Milot. All rights reserved.
 DevelopedBy,Text,Zachary Milot
 RequirementsMinimum1,Text,Windows 10 (x64) or later

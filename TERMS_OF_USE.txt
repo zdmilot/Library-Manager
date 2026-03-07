@@ -18,8 +18,8 @@ Commercial use is permitted under the License.
 
 If there is any conflict between these Terms and the License regarding permissions related to the App's source code, the License controls.
 
-Source code repository: https://github.com/zdmilot/Library-Manager-for-Venus-6
-License text: https://github.com/zdmilot/Library-Manager-for-Venus-6?tab=Apache-2.0-1-ov-file
+Source code repository: https://github.com/zdmilot/Library-Manager
+License text: https://github.com/zdmilot/Library-Manager?tab=Apache-2.0-1-ov-file
 
 3) Attribution and notices
 
