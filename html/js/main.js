@@ -6892,6 +6892,18 @@
 			// Use library name from the detected field
 			var libName = $("#pkg-library-name").val().trim() || "Unknown";
 
+			// Check for version duplicate among installed libraries
+			var installedLibs = db_installed_libs.installed_libs.find() || [];
+			for (var vi = 0; vi < installedLibs.length; vi++) {
+				var vLib = installedLibs[vi];
+				if (vLib.library_name === libName && vLib.version === version && !vLib.deleted) {
+					if (!confirm("A library named \"" + libName + "\" version \"" + version + "\" is already installed.\n\nDo you want to create this package anyway?")) {
+						return;
+					}
+					break;
+				}
+			}
+
 			// Set default filename and trigger save dialog
 			$("#pkg-save-dialog").attr("nwsaveas", libName + ".hxlibpkg");
 			$("#pkg-save-dialog").trigger("click");
