@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Code Signing</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">Code Signing</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager for Venus 6</a> &raquo; Code Signing</div>
+
+<h2>Overview</h2>
+<p>Code signing provides cryptographic proof that a library package was created by a specific publisher and has not been tampered with since it was signed. Library Manager for Venus 6 uses <b>Ed25519</b> digital signatures combined with <b>HMAC-SHA256</b> tamper detection for a two-layer integrity system.</p>
+
+<p>Code signing is <b>optional</b> &mdash; unsigned packages can still be imported and used. However, signed packages provide stronger assurances:</p>
+<ul>
+  <li>Publisher identity is cryptographically verified</li>
+  <li>File contents are guaranteed to be unchanged since signing</li>
+  <li>Packages from known OEM publishers display an <b>OEM Verified</b> badge</li>
+  <li>In <a href="RegulatedEnvironment.html">Regulated Environment Mode</a>, only signed packages can be imported</li>
+</ul>
+
+<!-- ================================================================== -->
+<h2>Key Concepts</h2>
+<!-- ================================================================== -->
+
+<h3>Ed25519 Key Pair</h3>
+<p>Code signing uses an <b>Ed25519</b> asymmetric key pair:</p>
+<ul>
+  <li><b>Private Key</b> (<code>.key.pem</code>) &mdash; PEM-encoded PKCS#8 Ed25519 private key. Used to sign packages. <b>Must be kept secret.</b></li>
+  <li><b>Publisher Certificate</b> (<code>.cert.json</code>) &mdash; JSON file containing the public key, publisher name, organization, key fingerprint, and creation date. Distributed freely to package consumers.</li>
+</ul>
+
+<h3>Signature Format</h3>
+<p>When a package is code-signed, a <code>signature.json</code> file is embedded inside the package ZIP with the following structure:</p>
+<div class="code"><pre>{
+  "signature_format_version": "2.0",
+  "algorithm": "Ed25519+HMAC-SHA256",
+  "signed_date": "2026-03-07T12:00:00.000Z",
+  "file_hashes": {
+    "manifest.json": "&lt;sha256&gt;",
+    "library/MyLib.hsl": "&lt;sha256&gt;",
+    ...
+  },
+  "hmac": "&lt;hmac-sha256 hex&gt;",
+  "digital_signature": "&lt;base64 Ed25519 signature&gt;",
+  "publisher_certificate": {
+    "cert_format": "hxlibpkg-publisher-cert/1.0",
+    "publisher": "Jane Smith",
+    "organization": "Acme Pharma",
+    "public_key": "&lt;base64 raw Ed25519 public key&gt;",
+    "fingerprint": "&lt;sha256 hex of raw public key bytes&gt;",
+    "key_id": "&lt;first 16 chars of fingerprint&gt;",
+    "created_date": "&lt;ISO 8601&gt;"
+  }
+}</pre></div>
+
+<p>Verification checks both layers:</p>
+<ol>
+  <li><b>HMAC-SHA256</b> &mdash; Verifies that the <code>file_hashes</code> object has not been altered</li>
+  <li><b>Ed25519 signature</b> &mdash; Verifies that the file hashes were signed by the private key matching the embedded public key</li>
+  <li><b>Per-file SHA-256</b> &mdash; Every file inside the package ZIP is hashed and compared against the signed hash list</li>
+</ol>
+
+<!-- ================================================================== -->
+<h2>Setting Up Code Signing (GUI)</h2>
+<!-- ================================================================== -->
+
+<p>Code signing is configured in <b>Settings &rarr; Code Signing</b>:</p>
+
+<h3>Step 1: Generate or Select a Key Pair</h3>
+<p>You can either generate a new key pair or load an existing one:</p>
+
+<h4>Generate a New Key Pair</h4>
+<ol>
+  <li>Open <b>Settings</b> (gear icon)</li>
+  <li>Scroll to the <b>Code Signing</b> section</li>
+  <li>Click <b>Generate Key Pair...</b></li>
+  <li>Enter a publisher name (3&ndash;29 characters) and optional organization</li>
+  <li>Choose an output directory for the key files</li>
+  <li>Two files are saved: <code>&lt;publisher&gt;.key.pem</code> (private key) and <code>&lt;publisher&gt;.cert.json</code> (certificate)</li>
+  <li>The key pair is automatically loaded into Settings</li>
+</ol>
+
+<h4>Load an Existing Key Pair</h4>
+<ol>
+  <li>In the <b>Code Signing</b> section, click <b>Browse</b> next to &ldquo;Private Key (.key.pem)&rdquo; and select your <code>.key.pem</code> file</li>
+  <li>Click <b>Browse</b> next to &ldquo;Certificate (.cert.json)&rdquo; and select your <code>.cert.json</code> file</li>
+  <li>The publisher name, organization, and key ID are displayed once both files are loaded successfully</li>
+</ol>
+
+<h3>Step 2: Sign Packages</h3>
+<p>Once a key pair is configured, a <b>Code Sign</b> toggle appears in the following locations:</p>
+<ul>
+  <li><b>Library Packager</b> &mdash; When creating a new <code>.hxlibpkg</code> package</li>
+  <li><b>Export Choice Modal</b> &mdash; When exporting a library from the detail view</li>
+  <li><b>Archive Export</b> &mdash; When exporting a <code>.hxlibarch</code> archive</li>
+</ul>
+<p>Toggle <b>Code Sign</b> on before building/exporting. The publisher name and key ID are displayed for confirmation. When enabled, the package is signed with your Ed25519 private key and the publisher certificate is embedded in the <code>signature.json</code>.</p>
+
+<h3>Clearing the Configuration</h3>
+<p>Click the <b>Clear</b> button in the Code Signing settings section to remove the current key pair configuration. This does not delete the key files from disk.</p>
+
+<!-- ================================================================== -->
+<h2>Setting Up Code Signing (CLI)</h2>
+<!-- ================================================================== -->
+
+<p>The CLI provides equivalent functionality for automated or scripted workflows:</p>
+
+<h3>Generate a Key Pair</h3>
+<div class="code"><pre>node cli.js generate-keypair --publisher "Jane Smith" --organization "Acme Pharma" --output-dir C:\Keys</pre></div>
+<p>See <a href="CLIGenerateKeypair.html">CLI: generate-keypair</a> for full options.</p>
+
+<h3>Create a Signed Package</h3>
+<div class="code"><pre>node cli.js create-package --spec package-spec.json --sign-key C:\Keys\Jane_Smith.key.pem --output MyLibrary.hxlibpkg</pre></div>
+<p>See <a href="CLICreatePackage.html">CLI: create-package</a> for full options.</p>
+
+<!-- ================================================================== -->
+<h2>Verification on Import</h2>
+<!-- ================================================================== -->
+
+<p>When a signed package is imported (via GUI or CLI), the signature is verified automatically:</p>
+<ol>
+  <li>The <code>signature.json</code> is read from the package</li>
+  <li>HMAC-SHA256 integrity is checked &mdash; detects tampering with the hash list</li>
+  <li>Ed25519 digital signature is verified against the embedded public key</li>
+  <li>Every file in the package ZIP is re-hashed and compared against the signed hash list</li>
+  <li>If any check fails, the import is <b>rejected</b> with a specific error message</li>
+</ol>
+
+<p>On successful verification:</p>
+<ul>
+  <li>The <b>publisher certificate</b> is stored in the library&rsquo;s database record</li>
+  <li>A <span style="color:#5cb85c;">&#10004; Signed</span> badge appears on the library card</li>
+  <li>The publisher name and key ID are displayed in the Library Detail Modal &rarr; Code Signing Certificate section</li>
+  <li>If the publisher name matches a known OEM keyword, an <b>OEM Verified</b> badge is displayed</li>
+</ul>
+
+<!-- ================================================================== -->
+<h2>Publisher Registry</h2>
+<!-- ================================================================== -->
+
+<p>Library Manager automatically maintains a registry of publisher names encountered during imports. Use <a href="CLIListPublishers.html">CLI: list-publishers</a> to view all registered publishers, or view publisher information in the Library Detail Modal.</p>
+
+<!-- ================================================================== -->
+<h2>OEM Publisher Protection</h2>
+<!-- ================================================================== -->
+
+<p>Packages that claim a <b>restricted OEM author or organization name</b> (e.g., Hamilton, Tecan, Roche, etc.) are subject to additional verification:</p>
+<ul>
+  <li>The package <b>must</b> be code-signed</li>
+  <li>The publisher certificate&rsquo;s holder name must contain the OEM keyword</li>
+  <li>An <b>author password</b> is required to import or create packages with restricted names</li>
+</ul>
+<p>This prevents unauthorized parties from publishing packages under established OEM brand names. See <a href="PackageSpecSchema.html">Package Spec Schema</a> for the full list of restricted keywords.</p>
+
+<!-- ================================================================== -->
+<h2>Regulated Environment Mode</h2>
+<!-- ================================================================== -->
+
+<p>When <a href="RegulatedEnvironment.html">Regulated Environment Mode</a> is enabled, only signed packages can be imported. Unsigned packages are rejected at import time. This ensures full traceability and accountability in GxP-regulated laboratory environments.</p>
+
+<!-- ================================================================== -->
+<h2>Security Considerations</h2>
+<!-- ================================================================== -->
+
+<ul>
+  <li><b>Private key security:</b> The <code>.key.pem</code> file grants the ability to sign packages as you. Store it securely and never share it. If compromised, generate a new key pair.</li>
+  <li><b>Certificate distribution:</b> The <code>.cert.json</code> file is public information and can be freely shared with anyone who will import your packages.</li>
+  <li><b>Algorithm:</b> Ed25519 is a modern, high-performance elliptic curve algorithm endorsed by NIST (as part of EdDSA). It provides 128-bit security with 32-byte keys.</li>
+  <li><b>Timing-safe comparison:</b> All cryptographic comparisons use <code>crypto.timingSafeEqual()</code> to prevent timing side-channel attacks.</li>
+</ul>
+
+<!-- ================================================================== -->
+<h2>Related</h2>
+<!-- ================================================================== -->
+<ul>
+  <li><a href="CLIGenerateKeypair.html">CLI: generate-keypair</a> &mdash; Generate an Ed25519 key pair</li>
+  <li><a href="CLICreatePackage.html">CLI: create-package</a> &mdash; Create signed packages via CLI</li>
+  <li><a href="CLIVerifyPackage.html">CLI: verify-package</a> &mdash; Verify a package signature</li>
+  <li><a href="CLIListPublishers.html">CLI: list-publishers</a> &mdash; View registered publishers</li>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a> &mdash; Full integrity system overview</li>
+  <li><a href="RegulatedEnvironment.html">Regulated Environment</a> &mdash; Restricted mode requiring signed packages</li>
+  <li><a href="CreatingPackages.html">Creating Packages</a> &mdash; GUI package creation workflow</li>
+  <li><a href="ExportingLibraries.html">Exporting Libraries</a> &mdash; Export with code signing</li>
+</ul>
+</div>
+<div class="footer">
+<p>Library Manager for Venus 6 Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

@@ -3899,6 +3899,8 @@
 					// Show Report Issue menu item when not in regulated mode
 					$(".overflow-report-issue").show();
 				}
+			}).catch(function(err) {
+				console.error('Regulated mode confirmation error:', err);
 			});
 		});
 
@@ -10605,7 +10607,6 @@
 
 				// Track all COM DLL paths across all packages for batch registration
 				var allComDllPaths = [];     // { dllPath, libName, savedId }
-				var comDllLibMap = {};        // libName -> [dllPath, ...]
 
 				// Process each package
 				for (var archPkgIdx = 0; archPkgIdx < pkgEntries.length; archPkgIdx++) { (function() { var pkgEntry = pkgEntries[archPkgIdx];
@@ -10772,8 +10773,6 @@
 							for (var cdi = 0; cdi < dllPaths.length; cdi++) {
 								allComDllPaths.push({dllPath: dllPaths[cdi], libName: libName, savedId: saved._id});
 							}
-							if (!comDllLibMap[libName]) comDllLibMap[libName] = [];
-							comDllLibMap[libName] = comDllLibMap[libName].concat(dllPaths);
 						}
 
 						// Auto-add to group

@@ -21,6 +21,7 @@ PackageSpecSchema.html
 HSLFileArchitecture.html
 DataModel.html
 IntegrityVerification.html
+CodeSigning.html
 ImportingLibraries.html
 ImportingHamPkg.html
 ExportingLibraries.html

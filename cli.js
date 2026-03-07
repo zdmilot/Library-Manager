@@ -624,7 +624,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         venus_compatibility: manifest.venus_compatibility  || '',
         description:         manifest.description          || '',
         github_url:          manifest.github_url           || '',
-        tags:                manifest.tags                 || [],
+        tags:                shared.sanitizeTags(manifest.tags || []),
         created_date:        manifest.created_date         || '',
         library_image:       manifest.library_image        || null,
         library_image_base64:manifest.library_image_base64 || null,
@@ -971,7 +971,8 @@ function cmdImportLib(args) {
         die(`Library "${libName}" is already installed. Use --force to overwrite.`);
     }
 
-    const libDestDir  = path.join(libBasePath, libName);
+    const installToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
+    const libDestDir  = installToRoot ? libBasePath : path.join(libBasePath, libName);
     const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
 
     const result = installPackage(
@@ -1108,7 +1109,8 @@ function cmdImportArchive(args) {
                 throw new Error(`"${libName}" already installed (use --force to overwrite)`);
             }
 
-            const libDestDir  = path.join(libBasePath, libName);
+            const archInstallToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
+            const libDestDir  = archInstallToRoot ? libBasePath : path.join(libBasePath, libName);
             const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
 
             const result = installPackage(
@@ -1435,9 +1437,14 @@ function cmdDeleteLib(args) {
         const libPath   = lib.lib_install_path || '';
 
         if (libPath && (libFiles.length > 0 || helpFiles.length > 0)) {
+            const resolvedLibBase = path.resolve(libPath);
             libFiles.concat(helpFiles).forEach(f => {
                 try {
                     const fp = path.join(libPath, f);
+                    if (!path.resolve(fp).startsWith(resolvedLibBase)) {
+                        process.stderr.write(`  Warning: skipping suspicious path: ${f}\n`);
+                        return;
+                    }
                     if (fs.existsSync(fp)) fs.unlinkSync(fp);
                 } catch (e) {
                     process.stderr.write(`  Warning: could not delete ${f}: ${e.message}\n`);
@@ -2198,7 +2205,8 @@ function cmdRollbackLib(args) {
         }
     }
 
-    const libDestDir  = path.join(libBasePath, libName);
+    const rbInstallToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
+    const libDestDir  = rbInstallToRoot ? libBasePath : path.join(libBasePath, libName);
     const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
 
     const result = installPackage(

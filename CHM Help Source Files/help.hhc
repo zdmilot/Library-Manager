@@ -74,6 +74,10 @@
 				<param name="Local" value="IntegrityVerification.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Code Signing">
+				<param name="Local" value="CodeSigning.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Visual Identity &amp; Assets">
 				<param name="Local" value="VisualIdentity.html">
 				</OBJECT>

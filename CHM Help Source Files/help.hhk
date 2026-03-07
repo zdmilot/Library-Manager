@@ -99,11 +99,19 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="code signing certificate">
-		<param name="Local" value="IntegrityVerification.html">
+		<param name="Local" value="CodeSigning.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="code signing">
-		<param name="Local" value="CLIGenerateKeypair.html">
+		<param name="Local" value="CodeSigning.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="code signing setup">
+		<param name="Local" value="CodeSigning.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="digital signature">
+		<param name="Local" value="CodeSigning.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="keypair">
@@ -175,11 +183,11 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Ed25519">
-		<param name="Local" value="CLIGenerateKeypair.html">
+		<param name="Local" value="CodeSigning.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Ed25519 code signing">
-		<param name="Local" value="IntegrityVerification.html">
+		<param name="Local" value="CodeSigning.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="export-lib">
@@ -283,7 +291,7 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="publisher certificate">
-		<param name="Local" value="IntegrityVerification.html">
+		<param name="Local" value="CodeSigning.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="HMAC">
@@ -423,7 +431,7 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="package signing">
-		<param name="Local" value="IntegrityVerification.html">
+		<param name="Local" value="CodeSigning.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="signing pipeline">
@@ -908,6 +916,22 @@
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="service layer">
 		<param name="Local" value="SystemArchitecture.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="key pair">
+		<param name="Local" value="CodeSigning.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="key pair generation">
+		<param name="Local" value="CodeSigning.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="publisher verification">
+		<param name="Local" value="CodeSigning.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="OEM publisher protection">
+		<param name="Local" value="CodeSigning.html">
 		</OBJECT>
 </UL>
 </BODY></HTML>
