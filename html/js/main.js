@@ -3595,10 +3595,11 @@
 
 			function matchesAuthorFilters(author, organization) {
 				if (!hasAuthorFilters) return true;
-				var a = (author || '').toLowerCase();
+				var authorParts = (author || '').split(',').map(function(s) { return s.trim().toLowerCase(); }).filter(Boolean);
 				var o = (organization || '').toLowerCase();
 				return authorFilters.every(function(filter) {
-					return a.indexOf(filter) !== -1 || o.indexOf(filter) !== -1;
+					return authorParts.some(function(part) { return part.indexOf(filter) !== -1; }) ||
+						o.indexOf(filter) !== -1;
 				});
 			}
 
