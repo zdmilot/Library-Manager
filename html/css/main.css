@@ -3109,6 +3109,13 @@ body.dark-mode .imp-issues-banner-header {
 body.dark-mode .imp-issues-item {
 	border-bottom-color: rgba(255,255,255,0.05);
 }
+
+/* Allow text selection in the library detail modal */
+#libDetailModal .modal-body {
+	-webkit-user-select: text;
+	user-select: text;
+	cursor: auto;
+}
 body.dark-mode .imp-issues-item .issue-detail {
 	color: #7a8ba0;
 }
