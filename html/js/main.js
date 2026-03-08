@@ -15219,6 +15219,7 @@
 		var _hampkgPkgInfo = null;   // Parsed package info from parsePkg()
 		var _hampkgBuffer = null;    // Raw .pkg file buffer
 		var _hampkgFilePath = '';    // Path to the .pkg file
+		var _hampkgLastClickedIdx = -1; // Last clicked file index for shift-select
 
 		/**
 		 * Format a byte count as a human-readable string.
@@ -15237,6 +15238,7 @@
 			_hampkgPkgInfo = null;
 			_hampkgBuffer = null;
 			_hampkgFilePath = '';
+			_hampkgLastClickedIdx = -1;
 
 			var $modal = $("#importHamPkgModal");
 			$modal.find(".hampkg-step-select").removeClass("d-none");
@@ -15352,6 +15354,15 @@
 
 			var activeCat = $(".hampkg-cat-btn.active").data("cat") || "all";
 
+			// Compute destination directories for from/to display
+			var libFolder = db_links.links.findOne({"_id":"lib-folder"});
+			var metFolder = db_links.links.findOne({"_id":"met-folder"});
+			var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+			var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
+			var libName = $("#hampkg-lib-name").val().trim() || "LibraryName";
+			var libDestDir = path.join(libBasePath, libName);
+			var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
+
 			var visibleCount = 0;
 			for (var i = 0; i < _hampkgFiles.length; i++) {
 				var f = _hampkgFiles[i];
@@ -15370,15 +15381,26 @@
 				visibleCount++;
 				var selectedClass = f.selected ? ' selected' : '';
 				var checkIcon = f.selected ? 'fa-check-square' : 'fa-square';
-				var relDisplay = f.relPath.length > 50 ? '...' + f.relPath.slice(-47) : f.relPath;
+
+				// Determine from (source) and to (destination) directories
+				var fromDir = f.absPath ? path.dirname(f.absPath) : path.dirname(f.relPath);
+				var toDir;
+				if (f.pathCategory === 'methods' || f.category.group === 'demo') {
+					toDir = demoDestDir;
+				} else {
+					toDir = libDestDir;
+				}
 
 				var html = '<div class="hampkg-file-item' + selectedClass + '" data-idx="' + i + '">'
 					+ '<span class="hampkg-file-check"><i class="far ' + checkIcon + '"></i></span>'
 					+ '<span class="hampkg-file-icon"><i class="fas ' + escapeHtml(f.category.icon) + '"></i></span>'
 					+ '<span class="hampkg-file-name">' + escapeHtml(f.fileName) + '</span>'
 					+ '<span class="hampkg-file-cat">' + escapeHtml(f.category.label) + '</span>'
-					+ '<span class="hampkg-file-path" title="' + escapeHtml(f.relPath) + '">' + escapeHtml(relDisplay) + '</span>'
 					+ '<span class="hampkg-file-size">' + formatFileSize(f.size) + '</span>'
+					+ '<div class="hampkg-file-dirs">'
+					+ '<span class="hampkg-file-from" title="' + escapeHtml(fromDir) + '"><i class="fas fa-sign-out-alt mr-1"></i>' + escapeHtml(fromDir) + '</span>'
+					+ '<span class="hampkg-file-to" title="' + escapeHtml(toDir) + '"><i class="fas fa-sign-in-alt mr-1"></i>' + escapeHtml(toDir) + '</span>'
+					+ '</div>'
 					+ '</div>';
 				$list.append(html);
 			}
@@ -15582,11 +15604,47 @@
 			hampkgBuildFileList();
 		});
 
-		// ---- File item click (toggle selection) ----
-		$(document).on("click", ".hampkg-file-item", function() {
+		// ---- File item click (toggle selection, shift-click for range) ----
+		$(document).on("click", ".hampkg-file-item", function(e) {
 			var idx = parseInt($(this).data("idx"), 10);
 			if (isNaN(idx) || idx < 0 || idx >= _hampkgFiles.length) return;
-			_hampkgFiles[idx].selected = !_hampkgFiles[idx].selected;
+
+			if (e.shiftKey && _hampkgLastClickedIdx >= 0 && _hampkgLastClickedIdx !== idx) {
+				// Shift-click: select/deselect all files between last clicked and current
+				var start = Math.min(_hampkgLastClickedIdx, idx);
+				var end = Math.max(_hampkgLastClickedIdx, idx);
+				// Determine target state from the anchor item
+				var targetState = _hampkgFiles[_hampkgLastClickedIdx].selected;
+				// Build set of currently visible indices (respecting category filter)
+				var activeCat = $(".hampkg-cat-btn.active").data("cat") || "all";
+				var visibleIndices = [];
+				for (var vi = 0; vi < _hampkgFiles.length; vi++) {
+					var vf = _hampkgFiles[vi];
+					if (activeCat === "all") {
+						visibleIndices.push(vi);
+					} else {
+						var vm = false;
+						if (activeCat === 'library' && vf.pathCategory === 'library' && vf.category.group !== 'help') vm = true;
+						else if (activeCat === 'help' && vf.category.group === 'help') vm = true;
+						else if (activeCat === 'labware' && vf.pathCategory === 'labware') vm = true;
+						else if (activeCat === 'config' && (vf.pathCategory === 'config' || vf.pathCategory === 'system')) vm = true;
+						else if (activeCat === 'demo' && (vf.pathCategory === 'methods' || vf.category.group === 'demo')) vm = true;
+						if (vm) visibleIndices.push(vi);
+					}
+				}
+				// Apply target state to all visible files in the range
+				for (var ri = 0; ri < visibleIndices.length; ri++) {
+					var rIdx = visibleIndices[ri];
+					if (rIdx >= start && rIdx <= end) {
+						_hampkgFiles[rIdx].selected = targetState;
+					}
+				}
+			} else {
+				// Normal click: toggle single file
+				_hampkgFiles[idx].selected = !_hampkgFiles[idx].selected;
+			}
+
+			_hampkgLastClickedIdx = idx;
 			hampkgBuildFileList();
 			hampkgUpdateSummary();
 			hampkgUpdateInstallPath();
