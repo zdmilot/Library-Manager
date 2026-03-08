@@ -981,7 +981,13 @@ function cmdImportLib(args) {
     // Check for existing installation
     const existing = db.installed_libs.findOne({ library_name: libName });
     if (existing && !existing.deleted && !args['force']) {
-        die(`Library "${libName}" is already installed. Use --force to overwrite.`);
+        const existingVer = existing.version || '?';
+        const incomingVer = manifest.version || '?';
+        if (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer) {
+            die(`Library "${libName}" v${existingVer} is already installed (same version). Use --force to overwrite.`);
+        } else {
+            die(`Library "${libName}" is already installed (v${existingVer}). Incoming version: v${incomingVer}. Use --force to overwrite.`);
+        }
     }
 
     const installToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
@@ -1112,7 +1118,13 @@ function cmdImportArchive(args) {
 
             const existing = db.installed_libs.findOne({ library_name: libName });
             if (existing && !existing.deleted && !args['force']) {
-                throw new Error(`"${libName}" already installed (use --force to overwrite)`);
+                const existingVer = existing.version || '?';
+                const incomingVer = manifest.version || '?';
+                if (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer) {
+                    throw new Error(`"${libName}" v${existingVer} is already installed (same version; use --force to overwrite)`);
+                } else {
+                    throw new Error(`"${libName}" is already installed (v${existingVer}). Incoming: v${incomingVer} (use --force to overwrite)`);
+                }
             }
 
             const archInstallToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);

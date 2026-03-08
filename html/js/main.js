@@ -11257,6 +11257,58 @@
 
 				if (!confirm(confirmMsg)) return;
 
+				// ---- Duplicate detection pre-scan ----
+				// Scan all packages for name/version and check against installed libraries.
+				// If duplicates exist, notify the user and let them choose to skip or overwrite.
+				var archDuplicates = [];
+				for (var dupScanIdx = 0; dupScanIdx < pkgEntries.length; dupScanIdx++) {
+					try {
+						var dupScanBuf = pkgEntries[dupScanIdx].getData();
+						var dupScanZipBuf = unpackContainer(dupScanBuf, CONTAINER_MAGIC_PKG);
+						var dupScanZip = new AdmZip(dupScanZipBuf);
+						var dupScanManifest = dupScanZip.getEntry("manifest.json");
+						if (dupScanManifest) {
+							var dupScanM = JSON.parse(dupScanZip.readAsText(dupScanManifest));
+							var dupScanName = dupScanM.library_name || pkgEntries[dupScanIdx].entryName;
+							var dupScanVer = dupScanM.version || '?';
+							var dupExisting = db_installed_libs.installed_libs.findOne({"library_name": dupScanName});
+							if (dupExisting && !dupExisting.deleted) {
+								archDuplicates.push({
+									index: dupScanIdx,
+									libName: dupScanName,
+									incomingVersion: dupScanVer,
+									existingVersion: dupExisting.version || '?'
+								});
+							}
+						}
+					} catch (_) { /* scan failure is non-fatal */ }
+				}
+
+				// If duplicates found, ask user what to do
+				var archSkipIndices = {};
+				if (archDuplicates.length > 0) {
+					var dupMsg = archDuplicates.length + " librar" + (archDuplicates.length !== 1 ? "ies are" : "y is") + " already installed:\n\n";
+					archDuplicates.forEach(function(d) {
+						if (d.existingVersion !== '?' && d.incomingVersion !== '?' && d.existingVersion === d.incomingVersion) {
+							dupMsg += "  \u2022 " + d.libName + " (same version: v" + d.existingVersion + ")\n";
+						} else {
+							dupMsg += "  \u2022 " + d.libName + " (installed: v" + d.existingVersion + " \u2192 importing: v" + d.incomingVersion + ")\n";
+						}
+					});
+					dupMsg += "\nClick OK to replace " + (archDuplicates.length !== 1 ? "these libraries" : "this library") + ", or Cancel to skip " + (archDuplicates.length !== 1 ? "them" : "it") + " and install only new libraries.";
+					if (!confirm(dupMsg)) {
+						// User chose to skip duplicates
+						archDuplicates.forEach(function(d) {
+							archSkipIndices[d.index] = true;
+						});
+						// If everything is a duplicate and user chose to skip, nothing to install
+						if (Object.keys(archSkipIndices).length >= pkgEntries.length) {
+							alert("All libraries in this archive are already installed. No changes were made.");
+							return;
+						}
+					}
+				}
+
 				// ---- COM DLL pre-scan: detect all COM registrations needed upfront ----
 				// Scan every package in the archive for com_register_dlls so we can
 				// prompt the user for admin rights ONCE and register ALL DLLs in a
@@ -11264,6 +11316,7 @@
 				var archiveComDllCount = 0;
 				var archiveComPkgNames = [];
 				for (var comScanIdx = 0; comScanIdx < pkgEntries.length; comScanIdx++) {
+					if (archSkipIndices[comScanIdx]) continue; // skip libraries the user chose not to replace
 					try {
 						var comScanBuf = pkgEntries[comScanIdx].getData();
 						var comScanZipBuf = unpackContainer(comScanBuf, CONTAINER_MAGIC_PKG);
@@ -11304,6 +11357,11 @@
 
 				// Process each package
 				for (var archPkgIdx = 0; archPkgIdx < pkgEntries.length; archPkgIdx++) { (function() { var pkgEntry = pkgEntries[archPkgIdx];
+					// Skip libraries the user chose not to replace
+					if (archSkipIndices[archPkgIdx]) {
+						results.failed.push(pkgEntry.entryName.replace('.hxlibpkg', '') + ": skipped (already installed)");
+						return;
+					}
 					try {
 						var pkgBuffer = pkgEntry.getData();
 						var innerZipBuf = unpackContainer(pkgBuffer, CONTAINER_MAGIC_PKG);
@@ -12395,10 +12453,22 @@
 				// Check for existing library
 				var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
 				if (existing) {
+					var existingVer = existing.version || '?';
+					var incomingVer = manifest.version || '?';
+					var isSameVersion = (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer);
 					$modal.find(".imp-preview-overwrite-warning").removeClass("d-none");
-					$modal.find(".imp-preview-overwrite-text").text('A library named "' + libName + '" is already installed (v' + (existing.version || '?') + '). It will be updated.');
+					if (isSameVersion) {
+						$modal.find(".imp-preview-overwrite-warning .alert").removeClass("alert-warning").addClass("alert-info");
+						$modal.find(".imp-preview-overwrite-text").text('A library named "' + libName + '" with the same version (v' + existingVer + ') is already installed. Importing will replace the existing copy.');
+					} else {
+						$modal.find(".imp-preview-overwrite-warning .alert").removeClass("alert-info").addClass("alert-warning");
+						$modal.find(".imp-preview-overwrite-text").text('A library named "' + libName + '" is already installed (v' + existingVer + '). Importing will replace it with v' + incomingVer + '.');
+					}
+					$("#imp-preview-confirm").html('<i class="fas fa-sync-alt mr-2"></i>Replace Library');
 				} else {
 					$modal.find(".imp-preview-overwrite-warning").addClass("d-none");
+					$modal.find(".imp-preview-overwrite-warning .alert").removeClass("alert-info").addClass("alert-warning");
+					$("#imp-preview-confirm").html('<i class="fas fa-file-import mr-2"></i>Install Library');
 				}
 
 				// Store data for confirm handler
@@ -15624,7 +15694,15 @@
 				// Check if library already exists
 				var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
 				if (existing) {
-					if (!confirm('A library named "' + libName + '" is already installed.\n\nDo you want to overwrite it?')) {
+					var existingVer = existing.version || '?';
+					var isSameVersion = (existingVer !== '?' && version && existingVer === version);
+					var overwriteMsg;
+					if (isSameVersion) {
+						overwriteMsg = 'A library named "' + libName + '" with the same version (v' + existingVer + ') is already installed.\n\nDo you want to replace it?';
+					} else {
+						overwriteMsg = 'A library named "' + libName + '" is already installed (v' + existingVer + ').\n\nDo you want to replace it with ' + (version ? 'v' + version : 'the imported version') + '?';
+					}
+					if (!confirm(overwriteMsg)) {
 						$btn.prop("disabled", false);
 						return;
 					}
