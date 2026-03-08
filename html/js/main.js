@@ -27,6 +27,13 @@
 		});
 
 		// ---------------------------------------------------------------------------
+		// Process exit safety net — clean up tray icon on any exit path
+		// ---------------------------------------------------------------------------
+		process.once('exit', function() {
+			try { removeTrayIcon(); } catch(_) {}
+		});
+
+		// ---------------------------------------------------------------------------
 		// System Tray Icon
 		// ---------------------------------------------------------------------------
 
@@ -1952,7 +1959,7 @@
 
         //Window close.   Ensure to close any background running nw.exe
 		win.on('close', function () {
-			// Remove system tray icon
+			// Remove system tray icon so it doesn't hold the process alive
 			try { removeTrayIcon(); } catch(_) {}
 
 			// Persist maximized state for next launch (dual-write for reliability)
@@ -1961,8 +1968,17 @@
 				localStorage.setItem('windowMaximized', String(_windowIsMaximized));
 			} catch(e) { console.log('Could not save window state: ' + e); }
 
-			gui.App.closeAllWindows();
+			// Force-close the window (skip the close event re-fire)
 			win.close(true);
+
+			// Quit the NW.js application entirely — this terminates the
+			// Node.js event loop and kills all nw.exe processes for this app.
+			try { nw.App.quit(); } catch(_) {}
+
+			// Safety net: if nw.App.quit() didn't terminate within 3 seconds
+			// (e.g. a lingering async callback keeps the event loop alive),
+			// force-kill the process so nothing remains in the background.
+			setTimeout(function() { process.exit(0); }, 3000);
 		});
 
         //Window resize
