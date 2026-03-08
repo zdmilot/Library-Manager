@@ -307,42 +307,11 @@
 									<div class="mb-2">
 										<button class="btn btn-sm btn-outlined" id="pkg-addLibFiles">Add Files...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-addLibFolder">Add Folder...</button>
+										<button class="btn btn-sm btn-outlined" id="pkg-changeLibPath"><i class="fas fa-folder-open mr-1"></i>Change Path</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-removeLibFiles">Remove Selected</button>
 										<span class="text-muted text-sm ml-2" id="pkg-lib-count">0 files</span>
 										<input type="file" class="d-none" id="pkg-input-libfiles" multiple>
 										<input type="file" class="d-none" id="pkg-input-libfolder" nwdirectory>
-									</div>
-									<div class="custom-control custom-switch mb-2">
-										<input type="checkbox" class="custom-control-input" id="chk-pkg-advanced">
-										<label class="custom-control-label pkg-advanced-switch-label" for="chk-pkg-advanced">Customize install paths</label>
-									</div>
-									<div class="pkg-advanced-panel d-none" id="pkg-advanced-panel">
-										<div class="custom-control custom-checkbox mb-2">
-											<input type="checkbox" class="custom-control-input" id="chk-pkg-install-to-root">
-											<label class="custom-control-label" for="chk-pkg-install-to-root">Add all files to Library root directory</label>
-											<small class="form-text text-muted mt-0">When enabled, library files are placed directly in <code>...\Hamilton\Library\</code> instead of a subdirectory.</small>
-										</div>
-										<div class="pkg-custom-dir-section" id="pkg-custom-dir-section">
-											<label class="text-sm font-weight-bold mb-1 d-block">Custom install directory</label>
-											<small class="form-text text-muted mt-0 mb-2">Choose or create a subdirectory within the Library folder. Files will be installed to this path instead of the default.</small>
-											<div class="pkg-dir-breadcrumb mb-2" id="pkg-dir-breadcrumb">
-												<span class="pkg-dir-crumb pkg-dir-crumb-root" data-path="">Library</span>
-											</div>
-											<div class="pkg-dir-input-row mb-2">
-												<div class="input-group input-group-sm">
-													<div class="input-group-prepend">
-														<span class="input-group-text"><i class="fas fa-folder"></i></span>
-													</div>
-													<input type="text" class="form-control form-control-sm" id="pkg-custom-subdir" placeholder="e.g. MyLibrary\SubFolder" autocomplete="off" spellcheck="false">
-													<div class="input-group-append">
-														<button class="btn btn-sm btn-outlined" type="button" id="pkg-custom-dir-clear" title="Clear custom directory"><i class="fas fa-times"></i></button>
-													</div>
-												</div>
-											</div>
-											<div class="pkg-dir-browser" id="pkg-dir-browser">
-												<div class="pkg-dir-browser-empty text-muted text-center py-2"><i class="fas fa-spinner fa-spin mr-1"></i>Loading directories...</div>
-											</div>
-										</div>
 									</div>
 									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
 									<div class="pkg-file-list" id="pkg-lib-list">
@@ -1894,42 +1863,11 @@
 							<div class="mb-2">
 								<button class="btn btn-sm btn-outlined" id="ulib-addLibFiles">Add Files...</button>
 								<button class="btn btn-sm btn-outlined" id="ulib-addLibFolder">Add Folder...</button>
+								<button class="btn btn-sm btn-outlined" id="ulib-changeLibPath"><i class="fas fa-folder-open mr-1"></i>Change Path</button>
 								<button class="btn btn-sm btn-outlined" id="ulib-removeLibFiles">Remove Selected</button>
 								<span class="text-muted text-sm ml-2" id="ulib-lib-count">0 files</span>
 								<input type="file" class="d-none" id="ulib-input-libfiles" multiple>
 								<input type="file" class="d-none" id="ulib-input-libfolder" nwdirectory>
-							</div>
-							<div class="custom-control custom-switch mb-2">
-								<input type="checkbox" class="custom-control-input" id="chk-ulib-advanced">
-								<label class="custom-control-label pkg-advanced-switch-label" for="chk-ulib-advanced">Customize install paths</label>
-							</div>
-							<div class="pkg-advanced-panel d-none" id="ulib-advanced-panel">
-								<div class="custom-control custom-checkbox mb-2">
-									<input type="checkbox" class="custom-control-input" id="chk-ulib-install-to-root">
-									<label class="custom-control-label" for="chk-ulib-install-to-root">Add all files to Library root directory</label>
-									<small class="form-text text-muted mt-0">When enabled, library files are placed directly in <code>...\Hamilton\Library\</code> instead of a subdirectory.</small>
-								</div>
-								<div class="pkg-custom-dir-section" id="ulib-custom-dir-section">
-									<label class="text-sm font-weight-bold mb-1 d-block">Custom install directory</label>
-									<small class="form-text text-muted mt-0 mb-2">Choose or create a subdirectory within the Library folder.</small>
-									<div class="pkg-dir-breadcrumb mb-2" id="ulib-dir-breadcrumb">
-										<span class="pkg-dir-crumb pkg-dir-crumb-root" data-path="">Library</span>
-									</div>
-									<div class="pkg-dir-input-row mb-2">
-										<div class="input-group input-group-sm">
-											<div class="input-group-prepend">
-												<span class="input-group-text"><i class="fas fa-folder"></i></span>
-											</div>
-											<input type="text" class="form-control form-control-sm" id="ulib-custom-subdir" placeholder="e.g. MyLibrary\SubFolder" autocomplete="off" spellcheck="false">
-											<div class="input-group-append">
-												<button class="btn btn-sm btn-outlined" type="button" id="ulib-custom-dir-clear" title="Clear custom directory"><i class="fas fa-times"></i></button>
-											</div>
-										</div>
-									</div>
-									<div class="pkg-dir-browser" id="ulib-dir-browser">
-										<div class="pkg-dir-browser-empty text-muted text-center py-2"><i class="fas fa-spinner fa-spin mr-1"></i>Loading directories...</div>
-									</div>
-								</div>
 							</div>
 							<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
 							<div class="pkg-file-list" id="ulib-file-list">
@@ -2892,45 +2830,23 @@
 		<div class="modal-dialog modal-dialog-centered" role="document">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title"><i class="fas fa-folder-open mr-2 color-medium"></i>Set Install Path</h5>
+					<h5 class="modal-title"><i class="fas fa-folder-open mr-2 color-medium"></i>Change Install Path</h5>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 					</button>
 				</div>
 				<div class="modal-body">
-					<p class="text-sm mb-3">File: <strong class="filepath-edit-filename"></strong></p>
-					<div class="form-check mb-1">
-						<input class="form-check-input" type="radio" name="filepath-edit-mode" id="filepath-edit-default" value="default" checked>
-						<label class="form-check-label" for="filepath-edit-default">Use default path <span class="text-muted filepath-edit-default-hint"></span></label>
-					</div>
-					<div class="form-check mb-1">
-						<input class="form-check-input" type="radio" name="filepath-edit-mode" id="filepath-edit-root" value="root">
-						<label class="form-check-label" for="filepath-edit-root">Install to Library root</label>
-					</div>
-					<div class="form-check mb-2">
-						<input class="form-check-input" type="radio" name="filepath-edit-mode" id="filepath-edit-custom" value="custom">
-						<label class="form-check-label" for="filepath-edit-custom">Custom subdirectory</label>
-					</div>
-					<div class="filepath-edit-custom-section ml-4 d-none">
-						<div class="pkg-dir-breadcrumb mb-2" id="fpedit-dir-breadcrumb">
-							<span class="pkg-dir-crumb pkg-dir-crumb-root" data-path="">Library</span>
-						</div>
-						<div class="pkg-dir-input-row mb-2">
-							<div class="input-group input-group-sm">
-								<div class="input-group-prepend">
-									<span class="input-group-text"><i class="fas fa-folder"></i></span>
-								</div>
-								<input type="text" class="form-control form-control-sm" id="fpedit-custom-subdir" placeholder="e.g. MyLibrary\SubFolder" autocomplete="off" spellcheck="false">
-								<div class="input-group-append">
-									<button class="btn btn-sm btn-outlined" type="button" id="fpedit-custom-dir-clear" title="Clear"><i class="fas fa-times"></i></button>
-								</div>
+					<div class="form-group mb-3">
+						<label class="text-sm font-weight-bold mb-1" for="fpedit-path-input">Install directory</label>
+						<small class="form-text text-muted mt-0 mb-2">Enter the subdirectory within the Library folder. Leave empty to install to the Library root.</small>
+						<div class="input-group">
+							<div class="input-group-prepend">
+								<span class="input-group-text"><i class="fas fa-folder"></i></span>
 							</div>
-						</div>
-						<div class="pkg-dir-browser" id="fpedit-dir-browser">
-							<div class="pkg-dir-browser-empty text-muted text-center py-2"><i class="fas fa-spinner fa-spin mr-1"></i>Loading directories...</div>
+							<input type="text" class="form-control" id="fpedit-path-input" placeholder="e.g. MyLibrary" autocomplete="off" spellcheck="false">
 						</div>
 					</div>
-					<div class="mt-3 p-2 rounded filepath-edit-preview-box">
+					<div class="p-2 rounded filepath-edit-preview-box">
 						<small class="text-muted">Resultant path:</small><br>
 						<code class="filepath-edit-preview text-sm"></code>
 					</div>

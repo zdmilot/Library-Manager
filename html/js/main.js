@@ -6159,6 +6159,7 @@
 		var pkg_demoMethodFiles = [];
 		var pkg_fileRelPaths = {};    // absolutePath -> relative path within package (preserves subfolder structure)
 		var pkg_fileCustomDirs = {};  // absolutePath -> custom install subdir ("" = root, string = subdir, undefined = default)
+		var pkg_installSubdir = null;  // global install subdir: null = default (library name), '' = root, string = custom subdir
 		var pkg_iconFilePath = null;   // custom icon/image path chosen by user
 		var pkg_iconAutoDetected = false;     // true if current preview is from auto-detected BMP
 		var pkg_iconAutoDetectedPath = null;  // file path of the auto-detected BMP
@@ -6615,14 +6616,14 @@
 		}
 
 		function pkgUpdatePathPlaceholders(name) {
-			var installToRoot = $("#chk-pkg-install-to-root").is(":checked");
-			var customSubdir = $("#pkg-custom-subdir").val().trim();
-			if (installToRoot) {
-				$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\');
-			} else if (customSubdir) {
-				var sanitized = customSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-				$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="pkg-path-libname"></span>');
-				$(".pkg-path-libname").text(sanitized);
+			if (pkg_installSubdir !== null) {
+				if (pkg_installSubdir === '') {
+					$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\');
+				} else {
+					var sanitized = pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+					$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="pkg-path-libname"></span>');
+					$(".pkg-path-libname").text(sanitized);
+				}
 			} else if(name){
 				$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="pkg-path-libname"></span>');
 				$(".pkg-path-libname").text(name);
@@ -6712,11 +6713,6 @@
 				$("#pkg-name-autocomplete").addClass("d-none").empty();
 				pkg_autocompleteActive = false;
 				pkgUpdatePathPlaceholders(pkg_autoDetectedName);
-				// Refresh file list dest paths
-				$("#pkg-lib-list .pkg-file-dest span").each(function() {
-					var fp = $(this).parent().attr("data-filepath").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-					$(this).text(pkgGetFileDestPath(fp));
-				});
 				pkgCheckVersionDuplicate();
 				pkgToggleChangelogVisibility(pkg_autoDetectedName);
 			}
@@ -6726,11 +6722,6 @@
 		$(document).on("input", "#pkg-library-name", function() {
 			var val = $(this).val().trim();
 			pkgUpdatePathPlaceholders(val);
-			// Refresh file list dest paths
-			$("#pkg-lib-list .pkg-file-dest span").each(function() {
-				var fp = $(this).parent().attr("data-filepath").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-				$(this).text(pkgGetFileDestPath(fp));
-			});
 			if(pkg_autoDetectedName && val !== pkg_autoDetectedName){
 				$("#pkg-name-warning").removeClass("d-none");
 				$("#pkg-name-hint").addClass("d-none");
@@ -6926,10 +6917,9 @@
 				if (latest.description) $("#pkg-description").val(latest.description);
 				if (latest.github_url) $("#pkg-github-url").val(latest.github_url);
 				if (latest.tags && latest.tags.length > 0) $("#pkg-tags").val(latest.tags.join(", "));
-				if (latest.install_to_library_root) $("#chk-pkg-install-to-root").prop("checked", true);
-				if (latest.custom_install_subdir) {
-					$("#pkg-custom-subdir").val(latest.custom_install_subdir);
-				}
+				if (latest.install_to_library_root) pkg_installSubdir = '';
+				else if (latest.custom_install_subdir) pkg_installSubdir = latest.custom_install_subdir;
+				else pkg_installSubdir = null;
 
 				// Populate version with current version (user should change it)
 				if (latest.version) {
@@ -7071,16 +7061,9 @@
 			var fileName = path.basename(relPath);
 			var relDir = path.dirname(relPath).replace(/\\/g, '/');
 			var relDirPrefix = (relDir && relDir !== '.') ? relDir.replace(/\//g, '\\') + '\\' : '';
-			var customDir = pkg_fileCustomDirs[absPath];
-			if (customDir !== undefined) {
-				if (customDir === '') return '...\\Hamilton\\Library\\' + relDirPrefix + fileName;
-				return '...\\Hamilton\\Library\\' + customDir + '\\' + relDirPrefix + fileName;
-			}
-			var installToRoot = $("#chk-pkg-install-to-root").is(":checked");
-			var customSubdir = $("#pkg-custom-subdir").val().trim();
-			if (installToRoot) return '...\\Hamilton\\Library\\' + relDirPrefix + fileName;
-			if (customSubdir) {
-				var sanitized = customSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+			if (pkg_installSubdir !== null) {
+				if (pkg_installSubdir === '') return '...\\Hamilton\\Library\\' + relDirPrefix + fileName;
+				var sanitized = pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
 				return '...\\Hamilton\\Library\\' + sanitized + '\\' + relDirPrefix + fileName;
 			}
 			return '...\\Hamilton\\Library\\' + libName + '\\' + relDirPrefix + fileName;
@@ -7093,16 +7076,9 @@
 			var libName = $("#ulib-name").val().trim() || "<libraryname>";
 			var relDir = '';
 			var fileName = path.basename(absPath);
-			var customDir = ulib_fileCustomDirs[absPath];
-			if (customDir !== undefined) {
-				if (customDir === '') return '...\\Hamilton\\Library\\' + fileName;
-				return '...\\Hamilton\\Library\\' + customDir + '\\' + fileName;
-			}
-			var installToRoot = $("#chk-ulib-install-to-root").is(":checked");
-			var customSubdir = $("#ulib-custom-subdir").val().trim();
-			if (installToRoot) return '...\\Hamilton\\Library\\' + fileName;
-			if (customSubdir) {
-				var sanitized = customSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+			if (ulib_installSubdir !== null) {
+				if (ulib_installSubdir === '') return '...\\Hamilton\\Library\\' + fileName;
+				var sanitized = ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
 				return '...\\Hamilton\\Library\\' + sanitized + '\\' + fileName;
 			}
 			return '...\\Hamilton\\Library\\' + libName + '\\' + fileName;
@@ -7112,7 +7088,6 @@
 		function pkgUpdateLibFileList() {
 			var $list = $("#pkg-lib-list");
 			$list.empty();
-			var advancedOn = $("#chk-pkg-advanced").is(":checked");
 			if (pkg_libraryFiles.length === 0) {
 				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>');
 			} else {
@@ -7128,19 +7103,11 @@
 							'<span class="text-xs text-muted">COM Register</span>' +
 						'</label>';
 					}
-					var destPath = pkgGetFileDestPath(f);
-					var hasOverride = pkg_fileCustomDirs[f] !== undefined;
-					var destClass = 'pkg-file-dest' + (advancedOn ? ' clickable' : '') + (hasOverride ? ' has-override' : '');
 					$list.append(
 						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
 						'<i class="far fa-file pkg-file-icon"></i>' +
 						'<span class="pkg-file-name">' + escapeHtml(baseName) + '</span>' +
 						 comCheckbox +
-						'<span class="pkg-file-dir">' + escapeHtml(path.dirname(f)) + '</span>' +
-						'<div class="' + destClass + '" data-filepath="' + escapedPath + '" data-context="pkg" title="' + (advancedOn ? 'Click to change install path' : 'Enable Customize install paths to change') + '">' +
-						'<i class="fas fa-long-arrow-alt-right mr-1"></i>' +
-						'<span>' + escapeHtml(destPath) + '</span>' +
-						'</div>' +
 						'</div>'
 					);
 				});
@@ -7182,7 +7149,6 @@
 						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
 						'<i class="far fa-file pkg-file-icon"></i>' +
 						'<span class="pkg-file-name">' + escapeHtml(path.basename(f)) + '</span>' +
-						'<span class="pkg-file-dir">' + escapeHtml(path.dirname(f)) + '</span>' +
 						'</div>'
 					);
 				});
@@ -7247,6 +7213,7 @@
 			pkg_demoMethodFiles = [];
 			pkg_fileRelPaths = {};
 			pkg_fileCustomDirs = {};
+			pkg_installSubdir = null;
 			pkg_iconFilePath = null;
 			pkg_iconAutoDetected = false;
 			pkg_iconAutoDetectedPath = null;
@@ -7257,11 +7224,7 @@
 			$(".pkg-installer-empty-msg").show();
 			$(".pkg-installer-filename").text('');
 			$("#pkg-installer-description").val('');
-			$("#chk-pkg-install-to-root").prop("checked", false);
-			$("#pkg-custom-subdir").val('').prop("disabled", false);
-			$("#pkg-custom-dir-section").css("opacity", "").css("pointer-events", "");
-			$("#pkg-advanced-panel").addClass("d-none");
-			$("#chk-pkg-advanced").prop("checked", false);
+			pkg_installSubdir = null;
 			pkgUpdateLibFileList();
 			pkgUpdateDemoFileList();
 			$("#pkg-icon-preview").html('<i class="fas fa-image fa-2x" style="color:#ccc;"></i>').removeClass('has-image');
@@ -7367,221 +7330,55 @@
 			$("#pkg-save-dialog").trigger("click");
 		});
 
-		// Toggle install-to-library-root path hint (normal packager)
-		$(document).on("change", "#chk-pkg-install-to-root", function() {
-			var isRoot = $(this).is(":checked");
-			if (isRoot) {
-				$("#pkg-custom-subdir").val('').prop("disabled", true);
-				$("#pkg-custom-dir-section").css("opacity", "0.4").css("pointer-events", "none");
-			} else {
-				$("#pkg-custom-subdir").prop("disabled", false);
-				$("#pkg-custom-dir-section").css("opacity", "").css("pointer-events", "");
-			}
-			var libName = $("#pkg-library-name").val().trim();
-			pkgUpdatePathPlaceholders(libName);
-			pkgUpdateLibFileList();
-		});
-
-		// ---- Advanced toggle (packager) ----
-		$(document).on("change", "#chk-pkg-advanced", function() {
-			var $panel = $("#pkg-advanced-panel");
-			if ($(this).is(":checked")) {
-				$panel.removeClass("d-none");
-				pkgDirBrowserLoad("pkg");
-			} else {
-				$panel.addClass("d-none");
-			}
-			pkgUpdateLibFileList();
-		});
-
-		// ---- Advanced toggle (unsigned library) ----
-		$(document).on("change", "#chk-ulib-advanced", function() {
-			var $panel = $("#ulib-advanced-panel");
-			if ($(this).is(":checked")) {
-				$panel.removeClass("d-none");
-				pkgDirBrowserLoad("ulib");
-			} else {
-				$panel.addClass("d-none");
-			}
-			ulibUpdateLibFileList();
-		});
-
-		// ---- Per-file path edit modal ----
+		// ---- Change Path button (packager) ----
 		var _fpEditContext = '';   // 'pkg' or 'ulib'
-		var _fpEditFilePath = '';  // absolute file path being edited
 
-		$(document).on("click", ".pkg-file-dest.clickable", function(e) {
-			e.stopPropagation();
-			var raw = $(this).attr("data-filepath");
-			var filePath = raw.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-			var ctx = $(this).attr("data-context") || 'pkg';
-			_fpEditContext = ctx;
-			_fpEditFilePath = filePath;
-
-			var baseName = path.basename(filePath);
-			var $modal = $("#filePathEditModal");
-			$modal.find(".filepath-edit-filename").text(baseName);
-
-			// Determine current state for this file
-			var customDirs = (ctx === 'pkg') ? pkg_fileCustomDirs : ulib_fileCustomDirs;
-			var currentCustom = customDirs[filePath];
-			if (currentCustom === '') {
-				$modal.find("#filepath-edit-root").prop("checked", true);
-				$modal.find(".filepath-edit-custom-section").addClass("d-none");
-				$modal.find("#fpedit-custom-subdir").val('');
-			} else if (currentCustom !== undefined) {
-				$modal.find("#filepath-edit-custom").prop("checked", true);
-				$modal.find(".filepath-edit-custom-section").removeClass("d-none");
-				$modal.find("#fpedit-custom-subdir").val(currentCustom);
-			} else {
-				$modal.find("#filepath-edit-default").prop("checked", true);
-				$modal.find(".filepath-edit-custom-section").addClass("d-none");
-				$modal.find("#fpedit-custom-subdir").val('');
-			}
-
-			// Set default hint
-			var defaultPath = '';
-			if (ctx === 'pkg') {
-				var libName = $("#pkg-library-name").val().trim() || "<libraryname>";
-				var installToRoot = $("#chk-pkg-install-to-root").is(":checked");
-				var customSubdir = $("#pkg-custom-subdir").val().trim();
-				if (installToRoot) defaultPath = 'Library root';
-				else if (customSubdir) defaultPath = customSubdir;
-				else defaultPath = libName;
-			} else {
-				var libName = $("#ulib-name").val().trim() || "<libraryname>";
-				var installToRoot = $("#chk-ulib-install-to-root").is(":checked");
-				var customSubdir = $("#ulib-custom-subdir").val().trim();
-				if (installToRoot) defaultPath = 'Library root';
-				else if (customSubdir) defaultPath = customSubdir;
-				else defaultPath = libName;
-			}
-			$modal.find(".filepath-edit-default-hint").text('(' + defaultPath + ')');
-
-			// Update preview
+		$(document).on("click", "#pkg-changeLibPath", function() {
+			_fpEditContext = 'pkg';
+			var libName = $("#pkg-library-name").val().trim() || "";
+			var currentPath = (pkg_installSubdir !== null) ? pkg_installSubdir : libName;
+			$("#fpedit-path-input").val(currentPath);
 			fpEditUpdatePreview();
-
-			// Load dir browser
-			pkgDirBrowserLoad("fpedit");
-
-			$modal.modal("show");
+			$("#filePathEditModal").modal("show");
 		});
 
-		// Radio button changes in per-file modal
-		$(document).on("change", "input[name='filepath-edit-mode']", function() {
-			var mode = $(this).val();
-			if (mode === 'custom') {
-				$(".filepath-edit-custom-section").removeClass("d-none");
-				pkgDirBrowserLoad("fpedit");
-			} else {
-				$(".filepath-edit-custom-section").addClass("d-none");
-			}
+		// ---- Change Path button (unsigned library) ----
+		$(document).on("click", "#ulib-changeLibPath", function() {
+			_fpEditContext = 'ulib';
+			var libName = $("#ulib-name").val().trim() || "";
+			var currentPath = (ulib_installSubdir !== null) ? ulib_installSubdir : libName;
+			$("#fpedit-path-input").val(currentPath);
 			fpEditUpdatePreview();
+			$("#filePathEditModal").modal("show");
 		});
 
-		$(document).on("input", "#fpedit-custom-subdir", function() {
+		// Live preview update as user types in the path input
+		$(document).on("input", "#fpedit-path-input", function() {
 			fpEditUpdatePreview();
-		});
-
-		$(document).on("click", "#fpedit-custom-dir-clear", function() {
-			$("#fpedit-custom-subdir").val('');
-			fpEditUpdatePreview();
-			pkgDirBrowserLoad("fpedit");
 		});
 
 		function fpEditUpdatePreview() {
-			var mode = $("input[name='filepath-edit-mode']:checked").val();
-			var baseName = path.basename(_fpEditFilePath);
-			var ctx = _fpEditContext;
-			var previewPath;
-			if (mode === 'root') {
-				previewPath = '...\\Hamilton\\Library\\' + baseName;
-			} else if (mode === 'custom') {
-				var subdir = $("#fpedit-custom-subdir").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-				if (subdir) {
-					previewPath = '...\\Hamilton\\Library\\' + subdir + '\\' + baseName;
-				} else {
-					previewPath = '...\\Hamilton\\Library\\' + baseName;
-				}
+			var subdir = $("#fpedit-path-input").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+			if (subdir) {
+				$(".filepath-edit-preview").text('...\\Hamilton\\Library\\' + subdir + '\\');
 			} else {
-				// Default - compute from global settings
-				if (ctx === 'pkg') {
-					// Temporarily remove override to get default
-					var saved = pkg_fileCustomDirs[_fpEditFilePath];
-					delete pkg_fileCustomDirs[_fpEditFilePath];
-					previewPath = pkgGetFileDestPath(_fpEditFilePath);
-					if (saved !== undefined) pkg_fileCustomDirs[_fpEditFilePath] = saved;
-				} else {
-					var saved = ulib_fileCustomDirs[_fpEditFilePath];
-					delete ulib_fileCustomDirs[_fpEditFilePath];
-					previewPath = ulibGetFileDestPath(_fpEditFilePath);
-					if (saved !== undefined) ulib_fileCustomDirs[_fpEditFilePath] = saved;
-				}
+				$(".filepath-edit-preview").text('...\\Hamilton\\Library\\');
 			}
-			$(".filepath-edit-preview").text(previewPath);
 		}
 
-		// Apply per-file path edit
+		// Apply path change
 		$(document).on("click", ".btn-filepath-edit-apply", function() {
-			var mode = $("input[name='filepath-edit-mode']:checked").val();
-			var customDirs = (_fpEditContext === 'pkg') ? pkg_fileCustomDirs : ulib_fileCustomDirs;
-			if (mode === 'root') {
-				customDirs[_fpEditFilePath] = '';
-			} else if (mode === 'custom') {
-				var subdir = $("#fpedit-custom-subdir").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-				customDirs[_fpEditFilePath] = subdir || '';
-			} else {
-				delete customDirs[_fpEditFilePath];
-			}
+			var subdir = $("#fpedit-path-input").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
 			if (_fpEditContext === 'pkg') {
-				pkgUpdateLibFileList();
-				var libName = $("#pkg-library-name").val().trim();
+				var libName = $("#pkg-library-name").val().trim() || "";
+				pkg_installSubdir = (subdir === libName) ? null : subdir;
 				pkgUpdatePathPlaceholders(libName);
 			} else {
-				ulibUpdateLibFileList();
+				var libName = $("#ulib-name").val().trim() || "";
+				ulib_installSubdir = (subdir === libName) ? null : subdir;
 				ulibUpdateInstallPathHint();
 			}
 			$("#filePathEditModal").modal("hide");
-		});
-
-		// ---- Custom subdir input ----
-		$(document).on("input", "#pkg-custom-subdir", function() {
-			var libName = $("#pkg-library-name").val().trim();
-			pkgUpdatePathPlaceholders(libName);
-			pkgUpdateLibFileList();
-		});
-		$(document).on("input", "#ulib-custom-subdir", function() {
-			ulibUpdateInstallPathHint();
-			ulibUpdateLibFileList();
-		});
-
-		// ---- Clear custom subdir ----
-		$(document).on("click", "#pkg-custom-dir-clear", function() {
-			$("#pkg-custom-subdir").val('');
-			var libName = $("#pkg-library-name").val().trim();
-			pkgUpdatePathPlaceholders(libName);
-			pkgUpdateLibFileList();
-			pkgDirBrowserLoad("pkg");
-		});
-		$(document).on("click", "#ulib-custom-dir-clear", function() {
-			$("#ulib-custom-subdir").val('');
-			ulibUpdateInstallPathHint();
-			ulibUpdateLibFileList();
-			pkgDirBrowserLoad("ulib");
-		});
-
-		// ---- Install-to-root (unsigned library) ----
-		$(document).on("change", "#chk-ulib-install-to-root", function() {
-			var isRoot = $(this).is(":checked");
-			if (isRoot) {
-				$("#ulib-custom-subdir").val('').prop("disabled", true);
-				$("#ulib-custom-dir-section").css("opacity", "0.4").css("pointer-events", "none");
-			} else {
-				$("#ulib-custom-subdir").prop("disabled", false);
-				$("#ulib-custom-dir-section").css("opacity", "").css("pointer-events", "");
-			}
-			ulibUpdateInstallPathHint();
-			ulibUpdateLibFileList();
 		});
 
 		/**
@@ -7927,8 +7724,8 @@
 					})]
 				};
 				if (githubUrl) manifest.github_url = githubUrl;
-				if ($("#chk-pkg-install-to-root").is(":checked")) manifest.install_to_library_root = true;
-				var customSubdir = $("#pkg-custom-subdir").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				if (pkg_installSubdir === '') manifest.install_to_library_root = true;
+				var customSubdir = (pkg_installSubdir && pkg_installSubdir !== '') ? pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '') : '';
 				if (customSubdir && !manifest.install_to_library_root) manifest.custom_install_subdir = customSubdir;
 				var changelog = $("#pkg-changelog").val().trim();
 				if (changelog) manifest.changelog = changelog;
@@ -13957,6 +13754,7 @@
 		var ulib_demoMethodFiles = [];    // user-added demo method files (absolute paths)
 		var ulib_comRegisterDlls = [];    // DLL basenames selected for COM registration
 		var ulib_fileCustomDirs = {};     // absolutePath -> custom install subdir ("" = root, string = subdir, undefined = default)
+		var ulib_installSubdir = null;    // global install subdir: null = default (library name), '' = root, string = custom subdir
 		var ulib_iconBase64 = null;       // base64-encoded icon data (user-picked or from DB)
 		var ulib_iconMime = null;         // MIME type of the icon
 		var ulib_iconFilename = null;     // original filename of the icon
@@ -13967,15 +13765,15 @@
 		 * based on the install-to-root checkbox state.
 		 */
 		function ulibUpdateInstallPathHint() {
-			var installToRoot = $("#chk-ulib-install-to-root").is(":checked");
-			var customSubdir = $("#ulib-custom-subdir").val().trim();
 			var libName = $("#ulib-name").val().trim() || "libraryname";
-			if (installToRoot) {
-				$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\');
-			} else if (customSubdir) {
-				var sanitized = customSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-				$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="ulib-path-libname"></span>');
-				$(".ulib-path-libname").text(sanitized);
+			if (ulib_installSubdir !== null) {
+				if (ulib_installSubdir === '') {
+					$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\');
+				} else {
+					var sanitized = ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+					$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="ulib-path-libname"></span>');
+					$(".ulib-path-libname").text(sanitized);
+				}
 			} else {
 				$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="ulib-path-libname"></span>');
 				$(".ulib-path-libname").text(libName);
@@ -13989,7 +13787,6 @@
 		function ulibUpdateLibFileList() {
 			var $list = $("#ulib-file-list");
 			$list.empty();
-			var advancedOn = $("#chk-ulib-advanced").is(":checked");
 			if (ulib_allLibFiles.length === 0) {
 				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>');
 			} else {
@@ -14005,19 +13802,11 @@
 							'<span class="text-xs text-muted">COM Register</span>' +
 						'</label>';
 					}
-					var destPath = ulibGetFileDestPath(f);
-					var hasOverride = ulib_fileCustomDirs[f] !== undefined;
-					var destClass = 'pkg-file-dest' + (advancedOn ? ' clickable' : '') + (hasOverride ? ' has-override' : '');
 					$list.append(
 						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
 						'<i class="far fa-file pkg-file-icon"></i>' +
 						'<span class="pkg-file-name">' + escapeHtml(baseName) + '</span>' +
 						comCheckbox +
-						'<span class="pkg-file-dir">' + escapeHtml(path.dirname(f)) + '</span>' +
-						'<div class="' + destClass + '" data-filepath="' + escapedPath + '" data-context="ulib" title="' + (advancedOn ? 'Click to change install path' : 'Enable Customize install paths to change') + '">' +
-						'<i class="fas fa-long-arrow-alt-right mr-1"></i>' +
-						'<span>' + escapeHtml(destPath) + '</span>' +
-						'</div>' +
 						'</div>'
 					);
 				});
@@ -14040,8 +13829,7 @@
 					$list.append(
 						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
 						'<i class="far fa-file pkg-file-icon"></i>' +
-						'<span class="pkg-file-name">' + path.basename(f) + '</span>' +
-						'<span class="pkg-file-dir">' + path.dirname(f) + '</span>' +
+						'<span class="pkg-file-name">' + escapeHtml(path.basename(f)) + '</span>' +
 						'</div>'
 					);
 				});
@@ -14451,20 +14239,10 @@
 				$("#ulib-removeIcon").hide();
 			}
 
-			// Populate install-to-root checkbox
-			$("#chk-ulib-install-to-root").prop("checked", !!uLib.install_to_library_root);
-			// Populate custom subdir
-			$("#ulib-custom-subdir").val(uLib.custom_install_subdir || '');
-			if (uLib.install_to_library_root) {
-				$("#ulib-custom-subdir").prop("disabled", true);
-				$("#ulib-custom-dir-section").css("opacity", "0.4").css("pointer-events", "none");
-			} else {
-				$("#ulib-custom-subdir").prop("disabled", false);
-				$("#ulib-custom-dir-section").css("opacity", "").css("pointer-events", "");
-			}
-			// Collapse advanced panel on open
-			$("#ulib-advanced-panel").addClass("d-none");
-			$("#chk-ulib-advanced").prop("checked", false);
+			// Populate install path state
+			if (uLib.install_to_library_root) ulib_installSubdir = '';
+			else if (uLib.custom_install_subdir) ulib_installSubdir = uLib.custom_install_subdir;
+			else ulib_installSubdir = null;
 			ulib_fileCustomDirs = {};
 			ulibUpdateInstallPathHint();
 
@@ -14484,11 +14262,6 @@
 		$(document).on("click", "#ulib-addLibFolder", function() { $("#ulib-input-libfolder").trigger("click"); });
 		$(document).on("click", "#ulib-addDemoFiles", function() { $("#ulib-input-demofiles").trigger("click"); });
 		$(document).on("click", "#ulib-addDemoFolder", function() { $("#ulib-input-demofolder").trigger("click"); });
-
-		// Toggle install-to-library-root path hint (unsigned modal)
-		$(document).on("change", "#chk-ulib-install-to-root", function() {
-			ulibUpdateInstallPathHint();
-		});
 
 		// ---- Unsigned lib: icon / image picker (mirrors pkg icon picker) ----
 		$(document).on("click", "#ulib-pickIcon", function() {
@@ -14811,11 +14584,8 @@
 				library_image: ulib_iconFilename,
 				library_image_base64: ulib_iconBase64,
 				library_image_mime: ulib_iconMime,
-				install_to_library_root: $("#chk-ulib-install-to-root").is(":checked"),
-				custom_install_subdir: (function() {
-					var v = $("#ulib-custom-subdir").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-					return (v && !$("#chk-ulib-install-to-root").is(":checked")) ? v : '';
-				})()
+				install_to_library_root: ulib_installSubdir === '',
+				custom_install_subdir: (ulib_installSubdir && ulib_installSubdir !== '') ? ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '') : ''
 			};
 
 			// Update in DB
@@ -15243,8 +15013,8 @@
 					help_files: manifestHelpFiles,
 					com_register_dlls: comDlls
 				};
-				if (uLib.install_to_library_root) manifest.install_to_library_root = true;
-				var ulibCustomSubdir = $("#ulib-custom-subdir").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				if (ulib_installSubdir === '') manifest.install_to_library_root = true;
+				var ulibCustomSubdir = (ulib_installSubdir && ulib_installSubdir !== '') ? ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '') : '';
 				if (ulibCustomSubdir && !manifest.install_to_library_root) manifest.custom_install_subdir = ulibCustomSubdir;
 
 				// Create ZIP package
