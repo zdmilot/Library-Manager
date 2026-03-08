@@ -966,6 +966,12 @@ function cmdImportLib(args) {
         die('Invalid library name: "' + libName + '". Library names cannot contain path separators, \'..\', trailing dots/spaces, or reserved characters.');
     }
 
+    // ---- Validate all file paths in manifest are safe relative paths ----
+    const pathValidation = shared.validateManifestPaths(manifest);
+    if (!pathValidation.valid) {
+        die('Invalid package: unsafe file paths detected.\\n' + pathValidation.errors.join('\\n'));
+    }
+
     // ---- Author/organization length validation ----
     const importAuthor = (manifest.author || '').trim();
     const importOrg = (manifest.organization || '').trim();
@@ -1258,6 +1264,12 @@ function cmdExportLib(args) {
             manifest[k] = lib[k];
         }
     });
+
+    try {
+        shared.sanitizeManifestFilePaths(manifest);
+    } catch (e) {
+        die('Unsafe file paths detected in manifest: ' + e.message);
+    }
 
     const zip = new AdmZip();
     zip.addZipComment([manifest.library_name, 'v' + manifest.version, manifest.author, manifest.organization, manifest.description].filter(Boolean).join(' | '));
@@ -1828,6 +1840,12 @@ function cmdCreatePackage(args) {
             manifest[k] = spec[k];
         }
     });
+
+    try {
+        shared.sanitizeManifestFilePaths(manifest);
+    } catch (e) {
+        die('Unsafe file paths detected in manifest: ' + e.message);
+    }
 
     const zip = new AdmZip();
     zip.addZipComment([libName, 'v' + spec.version, spec.author, spec.organization, spec.description].filter(Boolean).join(' | '));

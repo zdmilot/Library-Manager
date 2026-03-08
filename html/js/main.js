@@ -7739,6 +7739,15 @@
 					}
 				}
 
+				// Sanitize all file paths in manifest to ensure only safe relative paths
+				try {
+					shared.sanitizeManifestFilePaths(manifest);
+				} catch (e) {
+					alert('Package creation aborted:\n' + e.message);
+					$btn.prop('disabled', false);
+					return;
+				}
+
 				// Create ZIP package using adm-zip
 				var zip = new AdmZip();
 
@@ -10541,6 +10550,14 @@
 				if (lib.installer_executable) manifest.installer_executable = lib.installer_executable;
 				if (lib.installer_info) manifest.installer_info = lib.installer_info;
 
+				// Sanitize all file paths in manifest to ensure only safe relative paths
+				try {
+					shared.sanitizeManifestFilePaths(manifest);
+				} catch (e) {
+					alert('Export aborted: unsafe file path detected.\n' + e.message);
+					return;
+				}
+
 				// Preserve extra DB fields for forward compatibility
 				Object.keys(lib).forEach(function(k) {
 					if (shared.KNOWN_LIB_DB_KEYS.indexOf(k) === -1 && !(k in manifest)) {
@@ -12245,6 +12262,15 @@
 					_isImporting = false;
 					return;
 				}
+
+				// Validate all file paths in manifest are safe relative paths
+				var pathValidation = shared.validateManifestPaths(manifest);
+				if (!pathValidation.valid) {
+					alert("Invalid package: unsafe file paths detected.\n\n" + pathValidation.errors.join("\n"));
+					_isImporting = false;
+					return;
+				}
+
 				var libFiles = manifest.library_files || [];
 				var demoFiles = manifest.demo_method_files || [];
 
