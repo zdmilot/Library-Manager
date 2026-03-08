@@ -30,5 +30,12 @@
     "MyVenusLibrary.chm"
   ],
 
-  "com_register_dlls": []
+  "com_register_dlls": [],
+
+  "_comment_installer": "Optional: bundle a standalone setup .exe so users can access the original installer from the package.",
+  "installer_executable": "setup/MyVenusLibrarySetup.exe",
+  "installer_info": {
+    "description": "Official standalone installer for MyVenusLibrary",
+    "source_url": "https://github.com/acme-pharma/venus-ml600-helpers/releases"
+  }
 }

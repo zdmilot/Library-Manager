@@ -745,7 +745,7 @@ begin
 
       // Remove db/ only if it is now empty (hashes/system_libraries remain)
       RemoveDir(AppDir + '\db');
-      // local/ intentionally kept (packages/, exports/, audit_trail.json)
+      // local/ intentionally kept (packages/, exports/, installers/, audit_trail.json)
     end;
 
     // -- Tier 3: Full Removal --------------------------------------------
@@ -872,6 +872,7 @@ Source: "PRIVACY_POLICY.txt"; Flags: dontcopy
 Name: "{app}\local"; Permissions: users-modify
 Name: "{app}\local\packages"; Permissions: users-modify
 Name: "{app}\local\exports"; Permissions: users-modify
+Name: "{app}\local\installers"; Permissions: users-modify
 
 [Registry]
 ; --------------------------------------------------------------------------

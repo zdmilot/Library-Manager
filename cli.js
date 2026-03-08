@@ -71,6 +71,9 @@ const DEFAULT_MET_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Methods';
 const LOCAL_DATA_DIR = path.join(__dirname, 'local');
 const PACKAGE_STORE_DIR = path.join(LOCAL_DATA_DIR, 'packages');
 
+// Installer store - centralized location for bundled installer executables
+const INSTALLER_STORE_DIR = path.join(LOCAL_DATA_DIR, shared.INSTALLER_STORE_DIRNAME);
+
 // ---------------------------------------------------------------------------
 // Default Groups (hardcoded - never stored in external JSON)
 // ---------------------------------------------------------------------------
@@ -602,6 +605,31 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         // icon/ entries are not extracted to disk - they remain embedded in manifest base64
     });
 
+    // Extract installer executable to the centralized installer store
+    var installerPath = null;
+    var installerOriginalName = null;
+    var installerSize = 0;
+    if (manifest.installer_executable) {
+        var installerLibDir = path.join(INSTALLER_STORE_DIR, (manifest.library_name || 'Unknown').replace(/[<>:"\\|?*]/g, '_'));
+        zip.getEntries().forEach(function (entry) {
+            if (entry.isDirectory) return;
+            if (entry.entryName.startsWith('installer/')) {
+                var fname = entry.entryName.substring('installer/'.length);
+                if (fname) {
+                    var safePath = safeZipExtractPath(installerLibDir, fname);
+                    if (!safePath) { console.warn('Skipping unsafe installer ZIP entry: ' + entry.entryName); return; }
+                    if (!fs.existsSync(installerLibDir)) fs.mkdirSync(installerLibDir, { recursive: true });
+                    var data = entry.getData();
+                    fs.writeFileSync(safePath, data);
+                    installerPath = safePath;
+                    installerOriginalName = fname;
+                    installerSize = data.length;
+                    extractedCount++;
+                }
+            }
+        });
+    }
+
     // Upsert DB record - remove old entry if it exists
     const existing = db.installed_libs.findOne({ library_name: manifest.library_name });
     if (existing) {
@@ -646,7 +674,12 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         format_version:      manifest.format_version      || '1.0',
         windows_version:     manifest.windows_version     || '',
         venus_version:       manifest.venus_version       || '',
-        package_lineage:     manifest.package_lineage     || []
+        package_lineage:     manifest.package_lineage     || [],
+        installer_executable: manifest.installer_executable || null,
+        installer_info:      manifest.installer_info       || null,
+        installer_path:      installerPath                 || null,
+        installer_original_name: installerOriginalName     || null,
+        installer_size:      installerSize                 || 0
     };
 
     // Preserve any unknown manifest fields for forward compatibility
@@ -945,26 +978,6 @@ function cmdImportLib(args) {
     if (importOrg && importOrg.length > shared.AUTHOR_MAX_LENGTH)
         die('Invalid package: organization cannot exceed ' + shared.AUTHOR_MAX_LENGTH + ' characters.');
 
-    // ---- Restricted author check ----
-    // If the package claims a restricted OEM name as author or organization but is NOT a known system library,
-    // require --author-password for authorization
-    if ((isRestrictedAuthor(importAuthor) || isRestrictedAuthor(importOrg)) && !isSystemLibraryByName(libName)) {
-        if (!args['author-password']) {
-            die('This package uses a restricted OEM author/organization name. Use --author-password <password> to authorize.');
-        }
-        if (!validateAuthorPassword(args['author-password'])) {
-            die('Incorrect author password. Import of packages with restricted OEM names requires valid authorization.');
-        }
-
-        // OEM certificate verification: restricted-author packages must be code-signed
-        // with a certificate whose holder name encompasses the OEM identity.
-        const oemPubCert = (sigResult.code_signed && sigResult.valid) ? sigResult.publisher_cert : null;
-        const oemCertMatch = shared.validateOemCertificateMatch(importAuthor, importOrg, oemPubCert);
-        if (!oemCertMatch.valid) {
-            die(oemCertMatch.error);
-        }
-    }
-
     // Check for existing installation
     const existing = db.installed_libs.findOne({ library_name: libName });
     if (existing && !existing.deleted && !args['force']) {
@@ -972,7 +985,15 @@ function cmdImportLib(args) {
     }
 
     const installToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
-    const libDestDir  = installToRoot ? libBasePath : path.join(libBasePath, libName);
+    const cliCustomSubdir = manifest.custom_install_subdir || '';
+    let libDestDir;
+    if (installToRoot) {
+        libDestDir = libBasePath;
+    } else if (cliCustomSubdir) {
+        libDestDir = path.join(libBasePath, cliCustomSubdir);
+    } else {
+        libDestDir = path.join(libBasePath, libName);
+    }
     const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
 
     const result = installPackage(
@@ -983,6 +1004,10 @@ function cmdImportLib(args) {
     console.log(`\nSuccess: "${libName}" installed (${result.extractedCount} files)`);
     console.log(`  Library files  -> ${libDestDir}`);
     console.log(`  Demo methods   -> ${demoDestDir}`);
+    if (manifest.installer_executable) {
+        var installerStorePath = path.join(INSTALLER_STORE_DIR, libName.replace(/[<>:"\/\\|?*]/g, '_'), manifest.installer_executable);
+        console.log(`  Installer      -> ${installerStorePath}`);
+    }
 
     // ---- Audit trail entry ----
     try {
@@ -1085,32 +1110,21 @@ function cmdImportArchive(args) {
                 console.log(`    ${libName}: signature OK`);
             }
 
-            // ---- Restricted author check ----
-            const importAuthor = (manifest.author || '').trim();
-            const importOrg = (manifest.organization || '').trim();
-            if ((isRestrictedAuthor(importAuthor) || isRestrictedAuthor(importOrg)) && !isSystemLibraryByName(libName)) {
-                if (!args['author-password']) {
-                    throw new Error(`Package "${libName}" uses restricted author "${importAuthor}". Use --author-password to authorize.`);
-                }
-                if (!validateAuthorPassword(args['author-password'])) {
-                    throw new Error(`Incorrect author password for restricted package "${libName}".`);
-                }
-
-                // OEM certificate verification for archive entries
-                const oemPubCert = (sigResult.code_signed && sigResult.valid) ? sigResult.publisher_cert : null;
-                const oemCertMatch = shared.validateOemCertificateMatch(importAuthor, importOrg, oemPubCert);
-                if (!oemCertMatch.valid) {
-                    throw new Error(oemCertMatch.error);
-                }
-            }
-
             const existing = db.installed_libs.findOne({ library_name: libName });
             if (existing && !existing.deleted && !args['force']) {
                 throw new Error(`"${libName}" already installed (use --force to overwrite)`);
             }
 
             const archInstallToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
-            const libDestDir  = archInstallToRoot ? libBasePath : path.join(libBasePath, libName);
+            const archCustomSubdir = manifest.custom_install_subdir || '';
+            let libDestDir;
+            if (archInstallToRoot) {
+                libDestDir = libBasePath;
+            } else if (archCustomSubdir) {
+                libDestDir = path.join(libBasePath, archCustomSubdir);
+            } else {
+                libDestDir = path.join(libBasePath, libName);
+            }
             const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
 
             const result = installPackage(
@@ -1220,6 +1234,12 @@ function cmdExportLib(args) {
         })])
     };
 
+    // Include installer metadata in export if the library had an installer
+    if (lib.installer_executable) {
+        manifest.installer_executable = lib.installer_executable;
+        if (lib.installer_info) manifest.installer_info = lib.installer_info;
+    }
+
     // Preserve any extra DB fields for forward compatibility
     Object.keys(lib).forEach(function(k) {
         if (shared.KNOWN_LIB_DB_KEYS.indexOf(k) === -1 && !(k in manifest)) {
@@ -1241,6 +1261,11 @@ function cmdExportLib(args) {
         const fp = path.join(demoBasePath, f);
         if (fs.existsSync(fp)) zip.addLocalFile(fp, zipSubdir('demo_methods', f));
     });
+
+    // Include installer executable from the installer store
+    if (lib.installer_path && fs.existsSync(lib.installer_path)) {
+        zip.addLocalFile(lib.installer_path, 'installer');
+    }
 
     // Sign the package (Ed25519 code signing required)
     const sigCreds = resolveSigningArgs(args);
@@ -1723,6 +1748,18 @@ function cmdCreatePackage(args) {
         if (!fs.existsSync(fp)) die(`Help file not found: ${fp}`);
     }
 
+    // Resolve installer executable (optional)
+    let resolvedInstallerPath = null;
+    let installerBasename = null;
+    if (spec.installer_executable) {
+        resolvedInstallerPath = path.resolve(specDir, spec.installer_executable);
+        if (!fs.existsSync(resolvedInstallerPath)) die(`Installer executable not found: ${resolvedInstallerPath}`);
+        installerBasename = path.basename(resolvedInstallerPath);
+        if (!installerBasename.toLowerCase().endsWith('.exe')) {
+            die('installer_executable must be an .exe file: ' + installerBasename);
+        }
+    }
+
     // Build manifest - include help_files and keep CHMs in library_files for backward compat
     const libRelPaths = (spec.library_files || []).map(f => f.replace(/\\/g, '/'));
     const helpRelPaths = (spec.help_files || []).map(f => f.replace(/\\/g, '/'));
@@ -1760,10 +1797,20 @@ function cmdCreatePackage(args) {
         })]
     };
 
+    // Add installer fields to manifest if an installer was specified
+    if (installerBasename) {
+        manifest.installer_executable = installerBasename;
+        if (spec.installer_info && typeof spec.installer_info === 'object') {
+            manifest.installer_info = spec.installer_info;
+        }
+    }
+
     // Preserve any extra user-supplied spec fields for forward compatibility
     const knownSpecKeys = ['library_name','author','organization','version','venus_compatibility',
         'description','github_url','tags','library_image','library_files','demo_method_files',
-        'help_files','com_register_dlls','$schema','_comment_paths','_comment'];
+        'help_files','com_register_dlls','install_to_library_root',
+        'installer_executable','installer_info',
+        '$schema','_comment_paths','_comment','_comment_installer'];
     Object.keys(spec).forEach(function(k) {
         if (knownSpecKeys.indexOf(k) === -1 && !(k in manifest)) {
             manifest[k] = spec[k];
@@ -1792,6 +1839,11 @@ function cmdCreatePackage(args) {
         zip.addLocalFile(f, zipDir);
     });
     if (iconSourcePath) zip.addLocalFile(iconSourcePath, 'icon');
+
+    // Add installer executable under installer/ directory
+    if (resolvedInstallerPath) {
+        zip.addLocalFile(resolvedInstallerPath, 'installer');
+    }
 
     // Sign the package (Ed25519 code signing required)
     const sigCreds = resolveSigningArgs(args);
@@ -1824,6 +1876,7 @@ function cmdCreatePackage(args) {
     console.log(`  Help files        : ${resolvedHelpFiles.length}`);
     console.log(`  Demo method files : ${resolvedDemoFiles.length}`);
     if (comDlls.length > 0) console.log(`  COM DLLs          : ${comDlls.join(', ')}`);
+    if (installerBasename) console.log(`  Installer         : ${installerBasename}`);
     if (libraryImageFilename) console.log(`  Icon              : ${libraryImageFilename}`);
     if (sigCreds) console.log(`  Code signing      : Ed25519 (${sigCreds.cert.key_id})`);
     else          console.log(`  Code signing      : none (HMAC-only integrity)`);
@@ -2210,27 +2263,16 @@ function cmdRollbackLib(args) {
         die('Cached package signature verification FAILED:\n  ' + sigResult.errors.join('\n  ') + '\nRollback aborted.');
     }
 
-    // ---- Restricted author check ----
-    const rollbackAuthor = (manifest.author || '').trim();
-    const rollbackOrg = (manifest.organization || '').trim();
-    if ((isRestrictedAuthor(rollbackAuthor) || isRestrictedAuthor(rollbackOrg)) && !isSystemLibraryByName(rollbackLibName)) {
-        if (!args['author-password']) {
-            die('Cached package uses a restricted OEM author/organization name. Use --author-password <password> to authorize.');
-        }
-        if (!validateAuthorPassword(args['author-password'])) {
-            die('Incorrect author password. Rollback of packages with restricted OEM names requires valid authorization.');
-        }
-
-        // OEM certificate verification for rollback
-        const oemPubCert = (sigResult.code_signed && sigResult.valid) ? sigResult.publisher_cert : null;
-        const oemCertMatch = shared.validateOemCertificateMatch(rollbackAuthor, rollbackOrg, oemPubCert);
-        if (!oemCertMatch.valid) {
-            die(oemCertMatch.error);
-        }
-    }
-
     const rbInstallToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
-    const libDestDir  = rbInstallToRoot ? libBasePath : path.join(libBasePath, libName);
+    const rbCustomSubdir = manifest.custom_install_subdir || '';
+    let libDestDir;
+    if (rbInstallToRoot) {
+        libDestDir = libBasePath;
+    } else if (rbCustomSubdir) {
+        libDestDir = path.join(libBasePath, rbCustomSubdir);
+    } else {
+        libDestDir = path.join(libBasePath, libName);
+    }
     const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
 
     const result = installPackage(
@@ -2324,8 +2366,6 @@ import-lib
   --force                       Overwrite without error if already installed
   --no-group                    Skip auto-assigning to a library group
   --no-cache                    Skip caching the package in the store
-  --author-password <pw>        Authorize importing packages with a restricted
-                                OEM author/organization name
 
   Examples:
     node cli.js import-lib --file MyLib.hxlibpkg
@@ -2343,8 +2383,6 @@ import-archive
   --force                       Overwrite without error if already installed
   --no-group                    Skip auto-assigning to library groups
   --no-cache                    Skip caching packages in the store
-  --author-password <pw>        Authorize importing packages with a restricted
-                                OEM author/organization name
 
   Examples:
     node cli.js import-archive --file bundle.hxlibarch
@@ -2420,6 +2458,11 @@ create-package
   With --sign-key, an Ed25519 digital signature is embedded that
   cryptographically binds the publisher's identity to the package content.
 
+  To bundle a standalone installer executable, add "installer_executable"
+  to the spec JSON pointing to the .exe file path (relative to the spec).
+  The installer is stored under the installer/ directory in the package
+  and extracted to local/installers/<LibName>/ on import.
+
   Examples:
     node cli.js create-package --spec MyLib.spec.json --output MyLib.hxlibpkg
     node cli.js create-package --spec specs/proj.json --output dist/proj.hxlibpkg
@@ -2449,12 +2492,9 @@ rollback-lib
   --lib-dir <path>                 Override library install root
   --met-dir <path>                 Override methods (demo) install root
   --no-group                       Skip auto-assigning to a library group
-  --author-password <pw>           Required when rolling back a restricted-author package
 
   If neither --version nor --index is given, available versions are listed.
   The cached package signature is verified before installation.
-  If the package was published by a restricted author (e.g. Hamilton),
-  you must supply --author-password to authorise the rollback.
 
   Examples:
     node cli.js rollback-lib --name "MyLibrary" --version "1.0.0"

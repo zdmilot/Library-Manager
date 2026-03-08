@@ -886,13 +886,16 @@
 
 		var LOCAL_DATA_DIR = resolveDefaultLocalDataDir();
 
+		/** Centralized installer store directory */
+		var INSTALLER_STORE_DIR = path.join(LOCAL_DATA_DIR, shared.INSTALLER_STORE_DIRNAME);
+
 		/** Ensure the local data directory and all subdirectories exist with seed files */
 		function ensureLocalDataDir(dirPath) {
 			if (!fs.existsSync(dirPath)) {
 				fs.mkdirSync(dirPath, { recursive: true });
 			}
 			// Ensure subdirectories
-			var subDirs = ['packages', 'exports'];
+			var subDirs = ['packages', 'exports', shared.INSTALLER_STORE_DIRNAME];
 			subDirs.forEach(function(sub) {
 				var subPath = path.join(dirPath, sub);
 				if (!fs.existsSync(subPath)) {
@@ -2353,9 +2356,11 @@
 			if (unlocked) {
 				$("#settings-oem-keywords-section").show();
 				$("#settings-make-pretty-section").show();
+				$("#pkg-installer-exe-section").show();
 			} else {
 				$("#settings-oem-keywords-section").hide();
 				$("#settings-make-pretty-section").hide();
+				$("#pkg-installer-exe-section").hide();
 			}
 		}
 
@@ -3807,6 +3812,11 @@
 		//Settings screen menu navigation
 		//Settings > Installation checkboxes
 		$(document).on("click", "#chk_confirmBeforeInstall", function(){
+			saveSetting($(this).attr("id"), $(this).prop("checked"));
+		});
+
+		//Settings > Installation: retain embedded installers
+		$(document).on("click", "#chk_retainInstallers", function(){
 			saveSetting($(this).attr("id"), $(this).prop("checked"));
 		});
 
@@ -5774,6 +5784,9 @@
 			//setting - Installation checkboxes
 			$("#chk_confirmBeforeInstall").prop("checked", settings["chk_confirmBeforeInstall"] !== false);
 
+			//setting - Installation: retain embedded installers on import
+			$("#chk_retainInstallers").prop("checked", !!settings["chk_retainInstallers"]);
+
 			//setting - Display: hide system libraries
 			$("#chk_hideSystemLibraries").prop("checked", !!settings["chk_hideSystemLibraries"]);
 
@@ -6145,11 +6158,13 @@
 		var pkg_libraryFiles = [];
 		var pkg_demoMethodFiles = [];
 		var pkg_fileRelPaths = {};    // absolutePath -> relative path within package (preserves subfolder structure)
+		var pkg_fileCustomDirs = {};  // absolutePath -> custom install subdir ("" = root, string = subdir, undefined = default)
 		var pkg_iconFilePath = null;   // custom icon/image path chosen by user
 		var pkg_iconAutoDetected = false;     // true if current preview is from auto-detected BMP
 		var pkg_iconAutoDetectedPath = null;  // file path of the auto-detected BMP
 		var pkg_iconDismissedAuto = false;    // true if user explicitly dismissed the auto-detected image
 		var pkg_comRegisterDlls = [];  // DLL filenames selected for COM registration via RegAsm
+		var pkg_installerFilePath = null;  // optional .exe installer to embed in the package
 
 		/**
 		 * Recursively collects all files under a directory.
@@ -6207,6 +6222,33 @@
 		});
 		$(document).on("click", "#pkg-addDemoFolder", function() {
 			$("#pkg-input-demofolder").trigger("click");
+		});
+
+		// ---- Installer executable file picker ----
+		$(document).on("click", "#pkg-pickInstallerExe", function() {
+			$("#pkg-input-installer").trigger("click");
+		});
+		$(document).on("change", "#pkg-input-installer", function() {
+			var fileInput = this;
+			if (!fileInput.files || fileInput.files.length === 0) return;
+			var filePath = fileInput.files[0].path;
+			$(this).val('');
+			if (!filePath) return;
+			if (!fs.existsSync(filePath) || path.extname(filePath).toLowerCase() !== '.exe') {
+				alert('Please select a valid .exe file.');
+				return;
+			}
+			pkg_installerFilePath = filePath;
+			$(".pkg-installer-filename").text(path.basename(filePath));
+			$(".pkg-installer-detail").show();
+			$(".pkg-installer-empty-msg").hide();
+		});
+		$(document).on("click", "#pkg-removeInstaller", function() {
+			pkg_installerFilePath = null;
+			$(".pkg-installer-filename").text('');
+			$(".pkg-installer-detail").hide();
+			$(".pkg-installer-empty-msg").show();
+			$("#pkg-installer-description").val('');
 		});
 
 		// ---- Icon / image picker ----
@@ -6517,7 +6559,11 @@
 			});
 			if (selected.length === 0) { return; }
 			pkg_libraryFiles = pkg_libraryFiles.filter(function(f) {
-				return selected.indexOf(f) === -1;
+				if (selected.indexOf(f) !== -1) {
+					delete pkg_fileCustomDirs[f];
+					return false;
+				}
+				return true;
 			});
 			pkgUpdateLibFileList();
 		});
@@ -6570,8 +6616,13 @@
 
 		function pkgUpdatePathPlaceholders(name) {
 			var installToRoot = $("#chk-pkg-install-to-root").is(":checked");
+			var customSubdir = $("#pkg-custom-subdir").val().trim();
 			if (installToRoot) {
 				$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\');
+			} else if (customSubdir) {
+				var sanitized = customSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="pkg-path-libname"></span>');
+				$(".pkg-path-libname").text(sanitized);
 			} else if(name){
 				$("#pkg-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="pkg-path-libname"></span>');
 				$(".pkg-path-libname").text(name);
@@ -6661,6 +6712,11 @@
 				$("#pkg-name-autocomplete").addClass("d-none").empty();
 				pkg_autocompleteActive = false;
 				pkgUpdatePathPlaceholders(pkg_autoDetectedName);
+				// Refresh file list dest paths
+				$("#pkg-lib-list .pkg-file-dest span").each(function() {
+					var fp = $(this).parent().attr("data-filepath").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+					$(this).text(pkgGetFileDestPath(fp));
+				});
 				pkgCheckVersionDuplicate();
 				pkgToggleChangelogVisibility(pkg_autoDetectedName);
 			}
@@ -6670,6 +6726,11 @@
 		$(document).on("input", "#pkg-library-name", function() {
 			var val = $(this).val().trim();
 			pkgUpdatePathPlaceholders(val);
+			// Refresh file list dest paths
+			$("#pkg-lib-list .pkg-file-dest span").each(function() {
+				var fp = $(this).parent().attr("data-filepath").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+				$(this).text(pkgGetFileDestPath(fp));
+			});
 			if(pkg_autoDetectedName && val !== pkg_autoDetectedName){
 				$("#pkg-name-warning").removeClass("d-none");
 				$("#pkg-name-hint").addClass("d-none");
@@ -6866,6 +6927,9 @@
 				if (latest.github_url) $("#pkg-github-url").val(latest.github_url);
 				if (latest.tags && latest.tags.length > 0) $("#pkg-tags").val(latest.tags.join(", "));
 				if (latest.install_to_library_root) $("#chk-pkg-install-to-root").prop("checked", true);
+				if (latest.custom_install_subdir) {
+					$("#pkg-custom-subdir").val(latest.custom_install_subdir);
+				}
 
 				// Populate version with current version (user should change it)
 				if (latest.version) {
@@ -6878,6 +6942,7 @@
 				if (libBasePath && libFiles.length > 0) {
 					pkg_libraryFiles = [];
 					pkg_fileRelPaths = {};
+					pkg_fileCustomDirs = {};
 					for (var i = 0; i < libFiles.length; i++) {
 						var fullPath = path.join(libBasePath, libFiles[i]);
 						if (fs.existsSync(fullPath)) {
@@ -6936,6 +7001,7 @@
 				if (discoveredFiles.length > 0) {
 					pkg_libraryFiles = [];
 					pkg_fileRelPaths = {};
+					pkg_fileCustomDirs = {};
 					for (var df = 0; df < discoveredFiles.length; df++) {
 						var relFile = discoveredFiles[df].replace(/^Library[\\\/]/i, '');
 						var sysFullPath = path.join(sysLibDir, relFile);
@@ -6995,10 +7061,58 @@
 			pkgCheckVersionDuplicate();
 		});
 
+		/**
+		 * Compute the resultant install path for a single file in the packager.
+		 * Considers per-file custom dir override, then global install-to-root / custom subdir.
+		 */
+		function pkgGetFileDestPath(absPath) {
+			var libName = $("#pkg-library-name").val().trim() || "<libraryname>";
+			var relPath = pkg_fileRelPaths[absPath] || path.basename(absPath);
+			var fileName = path.basename(relPath);
+			var relDir = path.dirname(relPath).replace(/\\/g, '/');
+			var relDirPrefix = (relDir && relDir !== '.') ? relDir.replace(/\//g, '\\') + '\\' : '';
+			var customDir = pkg_fileCustomDirs[absPath];
+			if (customDir !== undefined) {
+				if (customDir === '') return '...\\Hamilton\\Library\\' + relDirPrefix + fileName;
+				return '...\\Hamilton\\Library\\' + customDir + '\\' + relDirPrefix + fileName;
+			}
+			var installToRoot = $("#chk-pkg-install-to-root").is(":checked");
+			var customSubdir = $("#pkg-custom-subdir").val().trim();
+			if (installToRoot) return '...\\Hamilton\\Library\\' + relDirPrefix + fileName;
+			if (customSubdir) {
+				var sanitized = customSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				return '...\\Hamilton\\Library\\' + sanitized + '\\' + relDirPrefix + fileName;
+			}
+			return '...\\Hamilton\\Library\\' + libName + '\\' + relDirPrefix + fileName;
+		}
+
+		/**
+		 * Compute the resultant install path for a single file in the unsigned library modal.
+		 */
+		function ulibGetFileDestPath(absPath) {
+			var libName = $("#ulib-name").val().trim() || "<libraryname>";
+			var relDir = '';
+			var fileName = path.basename(absPath);
+			var customDir = ulib_fileCustomDirs[absPath];
+			if (customDir !== undefined) {
+				if (customDir === '') return '...\\Hamilton\\Library\\' + fileName;
+				return '...\\Hamilton\\Library\\' + customDir + '\\' + fileName;
+			}
+			var installToRoot = $("#chk-ulib-install-to-root").is(":checked");
+			var customSubdir = $("#ulib-custom-subdir").val().trim();
+			if (installToRoot) return '...\\Hamilton\\Library\\' + fileName;
+			if (customSubdir) {
+				var sanitized = customSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				return '...\\Hamilton\\Library\\' + sanitized + '\\' + fileName;
+			}
+			return '...\\Hamilton\\Library\\' + libName + '\\' + fileName;
+		}
+
 		// ---- Update file list displays ----
 		function pkgUpdateLibFileList() {
 			var $list = $("#pkg-lib-list");
 			$list.empty();
+			var advancedOn = $("#chk-pkg-advanced").is(":checked");
 			if (pkg_libraryFiles.length === 0) {
 				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>');
 			} else {
@@ -7014,12 +7128,19 @@
 							'<span class="text-xs text-muted">COM Register</span>' +
 						'</label>';
 					}
+					var destPath = pkgGetFileDestPath(f);
+					var hasOverride = pkg_fileCustomDirs[f] !== undefined;
+					var destClass = 'pkg-file-dest' + (advancedOn ? ' clickable' : '') + (hasOverride ? ' has-override' : '');
 					$list.append(
 						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
 						'<i class="far fa-file pkg-file-icon"></i>' +
 						'<span class="pkg-file-name">' + escapeHtml(baseName) + '</span>' +
 						 comCheckbox +
 						'<span class="pkg-file-dir">' + escapeHtml(path.dirname(f)) + '</span>' +
+						'<div class="' + destClass + '" data-filepath="' + escapedPath + '" data-context="pkg" title="' + (advancedOn ? 'Click to change install path' : 'Enable Customize install paths to change') + '">' +
+						'<i class="fas fa-long-arrow-alt-right mr-1"></i>' +
+						'<span>' + escapeHtml(destPath) + '</span>' +
+						'</div>' +
 						'</div>'
 					);
 				});
@@ -7125,12 +7246,22 @@
 			pkg_libraryFiles = [];
 			pkg_demoMethodFiles = [];
 			pkg_fileRelPaths = {};
+			pkg_fileCustomDirs = {};
 			pkg_iconFilePath = null;
 			pkg_iconAutoDetected = false;
 			pkg_iconAutoDetectedPath = null;
 			pkg_iconDismissedAuto = false;
 			pkg_comRegisterDlls = [];
+			pkg_installerFilePath = null;
+			$(".pkg-installer-detail").hide();
+			$(".pkg-installer-empty-msg").show();
+			$(".pkg-installer-filename").text('');
+			$("#pkg-installer-description").val('');
 			$("#chk-pkg-install-to-root").prop("checked", false);
+			$("#pkg-custom-subdir").val('').prop("disabled", false);
+			$("#pkg-custom-dir-section").css("opacity", "").css("pointer-events", "");
+			$("#pkg-advanced-panel").addClass("d-none");
+			$("#chk-pkg-advanced").prop("checked", false);
 			pkgUpdateLibFileList();
 			pkgUpdateDemoFileList();
 			$("#pkg-icon-preview").html('<i class="fas fa-image fa-2x" style="color:#ccc;"></i>').removeClass('has-image');
@@ -7238,8 +7369,337 @@
 
 		// Toggle install-to-library-root path hint (normal packager)
 		$(document).on("change", "#chk-pkg-install-to-root", function() {
+			var isRoot = $(this).is(":checked");
+			if (isRoot) {
+				$("#pkg-custom-subdir").val('').prop("disabled", true);
+				$("#pkg-custom-dir-section").css("opacity", "0.4").css("pointer-events", "none");
+			} else {
+				$("#pkg-custom-subdir").prop("disabled", false);
+				$("#pkg-custom-dir-section").css("opacity", "").css("pointer-events", "");
+			}
 			var libName = $("#pkg-library-name").val().trim();
 			pkgUpdatePathPlaceholders(libName);
+			pkgUpdateLibFileList();
+		});
+
+		// ---- Advanced toggle (packager) ----
+		$(document).on("change", "#chk-pkg-advanced", function() {
+			var $panel = $("#pkg-advanced-panel");
+			if ($(this).is(":checked")) {
+				$panel.removeClass("d-none");
+				pkgDirBrowserLoad("pkg");
+			} else {
+				$panel.addClass("d-none");
+			}
+			pkgUpdateLibFileList();
+		});
+
+		// ---- Advanced toggle (unsigned library) ----
+		$(document).on("change", "#chk-ulib-advanced", function() {
+			var $panel = $("#ulib-advanced-panel");
+			if ($(this).is(":checked")) {
+				$panel.removeClass("d-none");
+				pkgDirBrowserLoad("ulib");
+			} else {
+				$panel.addClass("d-none");
+			}
+			ulibUpdateLibFileList();
+		});
+
+		// ---- Per-file path edit modal ----
+		var _fpEditContext = '';   // 'pkg' or 'ulib'
+		var _fpEditFilePath = '';  // absolute file path being edited
+
+		$(document).on("click", ".pkg-file-dest.clickable", function(e) {
+			e.stopPropagation();
+			var raw = $(this).attr("data-filepath");
+			var filePath = raw.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+			var ctx = $(this).attr("data-context") || 'pkg';
+			_fpEditContext = ctx;
+			_fpEditFilePath = filePath;
+
+			var baseName = path.basename(filePath);
+			var $modal = $("#filePathEditModal");
+			$modal.find(".filepath-edit-filename").text(baseName);
+
+			// Determine current state for this file
+			var customDirs = (ctx === 'pkg') ? pkg_fileCustomDirs : ulib_fileCustomDirs;
+			var currentCustom = customDirs[filePath];
+			if (currentCustom === '') {
+				$modal.find("#filepath-edit-root").prop("checked", true);
+				$modal.find(".filepath-edit-custom-section").addClass("d-none");
+				$modal.find("#fpedit-custom-subdir").val('');
+			} else if (currentCustom !== undefined) {
+				$modal.find("#filepath-edit-custom").prop("checked", true);
+				$modal.find(".filepath-edit-custom-section").removeClass("d-none");
+				$modal.find("#fpedit-custom-subdir").val(currentCustom);
+			} else {
+				$modal.find("#filepath-edit-default").prop("checked", true);
+				$modal.find(".filepath-edit-custom-section").addClass("d-none");
+				$modal.find("#fpedit-custom-subdir").val('');
+			}
+
+			// Set default hint
+			var defaultPath = '';
+			if (ctx === 'pkg') {
+				var libName = $("#pkg-library-name").val().trim() || "<libraryname>";
+				var installToRoot = $("#chk-pkg-install-to-root").is(":checked");
+				var customSubdir = $("#pkg-custom-subdir").val().trim();
+				if (installToRoot) defaultPath = 'Library root';
+				else if (customSubdir) defaultPath = customSubdir;
+				else defaultPath = libName;
+			} else {
+				var libName = $("#ulib-name").val().trim() || "<libraryname>";
+				var installToRoot = $("#chk-ulib-install-to-root").is(":checked");
+				var customSubdir = $("#ulib-custom-subdir").val().trim();
+				if (installToRoot) defaultPath = 'Library root';
+				else if (customSubdir) defaultPath = customSubdir;
+				else defaultPath = libName;
+			}
+			$modal.find(".filepath-edit-default-hint").text('(' + defaultPath + ')');
+
+			// Update preview
+			fpEditUpdatePreview();
+
+			// Load dir browser
+			pkgDirBrowserLoad("fpedit");
+
+			$modal.modal("show");
+		});
+
+		// Radio button changes in per-file modal
+		$(document).on("change", "input[name='filepath-edit-mode']", function() {
+			var mode = $(this).val();
+			if (mode === 'custom') {
+				$(".filepath-edit-custom-section").removeClass("d-none");
+				pkgDirBrowserLoad("fpedit");
+			} else {
+				$(".filepath-edit-custom-section").addClass("d-none");
+			}
+			fpEditUpdatePreview();
+		});
+
+		$(document).on("input", "#fpedit-custom-subdir", function() {
+			fpEditUpdatePreview();
+		});
+
+		$(document).on("click", "#fpedit-custom-dir-clear", function() {
+			$("#fpedit-custom-subdir").val('');
+			fpEditUpdatePreview();
+			pkgDirBrowserLoad("fpedit");
+		});
+
+		function fpEditUpdatePreview() {
+			var mode = $("input[name='filepath-edit-mode']:checked").val();
+			var baseName = path.basename(_fpEditFilePath);
+			var ctx = _fpEditContext;
+			var previewPath;
+			if (mode === 'root') {
+				previewPath = '...\\Hamilton\\Library\\' + baseName;
+			} else if (mode === 'custom') {
+				var subdir = $("#fpedit-custom-subdir").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				if (subdir) {
+					previewPath = '...\\Hamilton\\Library\\' + subdir + '\\' + baseName;
+				} else {
+					previewPath = '...\\Hamilton\\Library\\' + baseName;
+				}
+			} else {
+				// Default - compute from global settings
+				if (ctx === 'pkg') {
+					// Temporarily remove override to get default
+					var saved = pkg_fileCustomDirs[_fpEditFilePath];
+					delete pkg_fileCustomDirs[_fpEditFilePath];
+					previewPath = pkgGetFileDestPath(_fpEditFilePath);
+					if (saved !== undefined) pkg_fileCustomDirs[_fpEditFilePath] = saved;
+				} else {
+					var saved = ulib_fileCustomDirs[_fpEditFilePath];
+					delete ulib_fileCustomDirs[_fpEditFilePath];
+					previewPath = ulibGetFileDestPath(_fpEditFilePath);
+					if (saved !== undefined) ulib_fileCustomDirs[_fpEditFilePath] = saved;
+				}
+			}
+			$(".filepath-edit-preview").text(previewPath);
+		}
+
+		// Apply per-file path edit
+		$(document).on("click", ".btn-filepath-edit-apply", function() {
+			var mode = $("input[name='filepath-edit-mode']:checked").val();
+			var customDirs = (_fpEditContext === 'pkg') ? pkg_fileCustomDirs : ulib_fileCustomDirs;
+			if (mode === 'root') {
+				customDirs[_fpEditFilePath] = '';
+			} else if (mode === 'custom') {
+				var subdir = $("#fpedit-custom-subdir").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				customDirs[_fpEditFilePath] = subdir || '';
+			} else {
+				delete customDirs[_fpEditFilePath];
+			}
+			if (_fpEditContext === 'pkg') {
+				pkgUpdateLibFileList();
+				var libName = $("#pkg-library-name").val().trim();
+				pkgUpdatePathPlaceholders(libName);
+			} else {
+				ulibUpdateLibFileList();
+				ulibUpdateInstallPathHint();
+			}
+			$("#filePathEditModal").modal("hide");
+		});
+
+		// ---- Custom subdir input ----
+		$(document).on("input", "#pkg-custom-subdir", function() {
+			var libName = $("#pkg-library-name").val().trim();
+			pkgUpdatePathPlaceholders(libName);
+			pkgUpdateLibFileList();
+		});
+		$(document).on("input", "#ulib-custom-subdir", function() {
+			ulibUpdateInstallPathHint();
+			ulibUpdateLibFileList();
+		});
+
+		// ---- Clear custom subdir ----
+		$(document).on("click", "#pkg-custom-dir-clear", function() {
+			$("#pkg-custom-subdir").val('');
+			var libName = $("#pkg-library-name").val().trim();
+			pkgUpdatePathPlaceholders(libName);
+			pkgUpdateLibFileList();
+			pkgDirBrowserLoad("pkg");
+		});
+		$(document).on("click", "#ulib-custom-dir-clear", function() {
+			$("#ulib-custom-subdir").val('');
+			ulibUpdateInstallPathHint();
+			ulibUpdateLibFileList();
+			pkgDirBrowserLoad("ulib");
+		});
+
+		// ---- Install-to-root (unsigned library) ----
+		$(document).on("change", "#chk-ulib-install-to-root", function() {
+			var isRoot = $(this).is(":checked");
+			if (isRoot) {
+				$("#ulib-custom-subdir").val('').prop("disabled", true);
+				$("#ulib-custom-dir-section").css("opacity", "0.4").css("pointer-events", "none");
+			} else {
+				$("#ulib-custom-subdir").prop("disabled", false);
+				$("#ulib-custom-dir-section").css("opacity", "").css("pointer-events", "");
+			}
+			ulibUpdateInstallPathHint();
+			ulibUpdateLibFileList();
+		});
+
+		/**
+		 * Load the directory browser for a given prefix ("pkg" or "ulib").
+		 * Reads subdirectories from the Library folder and renders them as
+		 * clickable items. The user can navigate into subdirectories or type
+		 * a new path.
+		 */
+		function pkgDirBrowserLoad(prefix) {
+			var $browser = $("#" + prefix + "-dir-browser");
+			var $breadcrumb = $("#" + prefix + "-dir-breadcrumb");
+			var $input = $("#" + prefix + "-custom-subdir");
+			var currentSubdir = $input.val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+
+			var libFolderRec = db_links.links.findOne({"_id":"lib-folder"});
+			var libBaseDir = (libFolderRec && libFolderRec.path) ? libFolderRec.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+
+			var browseDir = libBaseDir;
+			if (currentSubdir) {
+				browseDir = path.join(libBaseDir, currentSubdir);
+			}
+
+			// Build breadcrumb
+			var crumbs = '<span class="pkg-dir-crumb pkg-dir-crumb-root" data-path="" data-prefix="' + prefix + '">Library</span>';
+			if (currentSubdir) {
+				var parts = currentSubdir.split('\\');
+				var accumulated = '';
+				for (var i = 0; i < parts.length; i++) {
+					if (!parts[i]) continue;
+					accumulated += (accumulated ? '\\' : '') + parts[i];
+					crumbs += '<span class="pkg-dir-sep"><i class="fas fa-chevron-right"></i></span>';
+					if (i === parts.length - 1) {
+						crumbs += '<span class="pkg-dir-crumb pkg-dir-crumb-active">' + escapeHtml(parts[i]) + '</span>';
+					} else {
+						crumbs += '<span class="pkg-dir-crumb" data-path="' + escapeHtml(accumulated) + '" data-prefix="' + prefix + '">' + escapeHtml(parts[i]) + '</span>';
+					}
+				}
+			}
+			$breadcrumb.html(crumbs);
+
+			// Read subdirectories
+			var subdirs = [];
+			try {
+				if (fs.existsSync(browseDir)) {
+					var entries = fs.readdirSync(browseDir, { withFileTypes: true });
+					for (var j = 0; j < entries.length; j++) {
+						if (entries[j].isDirectory() && !entries[j].name.startsWith('.')) {
+							subdirs.push(entries[j].name);
+						}
+					}
+					subdirs.sort(function(a, b) { return a.localeCompare(b, undefined, { sensitivity: 'base' }); });
+				}
+			} catch (e) {
+				// Directory may not exist yet - that's fine
+			}
+
+			var html = '';
+			if (subdirs.length === 0) {
+				html = '<div class="pkg-dir-browser-empty text-muted text-center py-2"><i class="fas fa-folder-open mr-1"></i>No subdirectories found</div>';
+			} else {
+				for (var k = 0; k < subdirs.length; k++) {
+					var subPath = currentSubdir ? (currentSubdir + '\\' + subdirs[k]) : subdirs[k];
+					html += '<div class="pkg-dir-item" data-path="' + escapeHtml(subPath) + '" data-prefix="' + prefix + '">' +
+						'<i class="fas fa-folder pkg-dir-item-icon"></i>' +
+						'<span class="pkg-dir-item-name">' + escapeHtml(subdirs[k]) + '</span>' +
+						'</div>';
+				}
+			}
+			$browser.html(html);
+		}
+
+		// Click a directory entry to navigate into it or select it
+		$(document).on("dblclick", ".pkg-dir-item:not(.pkg-dir-item-new)", function() {
+			var subPath = $(this).attr("data-path");
+			var prefix = $(this).attr("data-prefix");
+			$("#" + prefix + "-custom-subdir").val(subPath);
+			pkgDirBrowserLoad(prefix);
+			if (prefix === "pkg") {
+				var libName = $("#pkg-library-name").val().trim();
+				pkgUpdatePathPlaceholders(libName);
+			} else if (prefix === "fpedit") {
+				fpEditUpdatePreview();
+			} else {
+				ulibUpdateInstallPathHint();
+			}
+		});
+
+		// Single click selects the directory (sets the input value)
+		$(document).on("click", ".pkg-dir-item:not(.pkg-dir-item-new)", function() {
+			var subPath = $(this).attr("data-path");
+			var prefix = $(this).attr("data-prefix");
+			$("#" + prefix + "-dir-browser .pkg-dir-item").removeClass("selected");
+			$(this).addClass("selected");
+			$("#" + prefix + "-custom-subdir").val(subPath);
+			if (prefix === "pkg") {
+				var libName = $("#pkg-library-name").val().trim();
+				pkgUpdatePathPlaceholders(libName);
+			} else if (prefix === "fpedit") {
+				fpEditUpdatePreview();
+			} else {
+				ulibUpdateInstallPathHint();
+			}
+		});
+
+		// Click a breadcrumb to navigate up
+		$(document).on("click", ".pkg-dir-crumb:not(.pkg-dir-crumb-active)", function() {
+			var subPath = $(this).attr("data-path");
+			var prefix = $(this).attr("data-prefix");
+			$("#" + prefix + "-custom-subdir").val(subPath);
+			pkgDirBrowserLoad(prefix);
+			if (prefix === "pkg") {
+				var libName = $("#pkg-library-name").val().trim();
+				pkgUpdatePathPlaceholders(libName);
+			} else if (prefix === "fpedit") {
+				fpEditUpdatePreview();
+			} else {
+				ulibUpdateInstallPathHint();
+			}
 		});
 
 		// Clear red styling when user types in required fields
@@ -7468,8 +7928,19 @@
 				};
 				if (githubUrl) manifest.github_url = githubUrl;
 				if ($("#chk-pkg-install-to-root").is(":checked")) manifest.install_to_library_root = true;
+				var customSubdir = $("#pkg-custom-subdir").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				if (customSubdir && !manifest.install_to_library_root) manifest.custom_install_subdir = customSubdir;
 				var changelog = $("#pkg-changelog").val().trim();
 				if (changelog) manifest.changelog = changelog;
+
+				// Installer executable
+				if (pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
+					manifest.installer_executable = path.basename(pkg_installerFilePath);
+					var installerInfoDesc = $("#pkg-installer-description").val();
+					if (installerInfoDesc && installerInfoDesc.trim()) {
+						manifest.installer_info = { description: installerInfoDesc.trim() };
+					}
+				}
 
 				// Create ZIP package using adm-zip
 				var zip = new AdmZip();
@@ -7498,6 +7969,11 @@
 					var relPath = pkg_fileRelPaths[fpath] || path.basename(fpath);
 					zip.addLocalFile(fpath, zipSubdir('demo_methods', relPath));
 				});
+
+				// Add installer executable under installer/ directory
+				if (pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
+					zip.addLocalFile(pkg_installerFilePath, 'installer');
+				}
 
 				// Sign the package for integrity verification
 				var pkgUseCodeSigning = $("#chk-pkg-sign").is(":checked");
@@ -7541,6 +8017,7 @@
 						demo_file_names: pkg_demoMethodFiles.map(function(f) { return path.basename(f); }).join(', '),
 						com_dlls:        (manifest.com_register_dlls || []),
 						install_to_root: !!manifest.install_to_library_root,
+						custom_install_subdir: manifest.custom_install_subdir || '',
 						icon_file:       libImageFilename || 'None'
 					};
 					if (sigResult.codeSigned) {
@@ -9135,6 +9612,27 @@
 				$("#libDetailModal .lib-detail-package-info-section").addClass("d-none");
 			}
 
+			// Installer info
+			if (lib.installer_executable) {
+				var _instHtml = '<div class="small">';
+				_instHtml += '<div><b>Executable:</b> ' + escapeHtml(lib.installer_executable) + '</div>';
+				if (lib.installer_info && lib.installer_info.description) {
+					_instHtml += '<div><b>Description:</b> ' + escapeHtml(lib.installer_info.description) + '</div>';
+				}
+				if (lib.installer_path && fs.existsSync(lib.installer_path)) {
+					_instHtml += '<div class="mt-2"><button class="btn btn-sm btn-outline-primary lib-detail-open-installer-dir" data-dirpath="' + escapeHtml(path.dirname(lib.installer_path)) + '"><i class="fas fa-folder-open mr-1"></i>Open Installer Location</button></div>';
+				} else if (lib.installer_path) {
+					_instHtml += '<div class="text-muted mt-1"><i class="fas fa-exclamation-triangle text-warning mr-1"></i>Installer file not found on disk</div>';
+				} else {
+					_instHtml += '<div class="text-muted mt-1">Installer not extracted (enable <em>Retain embedded installers</em> in Settings)</div>';
+				}
+				_instHtml += '</div>';
+				$("#libDetailModal .lib-detail-installer-info").html(_instHtml);
+				$("#libDetailModal .lib-detail-installer-section").removeClass("d-none");
+			} else {
+				$("#libDetailModal .lib-detail-installer-section").addClass("d-none");
+			}
+
 			// Package lineage
 			var _lineage = lib.package_lineage || [];
 			if (_lineage.length > 0) {
@@ -9439,6 +9937,13 @@
 			$("#libDetailModal").modal("show");
 		}
 
+		// ---- Open installer directory from detail modal ----
+		$(document).on("click", ".lib-detail-open-installer-dir", function(e) {
+			e.preventDefault();
+			var dirPath = $(this).attr("data-dirpath");
+			if (dirPath) safeOpenItem(dirPath);
+		});
+
 		// ---- Rollback to a cached package version from detail modal ----
 		$(document).on("click", ".lib-detail-rollback-btn", async function(e) {
 			e.preventDefault();
@@ -9485,7 +9990,15 @@
 				var metFolder = db_links.links.findOne({"_id":"met-folder"});
 				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
 				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
-				var libDestDir = path.join(libBasePath, rLibName);
+				var rollbackCustomSubdir = manifest.custom_install_subdir || '';
+				var libDestDir;
+				if (manifest.install_to_library_root) {
+					libDestDir = libBasePath;
+				} else if (rollbackCustomSubdir) {
+					libDestDir = path.join(libBasePath, rollbackCustomSubdir);
+				} else {
+					libDestDir = path.join(libBasePath, rLibName);
+				}
 				var demoDestDir = path.join(metBasePath, "Library Demo Methods", rLibName);
 
 				var origLibFiles = manifest.library_files || [];
@@ -9568,6 +10081,32 @@
 					}
 				});
 
+				// Extract installer files if present and setting enabled
+				var rbInstallerPath = null;
+				var rbInstallerOriginalName = null;
+				var rbInstallerSize = null;
+				var retainInstallers = !!getSettingValue('chk_retainInstallers');
+				if (manifest.installer_executable && retainInstallers) {
+					var installerLibDir = path.join(INSTALLER_STORE_DIR, (rLibName || 'Unknown').replace(/[<>:"\/\\|?*]/g, '_'));
+					zipEntries.forEach(function(entry) {
+						if (entry.isDirectory) return;
+						if (entry.entryName.indexOf("installer/") === 0) {
+							var fname = entry.entryName.substring("installer/".length);
+							if (fname) {
+								var safePath = safeZipExtractPath(installerLibDir, fname);
+								if (!safePath) { console.warn('Skipping unsafe installer ZIP entry: ' + entry.entryName); return; }
+								if (!fs.existsSync(installerLibDir)) fs.mkdirSync(installerLibDir, { recursive: true });
+								var data = entry.getData();
+								fs.writeFileSync(safePath, data);
+								rbInstallerPath = safePath;
+								rbInstallerOriginalName = fname;
+								rbInstallerSize = data.length;
+								extractedCount++;
+							}
+						}
+					});
+				}
+
 				// Re-register COM DLLs after extraction (best-effort)
 				var comWarning = false;
 				if (comDlls.length > 0) {
@@ -9632,7 +10171,12 @@
 					file_hashes: fileHashes,
 					public_functions: extractPublicFunctions(libFiles, libDestDir),
 					required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
-					publisher_cert: (rollbackSig && rollbackSig.code_signed && rollbackSig.valid && rollbackSig.publisher_cert) ? rollbackSig.publisher_cert : null
+					publisher_cert: (rollbackSig && rollbackSig.code_signed && rollbackSig.valid && rollbackSig.publisher_cert) ? rollbackSig.publisher_cert : null,
+					installer_executable: manifest.installer_executable || null,
+					installer_info: manifest.installer_info || null,
+					installer_path: rbInstallerPath || null,
+					installer_original_name: rbInstallerOriginalName || null,
+					installer_size: rbInstallerSize || null
 				};
 				// Forward-compat: preserve unknown manifest fields in DB record
 				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
@@ -10186,6 +10730,10 @@
 					})])
 				};
 
+				// Include installer metadata in export manifest
+				if (lib.installer_executable) manifest.installer_executable = lib.installer_executable;
+				if (lib.installer_info) manifest.installer_info = lib.installer_info;
+
 				// Preserve extra DB fields for forward compatibility
 				Object.keys(lib).forEach(function(k) {
 					if (shared.KNOWN_LIB_DB_KEYS.indexOf(k) === -1 && !(k in manifest)) {
@@ -10222,6 +10770,12 @@
 						zip.addLocalFile(fullPath, zipSubdir('demo_methods', f));
 					}
 				});
+
+				// Add installer from installer store if available
+				if (lib.installer_path && fs.existsSync(lib.installer_path)) {
+					zip.addLocalFile(lib.installer_path, 'installer');
+				}
+
 				// Sign the package for integrity verification
 				var sigResult = applyPackageSigning(zip, useCodeSigning);
 
@@ -10363,6 +10917,10 @@
 						})])
 					};
 
+					// Include installer metadata in export manifest
+					if (lib.installer_executable) manifest.installer_executable = lib.installer_executable;
+					if (lib.installer_info) manifest.installer_info = lib.installer_info;
+
 					// Preserve extra DB fields for forward compatibility
 					Object.keys(lib).forEach(function(k) {
 						if (shared.KNOWN_LIB_DB_KEYS.indexOf(k) === -1 && !(k in manifest)) {
@@ -10398,6 +10956,11 @@
 							demoFilesAdded++;
 						}
 					});
+
+					// Add installer from installer store if available
+					if (lib.installer_path && fs.existsSync(lib.installer_path)) {
+						innerZip.addLocalFile(lib.installer_path, 'installer');
+					}
 
 					applyPackageSigning(innerZip, useCodeSigning);
 
@@ -10897,42 +11460,6 @@
 
 				if (!confirm(confirmMsg)) return;
 
-				// ---- Restricted author pre-check (scan all packages) ----
-				// Because the forEach loop is synchronous, we cannot await inside it.
-				// Pre-scan all manifests to see if any package claims a restricted
-				// author or organization.  If so, prompt for the password once now.
-				var hasRestrictedPackage = false;
-				for (var pi = 0; pi < pkgEntries.length; pi++) {
-					try {
-						var scanBuf = pkgEntries[pi].getData();
-						var scanZipBuf = unpackContainer(scanBuf, CONTAINER_MAGIC_PKG);
-						var scanZip = new AdmZip(scanZipBuf);
-						var scanManifest = scanZip.getEntry("manifest.json");
-						if (scanManifest) {
-							var scanM = JSON.parse(scanZip.readAsText(scanManifest));
-							var scanAuthor = (scanM.author || '').trim();
-							var scanOrg    = (scanM.organization || '').trim();
-							var scanLibName = scanM.library_name || '';
-							if (isRestrictedAuthor(scanAuthor) || isRestrictedAuthor(scanOrg)) {
-								var scanIsSysLib = systemLibraries.some(function(s) {
-									return s.canonical_name === scanLibName || s.library_name === scanLibName;
-								});
-								if (!scanIsSysLib) {
-									hasRestrictedPackage = true;
-									break;
-								}
-							}
-						}
-					} catch (_) { /* scan failure is non-fatal; will be caught during install */ }
-				}
-				if (hasRestrictedPackage && !isOemKeywordsEnabled()) {
-					var pwOk = await promptAuthorPassword();
-					if (!pwOk) {
-						alert('Import cancelled. One or more packages in this archive use a restricted OEM author/organization name.');
-						return;
-					}
-				}
-
 				// ---- COM DLL pre-scan: detect all COM registrations needed upfront ----
 				// Scan every package in the archive for com_register_dlls so we can
 				// prompt the user for admin rights ONCE and register ALL DLLs in a
@@ -11033,7 +11560,15 @@
 							}
 						});
 
-						var libDestDir = path.join(libBasePath, libName);
+						var archCustomSubdir = manifest.custom_install_subdir || '';
+						var libDestDir;
+						if (manifest.install_to_library_root) {
+							libDestDir = libBasePath;
+						} else if (archCustomSubdir) {
+							libDestDir = path.join(libBasePath, archCustomSubdir);
+						} else {
+							libDestDir = path.join(libBasePath, libName);
+						}
 						var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
 						var extractedCount = 0;
 
@@ -11829,34 +12364,6 @@
 					return;
 				}
 
-				// ---- Restricted author/organization check on import ----
-				// If the package uses a restricted OEM author or organization but is NOT a known system library,
-				// require password authorization before allowing the import.
-				if (isRestrictedAuthor(importAuthor) || isRestrictedAuthor(importOrg)) {
-					// Check if this library name matches a known system library
-					var isKnownSysLib = systemLibraries.some(function(s) {
-						return s.canonical_name === manifest.library_name || s.library_name === manifest.library_name;
-					});
-					if (!isKnownSysLib && !isOemKeywordsEnabled()) {
-						var pwOk = await promptAuthorPassword();
-						if (!pwOk) {
-							alert('Import cancelled. The package uses a restricted OEM author/organization name that requires authorization.');
-							_isImporting = false;
-							return;
-						}
-
-						// OEM certificate verification: restricted-author packages must be
-						// code-signed with a certificate whose holder name encompasses the OEM identity.
-						var oemPubCert = (sigResult.code_signed && sigResult.valid) ? sigResult.publisher_cert : null;
-						var oemCertMatch = shared.validateOemCertificateMatch(importAuthor, importOrg, oemPubCert);
-						if (!oemCertMatch.valid) {
-							alert('OEM Import Blocked\n\n' + oemCertMatch.error);
-							_isImporting = false;
-							return;
-						}
-					}
-				}
-
 				var libName = manifest.library_name || "Unknown";
 				if (!isValidLibraryName(libName)) {
 					alert("Invalid library name: \"" + libName + "\".\nLibrary names cannot contain path separators, '..', or special characters.");
@@ -11885,7 +12392,15 @@
 				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
 				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
 				var installToRoot = !!manifest.install_to_library_root;
-				var libDestDir = installToRoot ? libBasePath : path.join(libBasePath, libName);
+				var customSubdir = manifest.custom_install_subdir || '';
+				var libDestDir;
+				if (installToRoot) {
+					libDestDir = libBasePath;
+				} else if (customSubdir) {
+					libDestDir = path.join(libBasePath, customSubdir);
+				} else {
+					libDestDir = path.join(libBasePath, libName);
+				}
 				var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
 
 				// ---- Populate the import preview modal ----
@@ -12081,7 +12596,14 @@
 				$rootChk.prop("checked", installToRoot);
 				$rootChk.off("change.impRoot").on("change.impRoot", function() {
 					var checked = $(this).is(":checked");
-					var updatedLibDestDir = checked ? libBasePath : path.join(libBasePath, libName);
+					var updatedLibDestDir;
+					if (checked) {
+						updatedLibDestDir = libBasePath;
+					} else if (customSubdir) {
+						updatedLibDestDir = path.join(libBasePath, customSubdir);
+					} else {
+						updatedLibDestDir = path.join(libBasePath, libName);
+					}
 					$modal.find(".imp-preview-lib-path").text("Library \u2192 " + updatedLibDestDir);
 					$modal.data("imp-libDestDir", updatedLibDestDir);
 					$modal.data("imp-installToRoot", checked);
@@ -12277,6 +12799,32 @@
 					}
 				});
 
+				// Extract installer executable to centralized store if present and setting enabled
+				var impInstallerPath = null;
+				var impInstallerOriginalName = null;
+				var impInstallerSize = 0;
+				var retainInstallers = !!getSettingValue('chk_retainInstallers');
+				if (manifest.installer_executable && retainInstallers) {
+					var installerLibDir = path.join(INSTALLER_STORE_DIR, (libName || 'Unknown').replace(/[<>:"\/\\|?*]/g, '_'));
+					zipEntries.forEach(function(entry) {
+						if (entry.isDirectory) return;
+						if (entry.entryName.indexOf("installer/") === 0) {
+							var fname = entry.entryName.substring("installer/".length);
+							if (fname) {
+								var safePath = safeZipExtractPath(installerLibDir, fname);
+								if (!safePath) { console.warn('Skipping unsafe installer ZIP entry: ' + entry.entryName); return; }
+								if (!fs.existsSync(installerLibDir)) fs.mkdirSync(installerLibDir, { recursive: true });
+								var data = entry.getData();
+								fs.writeFileSync(safePath, data);
+								impInstallerPath = safePath;
+								impInstallerOriginalName = fname;
+								impInstallerSize = data.length;
+								extractedCount++;
+							}
+						}
+					});
+				}
+
 				// Check if already exists in DB (update if so)
 				var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
 				if (existing) {
@@ -12319,6 +12867,8 @@
 					com_registered: comDlls.length > 0 && !comWarning,
 					lib_install_path: libDestDir,
 					demo_install_path: demoDestDir,
+					install_to_library_root: !!manifest.install_to_library_root,
+					custom_install_subdir: manifest.custom_install_subdir || '',
 					installed_date: new Date().toISOString(),
 					source_package: path.basename(filePath),
 					file_hashes: fileHashes,
@@ -12327,7 +12877,12 @@
 					publisher_cert: (impSigResult && impSigResult.code_signed && impSigResult.valid && impSigResult.publisher_cert) ? impSigResult.publisher_cert : null,
 					converted_from_executable: !!(impSigResult && impSigResult.converted),
 					source_certificate: (impSigResult && impSigResult.converted && impSigResult.source_certificate) ? impSigResult.source_certificate : null,
-					conversion_source: (impSigResult && impSigResult.converted && impSigResult.conversion_source) ? impSigResult.conversion_source : null
+					conversion_source: (impSigResult && impSigResult.converted && impSigResult.conversion_source) ? impSigResult.conversion_source : null,
+					installer_executable: manifest.installer_executable || null,
+					installer_info: manifest.installer_info || null,
+					installer_path: impInstallerPath || null,
+					installer_original_name: impInstallerOriginalName || null,
+					installer_size: impInstallerSize || 0
 				};
 				// Forward-compat: preserve unknown manifest fields in DB record
 				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
@@ -12407,6 +12962,10 @@
 				if (cachedPath) {
 					pathsHtml += '<div class="path-label">Package Cached</div>';
 					pathsHtml += '<div class="path-value">' + cachedPath.replace(/</g, '&lt;') + '</div>';
+				}
+				if (impInstallerPath) {
+					pathsHtml += '<div class="path-label">Installer</div>';
+					pathsHtml += '<div class="path-value">' + impInstallerPath.replace(/</g, '&lt;') + '</div>';
 				}
 				$sm.find(".import-success-paths").html(pathsHtml);
 				if (!pathsHtml) $sm.find(".import-success-paths").addClass("d-none"); else $sm.find(".import-success-paths").removeClass("d-none");
@@ -12578,6 +13137,9 @@
 						lines.push("Install Path:     " + (lib.lib_install_path || "N/A"));
 						lines.push("Demo Path:        " + (lib.demo_install_path || "N/A"));
 						lines.push("Install To Root:  " + (lib.install_to_library_root ? "Yes" : "No"));
+						if (lib.custom_install_subdir) {
+							lines.push("Custom Subdir:    " + lib.custom_install_subdir);
+						}
 
 						// Changelog
 						if (lib.changelog) {
@@ -13411,6 +13973,7 @@
 		var ulib_allLibFiles = [];        // combined: discovered + user-added library files (absolute paths)
 		var ulib_demoMethodFiles = [];    // user-added demo method files (absolute paths)
 		var ulib_comRegisterDlls = [];    // DLL basenames selected for COM registration
+		var ulib_fileCustomDirs = {};     // absolutePath -> custom install subdir ("" = root, string = subdir, undefined = default)
 		var ulib_iconBase64 = null;       // base64-encoded icon data (user-picked or from DB)
 		var ulib_iconMime = null;         // MIME type of the icon
 		var ulib_iconFilename = null;     // original filename of the icon
@@ -13422,9 +13985,14 @@
 		 */
 		function ulibUpdateInstallPathHint() {
 			var installToRoot = $("#chk-ulib-install-to-root").is(":checked");
+			var customSubdir = $("#ulib-custom-subdir").val().trim();
 			var libName = $("#ulib-name").val().trim() || "libraryname";
 			if (installToRoot) {
 				$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\');
+			} else if (customSubdir) {
+				var sanitized = customSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="ulib-path-libname"></span>');
+				$(".ulib-path-libname").text(sanitized);
 			} else {
 				$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="ulib-path-libname"></span>');
 				$(".ulib-path-libname").text(libName);
@@ -13438,6 +14006,7 @@
 		function ulibUpdateLibFileList() {
 			var $list = $("#ulib-file-list");
 			$list.empty();
+			var advancedOn = $("#chk-ulib-advanced").is(":checked");
 			if (ulib_allLibFiles.length === 0) {
 				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>');
 			} else {
@@ -13453,12 +14022,19 @@
 							'<span class="text-xs text-muted">COM Register</span>' +
 						'</label>';
 					}
+					var destPath = ulibGetFileDestPath(f);
+					var hasOverride = ulib_fileCustomDirs[f] !== undefined;
+					var destClass = 'pkg-file-dest' + (advancedOn ? ' clickable' : '') + (hasOverride ? ' has-override' : '');
 					$list.append(
 						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
 						'<i class="far fa-file pkg-file-icon"></i>' +
-						'<span class="pkg-file-name">' + baseName + '</span>' +
+						'<span class="pkg-file-name">' + escapeHtml(baseName) + '</span>' +
 						comCheckbox +
-						'<span class="pkg-file-dir">' + path.dirname(f) + '</span>' +
+						'<span class="pkg-file-dir">' + escapeHtml(path.dirname(f)) + '</span>' +
+						'<div class="' + destClass + '" data-filepath="' + escapedPath + '" data-context="ulib" title="' + (advancedOn ? 'Click to change install path' : 'Enable Customize install paths to change') + '">' +
+						'<i class="fas fa-long-arrow-alt-right mr-1"></i>' +
+						'<span>' + escapeHtml(destPath) + '</span>' +
+						'</div>' +
 						'</div>'
 					);
 				});
@@ -13894,6 +14470,19 @@
 
 			// Populate install-to-root checkbox
 			$("#chk-ulib-install-to-root").prop("checked", !!uLib.install_to_library_root);
+			// Populate custom subdir
+			$("#ulib-custom-subdir").val(uLib.custom_install_subdir || '');
+			if (uLib.install_to_library_root) {
+				$("#ulib-custom-subdir").prop("disabled", true);
+				$("#ulib-custom-dir-section").css("opacity", "0.4").css("pointer-events", "none");
+			} else {
+				$("#ulib-custom-subdir").prop("disabled", false);
+				$("#ulib-custom-dir-section").css("opacity", "").css("pointer-events", "");
+			}
+			// Collapse advanced panel on open
+			$("#ulib-advanced-panel").addClass("d-none");
+			$("#chk-ulib-advanced").prop("checked", false);
+			ulib_fileCustomDirs = {};
 			ulibUpdateInstallPathHint();
 
 			// Render file lists using the shared update functions
@@ -14064,7 +14653,11 @@
 			});
 			if (selected.length === 0) return;
 			ulib_allLibFiles = ulib_allLibFiles.filter(function(f) {
-				return selected.indexOf(f) === -1;
+				if (selected.indexOf(f) !== -1) {
+					delete ulib_fileCustomDirs[f];
+					return false;
+				}
+				return true;
 			});
 			// Remove any COM registrations for removed DLLs
 			var removedDlls = selected.map(function(f) { return path.basename(f); }).filter(function(n) { return n.toLowerCase().endsWith('.dll'); });
@@ -14235,7 +14828,11 @@
 				library_image: ulib_iconFilename,
 				library_image_base64: ulib_iconBase64,
 				library_image_mime: ulib_iconMime,
-				install_to_library_root: $("#chk-ulib-install-to-root").is(":checked")
+				install_to_library_root: $("#chk-ulib-install-to-root").is(":checked"),
+				custom_install_subdir: (function() {
+					var v = $("#ulib-custom-subdir").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+					return (v && !$("#chk-ulib-install-to-root").is(":checked")) ? v : '';
+				})()
 			};
 
 			// Update in DB
@@ -14664,6 +15261,8 @@
 					com_register_dlls: comDlls
 				};
 				if (uLib.install_to_library_root) manifest.install_to_library_root = true;
+				var ulibCustomSubdir = $("#ulib-custom-subdir").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				if (ulibCustomSubdir && !manifest.install_to_library_root) manifest.custom_install_subdir = ulibCustomSubdir;
 
 				// Create ZIP package
 				var zip = new AdmZip();
@@ -15225,16 +15824,6 @@
 				if (!isValidLibraryName(libName)) { alert("Invalid library name. Use letters, numbers, spaces, hyphens, and underscores only."); $btn.prop("disabled", false); return; }
 				if (author.length < shared.AUTHOR_MIN_LENGTH) { alert("Author must be at least " + shared.AUTHOR_MIN_LENGTH + " characters."); $btn.prop("disabled", false); return; }
 				if (author.length > shared.AUTHOR_MAX_LENGTH) { alert("Author must be at most " + shared.AUTHOR_MAX_LENGTH + " characters."); $btn.prop("disabled", false); return; }
-
-				// Check restricted author
-				if ((isRestrictedAuthor(author) || isRestrictedAuthor(organization)) && !isOemKeywordsEnabled()) {
-					var pwOk = await promptAuthorPassword();
-					if (!pwOk) {
-						alert('Import cancelled. Using a restricted OEM author or organization name requires authorization.');
-						$btn.prop("disabled", false);
-						return;
-					}
-				}
 
 				// Parse tags
 				var tags = [];

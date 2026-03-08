@@ -1,0 +1,30 @@
+[
+  {
+    "event": "package_created",
+    "timestamp": "2026-03-08T03:30:19.260Z",
+    "username": "admin",
+    "windows_version": "Windows_NT 10.0.26200 (ia32)",
+    "venus_version": "6.2.2.4006",
+    "hostname": "DESKTOP-HR02679",
+    "details": {
+      "library_name": "ASWStandard",
+      "version": "v2.0",
+      "author": "Corsin Alig, Bernd Huf, Stephan Gieriet",
+      "organization": "Hamilton",
+      "description": "The ASWStandard library is a utility library, comprising two sub-libraries: ASWGlobal, which defines commonly used constants (booleans, dialog return codes, timer values) for use across Hamilton SMT and MED applications, and TraceLevel, which provides a configurable tracing/logging framework with multiple verbosity levels (None, Release, Debug) and functions for tracing variables, arrays, sequences, and action states - enabling developers to embed structured diagnostic output into their liquid-handling instrument methods.",
+      "venus_compatibility": "4.7+",
+      "github_url": "",
+      "tags": "constants, logging, tracing, diagnostics, debugging, utilities, enumerations, globals",
+      "changelog": "",
+      "output_file": "D:\\Hamilton\\Library Package Files\\ASWStandard_vv2.0.hxlibpkg",
+      "library_files": 7,
+      "library_file_names": "ASWGlobal.hsl, ASWGlobal.ico, ASWGlobal.stp, TraceLevel.hsl, TraceLevel.ico, TraceLevel.stp, TraceLevel.chm",
+      "demo_files": 3,
+      "demo_file_names": "TraceLevel Demo.hsl, TraceLevel Demo.med, TraceLevel Demo.stp",
+      "com_dlls": [],
+      "install_to_root": false,
+      "custom_install_subdir": "",
+      "icon_file": "ASWGlobal.ico"
+    }
+  }
+]
