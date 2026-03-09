@@ -6538,7 +6538,7 @@
 		// ---- Remove selected files ----
 		$(document).on("click", "#pkg-removeLibFiles", function() {
 			var selected = [];
-			$("#pkg-lib-list .pkg-file-item.selected").each(function() {
+			$("#pkg-lib-list .ft-file-row.selected").each(function() {
 				selected.push($(this).attr("data-path"));
 			});
 			if (selected.length === 0) { return; }
@@ -6554,7 +6554,7 @@
 
 		$(document).on("click", "#pkg-removeLabwareFiles", function() {
 			var selected = [];
-			$(".lw-file-row.selected").each(function() {
+			$("#pkg-labware-tree .ft-file-row.selected").each(function() {
 				selected.push($(this).attr("data-path"));
 			});
 			if (selected.length === 0) { return; }
@@ -6570,7 +6570,7 @@
 
 		$(document).on("click", "#pkg-removeDemoFiles", function() {
 			var selected = [];
-			$("#pkg-demo-list .pkg-file-item.selected").each(function() {
+			$("#pkg-demo-list .ft-file-row.selected").each(function() {
 				selected.push($(this).attr("data-path"));
 			});
 			if (selected.length === 0) { return; }
@@ -6580,13 +6580,34 @@
 			pkgUpdateDemoFileList();
 		});
 
-		// ---- Toggle file selection (click to select, ctrl+click for multi) ----
-		$(document).on("click", ".pkg-file-item", function(e) {
+		// ---- Toggle file selection in trees (click = single, ctrl+click = multi) ----
+		$(document).on("click", ".ft-file-row", function(e) {
+			var $tree = $(this).closest(".pkg-file-tree");
 			if (e.ctrlKey || e.metaKey) {
 				$(this).toggleClass("selected");
 			} else {
-				$(this).siblings().removeClass("selected");
-				$(this).toggleClass("selected");
+				var wasSelected = $(this).hasClass("selected");
+				$tree.find(".ft-file-row").removeClass("selected");
+				if (!wasSelected) $(this).addClass("selected");
+			}
+			pkgLabwareUpdateMoveTo();
+		});
+
+		// Expand/collapse folder: click on the folder row (shared across all trees)
+		$(document).on("click", ".ft-folder-row", function(e) {
+			if ($(e.target).closest(".ft-com-label").length) return; // don't toggle on COM checkbox click
+			var $row = $(this);
+			var $branch = $row.next(".ft-branch");
+			if (!$branch.length) return;
+			var isOpen = !$branch.hasClass("collapsed");
+			if (isOpen) {
+				$branch.addClass("collapsed");
+				$row.find(".ft-toggle").removeClass("fa-chevron-down").addClass("fa-chevron-right");
+				$row.find(".ft-icon-folder").removeClass("fa-folder-open").addClass("fa-folder");
+			} else {
+				$branch.removeClass("collapsed");
+				$row.find(".ft-toggle").removeClass("fa-chevron-right").addClass("fa-chevron-down");
+				$row.find(".ft-icon-folder").removeClass("fa-folder").addClass("fa-folder-open");
 			}
 		});
 
@@ -7083,6 +7104,105 @@
 			return '...\\Hamilton\\Library\\' + libName + '\\' + fileName;
 		}
 
+		// ---- Shared tree rendering helpers ----
+
+		/**
+		 * Build a nested tree object from a list of absolute file paths.
+		 * relPathFn(absPath) returns the relative path used for folder nesting.
+		 * Returns { children: { folderName: treeNode, ... }, files: [ absPath, ... ] }
+		 */
+		function ftBuildTree(files, relPathFn) {
+			var tree = { children: {}, files: [] };
+			files.forEach(function(f) {
+				var rel = relPathFn(f);
+				var dir = path.dirname(rel).replace(/\\/g, '/');
+				if (!dir || dir === '.') {
+					tree.files.push(f);
+				} else {
+					var parts = dir.split('/');
+					var node = tree;
+					for (var i = 0; i < parts.length; i++) {
+						if (!node.children[parts[i]]) node.children[parts[i]] = { children: {}, files: [] };
+						node = node.children[parts[i]];
+					}
+					node.files.push(f);
+				}
+			});
+			return tree;
+		}
+
+		/** Count total files in a tree node recursively */
+		function ftCountFiles(node) {
+			var count = node.files.length;
+			Object.keys(node.children).forEach(function(k) { count += ftCountFiles(node.children[k]); });
+			return count;
+		}
+
+		/**
+		 * Recursively render a tree node to HTML.
+		 * fileRowFn(absPath) returns the inner HTML of the file row (icon, label, badge/checkbox).
+		 */
+		function ftRenderNode(node, fileRowFn) {
+			var html = '';
+			var folderNames = Object.keys(node.children).sort(function(a, b) { return a.localeCompare(b); });
+
+			folderNames.forEach(function(name) {
+				var child = node.children[name];
+				var total = ftCountFiles(child);
+				html += '<li class="ft-node">';
+				html += '<div class="ft-row ft-folder-row" data-folder="' + escapeHtml(name) + '">';
+				html += '<i class="fas fa-chevron-down ft-toggle"></i>';
+				html += '<i class="fas fa-folder-open ft-icon-folder"></i>';
+				html += '<span class="ft-label">' + escapeHtml(name) + '</span>';
+				html += '<span class="ft-count">' + total + '</span>';
+				html += '</div>';
+				html += '<ul class="ft-branch">';
+				html += ftRenderNode(child, fileRowFn);
+				html += '</ul>';
+				html += '</li>';
+			});
+
+			node.files.forEach(function(f) {
+				html += '<li class="ft-node">';
+				html += fileRowFn(f);
+				html += '</li>';
+			});
+
+			return html;
+		}
+
+		/**
+		 * Build the full tree HTML, wrapping in a root folder if subfolders exist.
+		 * rootLabel: root folder label (e.g. "Library", "Demo Methods", "Labware")
+		 * totalCount: total file count for root
+		 */
+		function ftBuildHtml(tree, rootLabel, totalCount, fileRowFn) {
+			var hasSubfolders = Object.keys(tree.children).length > 0;
+			var html = '<ul class="ft-tree">';
+			if (hasSubfolders) {
+				html += '<li class="ft-node ft-root-folder">';
+				html += '<div class="ft-row ft-folder-row" data-folder="">';
+				html += '<i class="fas fa-chevron-down ft-toggle"></i>';
+				html += '<i class="fas fa-folder-open ft-icon-folder"></i>';
+				html += '<span class="ft-label">' + escapeHtml(rootLabel) + '</span>';
+				html += '<span class="ft-count">' + totalCount + '</span>';
+				html += '</div>';
+				html += '<ul class="ft-branch">';
+				html += ftRenderNode(tree, fileRowFn);
+				html += '</ul>';
+				html += '</li>';
+			} else {
+				// No subfolders — render flat
+				tree.files.forEach(function(f) {
+					html += '<li class="ft-node">';
+					html += fileRowFn(f);
+					html += '</li>';
+				});
+			}
+			html += '</ul>';
+			return html;
+		}
+
 		// ---- Update file list displays ----
 		function pkgUpdateLibFileList() {
 			var $list = $("#pkg-lib-list");
@@ -7090,30 +7210,32 @@
 			if (pkg_libraryFiles.length === 0) {
 				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>');
 			} else {
-				pkg_libraryFiles.forEach(function(f) {
+				var tree = ftBuildTree(pkg_libraryFiles, function(f) {
+					return pkg_fileRelPaths[f] || path.basename(f);
+				});
+				var fileRowFn = function(f) {
 					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 					var baseName = path.basename(f);
-					var isDll = baseName.toLowerCase().endsWith('.dll');
+					var ext = path.extname(baseName).toLowerCase();
+					var isDll = ext === '.dll';
 					var isChecked = pkg_comRegisterDlls.indexOf(baseName) !== -1;
-					var comCheckbox = '';
+					var comHtml = '';
 					if (isDll) {
-						comCheckbox = '<label class="pkg-com-checkbox-label mb-0 ml-auto mr-2" title="Register this DLL as a COM object using RegAsm.exe /codebase during import. Requires administrator rights.">' +
-							'<input type="checkbox" class="pkg-com-checkbox mr-1" data-dll="' + baseName.replace(/"/g, '&quot;') + '"' + (isChecked ? ' checked' : '') + '>' +
-							'<span class="text-xs text-muted">COM Register</span>' +
-						'</label>';
+						comHtml = '<label class="ft-com-label" title="Register this DLL as a COM object using RegAsm.exe /codebase during import. Requires administrator rights.">' +
+							'<input type="checkbox" class="pkg-com-checkbox" data-dll="' + baseName.replace(/"/g, '&quot;') + '"' + (isChecked ? ' checked' : '') + '>' +
+							'<span>COM</span></label>';
 					}
-					$list.append(
-						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
-						'<i class="far fa-file pkg-file-icon"></i>' +
-						'<span class="pkg-file-name">' + escapeHtml(baseName) + '</span>' +
-						 comCheckbox +
-						'</div>'
-					);
-				});
+					var icon = isDll ? 'fa-cog' : (ext === '.hsl' || ext === '.hs_' || ext === '.hsi' ? 'fa-code' : 'fa-file');
+					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '">' +
+						'<i class="fas ' + icon + ' ft-icon-file"></i>' +
+						'<span class="ft-label">' + escapeHtml(baseName) + '</span>' +
+						comHtml +
+						'</div>';
+				};
+				$list.html(ftBuildHtml(tree, 'Library', pkg_libraryFiles.length, fileRowFn));
 			}
 			$("#pkg-lib-count").text(pkg_libraryFiles.length + " file" + (pkg_libraryFiles.length !== 1 ? "s" : ""));
 			pkgDetectLibraryName();
-			// Reset dismiss flag when file list changes, then try auto-detect
 			pkg_iconDismissedAuto = false;
 			pkgAutoDetectBmpImage();
 		}
@@ -7132,7 +7254,7 @@
 		});
 
 		// Prevent checkbox click from toggling file selection
-		$(document).on("click", ".pkg-com-checkbox-label", function(e) {
+		$(document).on("click", ".ft-com-label", function(e) {
 			e.stopPropagation();
 		});
 
@@ -7142,21 +7264,30 @@
 			if (pkg_demoMethodFiles.length === 0) {
 				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No demo method files added</div>');
 			} else {
-				pkg_demoMethodFiles.forEach(function(f) {
-					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-					$list.append(
-						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
-						'<i class="far fa-file pkg-file-icon"></i>' +
-						'<span class="pkg-file-name">' + escapeHtml(path.basename(f)) + '</span>' +
-						'</div>'
-					);
+				var extInfo = {
+					'.hsl': 'fa-code', '.hs_': 'fa-code', '.hsi': 'fa-code',
+					'.stp': 'fa-play', '.med': 'fa-play', '.wfl': 'fa-project-diagram',
+					'.csv': 'fa-table', '.txt': 'fa-file-alt'
+				};
+				var tree = ftBuildTree(pkg_demoMethodFiles, function(f) {
+					return pkg_fileRelPaths[f] || path.basename(f);
 				});
+				var fileRowFn = function(f) {
+					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+					var baseName = path.basename(f);
+					var ext = path.extname(baseName).toLowerCase();
+					var icon = extInfo[ext] || 'fa-file';
+					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '">' +
+						'<i class="fas ' + icon + ' ft-icon-file"></i>' +
+						'<span class="ft-label">' + escapeHtml(baseName) + '</span>' +
+						'</div>';
+				};
+				$list.html(ftBuildHtml(tree, 'Demo Methods', pkg_demoMethodFiles.length, fileRowFn));
 			}
 			$("#pkg-demo-count").text(pkg_demoMethodFiles.length + " file" + (pkg_demoMethodFiles.length !== 1 ? "s" : ""));
 		}
 
 		// ---- Labware file list tree renderer ----
-		// Tracks user-created empty folders that should persist in the tree
 		var pkg_labwareEmptyFolders = [];
 
 		function pkgUpdateLabwareFileList() {
@@ -7169,7 +7300,6 @@
 				return;
 			}
 
-			// File extension to icon/label map
 			var extInfo = {
 				'.rck': { icon: 'fa-th',               label: 'Rack' },
 				'.ctr': { icon: 'fa-box',              label: 'Container' },
@@ -7178,10 +7308,8 @@
 				'.lay': { icon: 'fa-drafting-compass', label: 'Layout' }
 			};
 
-			// Build a nested tree data structure from files + subdirectory assignments
-			// tree = { children: { 'folderName': { children: {...}, files: [...] } }, files: [...] }
+			// Build tree from subdirectory assignments
 			var tree = { children: {}, files: [] };
-
 			pkg_labwareFiles.forEach(function(f) {
 				var subdir = (pkg_labwareSubdirs[f] || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
 				if (!subdir) {
@@ -7207,93 +7335,19 @@
 				}
 			});
 
-			// Recursively render tree as nested <ul>/<li>
-			function renderNode(node, depth) {
-				var html = '';
-				// Sort folders first, then files
-				var folderNames = Object.keys(node.children).sort(function(a, b) {
-					return a.localeCompare(b);
-				});
+			var fileRowFn = function(f) {
+				var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+				var baseName = path.basename(f);
+				var ext = path.extname(f).toLowerCase();
+				var info = extInfo[ext] || { icon: 'fa-file', label: ext.replace('.', '').toUpperCase() };
+				return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '">' +
+					'<i class="fas ' + info.icon + ' ft-icon-file"></i>' +
+					'<span class="ft-label">' + escapeHtml(baseName) + '</span>' +
+					'<span class="ft-badge">' + escapeHtml(info.label) + '</span>' +
+					'</div>';
+			};
 
-				// Render subfolders
-				folderNames.forEach(function(name) {
-					var child = node.children[name];
-					var totalFiles = countTreeFiles(child);
-					html += '<li class="lw-node lw-is-folder">';
-					html += '<div class="lw-row lw-folder-row" data-folder="' + escapeHtml(name) + '">';
-					html += '<i class="fas fa-chevron-down lw-toggle"></i>';
-					html += '<i class="fas fa-folder-open lw-icon-folder"></i>';
-					html += '<span class="lw-label">' + escapeHtml(name) + '</span>';
-					html += '<span class="lw-count">' + totalFiles + '</span>';
-					html += '</div>';
-					html += '<ul class="lw-branch">';
-					html += renderNode(child, depth + 1);
-					html += '</ul>';
-					html += '</li>';
-				});
-
-				// Render files
-				node.files.forEach(function(f) {
-					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-					var baseName = path.basename(f);
-					var ext = path.extname(f).toLowerCase();
-					var info = extInfo[ext] || { icon: 'fa-file', label: ext.replace('.', '').toUpperCase() };
-					html += '<li class="lw-node lw-is-file">';
-					html += '<div class="lw-row lw-file-row" data-path="' + escapedPath + '">';
-					html += '<i class="fas ' + info.icon + ' lw-icon-file"></i>';
-					html += '<span class="lw-label">' + escapeHtml(baseName) + '</span>';
-					html += '<span class="lw-badge">' + escapeHtml(info.label) + '</span>';
-					html += '</div>';
-					html += '</li>';
-				});
-
-				return html;
-			}
-
-			function countTreeFiles(node) {
-				var count = node.files.length;
-				Object.keys(node.children).forEach(function(k) {
-					count += countTreeFiles(node.children[k]);
-				});
-				return count;
-			}
-
-			// Build the root tree. If all files are in root and there are no subfolders,
-			// show a flat root. Otherwise wrap everything under a "Labware" root folder.
-			var hasSubfolders = Object.keys(tree.children).length > 0;
-			var rootHtml = '<ul class="lw-tree">';
-			if (hasSubfolders) {
-				var totalCount = pkg_labwareFiles.length;
-				rootHtml += '<li class="lw-node lw-is-folder lw-root-folder">';
-				rootHtml += '<div class="lw-row lw-folder-row" data-folder="">';
-				rootHtml += '<i class="fas fa-chevron-down lw-toggle"></i>';
-				rootHtml += '<i class="fas fa-folder-open lw-icon-folder"></i>';
-				rootHtml += '<span class="lw-label">Labware</span>';
-				rootHtml += '<span class="lw-count">' + totalCount + '</span>';
-				rootHtml += '</div>';
-				rootHtml += '<ul class="lw-branch">';
-				rootHtml += renderNode(tree, 1);
-				rootHtml += '</ul>';
-				rootHtml += '</li>';
-			} else {
-				// No subfolders — just show files at root level directly
-				tree.files.forEach(function(f) {
-					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-					var baseName = path.basename(f);
-					var ext = path.extname(f).toLowerCase();
-					var info = extInfo[ext] || { icon: 'fa-file', label: ext.replace('.', '').toUpperCase() };
-					rootHtml += '<li class="lw-node lw-is-file">';
-					rootHtml += '<div class="lw-row lw-file-row" data-path="' + escapedPath + '">';
-					rootHtml += '<i class="fas ' + info.icon + ' lw-icon-file"></i>';
-					rootHtml += '<span class="lw-label">' + escapeHtml(baseName) + '</span>';
-					rootHtml += '<span class="lw-badge">' + escapeHtml(info.label) + '</span>';
-					rootHtml += '</div>';
-					rootHtml += '</li>';
-				});
-			}
-			rootHtml += '</ul>';
-
-			$tree.html(rootHtml);
+			$tree.html(ftBuildHtml(tree, 'Labware', pkg_labwareFiles.length, fileRowFn));
 			$("#pkg-labware-count").text(pkg_labwareFiles.length + " file" + (pkg_labwareFiles.length !== 1 ? "s" : ""));
 			pkgLabwareUpdateMoveTo();
 		}
@@ -7314,40 +7368,11 @@
 
 		// -- Enable/disable Move-to button based on selection state --
 		function pkgLabwareUpdateMoveTo() {
-			var hasSelection = $(".lw-row.lw-file-row.selected").length > 0;
+			var hasSelection = $("#pkg-labware-tree .ft-file-row.selected").length > 0;
 			$("#pkg-labwareMoveToBtn").prop("disabled", !hasSelection);
 		}
 
-		// ---- Labware tree interaction handlers ----
-
-		// Expand/collapse folder: click on the folder row
-		$(document).on("click", ".lw-folder-row", function(e) {
-			var $row = $(this);
-			var $branch = $row.next(".lw-branch");
-			if (!$branch.length) return;
-			var isOpen = !$branch.hasClass("collapsed");
-			if (isOpen) {
-				$branch.addClass("collapsed");
-				$row.find(".lw-toggle").removeClass("fa-chevron-down").addClass("fa-chevron-right");
-				$row.find(".lw-icon-folder").removeClass("fa-folder-open").addClass("fa-folder");
-			} else {
-				$branch.removeClass("collapsed");
-				$row.find(".lw-toggle").removeClass("fa-chevron-right").addClass("fa-chevron-down");
-				$row.find(".lw-icon-folder").removeClass("fa-folder").addClass("fa-folder-open");
-			}
-		});
-
-		// Select/deselect labware files (click = single, ctrl+click = multi)
-		$(document).on("click", ".lw-file-row", function(e) {
-			if (e.ctrlKey || e.metaKey) {
-				$(this).toggleClass("selected");
-			} else {
-				var wasSelected = $(this).hasClass("selected");
-				$(".lw-file-row").removeClass("selected");
-				if (!wasSelected) $(this).addClass("selected");
-			}
-			pkgLabwareUpdateMoveTo();
-		});
+		// ---- Labware-specific interaction handlers ----
 
 		// "New Folder" button
 		$(document).on("click", "#pkg-labwareNewFolder", function() {
@@ -7369,17 +7394,13 @@
 				$menu.removeClass("show");
 				return;
 			}
-			// Populate folder list
 			$menu.empty();
-			// Root option
-			$menu.append('<div class="lw-moveto-item" data-target=""><i class="fas fa-folder"></i>Labware (root)</div>');
-			// Existing folders
+			$menu.append('<div class="ft-moveto-item" data-target=""><i class="fas fa-folder"></i>Labware (root)</div>');
 			var folders = pkgLabwareGetFolders();
 			folders.forEach(function(sd) {
-				$menu.append('<div class="lw-moveto-item" data-target="' + escapeHtml(sd) + '"><i class="fas fa-folder"></i>' + escapeHtml(sd) + '</div>');
+				$menu.append('<div class="ft-moveto-item" data-target="' + escapeHtml(sd) + '"><i class="fas fa-folder"></i>' + escapeHtml(sd) + '</div>');
 			});
-			// New folder option
-			$menu.append('<div class="lw-moveto-item lw-moveto-new" data-target="__new__"><i class="fas fa-folder-plus"></i>New Folder...</div>');
+			$menu.append('<div class="ft-moveto-item ft-moveto-new" data-target="__new__"><i class="fas fa-folder-plus"></i>New Folder...</div>');
 			$menu.addClass("show");
 		});
 
@@ -7389,7 +7410,7 @@
 		});
 
 		// Move-to menu item click
-		$(document).on("click", ".lw-moveto-item", function(e) {
+		$(document).on("click", ".ft-moveto-item", function(e) {
 			e.stopPropagation();
 			var target = $(this).attr("data-target");
 			if (target === '__new__') {
@@ -7403,8 +7424,7 @@
 					pkg_labwareEmptyFolders.push(target);
 				}
 			}
-			// Move all selected files to target folder
-			$(".lw-file-row.selected").each(function() {
+			$("#pkg-labware-tree .ft-file-row.selected").each(function() {
 				var filePath = $(this).attr("data-path");
 				if (target === '') {
 					delete pkg_labwareSubdirs[filePath];

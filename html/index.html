@@ -304,17 +304,17 @@
 									<span class="text-muted ml-2 text-sm font-weight-normal" id="pkg-lib-path-hint">Installed to: ...\Hamilton\Library\<span class="pkg-path-libname">&lt;libraryname&gt;</span></span>
 								</div>
 								<div class="card-body">
-									<div class="mb-2">
+									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
+									<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 										<button class="btn btn-sm btn-outlined" id="pkg-addLibFiles">Add Files...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-addLibFolder">Add Folder...</button>
-										<button class="btn btn-sm btn-outlined" id="pkg-changeLibPath"><i class="fas fa-folder-open mr-1"></i>Change Path</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-removeLibFiles">Remove Selected</button>
+										<button class="btn btn-sm btn-outlined" id="pkg-changeLibPath"><i class="fas fa-folder-open mr-1"></i>Change Path</button>
 										<span class="text-muted text-sm ml-2" id="pkg-lib-count">0 files</span>
 										<input type="file" class="d-none" id="pkg-input-libfiles" multiple>
 										<input type="file" class="d-none" id="pkg-input-libfolder" nwdirectory>
 									</div>
-									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
-									<div class="pkg-file-list" id="pkg-lib-list">
+									<div class="pkg-file-tree" id="pkg-lib-list">
 										<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>
 									</div>
 								</div>
@@ -327,7 +327,7 @@
 									<span class="text-muted ml-2 text-sm font-weight-normal">Installed to: ...\Hamilton\Methods\Library Demo Methods\<span class="pkg-path-libname">&lt;libraryname&gt;</span></span>
 								</div>
 								<div class="card-body">
-									<div class="mb-2">
+									<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 										<button class="btn btn-sm btn-outlined" id="pkg-addDemoFiles">Add Files...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-addDemoFolder">Add Folder...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-removeDemoFiles">Remove Selected</button>
@@ -335,7 +335,7 @@
 										<input type="file" class="d-none" id="pkg-input-demofiles" multiple accept=".hsl,.stp,.csv,.txt,.med,.wfl">
 										<input type="file" class="d-none" id="pkg-input-demofolder" nwdirectory>
 									</div>
-									<div class="pkg-file-list" id="pkg-demo-list">
+									<div class="pkg-file-tree" id="pkg-demo-list">
 										<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No demo method files added</div>
 									</div>
 								</div>
@@ -353,16 +353,16 @@
 										<button class="btn btn-sm btn-outlined" id="pkg-addLabwareFiles">Add Files...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-addLabwareFolder">Add Folder...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-removeLabwareFiles">Remove Selected</button>
-										<div class="lw-moveto-dropdown">
+										<div class="ft-moveto-dropdown">
 											<button class="btn btn-sm btn-outlined" id="pkg-labwareMoveToBtn" disabled><i class="fas fa-arrow-right mr-1"></i>Move to <i class="fas fa-caret-down ml-1"></i></button>
-											<div class="lw-moveto-menu" id="pkg-labwareMoveToMenu"></div>
+											<div class="ft-moveto-menu" id="pkg-labwareMoveToMenu"></div>
 										</div>
 										<button class="btn btn-sm btn-outlined" id="pkg-labwareNewFolder"><i class="fas fa-folder-plus mr-1"></i>New Folder</button>
 										<span class="text-muted text-sm ml-2" id="pkg-labware-count">0 files</span>
 										<input type="file" class="d-none" id="pkg-input-labwarefiles" multiple accept=".rck,.ctr,.tml,.dck,.lay">
 										<input type="file" class="d-none" id="pkg-input-labwarefolder" nwdirectory>
 									</div>
-									<div class="pkg-labware-tree" id="pkg-labware-tree">
+									<div class="pkg-file-tree" id="pkg-labware-tree">
 										<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No labware files added</div>
 									</div>
 								</div>

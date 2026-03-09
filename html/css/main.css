@@ -1393,8 +1393,8 @@ body {
 	color: #bbb;
 }
 
-/* ---- Labware tree UI ---- */
-.pkg-labware-tree {
+/* ---- File tree UI (shared by Library, Demo, Labware sections) ---- */
+.pkg-file-tree {
 	border: 1px solid #dee2e6;
 	border-radius: 6px;
 	min-height: 60px;
@@ -1403,24 +1403,24 @@ body {
 	background: #f8f9fa;
 	padding: 6px 0;
 }
-.pkg-labware-tree .pkg-empty-msg {
+.pkg-file-tree .pkg-empty-msg {
 	color: #bbb;
 }
 
 /* ---- Tree structure (nested <ul>/<li>) ---- */
-.lw-tree {
+.ft-tree {
 	list-style: none;
 	padding: 0;
 	margin: 0;
 }
-.lw-tree .lw-branch {
+.ft-tree .ft-branch {
 	list-style: none;
 	padding: 0 0 0 20px;
 	margin: 0;
 	position: relative;
 }
 /* Vertical connector line running down the left side of children */
-.lw-branch::before {
+.ft-branch::before {
 	content: '';
 	position: absolute;
 	top: 0;
@@ -1430,12 +1430,12 @@ body {
 	background: #cdd5de;
 }
 /* Each tree node (folder or file) */
-.lw-tree li {
+.ft-tree li {
 	position: relative;
 	list-style: none;
 }
 /* Horizontal connector from vertical guide to item */
-.lw-branch > li::before {
+.ft-branch > li::before {
 	content: '';
 	position: absolute;
 	top: 14px;
@@ -1445,7 +1445,7 @@ body {
 	border-top: 1px solid #cdd5de;
 }
 /* Trim vertical line at last child */
-.lw-branch > li:last-child::after {
+.ft-branch > li:last-child::after {
 	content: '';
 	position: absolute;
 	top: 14px;
@@ -1456,7 +1456,7 @@ body {
 }
 
 /* The clickable row (both folders and files) */
-.lw-row {
+.ft-row {
 	display: flex;
 	align-items: center;
 	height: 28px;
@@ -1468,16 +1468,16 @@ body {
 	transition: background 0.1s;
 	font-size: 0.82rem;
 }
-.lw-row:hover {
+.ft-row:hover {
 	background: rgba(0,0,0,0.045);
 }
 
 /* ---- Folder rows ---- */
-.lw-row.lw-folder-row .lw-label {
+.ft-row.ft-folder-row .ft-label {
 	font-weight: 600;
 	color: var(--dark1);
 }
-.lw-toggle {
+.ft-toggle {
 	width: 14px;
 	text-align: center;
 	font-size: 0.6rem;
@@ -1486,13 +1486,13 @@ body {
 	flex-shrink: 0;
 	transition: transform 0.15s;
 }
-.lw-icon-folder {
+.ft-icon-folder {
 	color: #e8a838;
 	font-size: 0.88rem;
 	margin-right: 6px;
 	flex-shrink: 0;
 }
-.lw-count {
+.ft-count {
 	margin-left: 8px;
 	font-size: 0.7rem;
 	color: #999;
@@ -1500,17 +1500,17 @@ body {
 }
 
 /* ---- File rows ---- */
-.lw-row.lw-file-row .lw-label {
+.ft-row.ft-file-row .ft-label {
 	font-weight: 400;
 	color: var(--dark1);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-.lw-row.lw-file-row.selected {
+.ft-row.ft-file-row.selected {
 	background: rgba(var(--medium-rgb), 0.16);
 }
-.lw-icon-file {
+.ft-icon-file {
 	width: 14px;
 	text-align: center;
 	font-size: 0.78rem;
@@ -1518,7 +1518,7 @@ body {
 	margin-right: 6px;
 	flex-shrink: 0;
 }
-.lw-badge {
+.ft-badge {
 	margin-left: auto;
 	padding: 0 6px;
 	font-size: 0.67rem;
@@ -1531,17 +1531,34 @@ body {
 	letter-spacing: 0.3px;
 }
 
+/* COM checkbox inline in file row */
+.ft-com-label {
+	margin-left: auto;
+	font-size: 0.72rem;
+	color: #999;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	flex-shrink: 0;
+	padding: 0 2px;
+}
+.ft-com-label input[type="checkbox"] {
+	margin: 0;
+	cursor: pointer;
+}
+
 /* Collapsed branch */
-.lw-branch.collapsed {
+.ft-branch.collapsed {
 	display: none;
 }
 
 /* Move-to dropdown in toolbar */
-.lw-moveto-dropdown {
+.ft-moveto-dropdown {
 	position: relative;
 	display: inline-block;
 }
-.lw-moveto-menu {
+.ft-moveto-menu {
 	position: absolute;
 	top: 100%;
 	left: 0;
@@ -1556,32 +1573,32 @@ body {
 	padding: 4px 0;
 	display: none;
 }
-.lw-moveto-menu.show {
+.ft-moveto-menu.show {
 	display: block;
 }
-.lw-moveto-item {
+.ft-moveto-item {
 	padding: 5px 14px;
 	font-size: 0.8rem;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 }
-.lw-moveto-item:hover {
+.ft-moveto-item:hover {
 	background: rgba(var(--medium-rgb), 0.08);
 }
-.lw-moveto-item i {
+.ft-moveto-item i {
 	margin-right: 8px;
 	width: 14px;
 	text-align: center;
 	color: #e8a838;
 	font-size: 0.8rem;
 }
-.lw-moveto-item.lw-moveto-new {
+.ft-moveto-item.ft-moveto-new {
 	border-top: 1px solid #eee;
 	color: var(--medium);
 	font-weight: 500;
 }
-.lw-moveto-item.lw-moveto-new i {
+.ft-moveto-item.ft-moveto-new i {
 	color: var(--medium);
 }
 
@@ -3663,44 +3680,47 @@ body.dark-mode .pkg-file-dest {
 body.dark-mode .pkg-file-dest.clickable {
 	color: var(--medium);
 }
-/* Labware tree dark mode */
-body.dark-mode .pkg-labware-tree {
+/* File tree dark mode */
+body.dark-mode .pkg-file-tree {
 	background: #0f0f23;
 	border-color: #2a3a5c;
 }
-body.dark-mode .lw-branch::before {
+body.dark-mode .ft-branch::before {
 	background: #3a4a6c;
 }
-body.dark-mode .lw-branch > li::before {
+body.dark-mode .ft-branch > li::before {
 	border-top-color: #3a4a6c;
 }
-body.dark-mode .lw-branch > li:last-child::after {
+body.dark-mode .ft-branch > li:last-child::after {
 	background: #0f0f23;
 }
-body.dark-mode .lw-row:hover {
+body.dark-mode .ft-row:hover {
 	background: rgba(255,255,255,0.05);
 }
-body.dark-mode .lw-row.lw-folder-row .lw-label,
-body.dark-mode .lw-row.lw-file-row .lw-label {
+body.dark-mode .ft-row.ft-folder-row .ft-label,
+body.dark-mode .ft-row.ft-file-row .ft-label {
 	color: #c8d6e5;
 }
-body.dark-mode .lw-row.lw-file-row.selected {
+body.dark-mode .ft-row.ft-file-row.selected {
 	background: rgba(var(--medium-rgb), 0.2);
 }
-body.dark-mode .lw-toggle {
+body.dark-mode .ft-toggle {
 	color: #6a7a8a;
 }
-body.dark-mode .lw-count {
+body.dark-mode .ft-count {
 	color: #5a6a7a;
 }
-body.dark-mode .lw-moveto-menu {
+body.dark-mode .ft-com-label {
+	color: #6a7a8a;
+}
+body.dark-mode .ft-moveto-menu {
 	background: #1a2a4c;
 	border-color: #3a4a6c;
 }
-body.dark-mode .lw-moveto-item:hover {
+body.dark-mode .ft-moveto-item:hover {
 	background: rgba(var(--medium-rgb), 0.14);
 }
-body.dark-mode .lw-moveto-item.lw-moveto-new {
+body.dark-mode .ft-moveto-item.ft-moveto-new {
 	border-top-color: #2a3a5c;
 }
 body.dark-mode .filepath-edit-preview-box {
