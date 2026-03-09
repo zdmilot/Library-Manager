@@ -1584,55 +1584,6 @@ body {
 	display: none;
 }
 
-/* Move-to dropdown in toolbar */
-.ft-moveto-dropdown {
-	position: relative;
-	display: inline-block;
-}
-.ft-moveto-menu {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	z-index: 20;
-	min-width: 200px;
-	max-height: 260px;
-	overflow-y: auto;
-	background: #fff;
-	border: 1px solid #ccc;
-	border-radius: 6px;
-	box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-	padding: 4px 0;
-	display: none;
-}
-.ft-moveto-menu.show {
-	display: block;
-}
-.ft-moveto-item {
-	padding: 5px 14px;
-	font-size: 0.8rem;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-}
-.ft-moveto-item:hover {
-	background: rgba(var(--medium-rgb), 0.08);
-}
-.ft-moveto-item i {
-	margin-right: 8px;
-	width: 14px;
-	text-align: center;
-	color: #e8a838;
-	font-size: 0.8rem;
-}
-.ft-moveto-item.ft-moveto-new {
-	border-top: 1px solid #eee;
-	color: var(--medium);
-	font-weight: 500;
-}
-.ft-moveto-item.ft-moveto-new i {
-	color: var(--medium);
-}
-
 .pkg-icon-preview {
 	width: 72px;
 	height: 72px;
@@ -3743,16 +3694,6 @@ body.dark-mode .ft-count {
 }
 body.dark-mode .ft-com-label {
 	color: #6a7a8a;
-}
-body.dark-mode .ft-moveto-menu {
-	background: #1a2a4c;
-	border-color: #3a4a6c;
-}
-body.dark-mode .ft-moveto-item:hover {
-	background: rgba(var(--medium-rgb), 0.14);
-}
-body.dark-mode .ft-moveto-item.ft-moveto-new {
-	border-top-color: #2a3a5c;
 }
 body.dark-mode .pkg-file-tree.ft-dragover {
 	border-color: var(--medium);

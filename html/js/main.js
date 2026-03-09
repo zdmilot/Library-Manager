@@ -6601,7 +6601,7 @@
 				if (!wasSelected) $(this).addClass("selected");
 			}
 			var _treeId = $tree.attr("id");
-			if (_treeId) ftUpdateMoveToBtn(_treeId);
+			// Selection done
 		});
 
 		// Expand/collapse folder: click on the folder row (shared across all trees)
@@ -7268,7 +7268,6 @@
 				$list.html(ftBuildHtml(tree, 'Library', pkg_libraryFiles.length, fileRowFn, ftGetInstallPath('pkg-lib-list')));
 			}
 			$("#pkg-lib-count").text(pkg_libraryFiles.length + " file" + (pkg_libraryFiles.length !== 1 ? "s" : ""));
-			ftUpdateMoveToBtn("pkg-lib-list");
 			pkgDetectLibraryName();
 			pkg_iconDismissedAuto = false;
 			pkgAutoDetectBmpImage();
@@ -7334,7 +7333,6 @@
 				$list.html(ftBuildHtml(tree, 'Demo Methods', pkg_demoMethodFiles.length, fileRowFn, ftGetInstallPath('pkg-demo-list')));
 			}
 			$("#pkg-demo-count").text(pkg_demoMethodFiles.length + " file" + (pkg_demoMethodFiles.length !== 1 ? "s" : ""));
-			ftUpdateMoveToBtn("pkg-demo-list");
 		}
 
 		// ---- Labware file list tree renderer ----
@@ -7350,7 +7348,6 @@
 				$tree.html(ftBuildHtml(emptyTree, 'Labware', 0, function() { return ''; }, '...\\Hamilton\\Labware\\'));
 				$tree.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
 				$("#pkg-labware-count").text("0 files");
-				ftUpdateMoveToBtn("pkg-labware-tree");
 				return;
 			}
 
@@ -7403,7 +7400,6 @@
 
 			$tree.html(ftBuildHtml(tree, 'Labware', pkg_labwareFiles.length, fileRowFn, ftGetInstallPath('pkg-labware-tree')));
 			$("#pkg-labware-count").text(pkg_labwareFiles.length + " file" + (pkg_labwareFiles.length !== 1 ? "s" : ""));
-			ftUpdateMoveToBtn("pkg-labware-tree");
 		}
 
 		// ---- Generic tree helpers for folder management across all three trees ----
@@ -7459,48 +7455,6 @@
 		/**
 		 * Collect distinct folder paths from a tree's files + empty folders.
 		 */
-		function ftGetFolders(treeId) {
-			var state = ftGetTreeState(treeId);
-			if (!state) return [];
-			var folders = [];
-			state.files().forEach(function(f) {
-				var rel = state.getRelPath(f);
-				var dir = path.dirname(rel).replace(/\\/g, '/');
-				if (dir && dir !== '.' && folders.indexOf(dir) === -1) folders.push(dir);
-			});
-			state.emptyFolders().forEach(function(ef) {
-				if (folders.indexOf(ef) === -1) folders.push(ef);
-			});
-			folders.sort();
-			return folders;
-		}
-
-		/**
-		 * Enable/disable Move-to button based on selection state in a given tree.
-		 */
-		function ftUpdateMoveToBtn(treeId) {
-			var hasSelection = $("#" + treeId + " .ft-file-row.selected").length > 0;
-			$('.ft-moveToBtn[data-tree="' + treeId + '"]').prop("disabled", !hasSelection);
-		}
-
-		/**
-		 * Move selected files in a tree to a target folder ('' = root, string = folder path).
-		 */
-		function ftMoveFilesToFolder(treeId, target) {
-			var state = ftGetTreeState(treeId);
-			if (!state) return;
-			$("#" + treeId + " .ft-file-row.selected").each(function() {
-				var filePath = $(this).attr("data-path");
-				var baseName = path.basename(filePath);
-				if (target === '') {
-					state.clearRelPath(filePath);
-				} else {
-					state.setRelPath(filePath, target + '/' + baseName);
-				}
-			});
-			state.update();
-		}
-
 		// "New Folder" button (generic for all trees)
 		$(document).on("click", ".ft-newFolderBtn", function() {
 			var treeId = $(this).attr("data-tree");
@@ -7515,57 +7469,6 @@
 					state.update();
 				}
 			}
-		});
-
-		// "Move to" dropdown: open/close (generic for all trees)
-		$(document).on("click", ".ft-moveToBtn", function(e) {
-			e.stopPropagation();
-			var treeId = $(this).attr("data-tree");
-			var state = ftGetTreeState(treeId);
-			if (!state) return;
-			var $menu = $('.ft-moveToMenu[data-tree="' + treeId + '"]');
-			if ($menu.hasClass("show")) {
-				$menu.removeClass("show");
-				return;
-			}
-			// Close any other open menus first
-			$(".ft-moveToMenu.show").removeClass("show");
-			$menu.empty();
-			$menu.append('<div class="ft-moveto-item" data-target="" data-tree="' + treeId + '"><i class="fas fa-folder"></i>' + escapeHtml(state.rootLabel) + ' (root)</div>');
-			var folders = ftGetFolders(treeId);
-			folders.forEach(function(sd) {
-				$menu.append('<div class="ft-moveto-item" data-target="' + escapeHtml(sd) + '" data-tree="' + treeId + '"><i class="fas fa-folder"></i>' + escapeHtml(sd) + '</div>');
-			});
-			$menu.append('<div class="ft-moveto-item ft-moveto-new" data-target="__new__" data-tree="' + treeId + '"><i class="fas fa-folder-plus"></i>New Folder...</div>');
-			$menu.addClass("show");
-		});
-
-		// Close move-to menu when clicking elsewhere
-		$(document).on("click", function() {
-			$(".ft-moveToMenu.show").removeClass("show");
-		});
-
-		// Move-to menu item click (generic for all trees)
-		$(document).on("click", ".ft-moveto-item", function(e) {
-			e.stopPropagation();
-			var treeId = $(this).attr("data-tree");
-			var state = ftGetTreeState(treeId);
-			if (!state) return;
-			var target = $(this).attr("data-target");
-			if (target === '__new__') {
-				var name = prompt("Enter folder name:", "");
-				if (!name || !name.trim()) {
-					$('.ft-moveToMenu[data-tree="' + treeId + '"]').removeClass("show");
-					return;
-				}
-				target = name.trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-				var ef = state.emptyFolders();
-				if (target && ef.indexOf(target) === -1) {
-					ef.push(target);
-				}
-			}
-			ftMoveFilesToFolder(treeId, target);
-			$('.ft-moveToMenu[data-tree="' + treeId + '"]').removeClass("show");
 		});
 
 		// ================================================================
