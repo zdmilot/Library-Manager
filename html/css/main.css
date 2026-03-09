@@ -1398,140 +1398,191 @@ body {
 	border: 1px solid #dee2e6;
 	border-radius: 6px;
 	min-height: 60px;
-	max-height: 340px;
+	max-height: 400px;
 	overflow-y: auto;
 	background: #f8f9fa;
+	padding: 6px 0;
 }
 .pkg-labware-tree .pkg-empty-msg {
 	color: #bbb;
 }
 
-.labware-tree-group {
-	border-bottom: 1px solid #eee;
+/* ---- Tree structure (nested <ul>/<li>) ---- */
+.lw-tree {
+	list-style: none;
+	padding: 0;
+	margin: 0;
 }
-.labware-tree-group:last-child {
-	border-bottom: none;
+.lw-tree .lw-branch {
+	list-style: none;
+	padding: 0 0 0 20px;
+	margin: 0;
+	position: relative;
+}
+/* Vertical connector line running down the left side of children */
+.lw-branch::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 9px;
+	width: 1px;
+	background: #cdd5de;
+}
+/* Each tree node (folder or file) */
+.lw-tree li {
+	position: relative;
+	list-style: none;
+}
+/* Horizontal connector from vertical guide to item */
+.lw-branch > li::before {
+	content: '';
+	position: absolute;
+	top: 14px;
+	left: -11px;
+	width: 14px;
+	height: 0;
+	border-top: 1px solid #cdd5de;
+}
+/* Trim vertical line at last child */
+.lw-branch > li:last-child::after {
+	content: '';
+	position: absolute;
+	top: 14px;
+	left: -12px;
+	bottom: 0;
+	width: 2px;
+	background: #f8f9fa;
 }
 
-.labware-tree-header {
+/* The clickable row (both folders and files) */
+.lw-row {
 	display: flex;
 	align-items: center;
-	padding: 7px 12px;
+	height: 28px;
+	padding: 0 10px 0 4px;
 	cursor: pointer;
 	user-select: none;
-	font-size: 0.85rem;
+	border-radius: 3px;
+	margin: 0 4px;
+	transition: background 0.1s;
+	font-size: 0.82rem;
+}
+.lw-row:hover {
+	background: rgba(0,0,0,0.045);
+}
+
+/* ---- Folder rows ---- */
+.lw-row.lw-folder-row .lw-label {
 	font-weight: 600;
 	color: var(--dark1);
-	background: rgba(var(--medium-rgb), 0.04);
-	transition: background 0.15s;
 }
-.labware-tree-header:hover {
-	background: rgba(var(--medium-rgb), 0.09);
-}
-.labware-tree-header .labware-tree-chevron {
-	width: 16px;
+.lw-toggle {
+	width: 14px;
 	text-align: center;
-	margin-right: 6px;
-	font-size: 0.7rem;
-	color: var(--medium);
-	transition: transform 0.2s;
+	font-size: 0.6rem;
+	color: #7a8a9a;
+	margin-right: 4px;
+	flex-shrink: 0;
+	transition: transform 0.15s;
 }
-.labware-tree-header .labware-tree-chevron.expanded {
-	transform: rotate(90deg);
-}
-.labware-tree-header .labware-tree-folder-icon {
-	margin-right: 8px;
+.lw-icon-folder {
 	color: #e8a838;
-	font-size: 0.9rem;
-}
-.labware-tree-header .labware-tree-count {
-	margin-left: auto;
-	font-size: 0.75rem;
-	color: #999;
-	font-weight: 400;
-}
-
-.labware-tree-children {
-	display: none;
-	padding-left: 0;
-}
-.labware-tree-children.expanded {
-	display: block;
-}
-
-.labware-tree-file {
-	display: flex;
-	align-items: center;
-	padding: 5px 12px 5px 40px;
-	font-size: 0.82rem;
-	border-bottom: 1px solid #f0f0f0;
-	cursor: pointer;
-	user-select: none;
-	transition: background 0.1s;
-}
-.labware-tree-file:last-child {
-	border-bottom: none;
-}
-.labware-tree-file:hover {
-	background: rgba(var(--medium-rgb), 0.06);
-}
-.labware-tree-file.selected {
-	background: rgba(var(--medium-rgb), 0.15);
-}
-.labware-tree-file .labware-file-icon {
-	margin-right: 8px;
-	color: var(--medium);
-	font-size: 0.8rem;
+	font-size: 0.88rem;
+	margin-right: 6px;
 	flex-shrink: 0;
 }
-.labware-tree-file .labware-file-name {
-	font-weight: 500;
+.lw-count {
+	margin-left: 8px;
+	font-size: 0.7rem;
+	color: #999;
+	flex-shrink: 0;
+}
+
+/* ---- File rows ---- */
+.lw-row.lw-file-row .lw-label {
+	font-weight: 400;
 	color: var(--dark1);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-.labware-tree-file .labware-file-ext {
-	margin-left: auto;
-	padding-left: 12px;
-	font-size: 0.72rem;
-	color: #aaa;
-	text-transform: uppercase;
-	white-space: nowrap;
+.lw-row.lw-file-row.selected {
+	background: rgba(var(--medium-rgb), 0.16);
 }
-
-.labware-subdir-picker {
-	display: inline-flex;
-	align-items: center;
-	margin-left: auto;
-	padding-left: 8px;
+.lw-icon-file {
+	width: 14px;
+	text-align: center;
+	font-size: 0.78rem;
+	color: var(--medium);
+	margin-right: 6px;
 	flex-shrink: 0;
 }
-.labware-subdir-picker select {
-	font-size: 0.75rem;
-	padding: 1px 6px;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	background: #fff;
-	color: var(--dark1);
-	cursor: pointer;
-	max-width: 180px;
+.lw-badge {
+	margin-left: auto;
+	padding: 0 6px;
+	font-size: 0.67rem;
+	border-radius: 3px;
+	background: rgba(var(--medium-rgb), 0.1);
+	color: var(--medium);
+	white-space: nowrap;
+	flex-shrink: 0;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
 }
-.labware-subdir-picker select:focus {
-	border-color: var(--medium);
-	outline: none;
-}
-.labware-subdir-input {
-	font-size: 0.75rem;
-	padding: 1px 6px;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	max-width: 160px;
-	margin-left: 4px;
+
+/* Collapsed branch */
+.lw-branch.collapsed {
 	display: none;
 }
-.labware-subdir-input.visible {
+
+/* Move-to dropdown in toolbar */
+.lw-moveto-dropdown {
+	position: relative;
 	display: inline-block;
+}
+.lw-moveto-menu {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	z-index: 20;
+	min-width: 200px;
+	max-height: 260px;
+	overflow-y: auto;
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+	padding: 4px 0;
+	display: none;
+}
+.lw-moveto-menu.show {
+	display: block;
+}
+.lw-moveto-item {
+	padding: 5px 14px;
+	font-size: 0.8rem;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+}
+.lw-moveto-item:hover {
+	background: rgba(var(--medium-rgb), 0.08);
+}
+.lw-moveto-item i {
+	margin-right: 8px;
+	width: 14px;
+	text-align: center;
+	color: #e8a838;
+	font-size: 0.8rem;
+}
+.lw-moveto-item.lw-moveto-new {
+	border-top: 1px solid #eee;
+	color: var(--medium);
+	font-weight: 500;
+}
+.lw-moveto-item.lw-moveto-new i {
+	color: var(--medium);
 }
 
 .pkg-icon-preview {
@@ -3617,35 +3668,40 @@ body.dark-mode .pkg-labware-tree {
 	background: #0f0f23;
 	border-color: #2a3a5c;
 }
-body.dark-mode .labware-tree-header {
+body.dark-mode .lw-branch::before {
+	background: #3a4a6c;
+}
+body.dark-mode .lw-branch > li::before {
+	border-top-color: #3a4a6c;
+}
+body.dark-mode .lw-branch > li:last-child::after {
+	background: #0f0f23;
+}
+body.dark-mode .lw-row:hover {
+	background: rgba(255,255,255,0.05);
+}
+body.dark-mode .lw-row.lw-folder-row .lw-label,
+body.dark-mode .lw-row.lw-file-row .lw-label {
 	color: #c8d6e5;
-	background: rgba(var(--medium-rgb), 0.06);
 }
-body.dark-mode .labware-tree-header:hover {
-	background: rgba(var(--medium-rgb), 0.12);
+body.dark-mode .lw-row.lw-file-row.selected {
+	background: rgba(var(--medium-rgb), 0.2);
 }
-body.dark-mode .labware-tree-group {
-	border-bottom-color: #2a3a5c;
-}
-body.dark-mode .labware-tree-file {
-	border-bottom-color: #1a2a4c;
-	color: #c8d6e5;
-}
-body.dark-mode .labware-tree-file .labware-file-name {
-	color: #c8d6e5;
-}
-body.dark-mode .labware-tree-file .labware-file-ext {
+body.dark-mode .lw-toggle {
 	color: #6a7a8a;
 }
-body.dark-mode .labware-subdir-picker select {
-	background: #1a2a4c;
-	border-color: #3a4a6c;
-	color: #c8d6e5;
+body.dark-mode .lw-count {
+	color: #5a6a7a;
 }
-body.dark-mode .labware-subdir-input {
+body.dark-mode .lw-moveto-menu {
 	background: #1a2a4c;
 	border-color: #3a4a6c;
-	color: #c8d6e5;
+}
+body.dark-mode .lw-moveto-item:hover {
+	background: rgba(var(--medium-rgb), 0.14);
+}
+body.dark-mode .lw-moveto-item.lw-moveto-new {
+	border-top-color: #2a3a5c;
 }
 body.dark-mode .filepath-edit-preview-box {
 	background: #0f0f23;

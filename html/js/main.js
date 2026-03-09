@@ -6554,7 +6554,7 @@
 
 		$(document).on("click", "#pkg-removeLabwareFiles", function() {
 			var selected = [];
-			$("#pkg-labware-tree .labware-tree-file.selected").each(function() {
+			$(".lw-file-row.selected").each(function() {
 				selected.push($(this).attr("data-path"));
 			});
 			if (selected.length === 0) { return; }
@@ -7156,134 +7156,264 @@
 		}
 
 		// ---- Labware file list tree renderer ----
+		// Tracks user-created empty folders that should persist in the tree
+		var pkg_labwareEmptyFolders = [];
+
 		function pkgUpdateLabwareFileList() {
 			var $tree = $("#pkg-labware-tree");
 			$tree.empty();
-			if (pkg_labwareFiles.length === 0) {
+			if (pkg_labwareFiles.length === 0 && pkg_labwareEmptyFolders.length === 0) {
 				$tree.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No labware files added</div>');
 				$("#pkg-labware-count").text("0 files");
+				pkgLabwareUpdateMoveTo();
 				return;
 			}
-			// Group files by their assigned subdirectory
-			var groups = {};
-			pkg_labwareFiles.forEach(function(f) {
-				var subdir = pkg_labwareSubdirs[f] || '';
-				if (!groups[subdir]) groups[subdir] = [];
-				groups[subdir].push(f);
-			});
-			// Sort group keys: empty string (root) first, then alphabetical
-			var sortedKeys = Object.keys(groups).sort(function(a, b) {
-				if (a === '') return -1;
-				if (b === '') return 1;
-				return a.localeCompare(b);
-			});
+
 			// File extension to icon/label map
 			var extInfo = {
-				'.rck': { icon: 'fa-th', label: 'Rack' },
-				'.ctr': { icon: 'fa-box', label: 'Container' },
-				'.tml': { icon: 'fa-file-alt', label: 'Template' },
-				'.dck': { icon: 'fa-layer-group', label: 'Deck' },
+				'.rck': { icon: 'fa-th',               label: 'Rack' },
+				'.ctr': { icon: 'fa-box',              label: 'Container' },
+				'.tml': { icon: 'fa-file-alt',         label: 'Template' },
+				'.dck': { icon: 'fa-layer-group',      label: 'Deck' },
 				'.lay': { icon: 'fa-drafting-compass', label: 'Layout' }
 			};
-			sortedKeys.forEach(function(subdir) {
-				var files = groups[subdir];
-				var groupLabel = subdir || 'Labware (root)';
-				var groupHtml = '<div class="labware-tree-group">';
-				groupHtml += '<div class="labware-tree-header expanded" data-subdir="' + escapeHtml(subdir) + '">';
-				groupHtml += '<i class="fas fa-chevron-down labware-tree-chevron mr-1"></i>';
-				groupHtml += '<i class="fas fa-folder-open labware-tree-folder-icon mr-1"></i>';
-				groupHtml += '<span class="labware-tree-group-name">' + escapeHtml(groupLabel) + '</span>';
-				groupHtml += '<span class="badge badge-secondary ml-2">' + files.length + '</span>';
-				groupHtml += '</div>';
-				groupHtml += '<div class="labware-tree-children" style="display:block;">';
-				files.forEach(function(f) {
+
+			// Build a nested tree data structure from files + subdirectory assignments
+			// tree = { children: { 'folderName': { children: {...}, files: [...] } }, files: [...] }
+			var tree = { children: {}, files: [] };
+
+			pkg_labwareFiles.forEach(function(f) {
+				var subdir = (pkg_labwareSubdirs[f] || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+				if (!subdir) {
+					tree.files.push(f);
+				} else {
+					var parts = subdir.split('/');
+					var node = tree;
+					for (var pi = 0; pi < parts.length; pi++) {
+						if (!node.children[parts[pi]]) node.children[parts[pi]] = { children: {}, files: [] };
+						node = node.children[parts[pi]];
+					}
+					node.files.push(f);
+				}
+			});
+
+			// Ensure user-created empty folders exist in the tree
+			pkg_labwareEmptyFolders.forEach(function(folderPath) {
+				var parts = folderPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '').split('/');
+				var node = tree;
+				for (var pi = 0; pi < parts.length; pi++) {
+					if (!node.children[parts[pi]]) node.children[parts[pi]] = { children: {}, files: [] };
+					node = node.children[parts[pi]];
+				}
+			});
+
+			// Recursively render tree as nested <ul>/<li>
+			function renderNode(node, depth) {
+				var html = '';
+				// Sort folders first, then files
+				var folderNames = Object.keys(node.children).sort(function(a, b) {
+					return a.localeCompare(b);
+				});
+
+				// Render subfolders
+				folderNames.forEach(function(name) {
+					var child = node.children[name];
+					var totalFiles = countTreeFiles(child);
+					html += '<li class="lw-node lw-is-folder">';
+					html += '<div class="lw-row lw-folder-row" data-folder="' + escapeHtml(name) + '">';
+					html += '<i class="fas fa-chevron-down lw-toggle"></i>';
+					html += '<i class="fas fa-folder-open lw-icon-folder"></i>';
+					html += '<span class="lw-label">' + escapeHtml(name) + '</span>';
+					html += '<span class="lw-count">' + totalFiles + '</span>';
+					html += '</div>';
+					html += '<ul class="lw-branch">';
+					html += renderNode(child, depth + 1);
+					html += '</ul>';
+					html += '</li>';
+				});
+
+				// Render files
+				node.files.forEach(function(f) {
 					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 					var baseName = path.basename(f);
 					var ext = path.extname(f).toLowerCase();
 					var info = extInfo[ext] || { icon: 'fa-file', label: ext.replace('.', '').toUpperCase() };
-					groupHtml += '<div class="labware-tree-file" data-path="' + escapedPath + '">';
-					groupHtml += '<i class="fas ' + info.icon + ' labware-tree-file-icon mr-1"></i>';
-					groupHtml += '<span class="labware-tree-file-name">' + escapeHtml(baseName) + '</span>';
-					groupHtml += '<span class="labware-tree-file-badge">' + escapeHtml(info.label) + '</span>';
-					groupHtml += '<select class="labware-subdir-picker ml-auto" data-filepath="' + escapedPath + '">';
-					groupHtml += '<option value=""' + (subdir === '' ? ' selected' : '') + '>Labware (root)</option>';
-					// Build unique subdirectory options from all current assignments
-					var allSubdirs = [];
-					Object.keys(pkg_labwareSubdirs).forEach(function(k) {
-						var sd = pkg_labwareSubdirs[k];
-						if (sd && allSubdirs.indexOf(sd) === -1) allSubdirs.push(sd);
-					});
-					allSubdirs.sort();
-					allSubdirs.forEach(function(sd) {
-						groupHtml += '<option value="' + escapeHtml(sd) + '"' + (subdir === sd ? ' selected' : '') + '>' + escapeHtml(sd) + '</option>';
-					});
-					groupHtml += '<option value="__custom__">Custom path...</option>';
-					groupHtml += '</select>';
-					groupHtml += '</div>';
+					html += '<li class="lw-node lw-is-file">';
+					html += '<div class="lw-row lw-file-row" data-path="' + escapedPath + '">';
+					html += '<i class="fas ' + info.icon + ' lw-icon-file"></i>';
+					html += '<span class="lw-label">' + escapeHtml(baseName) + '</span>';
+					html += '<span class="lw-badge">' + escapeHtml(info.label) + '</span>';
+					html += '</div>';
+					html += '</li>';
 				});
-				groupHtml += '</div></div>';
-				$tree.append(groupHtml);
-			});
+
+				return html;
+			}
+
+			function countTreeFiles(node) {
+				var count = node.files.length;
+				Object.keys(node.children).forEach(function(k) {
+					count += countTreeFiles(node.children[k]);
+				});
+				return count;
+			}
+
+			// Build the root tree. If all files are in root and there are no subfolders,
+			// show a flat root. Otherwise wrap everything under a "Labware" root folder.
+			var hasSubfolders = Object.keys(tree.children).length > 0;
+			var rootHtml = '<ul class="lw-tree">';
+			if (hasSubfolders) {
+				var totalCount = pkg_labwareFiles.length;
+				rootHtml += '<li class="lw-node lw-is-folder lw-root-folder">';
+				rootHtml += '<div class="lw-row lw-folder-row" data-folder="">';
+				rootHtml += '<i class="fas fa-chevron-down lw-toggle"></i>';
+				rootHtml += '<i class="fas fa-folder-open lw-icon-folder"></i>';
+				rootHtml += '<span class="lw-label">Labware</span>';
+				rootHtml += '<span class="lw-count">' + totalCount + '</span>';
+				rootHtml += '</div>';
+				rootHtml += '<ul class="lw-branch">';
+				rootHtml += renderNode(tree, 1);
+				rootHtml += '</ul>';
+				rootHtml += '</li>';
+			} else {
+				// No subfolders — just show files at root level directly
+				tree.files.forEach(function(f) {
+					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+					var baseName = path.basename(f);
+					var ext = path.extname(f).toLowerCase();
+					var info = extInfo[ext] || { icon: 'fa-file', label: ext.replace('.', '').toUpperCase() };
+					rootHtml += '<li class="lw-node lw-is-file">';
+					rootHtml += '<div class="lw-row lw-file-row" data-path="' + escapedPath + '">';
+					rootHtml += '<i class="fas ' + info.icon + ' lw-icon-file"></i>';
+					rootHtml += '<span class="lw-label">' + escapeHtml(baseName) + '</span>';
+					rootHtml += '<span class="lw-badge">' + escapeHtml(info.label) + '</span>';
+					rootHtml += '</div>';
+					rootHtml += '</li>';
+				});
+			}
+			rootHtml += '</ul>';
+
+			$tree.html(rootHtml);
 			$("#pkg-labware-count").text(pkg_labwareFiles.length + " file" + (pkg_labwareFiles.length !== 1 ? "s" : ""));
+			pkgLabwareUpdateMoveTo();
+		}
+
+		// -- Collect distinct folder paths from current labware subdirectory assignments --
+		function pkgLabwareGetFolders() {
+			var folders = [];
+			Object.keys(pkg_labwareSubdirs).forEach(function(k) {
+				var sd = pkg_labwareSubdirs[k];
+				if (sd && folders.indexOf(sd) === -1) folders.push(sd);
+			});
+			pkg_labwareEmptyFolders.forEach(function(ef) {
+				if (folders.indexOf(ef) === -1) folders.push(ef);
+			});
+			folders.sort();
+			return folders;
+		}
+
+		// -- Enable/disable Move-to button based on selection state --
+		function pkgLabwareUpdateMoveTo() {
+			var hasSelection = $(".lw-row.lw-file-row.selected").length > 0;
+			$("#pkg-labwareMoveToBtn").prop("disabled", !hasSelection);
 		}
 
 		// ---- Labware tree interaction handlers ----
-		// Expand/collapse tree groups
-		$(document).on("click", ".labware-tree-header", function(e) {
-			var $header = $(this);
-			var $children = $header.next(".labware-tree-children");
-			if ($header.hasClass("expanded")) {
-				$header.removeClass("expanded");
-				$header.find(".labware-tree-chevron").removeClass("fa-chevron-down").addClass("fa-chevron-right");
-				$header.find(".labware-tree-folder-icon").removeClass("fa-folder-open").addClass("fa-folder");
-				$children.slideUp(150);
+
+		// Expand/collapse folder: click on the folder row
+		$(document).on("click", ".lw-folder-row", function(e) {
+			var $row = $(this);
+			var $branch = $row.next(".lw-branch");
+			if (!$branch.length) return;
+			var isOpen = !$branch.hasClass("collapsed");
+			if (isOpen) {
+				$branch.addClass("collapsed");
+				$row.find(".lw-toggle").removeClass("fa-chevron-down").addClass("fa-chevron-right");
+				$row.find(".lw-icon-folder").removeClass("fa-folder-open").addClass("fa-folder");
 			} else {
-				$header.addClass("expanded");
-				$header.find(".labware-tree-chevron").removeClass("fa-chevron-right").addClass("fa-chevron-down");
-				$header.find(".labware-tree-folder-icon").removeClass("fa-folder").addClass("fa-folder-open");
-				$children.slideDown(150);
+				$branch.removeClass("collapsed");
+				$row.find(".lw-toggle").removeClass("fa-chevron-right").addClass("fa-chevron-down");
+				$row.find(".lw-icon-folder").removeClass("fa-folder").addClass("fa-folder-open");
 			}
 		});
 
-		// Select/deselect labware files (click to toggle, ctrl+click for multi-select)
-		$(document).on("click", ".labware-tree-file", function(e) {
-			if ($(e.target).closest(".labware-subdir-picker").length) return; // ignore picker clicks
+		// Select/deselect labware files (click = single, ctrl+click = multi)
+		$(document).on("click", ".lw-file-row", function(e) {
 			if (e.ctrlKey || e.metaKey) {
 				$(this).toggleClass("selected");
 			} else {
 				var wasSelected = $(this).hasClass("selected");
-				$(".labware-tree-file").removeClass("selected");
+				$(".lw-file-row").removeClass("selected");
 				if (!wasSelected) $(this).addClass("selected");
 			}
+			pkgLabwareUpdateMoveTo();
 		});
 
-		// Subdirectory picker change
-		$(document).on("change", ".labware-subdir-picker", function() {
-			var filePath = $(this).attr("data-filepath");
-			var val = $(this).val();
-			if (val === '__custom__') {
-				var custom = prompt("Enter subdirectory path (relative to Labware root):", "");
-				if (custom && custom.trim()) {
-					custom = custom.trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-					pkg_labwareSubdirs[filePath] = custom;
-				} else {
-					// User cancelled; revert to previous value or root
-					$(this).val(pkg_labwareSubdirs[filePath] || '');
-					return;
-				}
-			} else {
-				if (val === '') {
-					delete pkg_labwareSubdirs[filePath];
-				} else {
-					pkg_labwareSubdirs[filePath] = val;
+		// "New Folder" button
+		$(document).on("click", "#pkg-labwareNewFolder", function() {
+			var name = prompt("Enter new folder name (relative to Labware root):", "");
+			if (name && name.trim()) {
+				name = name.trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+				if (name && pkg_labwareEmptyFolders.indexOf(name) === -1) {
+					pkg_labwareEmptyFolders.push(name);
+					pkgUpdateLabwareFileList();
 				}
 			}
-			pkgUpdateLabwareFileList();
 		});
 
-		// Prevent subdirectory picker click from triggering file selection
-		$(document).on("click", ".labware-subdir-picker", function(e) {
+		// "Move to" dropdown: open/close
+		$(document).on("click", "#pkg-labwareMoveToBtn", function(e) {
 			e.stopPropagation();
+			var $menu = $("#pkg-labwareMoveToMenu");
+			if ($menu.hasClass("show")) {
+				$menu.removeClass("show");
+				return;
+			}
+			// Populate folder list
+			$menu.empty();
+			// Root option
+			$menu.append('<div class="lw-moveto-item" data-target=""><i class="fas fa-folder"></i>Labware (root)</div>');
+			// Existing folders
+			var folders = pkgLabwareGetFolders();
+			folders.forEach(function(sd) {
+				$menu.append('<div class="lw-moveto-item" data-target="' + escapeHtml(sd) + '"><i class="fas fa-folder"></i>' + escapeHtml(sd) + '</div>');
+			});
+			// New folder option
+			$menu.append('<div class="lw-moveto-item lw-moveto-new" data-target="__new__"><i class="fas fa-folder-plus"></i>New Folder...</div>');
+			$menu.addClass("show");
+		});
+
+		// Close move-to menu when clicking elsewhere
+		$(document).on("click", function() {
+			$("#pkg-labwareMoveToMenu").removeClass("show");
+		});
+
+		// Move-to menu item click
+		$(document).on("click", ".lw-moveto-item", function(e) {
+			e.stopPropagation();
+			var target = $(this).attr("data-target");
+			if (target === '__new__') {
+				var name = prompt("Enter folder name (relative to Labware root):", "");
+				if (!name || !name.trim()) {
+					$("#pkg-labwareMoveToMenu").removeClass("show");
+					return;
+				}
+				target = name.trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+				if (target && pkg_labwareEmptyFolders.indexOf(target) === -1) {
+					pkg_labwareEmptyFolders.push(target);
+				}
+			}
+			// Move all selected files to target folder
+			$(".lw-file-row.selected").each(function() {
+				var filePath = $(this).attr("data-path");
+				if (target === '') {
+					delete pkg_labwareSubdirs[filePath];
+				} else {
+					pkg_labwareSubdirs[filePath] = target;
+				}
+			});
+			$("#pkg-labwareMoveToMenu").removeClass("show");
+			pkgUpdateLabwareFileList();
 		});
 
 		// ---- Reset form ----
@@ -7352,6 +7482,7 @@
 			pkg_installerFilePath = null;
 			pkg_labwareFiles = [];
 			pkg_labwareSubdirs = {};
+			pkg_labwareEmptyFolders = [];
 			$(".pkg-installer-detail").hide();
 			$(".pkg-installer-empty-msg").show();
 			$(".pkg-installer-filename").text('');
