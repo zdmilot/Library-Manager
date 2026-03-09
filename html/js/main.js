@@ -7179,39 +7179,57 @@
 		 * rootLabel: root folder label (e.g. "Library", "Demo Methods", "Labware")
 		 * totalCount: total file count for root
 		 */
-		function ftBuildHtml(tree, rootLabel, totalCount, fileRowFn) {
-			var hasSubfolders = Object.keys(tree.children).length > 0;
+		function ftBuildHtml(tree, rootLabel, totalCount, fileRowFn, rootPath) {
+			var pathHint = rootPath ? '<span class="ft-root-path">' + escapeHtml(rootPath) + '</span>' : '';
 			var html = '<ul class="ft-tree">';
-			if (hasSubfolders) {
-				html += '<li class="ft-node ft-root-folder">';
-				html += '<div class="ft-row ft-folder-row" data-folder="">';
-				html += '<i class="fas fa-chevron-down ft-toggle"></i>';
-				html += '<i class="fas fa-folder-open ft-icon-folder"></i>';
-				html += '<span class="ft-label">' + escapeHtml(rootLabel) + '</span>';
-				html += '<span class="ft-count">' + totalCount + '</span>';
-				html += '</div>';
-				html += '<ul class="ft-branch">';
-				html += ftRenderNode(tree, fileRowFn);
-				html += '</ul>';
-				html += '</li>';
-			} else {
-				// No subfolders — render flat
-				tree.files.forEach(function(f) {
-					html += '<li class="ft-node">';
-					html += fileRowFn(f);
-					html += '</li>';
-				});
-			}
+			html += '<li class="ft-node ft-root-folder">';
+			html += '<div class="ft-row ft-folder-row" data-folder="">';
+			html += '<i class="fas fa-chevron-down ft-toggle"></i>';
+			html += '<i class="fas fa-folder-open ft-icon-folder"></i>';
+			html += '<span class="ft-label">' + escapeHtml(rootLabel) + '</span>';
+			html += pathHint;
+			html += '<span class="ft-count">' + totalCount + '</span>';
+			html += '</div>';
+			html += '<ul class="ft-branch">';
+			html += ftRenderNode(tree, fileRowFn);
+			html += '</ul>';
+			html += '</li>';
 			html += '</ul>';
 			return html;
 		}
 
 		// ---- Update file list displays ----
+		/** Get the install path string for a tree section. */
+		function ftGetInstallPath(treeId) {
+			var libName = $("#pkg-library-name").val() || '<libraryname>';
+			if (treeId === 'pkg-lib-list') {
+				if (pkg_installSubdir !== null) {
+					var sub = pkg_installSubdir === '' ? '' : pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+					return '...\\Hamilton\\Library\\' + (sub ? sub + '\\' : '');
+				}
+				return '...\\Hamilton\\Library\\' + libName + '\\';
+			} else if (treeId === 'pkg-demo-list') {
+				return '...\\Hamilton\\Methods\\Library Demo Methods\\' + libName + '\\';
+			} else if (treeId === 'pkg-labware-tree') {
+				return '...\\Hamilton\\Labware\\';
+			}
+			return '';
+		}
+
+		/** Render the empty drop-zone for a tree section. */
+		function ftEmptyDropZone(treeId) {
+			var installPath = ftGetInstallPath(treeId);
+			return '<div class="ft-drop-zone">' +
+				'<div class="ft-drop-zone-path"><i class="fas fa-folder-open mr-2"></i>' + escapeHtml(installPath) + '</div>' +
+				'<div class="ft-drop-zone-hint"><i class="fas fa-cloud-upload-alt mr-1"></i>Drop files here or click Add Files</div>' +
+				'</div>';
+		}
+
 		function pkgUpdateLibFileList() {
 			var $list = $("#pkg-lib-list");
 			$list.empty();
 			if (pkg_libraryFiles.length === 0 && pkg_libEmptyFolders.length === 0) {
-				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>');
+				$list.html(ftEmptyDropZone('pkg-lib-list'));
 			} else {
 				var tree = ftBuildTree(pkg_libraryFiles, function(f) {
 					return pkg_fileRelPaths[f] || path.basename(f);
@@ -7246,7 +7264,7 @@
 						'<span class="ft-badge">' + escapeHtml(label) + '</span>' +
 						'</div>';
 				};
-				$list.html(ftBuildHtml(tree, 'Library', pkg_libraryFiles.length, fileRowFn));
+				$list.html(ftBuildHtml(tree, 'Library', pkg_libraryFiles.length, fileRowFn, ftGetInstallPath('pkg-lib-list')));
 			}
 			$("#pkg-lib-count").text(pkg_libraryFiles.length + " file" + (pkg_libraryFiles.length !== 1 ? "s" : ""));
 			ftUpdateMoveToBtn("pkg-lib-list");
@@ -7277,7 +7295,7 @@
 			var $list = $("#pkg-demo-list");
 			$list.empty();
 			if (pkg_demoMethodFiles.length === 0 && pkg_demoEmptyFolders.length === 0) {
-				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No demo method files added</div>');
+				$list.html(ftEmptyDropZone('pkg-demo-list'));
 			} else {
 				var extIcons = {
 					'.hsl': 'fa-code', '.hs_': 'fa-code', '.hsi': 'fa-code',
@@ -7308,7 +7326,7 @@
 						'<span class="ft-badge">' + escapeHtml(label) + '</span>' +
 						'</div>';
 				};
-				$list.html(ftBuildHtml(tree, 'Demo Methods', pkg_demoMethodFiles.length, fileRowFn));
+				$list.html(ftBuildHtml(tree, 'Demo Methods', pkg_demoMethodFiles.length, fileRowFn, ftGetInstallPath('pkg-demo-list')));
 			}
 			$("#pkg-demo-count").text(pkg_demoMethodFiles.length + " file" + (pkg_demoMethodFiles.length !== 1 ? "s" : ""));
 			ftUpdateMoveToBtn("pkg-demo-list");
@@ -7321,7 +7339,7 @@
 			var $tree = $("#pkg-labware-tree");
 			$tree.empty();
 			if (pkg_labwareFiles.length === 0 && pkg_labwareEmptyFolders.length === 0) {
-				$tree.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No labware files added</div>');
+				$tree.html(ftEmptyDropZone('pkg-labware-tree'));
 				$("#pkg-labware-count").text("0 files");
 				ftUpdateMoveToBtn("pkg-labware-tree");
 				return;
@@ -7374,7 +7392,7 @@
 					'</div>';
 			};
 
-			$tree.html(ftBuildHtml(tree, 'Labware', pkg_labwareFiles.length, fileRowFn));
+			$tree.html(ftBuildHtml(tree, 'Labware', pkg_labwareFiles.length, fileRowFn, ftGetInstallPath('pkg-labware-tree')));
 			$("#pkg-labware-count").text(pkg_labwareFiles.length + " file" + (pkg_labwareFiles.length !== 1 ? "s" : ""));
 			ftUpdateMoveToBtn("pkg-labware-tree");
 		}
@@ -7605,8 +7623,8 @@
 		$(document).on("dragover", ".ft-folder-row", function(e) {
 			e.preventDefault();
 			e.stopPropagation();
-			// Only highlight for internal drag (same tree)
-			if (ftDragData && ftDragData.treeId === $(this).closest(".pkg-file-tree").attr("id")) {
+			// Highlight for internal drag (same or cross-tree)
+			if (ftDragData) {
 				e.originalEvent.dataTransfer.dropEffect = 'move';
 				$(".ft-drop-target").removeClass("ft-drop-target");
 				$(this).addClass("ft-drop-target");
@@ -7624,22 +7642,28 @@
 			$(this).removeClass("ft-drop-target");
 			var $tree = $(this).closest(".pkg-file-tree");
 			var treeId = $tree.attr("id");
+			var targetFolder = ftResolveFolderPath($(this));
 
-			// Internal drag rearrange
-			if (ftDragData && ftDragData.treeId === treeId) {
-				var targetFolder = ftResolveFolderPath($(this));
-				var state = ftGetTreeState(treeId);
-				if (state) {
-					ftDragData.filePaths.forEach(function(fp) {
-						var baseName = path.basename(fp);
-						if (targetFolder === '') {
-							state.clearRelPath(fp);
-						} else {
-							state.setRelPath(fp, targetFolder + '/' + baseName);
-						}
-					});
+			if (ftDragData) {
+				if (ftDragData.treeId === treeId) {
+					// Same-tree rearrange
+					var state = ftGetTreeState(treeId);
+					if (state) {
+						ftDragData.filePaths.forEach(function(fp) {
+							var baseName = path.basename(fp);
+							if (targetFolder === '') {
+								state.clearRelPath(fp);
+							} else {
+								state.setRelPath(fp, targetFolder + '/' + baseName);
+							}
+						});
+						ftDragData = null;
+						state.update();
+					}
+				} else {
+					// Cross-tree move
+					ftCrossTreeMove(ftDragData.treeId, treeId, ftDragData.filePaths, targetFolder);
 					ftDragData = null;
-					state.update();
 				}
 				return;
 			}
@@ -7648,7 +7672,6 @@
 			ftDragData = null;
 			var dt = e.originalEvent.dataTransfer;
 			if (dt && dt.files && dt.files.length > 0) {
-				var targetFolder = ftResolveFolderPath($(this));
 				ftHandleOsFileDrop(treeId, dt.files, targetFolder);
 			}
 		});
@@ -7675,16 +7698,23 @@
 			$(this).removeClass("ft-dragover");
 			$(".ft-drop-target").removeClass("ft-drop-target");
 
-			// If internal drag, handled by folder-row drop handler; if dropped on container = move to root
 			var treeId = $(this).attr("id");
-			if (ftDragData && ftDragData.treeId === treeId) {
-				var state = ftGetTreeState(treeId);
-				if (state) {
-					ftDragData.filePaths.forEach(function(fp) {
-						state.clearRelPath(fp);
-					});
+
+			if (ftDragData) {
+				if (ftDragData.treeId === treeId) {
+					// Same-tree: drop on container background = move to root
+					var state = ftGetTreeState(treeId);
+					if (state) {
+						ftDragData.filePaths.forEach(function(fp) {
+							state.clearRelPath(fp);
+						});
+						ftDragData = null;
+						state.update();
+					}
+				} else {
+					// Cross-tree move to root of target tree
+					ftCrossTreeMove(ftDragData.treeId, treeId, ftDragData.filePaths, '');
 					ftDragData = null;
-					state.update();
 				}
 				return;
 			}
@@ -7695,6 +7725,42 @@
 				ftHandleOsFileDrop(treeId, dt.files, '');
 			}
 		});
+
+		/**
+		 * Move files from one tree to another (cross-tree drag and drop).
+		 * Removes files from the source tree and adds them to the target tree.
+		 * @param {string} srcTreeId - Source tree container ID
+		 * @param {string} dstTreeId - Destination tree container ID
+		 * @param {string[]} filePaths - Absolute file paths being moved
+		 * @param {string} targetFolder - Folder path within destination tree ('' = root)
+		 */
+		function ftCrossTreeMove(srcTreeId, dstTreeId, filePaths, targetFolder) {
+			var srcState = ftGetTreeState(srcTreeId);
+			var dstState = ftGetTreeState(dstTreeId);
+			if (!srcState || !dstState) return;
+
+			var srcFiles = srcState.files();
+			var dstFiles = dstState.files();
+
+			filePaths.forEach(function(fp) {
+				// Remove from source
+				var idx = srcFiles.indexOf(fp);
+				if (idx !== -1) {
+					srcFiles.splice(idx, 1);
+					srcState.clearRelPath(fp);
+				}
+				// Add to destination (avoid duplicates)
+				if (dstFiles.indexOf(fp) === -1) {
+					dstFiles.push(fp);
+					if (targetFolder) {
+						dstState.setRelPath(fp, targetFolder + '/' + path.basename(fp));
+					}
+				}
+			});
+
+			srcState.update();
+			dstState.update();
+		}
 
 		/**
 		 * Handle files dropped from the OS file system into a tree container.
