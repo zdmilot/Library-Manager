@@ -1531,6 +1531,25 @@ body {
 	letter-spacing: 0.3px;
 }
 
+/* ---- Drag-and-drop states ---- */
+.pkg-file-tree.ft-dragover {
+	border-color: var(--medium);
+	background: rgba(var(--medium-rgb), 0.06);
+	box-shadow: inset 0 0 0 2px rgba(var(--medium-rgb), 0.18);
+}
+.pkg-file-tree.ft-dragover .pkg-empty-msg {
+	color: var(--medium);
+}
+.ft-folder-row.ft-drop-target {
+	background: rgba(var(--medium-rgb), 0.14) !important;
+	outline: 2px dashed var(--medium);
+	outline-offset: -2px;
+	border-radius: 3px;
+}
+.ft-file-row.ft-dragging {
+	opacity: 0.35;
+}
+
 /* COM checkbox inline in file row */
 .ft-com-label {
 	margin-left: auto;
@@ -3722,6 +3741,14 @@ body.dark-mode .ft-moveto-item:hover {
 }
 body.dark-mode .ft-moveto-item.ft-moveto-new {
 	border-top-color: #2a3a5c;
+}
+body.dark-mode .pkg-file-tree.ft-dragover {
+	border-color: var(--medium);
+	background: rgba(var(--medium-rgb), 0.1);
+	box-shadow: inset 0 0 0 2px rgba(var(--medium-rgb), 0.22);
+}
+body.dark-mode .ft-folder-row.ft-drop-target {
+	background: rgba(var(--medium-rgb), 0.18) !important;
 }
 body.dark-mode .filepath-edit-preview-box {
 	background: #0f0f23;

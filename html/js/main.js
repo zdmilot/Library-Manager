@@ -6092,6 +6092,8 @@
 		var pkg_fileRelPaths = {};    // absolutePath -> relative path within package (preserves subfolder structure)
 		var pkg_fileCustomDirs = {};  // absolutePath -> custom install subdir ("" = root, string = subdir, undefined = default)
 		var pkg_installSubdir = null;  // global install subdir: null = default (library name), '' = root, string = custom subdir
+		var pkg_libEmptyFolders = [];      // empty folders for library tree
+		var pkg_demoEmptyFolders = [];     // empty folders for demo tree
 		var pkg_iconFilePath = null;   // custom icon/image path chosen by user
 		var pkg_iconAutoDetected = false;     // true if current preview is from auto-detected BMP
 		var pkg_iconAutoDetectedPath = null;  // file path of the auto-detected BMP
@@ -6590,7 +6592,8 @@
 				$tree.find(".ft-file-row").removeClass("selected");
 				if (!wasSelected) $(this).addClass("selected");
 			}
-			pkgLabwareUpdateMoveTo();
+			var _treeId = $tree.attr("id");
+			if (_treeId) ftUpdateMoveToBtn(_treeId);
 		});
 
 		// Expand/collapse folder: click on the folder row (shared across all trees)
@@ -7207,11 +7210,20 @@
 		function pkgUpdateLibFileList() {
 			var $list = $("#pkg-lib-list");
 			$list.empty();
-			if (pkg_libraryFiles.length === 0) {
+			if (pkg_libraryFiles.length === 0 && pkg_libEmptyFolders.length === 0) {
 				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>');
 			} else {
 				var tree = ftBuildTree(pkg_libraryFiles, function(f) {
 					return pkg_fileRelPaths[f] || path.basename(f);
+				});
+				// Ensure user-created empty folders exist in the tree
+				pkg_libEmptyFolders.forEach(function(folderPath) {
+					var parts = folderPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '').split('/');
+					var node = tree;
+					for (var pi = 0; pi < parts.length; pi++) {
+						if (!node.children[parts[pi]]) node.children[parts[pi]] = { children: {}, files: [] };
+						node = node.children[parts[pi]];
+					}
 				});
 				var fileRowFn = function(f) {
 					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -7227,7 +7239,7 @@
 					}
 					var icon = isDll ? 'fa-cog' : (ext === '.hsl' || ext === '.hs_' || ext === '.hsi' ? 'fa-code' : (ext === '.smt' ? 'fa-microchip' : 'fa-file'));
 					var label = ext ? ext.replace('.', '').toUpperCase() : 'FILE';
-					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '">' +
+					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '" draggable="true">' +
 						'<i class="fas ' + icon + ' ft-icon-file"></i>' +
 						'<span class="ft-label">' + escapeHtml(baseName) + '</span>' +
 						comHtml +
@@ -7237,6 +7249,7 @@
 				$list.html(ftBuildHtml(tree, 'Library', pkg_libraryFiles.length, fileRowFn));
 			}
 			$("#pkg-lib-count").text(pkg_libraryFiles.length + " file" + (pkg_libraryFiles.length !== 1 ? "s" : ""));
+			ftUpdateMoveToBtn("pkg-lib-list");
 			pkgDetectLibraryName();
 			pkg_iconDismissedAuto = false;
 			pkgAutoDetectBmpImage();
@@ -7263,7 +7276,7 @@
 		function pkgUpdateDemoFileList() {
 			var $list = $("#pkg-demo-list");
 			$list.empty();
-			if (pkg_demoMethodFiles.length === 0) {
+			if (pkg_demoMethodFiles.length === 0 && pkg_demoEmptyFolders.length === 0) {
 				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No demo method files added</div>');
 			} else {
 				var extIcons = {
@@ -7274,13 +7287,22 @@
 				var tree = ftBuildTree(pkg_demoMethodFiles, function(f) {
 					return pkg_fileRelPaths[f] || path.basename(f);
 				});
+				// Ensure user-created empty folders exist in the tree
+				pkg_demoEmptyFolders.forEach(function(folderPath) {
+					var parts = folderPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '').split('/');
+					var node = tree;
+					for (var pi = 0; pi < parts.length; pi++) {
+						if (!node.children[parts[pi]]) node.children[parts[pi]] = { children: {}, files: [] };
+						node = node.children[parts[pi]];
+					}
+				});
 				var fileRowFn = function(f) {
 					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 					var baseName = path.basename(f);
 					var ext = path.extname(baseName).toLowerCase();
 					var icon = extIcons[ext] || 'fa-file';
 					var label = ext ? ext.replace('.', '').toUpperCase() : 'FILE';
-					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '">' +
+					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '" draggable="true">' +
 						'<i class="fas ' + icon + ' ft-icon-file"></i>' +
 						'<span class="ft-label">' + escapeHtml(baseName) + '</span>' +
 						'<span class="ft-badge">' + escapeHtml(label) + '</span>' +
@@ -7289,6 +7311,7 @@
 				$list.html(ftBuildHtml(tree, 'Demo Methods', pkg_demoMethodFiles.length, fileRowFn));
 			}
 			$("#pkg-demo-count").text(pkg_demoMethodFiles.length + " file" + (pkg_demoMethodFiles.length !== 1 ? "s" : ""));
+			ftUpdateMoveToBtn("pkg-demo-list");
 		}
 
 		// ---- Labware file list tree renderer ----
@@ -7300,7 +7323,7 @@
 			if (pkg_labwareFiles.length === 0 && pkg_labwareEmptyFolders.length === 0) {
 				$tree.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No labware files added</div>');
 				$("#pkg-labware-count").text("0 files");
-				pkgLabwareUpdateMoveTo();
+				ftUpdateMoveToBtn("pkg-labware-tree");
 				return;
 			}
 
@@ -7344,7 +7367,7 @@
 				var baseName = path.basename(f);
 				var ext = path.extname(f).toLowerCase();
 				var info = extInfo[ext] || { icon: 'fa-file', label: ext ? ext.replace('.', '').toUpperCase() : 'FILE' };
-				return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '">' +
+				return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '" draggable="true">' +
 					'<i class="fas ' + info.icon + ' ft-icon-file"></i>' +
 					'<span class="ft-label">' + escapeHtml(baseName) + '</span>' +
 					'<span class="ft-badge">' + escapeHtml(info.label) + '</span>' +
@@ -7353,92 +7376,374 @@
 
 			$tree.html(ftBuildHtml(tree, 'Labware', pkg_labwareFiles.length, fileRowFn));
 			$("#pkg-labware-count").text(pkg_labwareFiles.length + " file" + (pkg_labwareFiles.length !== 1 ? "s" : ""));
-			pkgLabwareUpdateMoveTo();
+			ftUpdateMoveToBtn("pkg-labware-tree");
 		}
 
-		// -- Collect distinct folder paths from current labware subdirectory assignments --
-		function pkgLabwareGetFolders() {
+		// ---- Generic tree helpers for folder management across all three trees ----
+
+		/**
+		 * Map a tree container ID to its state: files array, relPath lookup, empty folders, update function, root label.
+		 */
+		function ftGetTreeState(treeId) {
+			if (treeId === 'pkg-lib-list') {
+				return {
+					files: function() { return pkg_libraryFiles; },
+					setFiles: function(v) { pkg_libraryFiles = v; },
+					getRelPath: function(f) { return pkg_fileRelPaths[f] || path.basename(f); },
+					setRelPath: function(f, rel) { pkg_fileRelPaths[f] = rel; },
+					clearRelPath: function(f) { delete pkg_fileRelPaths[f]; },
+					emptyFolders: function() { return pkg_libEmptyFolders; },
+					setEmptyFolders: function(v) { pkg_libEmptyFolders = v; },
+					update: function() { pkgUpdateLibFileList(); },
+					rootLabel: 'Library'
+				};
+			} else if (treeId === 'pkg-demo-list') {
+				return {
+					files: function() { return pkg_demoMethodFiles; },
+					setFiles: function(v) { pkg_demoMethodFiles = v; },
+					getRelPath: function(f) { return pkg_fileRelPaths[f] || path.basename(f); },
+					setRelPath: function(f, rel) { pkg_fileRelPaths[f] = rel; },
+					clearRelPath: function(f) { delete pkg_fileRelPaths[f]; },
+					emptyFolders: function() { return pkg_demoEmptyFolders; },
+					setEmptyFolders: function(v) { pkg_demoEmptyFolders = v; },
+					update: function() { pkgUpdateDemoFileList(); },
+					rootLabel: 'Demo Methods'
+				};
+			} else if (treeId === 'pkg-labware-tree') {
+				return {
+					files: function() { return pkg_labwareFiles; },
+					setFiles: function(v) { pkg_labwareFiles = v; },
+					getRelPath: function(f) { return pkg_labwareSubdirs[f] ? pkg_labwareSubdirs[f] + '/' + path.basename(f) : path.basename(f); },
+					setRelPath: function(f, rel) {
+						var dir = path.dirname(rel).replace(/\\/g, '/');
+						if (!dir || dir === '.') { delete pkg_labwareSubdirs[f]; }
+						else { pkg_labwareSubdirs[f] = dir; }
+					},
+					clearRelPath: function(f) { delete pkg_labwareSubdirs[f]; },
+					emptyFolders: function() { return pkg_labwareEmptyFolders; },
+					setEmptyFolders: function(v) { pkg_labwareEmptyFolders = v; },
+					update: function() { pkgUpdateLabwareFileList(); },
+					rootLabel: 'Labware'
+				};
+			}
+			return null;
+		}
+
+		/**
+		 * Collect distinct folder paths from a tree's files + empty folders.
+		 */
+		function ftGetFolders(treeId) {
+			var state = ftGetTreeState(treeId);
+			if (!state) return [];
 			var folders = [];
-			Object.keys(pkg_labwareSubdirs).forEach(function(k) {
-				var sd = pkg_labwareSubdirs[k];
-				if (sd && folders.indexOf(sd) === -1) folders.push(sd);
+			state.files().forEach(function(f) {
+				var rel = state.getRelPath(f);
+				var dir = path.dirname(rel).replace(/\\/g, '/');
+				if (dir && dir !== '.' && folders.indexOf(dir) === -1) folders.push(dir);
 			});
-			pkg_labwareEmptyFolders.forEach(function(ef) {
+			state.emptyFolders().forEach(function(ef) {
 				if (folders.indexOf(ef) === -1) folders.push(ef);
 			});
 			folders.sort();
 			return folders;
 		}
 
-		// -- Enable/disable Move-to button based on selection state --
-		function pkgLabwareUpdateMoveTo() {
-			var hasSelection = $("#pkg-labware-tree .ft-file-row.selected").length > 0;
-			$("#pkg-labwareMoveToBtn").prop("disabled", !hasSelection);
+		/**
+		 * Enable/disable Move-to button based on selection state in a given tree.
+		 */
+		function ftUpdateMoveToBtn(treeId) {
+			var hasSelection = $("#" + treeId + " .ft-file-row.selected").length > 0;
+			$('.ft-moveToBtn[data-tree="' + treeId + '"]').prop("disabled", !hasSelection);
 		}
 
-		// ---- Labware-specific interaction handlers ----
+		/**
+		 * Move selected files in a tree to a target folder ('' = root, string = folder path).
+		 */
+		function ftMoveFilesToFolder(treeId, target) {
+			var state = ftGetTreeState(treeId);
+			if (!state) return;
+			$("#" + treeId + " .ft-file-row.selected").each(function() {
+				var filePath = $(this).attr("data-path");
+				var baseName = path.basename(filePath);
+				if (target === '') {
+					state.clearRelPath(filePath);
+				} else {
+					state.setRelPath(filePath, target + '/' + baseName);
+				}
+			});
+			state.update();
+		}
 
-		// "New Folder" button
-		$(document).on("click", "#pkg-labwareNewFolder", function() {
-			var name = prompt("Enter new folder name (relative to Labware root):", "");
+		// "New Folder" button (generic for all trees)
+		$(document).on("click", ".ft-newFolderBtn", function() {
+			var treeId = $(this).attr("data-tree");
+			var state = ftGetTreeState(treeId);
+			if (!state) return;
+			var name = prompt("Enter new folder name:", "");
 			if (name && name.trim()) {
 				name = name.trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-				if (name && pkg_labwareEmptyFolders.indexOf(name) === -1) {
-					pkg_labwareEmptyFolders.push(name);
-					pkgUpdateLabwareFileList();
+				var ef = state.emptyFolders();
+				if (name && ef.indexOf(name) === -1) {
+					ef.push(name);
+					state.update();
 				}
 			}
 		});
 
-		// "Move to" dropdown: open/close
-		$(document).on("click", "#pkg-labwareMoveToBtn", function(e) {
+		// "Move to" dropdown: open/close (generic for all trees)
+		$(document).on("click", ".ft-moveToBtn", function(e) {
 			e.stopPropagation();
-			var $menu = $("#pkg-labwareMoveToMenu");
+			var treeId = $(this).attr("data-tree");
+			var state = ftGetTreeState(treeId);
+			if (!state) return;
+			var $menu = $('.ft-moveToMenu[data-tree="' + treeId + '"]');
 			if ($menu.hasClass("show")) {
 				$menu.removeClass("show");
 				return;
 			}
+			// Close any other open menus first
+			$(".ft-moveToMenu.show").removeClass("show");
 			$menu.empty();
-			$menu.append('<div class="ft-moveto-item" data-target=""><i class="fas fa-folder"></i>Labware (root)</div>');
-			var folders = pkgLabwareGetFolders();
+			$menu.append('<div class="ft-moveto-item" data-target="" data-tree="' + treeId + '"><i class="fas fa-folder"></i>' + escapeHtml(state.rootLabel) + ' (root)</div>');
+			var folders = ftGetFolders(treeId);
 			folders.forEach(function(sd) {
-				$menu.append('<div class="ft-moveto-item" data-target="' + escapeHtml(sd) + '"><i class="fas fa-folder"></i>' + escapeHtml(sd) + '</div>');
+				$menu.append('<div class="ft-moveto-item" data-target="' + escapeHtml(sd) + '" data-tree="' + treeId + '"><i class="fas fa-folder"></i>' + escapeHtml(sd) + '</div>');
 			});
-			$menu.append('<div class="ft-moveto-item ft-moveto-new" data-target="__new__"><i class="fas fa-folder-plus"></i>New Folder...</div>');
+			$menu.append('<div class="ft-moveto-item ft-moveto-new" data-target="__new__" data-tree="' + treeId + '"><i class="fas fa-folder-plus"></i>New Folder...</div>');
 			$menu.addClass("show");
 		});
 
 		// Close move-to menu when clicking elsewhere
 		$(document).on("click", function() {
-			$("#pkg-labwareMoveToMenu").removeClass("show");
+			$(".ft-moveToMenu.show").removeClass("show");
 		});
 
-		// Move-to menu item click
+		// Move-to menu item click (generic for all trees)
 		$(document).on("click", ".ft-moveto-item", function(e) {
 			e.stopPropagation();
+			var treeId = $(this).attr("data-tree");
+			var state = ftGetTreeState(treeId);
+			if (!state) return;
 			var target = $(this).attr("data-target");
 			if (target === '__new__') {
-				var name = prompt("Enter folder name (relative to Labware root):", "");
+				var name = prompt("Enter folder name:", "");
 				if (!name || !name.trim()) {
-					$("#pkg-labwareMoveToMenu").removeClass("show");
+					$('.ft-moveToMenu[data-tree="' + treeId + '"]').removeClass("show");
 					return;
 				}
 				target = name.trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-				if (target && pkg_labwareEmptyFolders.indexOf(target) === -1) {
-					pkg_labwareEmptyFolders.push(target);
+				var ef = state.emptyFolders();
+				if (target && ef.indexOf(target) === -1) {
+					ef.push(target);
 				}
 			}
-			$("#pkg-labware-tree .ft-file-row.selected").each(function() {
-				var filePath = $(this).attr("data-path");
-				if (target === '') {
-					delete pkg_labwareSubdirs[filePath];
-				} else {
-					pkg_labwareSubdirs[filePath] = target;
-				}
-			});
-			$("#pkg-labwareMoveToMenu").removeClass("show");
-			pkgUpdateLabwareFileList();
+			ftMoveFilesToFolder(treeId, target);
+			$('.ft-moveToMenu[data-tree="' + treeId + '"]').removeClass("show");
 		});
+
+		// ================================================================
+		// ---- DRAG AND DROP: OS file drop + internal rearrange ----
+		// ================================================================
+
+		var ftDragData = null; // { treeId, filePaths[] } — set during internal drag
+
+		/**
+		 * Resolve the full folder path for a folder row by walking up the tree.
+		 * Returns '' for root, 'folderName' for single level, 'parent/child' for nested.
+		 */
+		function ftResolveFolderPath($folderRow) {
+			var parts = [];
+			var $row = $folderRow;
+			while ($row.length) {
+				var folderName = $row.attr("data-folder");
+				if (folderName === '' || folderName === undefined) break; // root folder — stop
+				parts.unshift(folderName);
+				// Walk up: folder-row -> li.ft-node -> ul.ft-branch -> li.ft-node (parent) -> div.ft-folder-row
+				var $parentNode = $row.closest("li.ft-node").parent("ul.ft-branch").closest("li.ft-node");
+				if (!$parentNode.length) break;
+				$row = $parentNode.children(".ft-folder-row").first();
+				if (!$row.length) break;
+			}
+			return parts.join('/');
+		}
+
+		// --- Internal drag: dragstart on .ft-file-row ---
+		$(document).on("dragstart", ".ft-file-row", function(e) {
+			var $tree = $(this).closest(".pkg-file-tree");
+			var treeId = $tree.attr("id");
+			// Collect all selected file paths, or just this one if it's not selected
+			var filePaths = [];
+			if ($(this).hasClass("selected")) {
+				$tree.find(".ft-file-row.selected").each(function() {
+					filePaths.push($(this).attr("data-path"));
+				});
+			} else {
+				filePaths.push($(this).attr("data-path"));
+			}
+			ftDragData = { treeId: treeId, filePaths: filePaths };
+			e.originalEvent.dataTransfer.effectAllowed = 'move';
+			e.originalEvent.dataTransfer.setData('text/plain', filePaths.join('\n'));
+			// Mark dragging files
+			var self = this;
+			setTimeout(function() {
+				if ($(self).hasClass("selected")) {
+					$tree.find(".ft-file-row.selected").addClass("ft-dragging");
+				} else {
+					$(self).addClass("ft-dragging");
+				}
+			}, 0);
+		});
+
+		$(document).on("dragend", ".ft-file-row", function() {
+			$(".ft-dragging").removeClass("ft-dragging");
+			$(".ft-drop-target").removeClass("ft-drop-target");
+			$(".ft-dragover").removeClass("ft-dragover");
+			ftDragData = null;
+		});
+
+		// --- Folder row drop target highlighting ---
+		$(document).on("dragover", ".ft-folder-row", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			// Only highlight for internal drag (same tree)
+			if (ftDragData && ftDragData.treeId === $(this).closest(".pkg-file-tree").attr("id")) {
+				e.originalEvent.dataTransfer.dropEffect = 'move';
+				$(".ft-drop-target").removeClass("ft-drop-target");
+				$(this).addClass("ft-drop-target");
+			}
+		});
+
+		$(document).on("dragleave", ".ft-folder-row", function() {
+			$(this).removeClass("ft-drop-target");
+		});
+
+		// --- Drop onto folder row: move files to that folder ---
+		$(document).on("drop", ".ft-folder-row", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			$(this).removeClass("ft-drop-target");
+			var $tree = $(this).closest(".pkg-file-tree");
+			var treeId = $tree.attr("id");
+
+			// Internal drag rearrange
+			if (ftDragData && ftDragData.treeId === treeId) {
+				var targetFolder = ftResolveFolderPath($(this));
+				var state = ftGetTreeState(treeId);
+				if (state) {
+					ftDragData.filePaths.forEach(function(fp) {
+						var baseName = path.basename(fp);
+						if (targetFolder === '') {
+							state.clearRelPath(fp);
+						} else {
+							state.setRelPath(fp, targetFolder + '/' + baseName);
+						}
+					});
+					ftDragData = null;
+					state.update();
+				}
+				return;
+			}
+
+			// OS file drop onto a specific folder
+			ftDragData = null;
+			var dt = e.originalEvent.dataTransfer;
+			if (dt && dt.files && dt.files.length > 0) {
+				var targetFolder = ftResolveFolderPath($(this));
+				ftHandleOsFileDrop(treeId, dt.files, targetFolder);
+			}
+		});
+
+		// --- OS file drop on tree container ---
+		$(document).on("dragover", ".pkg-file-tree", function(e) {
+			e.preventDefault();
+			e.originalEvent.dataTransfer.dropEffect = ftDragData ? 'move' : 'copy';
+			$(this).addClass("ft-dragover");
+		});
+
+		$(document).on("dragleave", ".pkg-file-tree", function(e) {
+			// Only remove if we actually left the container (not entering a child)
+			var rect = this.getBoundingClientRect();
+			var x = e.originalEvent.clientX;
+			var y = e.originalEvent.clientY;
+			if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+				$(this).removeClass("ft-dragover");
+			}
+		});
+
+		$(document).on("drop", ".pkg-file-tree", function(e) {
+			e.preventDefault();
+			$(this).removeClass("ft-dragover");
+			$(".ft-drop-target").removeClass("ft-drop-target");
+
+			// If internal drag, handled by folder-row drop handler; if dropped on container = move to root
+			var treeId = $(this).attr("id");
+			if (ftDragData && ftDragData.treeId === treeId) {
+				var state = ftGetTreeState(treeId);
+				if (state) {
+					ftDragData.filePaths.forEach(function(fp) {
+						state.clearRelPath(fp);
+					});
+					ftDragData = null;
+					state.update();
+				}
+				return;
+			}
+
+			ftDragData = null;
+			var dt = e.originalEvent.dataTransfer;
+			if (dt && dt.files && dt.files.length > 0) {
+				ftHandleOsFileDrop(treeId, dt.files, '');
+			}
+		});
+
+		/**
+		 * Handle files dropped from the OS file system into a tree container.
+		 * @param {string} treeId - The tree container ID
+		 * @param {FileList} fileList - The dropped files (NW.js provides .path)
+		 * @param {string} targetFolder - Target folder within the tree ('' = root)
+		 */
+		function ftHandleOsFileDrop(treeId, fileList, targetFolder) {
+			var state = ftGetTreeState(treeId);
+			if (!state) return;
+			var files = state.files();
+
+			for (var i = 0; i < fileList.length; i++) {
+				var filePath = fileList[i].path;
+				if (!filePath) continue;
+
+				try {
+					var stat = fs.statSync(filePath);
+				} catch(e) { continue; }
+
+				if (stat.isDirectory()) {
+					// Recursively add all files from the folder
+					var allFiles = getFilesRecursive(filePath, filePath);
+					allFiles.forEach(function(fileInfo) {
+						if (files.indexOf(fileInfo.absolutePath) === -1) {
+							files.push(fileInfo.absolutePath);
+							var relDir = path.dirname(fileInfo.relativePath).replace(/\\/g, '/');
+							var rel = (targetFolder ? targetFolder + '/' : '') +
+								(relDir && relDir !== '.' ? relDir + '/' : '') +
+								path.basename(fileInfo.absolutePath);
+							state.setRelPath(fileInfo.absolutePath, rel);
+						}
+					});
+				} else if (stat.isFile()) {
+					if (files.indexOf(filePath) === -1) {
+						files.push(filePath);
+						if (targetFolder) {
+							state.setRelPath(filePath, targetFolder + '/' + path.basename(filePath));
+						}
+					}
+				}
+			}
+
+			state.update();
+		}
+
+		// Prevent default browser file drop behavior on the whole document
+		$(document).on("dragover", function(e) { e.preventDefault(); });
+		$(document).on("drop", function(e) { e.preventDefault(); });
 
 		// ---- Reset form ----
 		// Track whether restricted OEM author was already authorized for this session
@@ -7507,6 +7812,8 @@
 			pkg_labwareFiles = [];
 			pkg_labwareSubdirs = {};
 			pkg_labwareEmptyFolders = [];
+			pkg_libEmptyFolders = [];
+			pkg_demoEmptyFolders = [];
 			$(".pkg-installer-detail").hide();
 			$(".pkg-installer-empty-msg").show();
 			$(".pkg-installer-filename").text('');
