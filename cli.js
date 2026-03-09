@@ -65,6 +65,7 @@ const HSL_METADATA_EXTS = shared.HSL_METADATA_EXTS;
 
 const DEFAULT_LIB_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Library';
 const DEFAULT_MET_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Methods';
+const DEFAULT_LABWARE_PATH = 'C:\\Program Files (x86)\\HAMILTON\\Labware';
 
 // Package store - persists all imported .hxlibpkg files for repair & rollback
 // Now stored under local/packages/ within the app directory
@@ -366,6 +367,7 @@ function warnIfSystemPath(dirPath, label) {
 function getInstallPaths(db, libDirOverride, metDirOverride) {
     let libBasePath = DEFAULT_LIB_PATH;
     let metBasePath = DEFAULT_MET_PATH;
+    let labwareBasePath = DEFAULT_LABWARE_PATH;
 
     if (libDirOverride) {
         libBasePath = libDirOverride;
@@ -387,7 +389,18 @@ function getInstallPaths(db, libDirOverride, metDirOverride) {
         } catch (e) { process.stderr.write('  Warning: could not read met-folder from DB: ' + e.message + '\n'); }
     }
 
-    return { libBasePath, metBasePath };
+    // Labware path: derive from library path (sibling directory) or use default
+    try {
+        const rec = db.links.findOne({ _id: 'labware-folder' });
+        if (rec && rec.path) labwareBasePath = rec.path;
+    } catch (e) {
+        // Derive from libBasePath: ..\Labware relative to ..\Library
+        var libParent = path.dirname(libBasePath);
+        var derivedLabware = path.join(libParent, 'Labware');
+        if (fs.existsSync(derivedLabware)) labwareBasePath = derivedLabware;
+    }
+
+    return { libBasePath, metBasePath, labwareBasePath };
 }
 
 // ---------------------------------------------------------------------------
@@ -530,19 +543,21 @@ function autoAddToGroup(db, savedLibId, authorName) {
 // ---------------------------------------------------------------------------
 
 /**
- * @param {object}  manifest   - Parsed manifest.json content
- * @param {AdmZip}  zip        - AdmZip instance for the .hxlibpkg
- * @param {string}  libDestDir - Target library directory on disk
- * @param {string}  demoDestDir- Target demo methods directory on disk
- * @param {string}  sourceName - Name of the source .hxlibpkg / archive entry
- * @param {object}  db         - Connected diskdb instance
- * @param {boolean} skipGroup  - If true, skip auto-group assignment
+ * @param {object}  manifest       - Parsed manifest.json content
+ * @param {AdmZip}  zip            - AdmZip instance for the .hxlibpkg
+ * @param {string}  libDestDir     - Target library directory on disk
+ * @param {string}  demoDestDir    - Target demo methods directory on disk
+ * @param {string}  sourceName     - Name of the source .hxlibpkg / archive entry
+ * @param {object}  db             - Connected diskdb instance
+ * @param {boolean} skipGroup      - If true, skip auto-group assignment
+ * @param {string}  [labwareDestDir] - Target labware directory on disk (optional)
  * @returns {{ extractedCount: number, libName: string }}
  */
-function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, skipGroup) {
+function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, skipGroup, labwareDestDir) {
     const libFiles  = manifest.library_files     || [];
     const demoFiles = manifest.demo_method_files || [];
     const comDlls   = manifest.com_register_dlls || [];
+    const labwareFiles = manifest.labware_files  || [];
 
     // Auto-detect .chm help files: separate them from library_files
     // Also check manifest.help_files for packages that already have them declared
@@ -563,6 +578,9 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
     }
     if (demoFiles.length > 0 && !fs.existsSync(demoDestDir)) {
         fs.mkdirSync(demoDestDir, { recursive: true });
+    }
+    if (labwareFiles.length > 0 && labwareDestDir && !fs.existsSync(labwareDestDir)) {
+        fs.mkdirSync(labwareDestDir, { recursive: true });
     }
 
     // Extract payload files - CHM files are extracted to the library directory
@@ -595,6 +613,16 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
             const fname = entry.entryName.substring('help_files/'.length);
             if (fname) {
                 const safePath = safeZipExtractPath(libDestDir, fname);
+                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+                const parentDir = path.dirname(safePath);
+                if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+                fs.writeFileSync(safePath, entry.getData());
+                extractedCount++;
+            }
+        } else if (entry.entryName.startsWith('labware/') && labwareDestDir) {
+            const fname = entry.entryName.substring('labware/'.length);
+            if (fname) {
+                const safePath = safeZipExtractPath(labwareDestDir, fname);
                 if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
                 const parentDir = path.dirname(safePath);
                 if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
@@ -661,9 +689,11 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         demo_method_files:   demoFiles,
         help_files:          helpFiles,
         com_register_dlls:   comDlls,
+        labware_files:       labwareFiles,
         com_warning:         false,
         lib_install_path:    libDestDir,
         demo_install_path:   demoDestDir,
+        labware_install_path: labwareDestDir || null,
         installed_date:      new Date().toISOString(),
         installed_by:        getWindowsUsername(),
         source_package:      sourceName,
@@ -898,7 +928,7 @@ function cmdImportLib(args) {
     if (!fs.existsSync(filePath)) { die('File not found: ' + filePath); }
 
     const db = connectDB(resolveDBPath(args));
-    const { libBasePath, metBasePath } = getInstallPaths(db, args['lib-dir'], args['met-dir']);
+    const { libBasePath, metBasePath, labwareBasePath } = getInstallPaths(db, args['lib-dir'], args['met-dir']);
 
     console.log('Importing: ' + filePath);
 
@@ -1007,15 +1037,19 @@ function cmdImportLib(args) {
         libDestDir = path.join(libBasePath, libName);
     }
     const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
+    const labwareDestDir = labwareBasePath;
 
     const result = installPackage(
         manifest, zip, libDestDir, demoDestDir,
-        path.basename(filePath), db, !!(args['no-group'])
+        path.basename(filePath), db, !!(args['no-group']), labwareDestDir
     );
 
     console.log(`\nSuccess: "${libName}" installed (${result.extractedCount} files)`);
     console.log(`  Library files  -> ${libDestDir}`);
     console.log(`  Demo methods   -> ${demoDestDir}`);
+    if ((manifest.labware_files || []).length > 0) {
+        console.log(`  Labware files  -> ${labwareDestDir}`);
+    }
     if (manifest.installer_executable) {
         var installerStorePath = path.join(INSTALLER_STORE_DIR, libName.replace(/[<>:"\/\\|?*]/g, '_'), manifest.installer_executable);
         console.log(`  Installer      -> ${installerStorePath}`);
@@ -1066,7 +1100,7 @@ function cmdImportArchive(args) {
     if (!fs.existsSync(filePath)) { die('File not found: ' + filePath); }
 
     const db = connectDB(resolveDBPath(args));
-    const { libBasePath, metBasePath } = getInstallPaths(db, args['lib-dir'], args['met-dir']);
+    const { libBasePath, metBasePath, labwareBasePath } = getInstallPaths(db, args['lib-dir'], args['met-dir']);
 
     console.log('Importing archive: ' + filePath);
 
@@ -1144,10 +1178,11 @@ function cmdImportArchive(args) {
                 libDestDir = path.join(libBasePath, libName);
             }
             const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
+            const labwareDestDir = labwareBasePath;
 
             const result = installPackage(
                 manifest, innerZip, libDestDir, demoDestDir,
-                label, db, !!(args['no-group'])
+                label, db, !!(args['no-group']), labwareDestDir
             );
 
             results.success.push(`${libName} (${result.extractedCount} files)`);
@@ -1213,8 +1248,10 @@ function cmdExportLib(args) {
     const libraryFiles = lib.library_files     || [];
     const demoFiles    = lib.demo_method_files  || [];
     const helpFiles    = lib.help_files         || [];
+    const labwareFiles = lib.labware_files      || [];
     const libBasePath  = lib.lib_install_path   || '';
     const demoBasePath = lib.demo_install_path  || '';
+    const labwareBasePath = lib.labware_install_path || '';
 
     // Verify source files are present
     for (const f of libraryFiles) {
@@ -1242,6 +1279,7 @@ function cmdExportLib(args) {
         demo_method_files:   demoFiles.slice(),
         help_files:          helpFiles.slice(),
         com_register_dlls:   (lib.com_register_dlls   || []).slice(),
+        labware_files:       labwareFiles.slice(),
         app_version:         shared.getAppVersion(),
         windows_version:     lib.windows_version      || shared.getWindowsVersion(),
         venus_version:       lib.venus_version         || getVENUSVersion() || '',
@@ -1284,6 +1322,12 @@ function cmdExportLib(args) {
     demoFiles.forEach(f => {
         const fp = path.join(demoBasePath, f);
         if (fs.existsSync(fp)) zip.addLocalFile(fp, zipSubdir('demo_methods', f));
+    });
+
+    // Pack labware files into labware/ directory
+    labwareFiles.forEach(f => {
+        const fp = path.join(labwareBasePath, f);
+        if (fs.existsSync(fp)) zip.addLocalFile(fp, zipSubdir('labware', f));
     });
 
     // Include installer executable from the installer store
@@ -2267,7 +2311,7 @@ function cmdRollbackLib(args) {
 
     // Re-use the import-lib flow with the cached package
     const db = connectDB(resolveDBPath(args));
-    const { libBasePath, metBasePath } = getInstallPaths(db, args['lib-dir'], args['met-dir']);
+    const { libBasePath, metBasePath, labwareBasePath } = getInstallPaths(db, args['lib-dir'], args['met-dir']);
 
     let zip, manifest;
     try {
@@ -2304,10 +2348,11 @@ function cmdRollbackLib(args) {
         libDestDir = path.join(libBasePath, libName);
     }
     const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
+    const labwareDestDir = labwareBasePath;
 
     const result = installPackage(
         manifest, zip, libDestDir, demoDestDir,
-        target.file, db, !!(args['no-group'])
+        target.file, db, !!(args['no-group']), labwareDestDir
     );
 
     console.log(`\nSuccess: "${libName}" rolled back to version ${target.version} (${result.extractedCount} files)`);

@@ -341,6 +341,28 @@
 								</div>
 							</div>
 
+							<!-- Labware Files Section -->
+							<div class="card mb-3 exporter-card">
+								<div class="card-header">
+									<i class="fas fa-th mr-2 color-medium"></i>Labware Files
+									<span class="text-muted ml-2 text-sm font-weight-normal">Installed to: ...\Hamilton\Labware\</span>
+								</div>
+								<div class="card-body">
+									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>Add labware definitions (<b>.rck</b>, <b>.ctr</b>, <b>.tml</b>, <b>.dck</b>, <b>.lay</b>) that ship with this library. Use the subdirectory selector to place each file into the correct labware category folder.</p>
+									<div class="mb-2">
+										<button class="btn btn-sm btn-outlined" id="pkg-addLabwareFiles">Add Files...</button>
+										<button class="btn btn-sm btn-outlined" id="pkg-addLabwareFolder">Add Folder...</button>
+										<button class="btn btn-sm btn-outlined" id="pkg-removeLabwareFiles">Remove Selected</button>
+										<span class="text-muted text-sm ml-2" id="pkg-labware-count">0 files</span>
+										<input type="file" class="d-none" id="pkg-input-labwarefiles" multiple accept=".rck,.ctr,.tml,.dck,.lay">
+										<input type="file" class="d-none" id="pkg-input-labwarefolder" nwdirectory>
+									</div>
+									<div class="pkg-labware-tree" id="pkg-labware-tree">
+										<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No labware files added</div>
+									</div>
+								</div>
+							</div>
+
 							<!-- Installer Executable Section (optional, developer-only) -->
 							<div class="card mb-3 exporter-card" id="pkg-installer-exe-section" style="display:none;">
 								<div class="card-header">

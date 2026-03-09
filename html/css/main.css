@@ -1393,6 +1393,147 @@ body {
 	color: #bbb;
 }
 
+/* ---- Labware tree UI ---- */
+.pkg-labware-tree {
+	border: 1px solid #dee2e6;
+	border-radius: 6px;
+	min-height: 60px;
+	max-height: 340px;
+	overflow-y: auto;
+	background: #f8f9fa;
+}
+.pkg-labware-tree .pkg-empty-msg {
+	color: #bbb;
+}
+
+.labware-tree-group {
+	border-bottom: 1px solid #eee;
+}
+.labware-tree-group:last-child {
+	border-bottom: none;
+}
+
+.labware-tree-header {
+	display: flex;
+	align-items: center;
+	padding: 7px 12px;
+	cursor: pointer;
+	user-select: none;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var(--dark1);
+	background: rgba(var(--medium-rgb), 0.04);
+	transition: background 0.15s;
+}
+.labware-tree-header:hover {
+	background: rgba(var(--medium-rgb), 0.09);
+}
+.labware-tree-header .labware-tree-chevron {
+	width: 16px;
+	text-align: center;
+	margin-right: 6px;
+	font-size: 0.7rem;
+	color: var(--medium);
+	transition: transform 0.2s;
+}
+.labware-tree-header .labware-tree-chevron.expanded {
+	transform: rotate(90deg);
+}
+.labware-tree-header .labware-tree-folder-icon {
+	margin-right: 8px;
+	color: #e8a838;
+	font-size: 0.9rem;
+}
+.labware-tree-header .labware-tree-count {
+	margin-left: auto;
+	font-size: 0.75rem;
+	color: #999;
+	font-weight: 400;
+}
+
+.labware-tree-children {
+	display: none;
+	padding-left: 0;
+}
+.labware-tree-children.expanded {
+	display: block;
+}
+
+.labware-tree-file {
+	display: flex;
+	align-items: center;
+	padding: 5px 12px 5px 40px;
+	font-size: 0.82rem;
+	border-bottom: 1px solid #f0f0f0;
+	cursor: pointer;
+	user-select: none;
+	transition: background 0.1s;
+}
+.labware-tree-file:last-child {
+	border-bottom: none;
+}
+.labware-tree-file:hover {
+	background: rgba(var(--medium-rgb), 0.06);
+}
+.labware-tree-file.selected {
+	background: rgba(var(--medium-rgb), 0.15);
+}
+.labware-tree-file .labware-file-icon {
+	margin-right: 8px;
+	color: var(--medium);
+	font-size: 0.8rem;
+	flex-shrink: 0;
+}
+.labware-tree-file .labware-file-name {
+	font-weight: 500;
+	color: var(--dark1);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.labware-tree-file .labware-file-ext {
+	margin-left: auto;
+	padding-left: 12px;
+	font-size: 0.72rem;
+	color: #aaa;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.labware-subdir-picker {
+	display: inline-flex;
+	align-items: center;
+	margin-left: auto;
+	padding-left: 8px;
+	flex-shrink: 0;
+}
+.labware-subdir-picker select {
+	font-size: 0.75rem;
+	padding: 1px 6px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	background: #fff;
+	color: var(--dark1);
+	cursor: pointer;
+	max-width: 180px;
+}
+.labware-subdir-picker select:focus {
+	border-color: var(--medium);
+	outline: none;
+}
+.labware-subdir-input {
+	font-size: 0.75rem;
+	padding: 1px 6px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	max-width: 160px;
+	margin-left: 4px;
+	display: none;
+}
+.labware-subdir-input.visible {
+	display: inline-block;
+}
+
 .pkg-icon-preview {
 	width: 72px;
 	height: 72px;
@@ -3470,6 +3611,41 @@ body.dark-mode .pkg-file-dest {
 }
 body.dark-mode .pkg-file-dest.clickable {
 	color: var(--medium);
+}
+/* Labware tree dark mode */
+body.dark-mode .pkg-labware-tree {
+	background: #0f0f23;
+	border-color: #2a3a5c;
+}
+body.dark-mode .labware-tree-header {
+	color: #c8d6e5;
+	background: rgba(var(--medium-rgb), 0.06);
+}
+body.dark-mode .labware-tree-header:hover {
+	background: rgba(var(--medium-rgb), 0.12);
+}
+body.dark-mode .labware-tree-group {
+	border-bottom-color: #2a3a5c;
+}
+body.dark-mode .labware-tree-file {
+	border-bottom-color: #1a2a4c;
+	color: #c8d6e5;
+}
+body.dark-mode .labware-tree-file .labware-file-name {
+	color: #c8d6e5;
+}
+body.dark-mode .labware-tree-file .labware-file-ext {
+	color: #6a7a8a;
+}
+body.dark-mode .labware-subdir-picker select {
+	background: #1a2a4c;
+	border-color: #3a4a6c;
+	color: #c8d6e5;
+}
+body.dark-mode .labware-subdir-input {
+	background: #1a2a4c;
+	border-color: #3a4a6c;
+	color: #c8d6e5;
 }
 body.dark-mode .filepath-edit-preview-box {
 	background: #0f0f23;
