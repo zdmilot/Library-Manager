@@ -6642,6 +6642,7 @@
 			if(!pkg_nameOverridden){
 				$("#pkg-library-name").val(libName);
 				pkgUpdatePathPlaceholders(libName);
+				ftUpdateLibNameFolders();
 				pkgToggleChangelogVisibility(libName);
 			}
 		}
@@ -6753,6 +6754,7 @@
 		$(document).on("input", "#pkg-library-name", function() {
 			var val = $(this).val().trim();
 			pkgUpdatePathPlaceholders(val);
+			ftUpdateLibNameFolders();
 			if(pkg_autoDetectedName && val !== pkg_autoDetectedName){
 				$("#pkg-name-warning").removeClass("d-none");
 				$("#pkg-name-hint").addClass("d-none");
@@ -6883,6 +6885,7 @@
 			$("#pkg-name-autocomplete").addClass("d-none").empty();
 			pkg_autocompleteActive = false;
 			pkgUpdatePathPlaceholders(selectedName);
+			ftUpdateLibNameFolders();
 
 			// Load metadata and files from the latest version of this library
 			pkgPopulateFromExistingLibrary(selectedName, selectedType);
@@ -7224,12 +7227,23 @@
 			return '';
 		}
 
+		/** Update the library-name subfolder label in all empty trees. */
+		function ftUpdateLibNameFolders() {
+			var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
+			$('.ft-libname-node .ft-label').text(libName);
+			$('.ft-libname-node').attr('data-folder', libName);
+		}
+
 		function pkgUpdateLibFileList() {
 			var $list = $("#pkg-lib-list");
 			$list.empty();
 			if (pkg_libraryFiles.length === 0 && pkg_libEmptyFolders.length === 0) {
+				var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
 				var emptyTree = { children: {}, files: [] };
-				$list.html(ftBuildHtml(emptyTree, 'Library', 0, function() { return ''; }, ftGetInstallPath('pkg-lib-list')));
+				emptyTree.children[libName] = { children: {}, files: [] };
+				var rootPath = pkg_installSubdir !== null ? ftGetInstallPath('pkg-lib-list') : '...\\Hamilton\\Library\\';
+				$list.html(ftBuildHtml(emptyTree, 'Library', 0, function() { return ''; }, rootPath));
+				$list.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
 			} else {
 				var tree = ftBuildTree(pkg_libraryFiles, function(f) {
 					return pkg_fileRelPaths[f] || path.basename(f);
@@ -7295,8 +7309,11 @@
 			var $list = $("#pkg-demo-list");
 			$list.empty();
 			if (pkg_demoMethodFiles.length === 0 && pkg_demoEmptyFolders.length === 0) {
+				var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
 				var emptyTree = { children: {}, files: [] };
-				$list.html(ftBuildHtml(emptyTree, 'Demo Methods', 0, function() { return ''; }, ftGetInstallPath('pkg-demo-list')));
+				emptyTree.children[libName] = { children: {}, files: [] };
+				$list.html(ftBuildHtml(emptyTree, 'Demo Methods', 0, function() { return ''; }, '...\\Hamilton\\Methods\\Library Demo Methods\\'));
+				$list.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
 			} else {
 				var extIcons = {
 					'.hsl': 'fa-code', '.hs_': 'fa-code', '.hsi': 'fa-code',
@@ -7340,8 +7357,11 @@
 			var $tree = $("#pkg-labware-tree");
 			$tree.empty();
 			if (pkg_labwareFiles.length === 0 && pkg_labwareEmptyFolders.length === 0) {
+				var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
 				var emptyTree = { children: {}, files: [] };
-				$tree.html(ftBuildHtml(emptyTree, 'Labware', 0, function() { return ''; }, ftGetInstallPath('pkg-labware-tree')));
+				emptyTree.children[libName] = { children: {}, files: [] };
+				$tree.html(ftBuildHtml(emptyTree, 'Labware', 0, function() { return ''; }, '...\\Hamilton\\Labware\\'));
+				$tree.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
 				$("#pkg-labware-count").text("0 files");
 				ftUpdateMoveToBtn("pkg-labware-tree");
 				return;
