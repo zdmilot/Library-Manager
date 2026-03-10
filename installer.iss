@@ -34,6 +34,9 @@ WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64
 MinVersion=10.0
+; LicenseFile is intentionally empty — the Terms of Use and Privacy Policy are
+; displayed on a custom acceptance page (with checkbox) created in [Code] below,
+; rather than using Inno Setup's built-in license page.
 LicenseFile=
 DisableWelcomePage=no
 ; Show the "Ready to Install" summary page

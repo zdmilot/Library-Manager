@@ -1531,13 +1531,13 @@
 			var safe   = (libName || 'Unknown').replace(/[<>:"\/\\|?*]/g, '_');
 			var ver    = (version || '0.0.0').replace(/[<>:"\/\\|?*]/g, '_');
 			var now    = new Date();
-			var stamp  = now.getFullYear().toString()
-			           + String(now.getMonth() + 1).padStart(2, '0')
-			           + String(now.getDate()).padStart(2, '0')
+			var stamp  = now.getUTCFullYear().toString()
+			           + String(now.getUTCMonth() + 1).padStart(2, '0')
+			           + String(now.getUTCDate()).padStart(2, '0')
 			           + '-'
-			           + String(now.getHours()).padStart(2, '0')
-			           + String(now.getMinutes()).padStart(2, '0')
-			           + String(now.getSeconds()).padStart(2, '0');
+			           + String(now.getUTCHours()).padStart(2, '0')
+			           + String(now.getUTCMinutes()).padStart(2, '0')
+			           + String(now.getUTCSeconds()).padStart(2, '0');
 			return safe + '_v' + ver + '_' + stamp + '.hxlibpkg';
 		}
 
@@ -1893,7 +1893,7 @@
 			// Safety net: if nw.App.quit() didn't terminate within 3 seconds
 			// (e.g. a lingering async callback keeps the event loop alive),
 			// force-kill the process so nothing remains in the background.
-			setTimeout(function() { process.exit(0); }, 3000);
+			setTimeout(function() { process.exitCode = 0; process.exit(); }, 3000);
 		});
 
         //Window resize
@@ -5968,7 +5968,6 @@
 					// console.log(files.length);
 
 					files.forEach(function(file, index) {
-						var ext = path.extname(file);
 							var currentPath = path.join(HxFolder_LogFiles,file);
 							var bool_processFile = false;
 							fs.stat(currentPath, function(err, stats) {

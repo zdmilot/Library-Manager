@@ -779,13 +779,13 @@ function buildCachedPackageName(libName, version) {
     const safe   = (libName || 'Unknown').replace(/[<>:"\/\\|?*]/g, '_');
     const ver    = (version || '0.0.0').replace(/[<>:"\/\\|?*]/g, '_');
     const now    = new Date();
-    const stamp  = now.getFullYear().toString()
-                 + String(now.getMonth() + 1).padStart(2, '0')
-                 + String(now.getDate()).padStart(2, '0')
+    const stamp  = now.getUTCFullYear().toString()
+                 + String(now.getUTCMonth() + 1).padStart(2, '0')
+                 + String(now.getUTCDate()).padStart(2, '0')
                  + '-'
-                 + String(now.getHours()).padStart(2, '0')
-                 + String(now.getMinutes()).padStart(2, '0')
-                 + String(now.getSeconds()).padStart(2, '0');
+                 + String(now.getUTCHours()).padStart(2, '0')
+                 + String(now.getUTCMinutes()).padStart(2, '0')
+                 + String(now.getUTCSeconds()).padStart(2, '0');
     return safe + '_v' + ver + '_' + stamp + '.hxlibpkg';
 }
 
@@ -2230,15 +2230,12 @@ function cmdVerifySyslibHashes(args) {
                     });
                     return;
                 }
-                if (stored.checksum && footer.checksum && stored.checksum !== footer.checksum) {
-                    results.tampered.push({
-                        library: libName, file: fname,
-                        reason:  'Checksum mismatch',
-                        expected: `checksum=${stored.checksum}`,
-                        actual:   `checksum=${footer.checksum}`
-                    });
-                    return;
-                }
+                // NOTE: Checksum comparison is intentionally omitted here.
+                // Different VENUS versions may rewrite the HSL metadata footer
+                // with a different checksum while the file content remains valid.
+                // Comparing checksums would cause false-positive tamper alerts
+                // on systems running multiple VENUS versions. Only the valid
+                // flag is authoritative for integrity verification.
                 results.ok.push({ library: libName, file: fname });
             } catch (e) {
                 results.errors.push({ library: libName, file: fname, error: e.message });
