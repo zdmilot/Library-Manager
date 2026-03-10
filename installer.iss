@@ -858,6 +858,8 @@ Source: "Library Manager.chm"; DestDir: "{app}"; Flags: ignoreversion
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Legal
+Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "NOTICE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "PRIVACY_POLICY.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "TERMS_OF_USE.txt"; DestDir: "{app}"; Flags: ignoreversion
 

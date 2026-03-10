@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/your-org/venus-library-manager/cli-schema.json",
+  "$id": "https://github.com/zdmilot/Library-Manager/blob/main/cli-schema.json",
   "title": "HxLibPkg Package Specification",
   "description": "JSON specification file used by `node cli.js create-package --spec <file>` to build a .hxlibpkg library package. File paths inside this document are resolved relative to the directory containing the spec file itself. Unknown properties are preserved to support forward compatibility with future application versions.",
   "type": "object",
@@ -19,7 +19,7 @@
     "author": {
       "type": "string",
       "minLength": 3,
-      "maxLength": 29,
+      "maxLength": 500,
       "description": "Full name of the library author. Required.",
       "examples": ["Jane Smith", "Automation Team"]
     },

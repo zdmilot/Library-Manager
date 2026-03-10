@@ -22,8 +22,6 @@
 'use strict';
 
 var service = require('./lib/service');
-var path    = require('path');
-var fs      = require('fs');
 
 function success(data) {
     process.stdout.write(JSON.stringify({ success: true, data: data }));

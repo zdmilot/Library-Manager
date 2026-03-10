@@ -8322,7 +8322,7 @@
 					shared.sanitizeManifestFilePaths(manifest);
 				} catch (e) {
 					alert('Package creation aborted:\n' + e.message);
-					$btn.prop('disabled', false);
+					pkgSetCreateEnabled(true);
 					return;
 				}
 

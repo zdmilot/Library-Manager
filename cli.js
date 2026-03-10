@@ -63,6 +63,21 @@ const MIME_MAP = shared.IMAGE_MIME_MAP;
 
 const HSL_METADATA_EXTS = shared.HSL_METADATA_EXTS;
 
+/**
+ * Validate custom_install_subdir from a manifest to prevent path traversal.
+ * @param {string} subdir - The subdirectory value from manifest.
+ * @returns {string} The validated subdirectory.
+ */
+function validateCustomSubdir(subdir) {
+    if (!subdir) return '';
+    // Reject path traversal sequences
+    var normalized = subdir.replace(/\\/g, '/');
+    if (normalized.indexOf('..') !== -1 || path.isAbsolute(subdir)) {
+        die('Invalid custom_install_subdir: path traversal or absolute paths are not allowed: "' + subdir + '"');
+    }
+    return subdir;
+}
+
 const DEFAULT_LIB_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Library';
 const DEFAULT_MET_PATH  = 'C:\\Program Files (x86)\\HAMILTON\\Methods';
 const DEFAULT_LABWARE_PATH = 'C:\\Program Files (x86)\\HAMILTON\\Labware';
@@ -999,7 +1014,7 @@ function cmdImportLib(args) {
     // ---- Validate all file paths in manifest are safe relative paths ----
     const pathValidation = shared.validateManifestPaths(manifest);
     if (!pathValidation.valid) {
-        die('Invalid package: unsafe file paths detected.\\n' + pathValidation.errors.join('\\n'));
+        die('Invalid package: unsafe file paths detected.\n' + pathValidation.errors.join('\n'));
     }
 
     // ---- Author/organization length validation ----
@@ -1014,6 +1029,16 @@ function cmdImportLib(args) {
     if (importOrg && importOrg.length > shared.AUTHOR_MAX_LENGTH)
         die('Invalid package: organization cannot exceed ' + shared.AUTHOR_MAX_LENGTH + ' characters.');
 
+    // ---- Restricted author/OEM check ----
+    if (isRestrictedAuthor(importAuthor) || isRestrictedAuthor(importOrg)) {
+        if (!args['author-password']) {
+            die('The package author/organization is a restricted OEM name. Use --author-password <password> to authorize.');
+        }
+        if (!validateAuthorPassword(args['author-password'])) {
+            die('Incorrect author password. Importing packages with restricted OEM names requires valid authorization.');
+        }
+    }
+
     // Check for existing installation
     const existing = db.installed_libs.findOne({ library_name: libName });
     if (existing && !existing.deleted && !args['force']) {
@@ -1027,7 +1052,7 @@ function cmdImportLib(args) {
     }
 
     const installToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
-    const cliCustomSubdir = manifest.custom_install_subdir || '';
+    const cliCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
     let libDestDir;
     if (installToRoot) {
         libDestDir = libBasePath;
@@ -1143,6 +1168,24 @@ function cmdImportArchive(args) {
                 throw new Error('Invalid library name: "' + libName + '"');
             }
 
+            // ---- Restricted author/OEM check ----
+            const archAuthor = (manifest.author || '').trim();
+            const archOrg = (manifest.organization || '').trim();
+            if (isRestrictedAuthor(archAuthor) || isRestrictedAuthor(archOrg)) {
+                if (!args['author-password']) {
+                    throw new Error('Package "' + libName + '" has a restricted OEM author/organization. Use --author-password <password> to authorize.');
+                }
+                if (!validateAuthorPassword(args['author-password'])) {
+                    throw new Error('Incorrect author password for restricted OEM package "' + libName + '".');
+                }
+            }
+
+            // ---- Validate manifest paths ----
+            const archPathValidation = shared.validateManifestPaths(manifest);
+            if (!archPathValidation.valid) {
+                throw new Error('Unsafe file paths in package "' + libName + '": ' + archPathValidation.errors.join('; '));
+            }
+
             // Verify inner package signature
             const sigResult = verifyPackageSignature(innerZip);
             if (sigResult.signed && !sigResult.valid) {
@@ -1168,7 +1211,7 @@ function cmdImportArchive(args) {
             }
 
             const archInstallToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
-            const archCustomSubdir = manifest.custom_install_subdir || '';
+            const archCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
             let libDestDir;
             if (archInstallToRoot) {
                 libDestDir = libBasePath;
@@ -1416,9 +1459,11 @@ function cmdExportArchive(args) {
         try {
             const libBasePath  = lib.lib_install_path  || '';
             const demoBasePath = lib.demo_install_path || '';
+            const labwareBasePath = lib.labware_install_path || '';
             const libraryFiles = lib.library_files     || [];
             const demoFiles    = lib.demo_method_files  || [];
             const helpFiles    = lib.help_files         || [];
+            const labwareFiles = lib.labware_files      || [];
             const comDlls      = lib.com_register_dlls  || [];
 
             const manifest = {
@@ -1439,6 +1484,7 @@ function cmdExportArchive(args) {
                 demo_method_files:   demoFiles.slice(),
                 help_files:          helpFiles.slice(),
                 com_register_dlls:   comDlls.slice(),
+                labware_files:       labwareFiles.slice(),
                 app_version:         shared.getAppVersion(),
                 windows_version:     lib.windows_version      || shared.getWindowsVersion(),
                 venus_version:       lib.venus_version         || getVENUSVersion() || '',
@@ -1448,6 +1494,12 @@ function cmdExportArchive(args) {
                     venusVersion:    getVENUSVersion() || ''
                 })])
             };
+
+            // Include installer metadata if the library had an installer
+            if (lib.installer_executable) {
+                manifest.installer_executable = lib.installer_executable;
+                if (lib.installer_info) manifest.installer_info = lib.installer_info;
+            }
 
             // Preserve extra DB fields for forward compatibility
             Object.keys(lib).forEach(function(k) {
@@ -1459,7 +1511,7 @@ function cmdExportArchive(args) {
             const innerZip = new AdmZip();
             innerZip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
 
-            let libAdded = 0, demoAdded = 0;
+            let libAdded = 0, demoAdded = 0, labwareAdded = 0;
             libraryFiles.concat(helpFiles).forEach(f => {
                 const fp = path.join(libBasePath, f);
                 if (fs.existsSync(fp)) { innerZip.addLocalFile(fp, zipSubdir('library', f));      libAdded++;  }
@@ -1468,6 +1520,15 @@ function cmdExportArchive(args) {
                 const fp = path.join(demoBasePath, f);
                 if (fs.existsSync(fp)) { innerZip.addLocalFile(fp, zipSubdir('demo_methods', f)); demoAdded++; }
             });
+            labwareFiles.forEach(f => {
+                const fp = path.join(labwareBasePath, f);
+                if (fs.existsSync(fp)) { innerZip.addLocalFile(fp, zipSubdir('labware', f)); labwareAdded++; }
+            });
+
+            // Include installer executable from the installer store
+            if (lib.installer_path && fs.existsSync(lib.installer_path)) {
+                innerZip.addLocalFile(lib.installer_path, 'installer');
+            }
 
             // Sign the inner package (Ed25519 code signing)
             if (archSigCreds) {
@@ -1475,8 +1536,8 @@ function cmdExportArchive(args) {
             }
 
             archiveZip.addFile(lib.library_name + '.hxlibpkg', packContainer(innerZip.toBuffer(), CONTAINER_MAGIC_PKG));
-            exportedLibs.push({ name: lib.library_name, libFiles: libAdded, demoFiles: demoAdded });
-            console.log(`  + ${lib.library_name} (${libAdded} lib files, ${demoAdded} demo files)`);
+            exportedLibs.push({ name: lib.library_name, libFiles: libAdded, demoFiles: demoAdded, labwareFiles: labwareAdded });
+            console.log(`  + ${lib.library_name} (${libAdded} lib files, ${demoAdded} demo files${labwareAdded ? ', ' + labwareAdded + ' labware files' : ''})`);
         } catch (e) {
             errors.push(`${lib.library_name}: ${e.message}`);
             process.stderr.write(`  ! ${lib.library_name}: ${e.message}\n`);
@@ -2169,6 +2230,15 @@ function cmdVerifySyslibHashes(args) {
                     });
                     return;
                 }
+                if (stored.checksum && footer.checksum && stored.checksum !== footer.checksum) {
+                    results.tampered.push({
+                        library: libName, file: fname,
+                        reason:  'Checksum mismatch',
+                        expected: `checksum=${stored.checksum}`,
+                        actual:   `checksum=${footer.checksum}`
+                    });
+                    return;
+                }
                 results.ok.push({ library: libName, file: fname });
             } catch (e) {
                 results.errors.push({ library: libName, file: fname, error: e.message });
@@ -2331,6 +2401,18 @@ function cmdRollbackLib(args) {
         die('Invalid library name in cached package: "' + rollbackLibName + '". Package may be corrupt.');
     }
 
+    // ---- Restricted author/OEM check ----
+    const rbAuthor = (manifest.author || '').trim();
+    const rbOrg = (manifest.organization || '').trim();
+    if (isRestrictedAuthor(rbAuthor) || isRestrictedAuthor(rbOrg)) {
+        if (!args['author-password']) {
+            die('This library has a restricted OEM author/organization. Use --author-password <password> to authorize rollback.');
+        }
+        if (!validateAuthorPassword(args['author-password'])) {
+            die('Incorrect author password. Rolling back libraries with restricted OEM names requires valid authorization.');
+        }
+    }
+
     // ---- Signature verification ----
     const sigResult = verifyPackageSignature(zip);
     if (sigResult.signed && !sigResult.valid) {
@@ -2338,7 +2420,7 @@ function cmdRollbackLib(args) {
     }
 
     const rbInstallToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
-    const rbCustomSubdir = manifest.custom_install_subdir || '';
+    const rbCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
     let libDestDir;
     if (rbInstallToRoot) {
         libDestDir = libBasePath;
