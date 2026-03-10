@@ -70,10 +70,9 @@ const HSL_METADATA_EXTS = shared.HSL_METADATA_EXTS;
  */
 function validateCustomSubdir(subdir) {
     if (!subdir) return '';
-    // Reject path traversal sequences
-    var normalized = subdir.replace(/\\/g, '/');
-    if (normalized.indexOf('..') !== -1 || path.isAbsolute(subdir)) {
-        die('Invalid custom_install_subdir: path traversal or absolute paths are not allowed: "' + subdir + '"');
+    var sdCheck = shared.isValidSubdirPath(subdir);
+    if (!sdCheck.valid) {
+        die('Invalid custom_install_subdir: ' + sdCheck.reason);
     }
     return subdir;
 }
@@ -1017,17 +1016,17 @@ function cmdImportLib(args) {
         die('Invalid package: unsafe file paths detected.\n' + pathValidation.errors.join('\n'));
     }
 
-    // ---- Author/organization length validation ----
+    // ---- Author/organization validation ----
     const importAuthor = (manifest.author || '').trim();
     const importOrg = (manifest.organization || '').trim();
-    if (importAuthor && importAuthor.length < shared.AUTHOR_MIN_LENGTH)
-        die('Invalid package: author must be at least ' + shared.AUTHOR_MIN_LENGTH + ' characters.');
-    if (importAuthor && importAuthor.length > shared.AUTHOR_MAX_LENGTH)
-        die('Invalid package: author cannot exceed ' + shared.AUTHOR_MAX_LENGTH + ' characters.');
-    if (importOrg && importOrg.length < shared.AUTHOR_MIN_LENGTH)
-        die('Invalid package: organization must be at least ' + shared.AUTHOR_MIN_LENGTH + ' characters.');
-    if (importOrg && importOrg.length > shared.AUTHOR_MAX_LENGTH)
-        die('Invalid package: organization cannot exceed ' + shared.AUTHOR_MAX_LENGTH + ' characters.');
+    if (importAuthor) {
+        const impAuthorCheck = shared.isValidAuthorName(importAuthor);
+        if (!impAuthorCheck.valid) die('Invalid package: ' + impAuthorCheck.reason);
+    }
+    {
+        const impOrgCheck = shared.isValidOrganizationName(importOrg);
+        if (!impOrgCheck.valid) die('Invalid package: ' + impOrgCheck.reason);
+    }
 
     // ---- Restricted author/OEM check ----
     if (isRestrictedAuthor(importAuthor) || isRestrictedAuthor(importOrg)) {
@@ -1171,6 +1170,14 @@ function cmdImportArchive(args) {
             // ---- Restricted author/OEM check ----
             const archAuthor = (manifest.author || '').trim();
             const archOrg = (manifest.organization || '').trim();
+            if (archAuthor) {
+                const archAuthorCheck = shared.isValidAuthorName(archAuthor);
+                if (!archAuthorCheck.valid) throw new Error('Package "' + libName + '": ' + archAuthorCheck.reason);
+            }
+            {
+                const archOrgCheck = shared.isValidOrganizationName(archOrg);
+                if (!archOrgCheck.valid) throw new Error('Package "' + libName + '": ' + archOrgCheck.reason);
+            }
             if (isRestrictedAuthor(archAuthor) || isRestrictedAuthor(archOrg)) {
                 if (!args['author-password']) {
                     throw new Error('Package "' + libName + '" has a restricted OEM author/organization. Use --author-password <password> to authorize.');
@@ -1775,14 +1782,14 @@ function cmdCreatePackage(args) {
     // ---- Validate required fields ----
     const validationErrors = [];
     if (!spec.author)                              validationErrors.push('"author" is required');
-    if (spec.author && spec.author.trim().length < shared.AUTHOR_MIN_LENGTH)
-                                                   validationErrors.push('"author" must be at least ' + shared.AUTHOR_MIN_LENGTH + ' characters');
-    if (spec.author && spec.author.trim().length > shared.AUTHOR_MAX_LENGTH)
-                                                   validationErrors.push('"author" cannot exceed ' + shared.AUTHOR_MAX_LENGTH + ' characters');
-    if (spec.organization && spec.organization.trim().length > 0 && spec.organization.trim().length < shared.AUTHOR_MIN_LENGTH)
-                                                   validationErrors.push('"organization" must be at least ' + shared.AUTHOR_MIN_LENGTH + ' characters');
-    if (spec.organization && spec.organization.trim().length > shared.AUTHOR_MAX_LENGTH)
-                                                   validationErrors.push('"organization" cannot exceed ' + shared.AUTHOR_MAX_LENGTH + ' characters');
+    if (spec.author) {
+        const specAuthorCheck = shared.isValidAuthorName(spec.author.trim());
+        if (!specAuthorCheck.valid) validationErrors.push(specAuthorCheck.reason);
+    }
+    if (spec.organization) {
+        const specOrgCheck = shared.isValidOrganizationName(spec.organization.trim());
+        if (!specOrgCheck.valid) validationErrors.push(specOrgCheck.reason);
+    }
     if (!spec.version)                             validationErrors.push('"version" is required');
     if (!spec.venus_compatibility)                 validationErrors.push('"venus_compatibility" is required');
     if (!spec.description)                         validationErrors.push('"description" is required');

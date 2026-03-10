@@ -4345,11 +4345,14 @@
             if (isValid == false){
 				e.preventDefault();
 			}else{
-				// Check reserved group names
+				// Check group name validity
 				if ($("#editModal .modal-content").attr("data-linkOrGroup") === "group") {
 					var groupName = $.trim($('#editModal .txt-linkName').val());
-					if (shared.isReservedGroupName(groupName)) {
-						alert('The group name "' + groupName + '" is reserved and cannot be used. Please choose a different name.');
+					if (!shared.isValidGroupName(groupName)) {
+						var reason = shared.isReservedGroupName(groupName)
+							? 'The group name "' + groupName + '" is reserved and cannot be used.'
+							: 'Group names can only contain letters, numbers, spaces, dashes, and underscores.';
+						alert(reason + ' Please choose a different name.');
 						$('#editModal .txt-linkName').css({ "border": "1px solid red", "background": "#FFCECE" });
 						e.preventDefault();
 						return;
@@ -7813,28 +7816,15 @@
 			var venusCompat = $("#pkg-venus-compat").val().trim();
 			var description = $("#pkg-description").val().trim();
 
-			if (!author) {
-				alert("Author Name is required.");
+			var authorCheck = shared.isValidAuthorName(author);
+			if (!authorCheck.valid) {
+				alert(authorCheck.reason);
 				$("#pkg-author").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
-			if (author.length < shared.AUTHOR_MIN_LENGTH) {
-				alert("Author Name must be at least " + shared.AUTHOR_MIN_LENGTH + " characters.");
-				$("#pkg-author").focus().css({"border": "1px solid red", "background": "#FFCECE"});
-				return;
-			}
-			if (author.length > shared.AUTHOR_MAX_LENGTH) {
-				alert("Author Name cannot exceed " + shared.AUTHOR_MAX_LENGTH + " characters.");
-				$("#pkg-author").focus().css({"border": "1px solid red", "background": "#FFCECE"});
-				return;
-			}
-			if (organization && organization.length < shared.AUTHOR_MIN_LENGTH) {
-				alert("Organization must be at least " + shared.AUTHOR_MIN_LENGTH + " characters.");
-				$("#pkg-organization").focus().css({"border": "1px solid red", "background": "#FFCECE"});
-				return;
-			}
-			if (organization && organization.length > shared.AUTHOR_MAX_LENGTH) {
-				alert("Organization cannot exceed " + shared.AUTHOR_MAX_LENGTH + " characters.");
+			var orgCheck = shared.isValidOrganizationName(organization);
+			if (!orgCheck.valid) {
+				alert(orgCheck.reason);
 				$("#pkg-organization").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
@@ -7902,6 +7892,11 @@
 
 			// Use library name from the detected field
 			var libName = $("#pkg-library-name").val().trim() || "Unknown";
+			if (!isValidLibraryName(libName)) {
+				alert('Invalid library name: "' + libName + '".\nLibrary names can only contain letters, numbers, spaces, dashes, and underscores.');
+				$("#pkg-library-name").focus().css({"border": "1px solid red", "background": "#FFCECE"});
+				return;
+			}
 
 			// Set default filename and trigger save dialog
 			$("#pkg-save-dialog").attr("nwsaveas", libName + "_v" + version + ".hxlibpkg");
@@ -7937,6 +7932,13 @@
 		// Apply path change
 		$(document).on("click", ".btn-filepath-edit-apply", function() {
 			var subdir = $("#fpedit-path-input").val().trim().replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+			if (subdir) {
+				var subdirCheck = shared.isValidSubdirPath(subdir);
+				if (!subdirCheck.valid) {
+					alert(subdirCheck.reason);
+					return;
+				}
+			}
 			if (_fpEditContext === 'pkg') {
 				var libName = $("#pkg-library-name").val().trim() || "";
 				pkg_installSubdir = (subdir === libName) ? null : subdir;
@@ -12033,6 +12035,24 @@
 							return;
 						}
 
+						// Author/organization validation for archive entry
+						var archImportAuthor = (manifest.author || '').trim();
+						var archImportOrg = (manifest.organization || '').trim();
+						if (archImportAuthor) {
+							var archAuthorChk = shared.isValidAuthorName(archImportAuthor);
+							if (!archAuthorChk.valid) {
+								results.failed.push(libName + ": " + archAuthorChk.reason);
+								return;
+							}
+						}
+						if (archImportOrg) {
+							var archOrgChk = shared.isValidOrganizationName(archImportOrg);
+							if (!archOrgChk.valid) {
+								results.failed.push(libName + ": " + archOrgChk.reason);
+								return;
+							}
+						}
+
 						// Version mismatch check for inner package
 						var _archPkgVer = manifest.app_version || '';
 						var _archCurVer = shared.getAppVersion();
@@ -12873,25 +12893,21 @@
 				// ---- Author/organization length validation on import ----
 				var importAuthor = (manifest.author || '').trim();
 				var importOrg = (manifest.organization || '').trim();
-				if (importAuthor && importAuthor.length < shared.AUTHOR_MIN_LENGTH) {
-					alert("Invalid package: author must be at least " + shared.AUTHOR_MIN_LENGTH + " characters.");
-					_isImporting = false;
-					return;
+				if (importAuthor) {
+					var impAuthorCheck = shared.isValidAuthorName(importAuthor);
+					if (!impAuthorCheck.valid) {
+						alert("Invalid package: " + impAuthorCheck.reason);
+						_isImporting = false;
+						return;
+					}
 				}
-				if (importAuthor && importAuthor.length > shared.AUTHOR_MAX_LENGTH) {
-					alert("Invalid package: author cannot exceed " + shared.AUTHOR_MAX_LENGTH + " characters.");
-					_isImporting = false;
-					return;
-				}
-				if (importOrg && importOrg.length < shared.AUTHOR_MIN_LENGTH) {
-					alert("Invalid package: organization must be at least " + shared.AUTHOR_MIN_LENGTH + " characters.");
-					_isImporting = false;
-					return;
-				}
-				if (importOrg && importOrg.length > shared.AUTHOR_MAX_LENGTH) {
-					alert("Invalid package: organization cannot exceed " + shared.AUTHOR_MAX_LENGTH + " characters.");
-					_isImporting = false;
-					return;
+				if (importOrg) {
+					var impOrgCheck = shared.isValidOrganizationName(importOrg);
+					if (!impOrgCheck.valid) {
+						alert("Invalid package: " + impOrgCheck.reason);
+						_isImporting = false;
+						return;
+					}
 				}
 
 				var libName = manifest.library_name || "Unknown";

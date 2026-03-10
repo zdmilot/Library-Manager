@@ -586,6 +586,142 @@ node cli.js verify-package --file MyLibrary.hxlibpkg --json
 
 ---
 
+### `list-versions` - List cached package versions
+
+Lists all cached versions of a library in the package store. Useful for seeing what rollback targets are available.
+
+```
+node cli.js list-versions --name <name> [--json] [--db-path <dir>] [--store-dir <dir>]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--name <name>` | **Required.** Library name to query |
+| `--json` | Print machine-readable JSON output |
+| `--store-dir <dir>` | Override package store location |
+
+**Example**
+```bat
+node cli.js list-versions --name "ML_STAR"
+```
+
+---
+
+### `rollback-lib` - Roll back a library to a previous version
+
+Reinstalls a previously cached version of a library from the package store. The cached package signature is verified before installation.
+
+```
+node cli.js rollback-lib --name <name> (--version <ver> | --index <n>) [options]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--name <name>` | **Required.** Library name to roll back |
+| `--version <ver>` | Target version string (selects newest cache of that version) |
+| `--index <n>` | 1-based index from `list-versions` output |
+| `--no-group` | Skip auto-assigning to a library group |
+| `--no-subdir` | Install directly to library root instead of subdirectory |
+| `--author-password <pw>` | Required when the library has a restricted OEM author/organization |
+| `--lib-dir <path>` | Override library install root |
+| `--met-dir <path>` | Override methods (demo) install root |
+
+**Example**
+```bat
+node cli.js rollback-lib --name "ML_STAR" --version "4.6"
+node cli.js rollback-lib --name "ML_STAR" --index 2
+```
+
+---
+
+### `generate-keypair` - Generate a code-signing key pair
+
+Generates an Ed25519 key pair for code-signing packages. Outputs a private key (`.key.pem`) and a publisher certificate (`.cert.json`).
+
+```
+node cli.js generate-keypair --publisher <name> [options]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--publisher <name>` | **Required.** Publisher name (appears in signed packages) |
+| `--organization <name>` | Organization or company name |
+| `--output-dir <dir>` | Directory for output files (default: current working directory) |
+| `--force` | Overwrite existing key/certificate files |
+| `--author-password <pw>` | Required when publisher or organization is a restricted OEM name |
+
+**Example**
+```bat
+node cli.js generate-keypair --publisher "Lab Automation Team" --organization "Acme Corp"
+```
+
+---
+
+### `list-publishers` - List registered publisher certificates
+
+Lists all registered publisher certificates from the publisher registry.
+
+```
+node cli.js list-publishers [--json]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--json` | Print machine-readable JSON output |
+
+**Example**
+```bat
+node cli.js list-publishers
+```
+
+---
+
+### `generate-syslib-hashes` - Generate system library integrity baseline
+
+Generates an integrity baseline JSON file from a known-good Hamilton Library folder. Captures the `$$valid$$` and `$$checksum$$` metadata from each HSL file's footer for later verification.
+
+```
+node cli.js generate-syslib-hashes --source-dir <path> [--output <path>]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--source-dir <path>` | **Required.** Path to the known-good Library folder |
+| `--output <path>` | Output baseline file path (default: `db/system_library_hashes.json`) |
+
+**Example**
+```bat
+node cli.js generate-syslib-hashes --source-dir "C:\Program Files (x86)\HAMILTON\Library"
+```
+
+---
+
+### `verify-syslib-hashes` - Verify system library integrity
+
+Verifies installed system library files against the known-good baseline. Checks each tracked HSL file's `$$valid$$` metadata footer flag and reports tampered, missing, or unreadable files.
+
+```
+node cli.js verify-syslib-hashes [--hash-file <path>] [--lib-dir <path>] [--json]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--hash-file <path>` | Path to baseline file (default: `db/system_library_hashes.json`) |
+| `--lib-dir <path>` | Override library root to verify against |
+| `--json` | Print machine-readable JSON output |
+
+**Exit codes:**
+- `0` - All files verify OK
+- `1` - One or more files are tampered, missing, or unreadable
+
+**Example**
+```bat
+node cli.js verify-syslib-hashes
+node cli.js verify-syslib-hashes --json
+```
+
+---
+
 ### Automated testing / CI usage
 
 The CLI is designed for use in automated test pipelines. A typical round-trip test sequence:
@@ -630,14 +766,14 @@ All commands exit with code `0` on success and non-zero on failure, making them 
 
 ---
 
-## Companion tools included in repository
+## Companion tools
 
-The repository also includes Python desktop tools under `Library Packager/`:
+The following companion tools are maintained in a separate repository:
 
-- `packager.py` - standalone Tkinter packager for building `.hxlibpkg` from raw files.
-- `reader.py` - standalone package reader/viewer/extractor for `.hxlibpkg`.
-- `test_roundtrip.py` - package roundtrip test helper.
-- C# reference projects under `Library Packager/CSharp/` for packaging/reading interop classes and testing.
+- **Python packager** (`packager.py`) - standalone Tkinter packager for building `.hxlibpkg` from raw files.
+- **Python reader** (`reader.py`) - standalone package reader/viewer/extractor for `.hxlibpkg`.
+- **Python roundtrip test** (`test_roundtrip.py`) - package roundtrip test helper.
+- **C# reference projects** - packaging/reading interop classes and testing.
 
 ---
 
