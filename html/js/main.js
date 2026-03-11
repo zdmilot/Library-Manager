@@ -1102,10 +1102,14 @@
 			var installedLibs = db_installed_libs.installed_libs.find() || [];
 			installedLibs.forEach(function(lib) {
 				if (lib.deleted) return;
-				var author = (lib.author || '').trim();
-				if (author) seenPublishers[author.toLowerCase()] = author;
-				var org = (lib.organization || '').trim();
-				if (org && org.toLowerCase() !== author.toLowerCase()) seenPublishers[org.toLowerCase()] = org;
+				(lib.author || '').split(',').forEach(function(a) {
+					var author = a.trim();
+					if (author) seenPublishers[author.toLowerCase()] = author;
+				});
+				(lib.organization || '').split(',').forEach(function(o) {
+					var org = o.trim();
+					if (org) seenPublishers[org.toLowerCase()] = org;
+				});
 				(lib.tags || []).forEach(function(t) {
 					var s = shared.sanitizeTag(t);
 					if (s) seenTags[s] = true;
@@ -1115,10 +1119,14 @@
 			// Scan system libraries
 			var sysLibs = getAllSystemLibraries();
 			sysLibs.forEach(function(sLib) {
-				var author = (sLib.author || '').trim();
-				if (author) seenPublishers[author.toLowerCase()] = author;
-				var org = (sLib.organization || '').trim();
-				if (org && org.toLowerCase() !== author.toLowerCase()) seenPublishers[org.toLowerCase()] = org;
+				(sLib.author || '').split(',').forEach(function(a) {
+					var author = a.trim();
+					if (author) seenPublishers[author.toLowerCase()] = author;
+				});
+				(sLib.organization || '').split(',').forEach(function(o) {
+					var org = o.trim();
+					if (org) seenPublishers[org.toLowerCase()] = org;
+				});
 			});
 
 			// Build new registry
@@ -3538,10 +3546,10 @@
 			function matchesAuthorFilters(author, organization) {
 				if (!hasAuthorFilters) return true;
 				var authorParts = (author || '').split(',').map(function(s) { return s.trim().toLowerCase(); }).filter(Boolean);
-				var o = (organization || '').toLowerCase();
+				var orgParts = (organization || '').split(',').map(function(s) { return s.trim().toLowerCase(); }).filter(Boolean);
 				return authorFilters.every(function(filter) {
 					return authorParts.some(function(part) { return part.indexOf(filter) !== -1; }) ||
-						o.indexOf(filter) !== -1;
+						orgParts.some(function(part) { return part.indexOf(filter) !== -1; });
 				});
 			}
 
