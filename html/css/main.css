@@ -1561,6 +1561,39 @@ body {
 .ft-file-row.ft-dragging {
 	opacity: 0.35;
 }
+li.ft-node.ft-dragging-folder {
+	opacity: 0.35;
+}
+/* Folder action buttons (rename, delete) */
+.ft-folder-actions {
+	margin-left: auto;
+	display: none;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+	padding: 0 2px;
+}
+.ft-folder-row:hover .ft-folder-actions {
+	display: flex;
+}
+.ft-folder-actions i {
+	font-size: 0.72rem;
+	color: #999;
+	cursor: pointer;
+	padding: 2px 3px;
+	border-radius: 3px;
+}
+.ft-folder-actions i:hover {
+	color: #333;
+	background: rgba(0,0,0,0.08);
+}
+.ft-folder-actions .ft-folder-delete:hover {
+	color: #d9534f;
+}
+/* Non-root folder rows get a grab cursor */
+.ft-folder-row[data-folder]:not([data-folder=""]) {
+	cursor: grab;
+}
 
 /* COM checkbox inline in file row */
 .ft-com-label {
@@ -3728,6 +3761,16 @@ body.dark-mode .ft-folder-row.ft-drop-target {
 }
 body.dark-mode .ft-root-path {
 	color: #5a6a7a;
+}
+body.dark-mode .ft-folder-actions i {
+	color: #6a7a8a;
+}
+body.dark-mode .ft-folder-actions i:hover {
+	color: #c8d6e5;
+	background: rgba(255,255,255,0.08);
+}
+body.dark-mode .ft-folder-actions .ft-folder-delete:hover {
+	color: #e74c3c;
 }
 body.dark-mode .filepath-edit-preview-box {
 	background: #0f0f23;

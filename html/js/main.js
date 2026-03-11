@@ -6930,11 +6930,15 @@
 				var child = node.children[name];
 				var total = ftCountFiles(child);
 				html += '<li class="ft-node">';
-				html += '<div class="ft-row ft-folder-row" data-folder="' + escapeHtml(name) + '">';
+				html += '<div class="ft-row ft-folder-row" data-folder="' + escapeHtml(name) + '" draggable="true">';
 				html += '<i class="fas fa-chevron-down ft-toggle"></i>';
 				html += '<i class="fas fa-folder-open ft-icon-folder"></i>';
 				html += '<span class="ft-label">' + escapeHtml(name) + '</span>';
 				html += '<span class="ft-count">' + total + '</span>';
+				html += '<span class="ft-folder-actions">';
+				html += '<i class="fas fa-pencil-alt ft-folder-rename" title="Rename folder"></i>';
+				html += '<i class="fas fa-trash-alt ft-folder-delete" title="Delete folder"></i>';
+				html += '</span>';
 				html += '</div>';
 				html += '<ul class="ft-branch">';
 				html += ftRenderNode(child, fileRowFn);
@@ -7347,12 +7351,176 @@
 			ftDragData = null;
 		});
 
+		// --- Internal drag: dragstart on non-root .ft-folder-row ---
+		$(document).on("dragstart", ".ft-folder-row[data-folder]", function(e) {
+			var folderName = $(this).attr("data-folder");
+			if (folderName === '' || folderName === undefined) {
+				e.preventDefault(); // root folder is not draggable
+				return;
+			}
+			e.stopPropagation();
+			var $tree = $(this).closest(".pkg-file-tree");
+			var treeId = $tree.attr("id");
+			var state = ftGetTreeState(treeId);
+			if (!state) return;
+			var folderPath = ftResolveFolderPath($(this));
+			// Collect all files whose relative path starts with this folder
+			var filePaths = [];
+			state.files().forEach(function(f) {
+				var rel = state.getRelPath(f);
+				var dir = path.dirname(rel).replace(/\\/g, '/');
+				if (dir === folderPath || dir.indexOf(folderPath + '/') === 0) {
+					filePaths.push(f);
+				}
+			});
+			ftDragData = { treeId: treeId, filePaths: filePaths, folderPath: folderPath, isFolder: true };
+			e.originalEvent.dataTransfer.effectAllowed = 'move';
+			e.originalEvent.dataTransfer.setData('text/plain', 'folder:' + folderPath);
+			var self = this;
+			setTimeout(function() {
+				$(self).closest("li.ft-node").addClass("ft-dragging-folder");
+			}, 0);
+		});
+
+		$(document).on("dragend", ".ft-folder-row", function() {
+			$(".ft-dragging-folder").removeClass("ft-dragging-folder");
+			$(".ft-drop-target").removeClass("ft-drop-target");
+			$(".ft-dragover").removeClass("ft-dragover");
+			ftDragData = null;
+		});
+
+		/**
+		 * Move an entire folder (all files + subfolders + empty folders) to a new parent.
+		 * @param {string} treeId - The tree container ID
+		 * @param {string} srcFolder - Source folder path (e.g. "Vantage Tools")
+		 * @param {string} dstFolder - Destination parent folder path ('' = root)
+		 */
+		function ftMoveFolder(treeId, srcFolder, dstFolder) {
+			var state = ftGetTreeState(treeId);
+			if (!state) return;
+			var srcName = srcFolder.indexOf('/') !== -1 ? srcFolder.substring(srcFolder.lastIndexOf('/') + 1) : srcFolder;
+			var newFolder = dstFolder ? dstFolder + '/' + srcName : srcName;
+			// Prevent moving a folder into itself or its own subtree
+			if (newFolder === srcFolder || newFolder.indexOf(srcFolder + '/') === 0) return;
+			// Update all file relative paths under this folder
+			state.files().forEach(function(f) {
+				var rel = state.getRelPath(f);
+				var dir = path.dirname(rel).replace(/\\/g, '/');
+				if (dir === srcFolder) {
+					state.setRelPath(f, newFolder + '/' + path.basename(f));
+				} else if (dir.indexOf(srcFolder + '/') === 0) {
+					var suffix = dir.substring(srcFolder.length);
+					state.setRelPath(f, newFolder + suffix + '/' + path.basename(f));
+				}
+			});
+			// Update empty folders
+			var ef = state.emptyFolders();
+			for (var i = 0; i < ef.length; i++) {
+				if (ef[i] === srcFolder) {
+					ef[i] = newFolder;
+				} else if (ef[i].indexOf(srcFolder + '/') === 0) {
+					ef[i] = newFolder + ef[i].substring(srcFolder.length);
+				}
+			}
+			state.update();
+		}
+
+		// --- Folder rename handler ---
+		$(document).on("click", ".ft-folder-rename", function(e) {
+			e.stopPropagation();
+			var $folderRow = $(this).closest(".ft-folder-row");
+			var $tree = $(this).closest(".pkg-file-tree");
+			var treeId = $tree.attr("id");
+			var state = ftGetTreeState(treeId);
+			if (!state) return;
+			var oldFolder = ftResolveFolderPath($folderRow);
+			var oldName = $folderRow.attr("data-folder");
+			var newName = prompt("Rename folder:", oldName);
+			if (!newName || !newName.trim() || newName.trim() === oldName) return;
+			newName = newName.trim();
+			var validation = isValidSubdirPath(newName);
+			if (!validation.valid) {
+				alert(validation.reason);
+				return;
+			}
+			// Build new folder path by replacing the last segment
+			var parentPath = oldFolder.indexOf('/') !== -1 ? oldFolder.substring(0, oldFolder.lastIndexOf('/')) : '';
+			var newFolder = parentPath ? parentPath + '/' + newName : newName;
+			// Update all file relative paths under this folder
+			state.files().forEach(function(f) {
+				var rel = state.getRelPath(f);
+				var dir = path.dirname(rel).replace(/\\/g, '/');
+				if (dir === oldFolder) {
+					state.setRelPath(f, newFolder + '/' + path.basename(f));
+				} else if (dir.indexOf(oldFolder + '/') === 0) {
+					var suffix = dir.substring(oldFolder.length);
+					state.setRelPath(f, newFolder + suffix + '/' + path.basename(f));
+				}
+			});
+			// Update empty folders
+			var ef = state.emptyFolders();
+			for (var i = 0; i < ef.length; i++) {
+				if (ef[i] === oldFolder) {
+					ef[i] = newFolder;
+				} else if (ef[i].indexOf(oldFolder + '/') === 0) {
+					ef[i] = newFolder + ef[i].substring(oldFolder.length);
+				}
+			}
+			state.update();
+		});
+
+		// --- Folder delete handler ---
+		$(document).on("click", ".ft-folder-delete", function(e) {
+			e.stopPropagation();
+			var $folderRow = $(this).closest(".ft-folder-row");
+			var $tree = $(this).closest(".pkg-file-tree");
+			var treeId = $tree.attr("id");
+			var state = ftGetTreeState(treeId);
+			if (!state) return;
+			var folderPath = ftResolveFolderPath($folderRow);
+			// Count files in this folder and its subfolders
+			var fileCount = 0;
+			state.files().forEach(function(f) {
+				var rel = state.getRelPath(f);
+				var dir = path.dirname(rel).replace(/\\/g, '/');
+				if (dir === folderPath || dir.indexOf(folderPath + '/') === 0) {
+					fileCount++;
+				}
+			});
+			if (fileCount > 0) {
+				if (!confirm("Delete folder \"" + folderPath + "\" and move " + fileCount + " file(s) to the root?")) return;
+				// Move all files to root
+				state.files().forEach(function(f) {
+					var rel = state.getRelPath(f);
+					var dir = path.dirname(rel).replace(/\\/g, '/');
+					if (dir === folderPath || dir.indexOf(folderPath + '/') === 0) {
+						state.clearRelPath(f);
+					}
+				});
+			}
+			// Remove empty folder entries matching this folder or its children
+			var ef = state.emptyFolders();
+			var filtered = ef.filter(function(fp) {
+				return fp !== folderPath && fp.indexOf(folderPath + '/') !== 0;
+			});
+			state.setEmptyFolders(filtered);
+			state.update();
+		});
+
 		// --- Folder row drop target highlighting ---
 		$(document).on("dragover", ".ft-folder-row", function(e) {
 			e.preventDefault();
 			e.stopPropagation();
 			// Highlight for internal drag (same or cross-tree)
 			if (ftDragData) {
+				// If dragging a folder, prevent dropping onto itself or its subtree
+				if (ftDragData.isFolder) {
+					var hoverFolder = ftResolveFolderPath($(this));
+					if (hoverFolder === ftDragData.folderPath || hoverFolder.indexOf(ftDragData.folderPath + '/') === 0) {
+						e.originalEvent.dataTransfer.dropEffect = 'none';
+						return;
+					}
+				}
 				e.originalEvent.dataTransfer.dropEffect = 'move';
 				$(".ft-drop-target").removeClass("ft-drop-target");
 				$(this).addClass("ft-drop-target");
@@ -7363,7 +7531,7 @@
 			$(this).removeClass("ft-drop-target");
 		});
 
-		// --- Drop onto folder row: move files to that folder ---
+		// --- Drop onto folder row: move files/folders to that folder ---
 		$(document).on("drop", ".ft-folder-row", function(e) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -7373,6 +7541,14 @@
 			var targetFolder = ftResolveFolderPath($(this));
 
 			if (ftDragData) {
+				if (ftDragData.isFolder) {
+					// Folder drag: move entire folder into target
+					if (ftDragData.treeId === treeId) {
+						ftMoveFolder(treeId, ftDragData.folderPath, targetFolder);
+					}
+					ftDragData = null;
+					return;
+				}
 				if (ftDragData.treeId === treeId) {
 					// Same-tree rearrange
 					var state = ftGetTreeState(treeId);
@@ -7429,6 +7605,14 @@
 			var treeId = $(this).attr("id");
 
 			if (ftDragData) {
+				if (ftDragData.isFolder) {
+					// Folder drag to tree root: move folder to root level
+					if (ftDragData.treeId === treeId) {
+						ftMoveFolder(treeId, ftDragData.folderPath, '');
+					}
+					ftDragData = null;
+					return;
+				}
 				if (ftDragData.treeId === treeId) {
 					// Same-tree: drop on container background = move to root
 					var state = ftGetTreeState(treeId);

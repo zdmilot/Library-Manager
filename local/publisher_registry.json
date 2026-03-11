@@ -1,1 +1,10 @@
-{"publishers":[],"tags":[],"maxPublisherSpaces":0}
+{
+  "publishers": [
+    {
+      "name": "Hamilton",
+      "maxSpaces": 0
+    }
+  ],
+  "tags": [],
+  "maxPublisherSpaces": 0
+}
