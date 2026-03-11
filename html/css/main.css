@@ -801,6 +801,82 @@ body {
 	border-color: #b22a37;
 }
 
+/* ---- Folder Name Modal ---- */
+.folder-modal-header {
+	border-bottom: 2px solid var(--medium);
+	padding: 16px 20px;
+}
+.folder-modal-icon {
+	color: var(--medium);
+}
+.folder-name-input {
+	border: 2px solid var(--body-background);
+	border-radius: 6px;
+	font-size: 0.95rem;
+	padding: 8px 12px;
+	transition: border-color 0.2s;
+}
+.folder-name-input:focus {
+	border-color: var(--medium);
+	box-shadow: 0 0 0 3px rgba(var(--medium-rgb), 0.15);
+	outline: none;
+}
+.folder-name-input.is-invalid {
+	border-color: #d73a49;
+	box-shadow: 0 0 0 3px rgba(215, 58, 73, 0.15);
+}
+.folder-name-confirm-btn {
+	background: var(--solid-button-background);
+	border-color: var(--solid-button-background);
+}
+.folder-name-confirm-btn:hover:not(:disabled) {
+	background: var(--solid-button-over);
+	border-color: var(--solid-button-over);
+}
+.folder-name-confirm-btn:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+.folder-modal-hint code {
+	background: rgba(var(--medium-rgb), 0.1);
+	color: var(--medium2);
+	padding: 1px 5px;
+	border-radius: 3px;
+	font-size: 0.82rem;
+}
+
+/* ---- Folder Delete Confirm Modal ---- */
+.folder-delete-header {
+	background: #5f1616;
+	color: #ffcfcf;
+	border-bottom: 3px solid #d73a49;
+	padding: 18px 22px;
+}
+.folder-delete-icon i {
+	color: #d73a49;
+}
+.folder-delete-name {
+	color: #ffa8a8 !important;
+}
+.folder-delete-warning-box {
+	background: #fff8f0;
+	border: 1px solid #d73a49;
+	border-radius: 8px;
+	padding: 14px 16px;
+	color: #5f1616;
+	font-size: 0.9rem;
+	line-height: 1.5;
+}
+.folder-delete-confirm-btn {
+	background: #d73a49;
+	border-color: #d73a49;
+	font-weight: 600;
+}
+.folder-delete-confirm-btn:hover {
+	background: #b22a37;
+	border-color: #b22a37;
+}
+
 /* ---- Upgrade Library Confirmation Modal (Destructive red theme) ---- */
 .upgrade-confirm-content {
 	border: none;
@@ -3662,6 +3738,51 @@ body.dark-mode .delete-confirm-label,
 body.dark-mode .upgrade-confirm-label,
 body.dark-mode .rollback-confirm-label {
 	color: #8899aa;
+}
+
+/* Folder Name Modal - dark mode */
+body.dark-mode .folder-modal-header {
+	border-bottom-color: #3a7bd5;
+}
+body.dark-mode .folder-modal-icon {
+	color: #5a9ae6;
+}
+body.dark-mode .folder-name-input {
+	background-color: #0f0f23;
+	color: #c8d6e5;
+	border-color: #2a3a5c;
+}
+body.dark-mode .folder-name-input:focus {
+	background-color: #16213e;
+	color: #e0e6ed;
+	border-color: #3a7bd5;
+	box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.2);
+}
+body.dark-mode .folder-name-input.is-invalid {
+	border-color: #d73a49;
+	box-shadow: 0 0 0 3px rgba(215, 58, 73, 0.2);
+}
+body.dark-mode .folder-modal-hint {
+	color: #8899aa !important;
+}
+body.dark-mode .folder-modal-hint code {
+	background: rgba(58, 123, 213, 0.15);
+	color: #8abaef;
+}
+
+/* Folder Delete Modal - dark mode */
+body.dark-mode .folder-delete-header {
+	background: #3a1020;
+	color: #ffcfcf;
+	border-bottom-color: #d73a49;
+}
+body.dark-mode .folder-delete-name {
+	color: #ef8a8a !important;
+}
+body.dark-mode .folder-delete-warning-box {
+	background: rgba(215, 58, 73, 0.15);
+	border-color: #635;
+	color: #ef6b6b;
 }
 
 /* Archive conflict table */

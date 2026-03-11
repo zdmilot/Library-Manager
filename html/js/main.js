@@ -7275,16 +7275,109 @@
 		/**
 		 * Collect distinct folder paths from a tree's files + empty folders.
 		 */
+
+		// ---- Folder name modal helpers ----
+		var _folderNameResolve = null;
+		var _folderNameMode = 'new'; // 'new' or 'rename'
+
+		function ftShowFolderNameModal(defaultValue, mode) {
+			_folderNameMode = mode || 'new';
+			var $modal = $("#folderNameModal");
+			var $input = $("#folder-name-input");
+			$input.val(defaultValue || '').removeClass('is-invalid');
+			$(".folder-name-error").addClass("d-none");
+			$(".folder-name-confirm-btn").prop("disabled", !defaultValue);
+			if (_folderNameMode === 'rename') {
+				$(".folder-modal-title-text").text('Rename Folder');
+				$modal.find('.folder-modal-icon').removeClass('fa-folder-plus').addClass('fa-pencil-alt');
+				$(".folder-name-confirm-btn").html('<i class="fas fa-check mr-1"></i>Rename');
+			} else {
+				$(".folder-modal-title-text").text('New Folder');
+				$modal.find('.folder-modal-icon').removeClass('fa-pencil-alt').addClass('fa-folder-plus');
+				$(".folder-name-confirm-btn").html('<i class="fas fa-check mr-1"></i>Create');
+			}
+			$modal.modal('show');
+			setTimeout(function() { $input.focus().select(); }, 200);
+			return new Promise(function(resolve) {
+				_folderNameResolve = resolve;
+			});
+		}
+
+		$("#folder-name-input").on("input", function() {
+			var val = $(this).val().trim();
+			var $err = $(".folder-name-error");
+			var $errText = $(".folder-name-error-text");
+			if (!val) {
+				$(".folder-name-confirm-btn").prop("disabled", true);
+				$err.addClass("d-none");
+				$(this).removeClass('is-invalid');
+				return;
+			}
+			var normalized = val.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+			var validation = shared.isValidSubdirPath(normalized);
+			if (!validation.valid) {
+				$errText.text(validation.reason);
+				$err.removeClass("d-none");
+				$(this).addClass('is-invalid');
+				$(".folder-name-confirm-btn").prop("disabled", true);
+			} else {
+				$err.addClass("d-none");
+				$(this).removeClass('is-invalid');
+				$(".folder-name-confirm-btn").prop("disabled", false);
+			}
+		});
+
+		$("#folder-name-input").on("keydown", function(e) {
+			if (e.key === 'Enter' && !$(".folder-name-confirm-btn").prop("disabled")) {
+				$(".folder-name-confirm-btn").click();
+			}
+		});
+
+		$(".folder-name-confirm-btn").on("click", function() {
+			var name = $("#folder-name-input").val().trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+			$("#folderNameModal").modal('hide');
+			if (_folderNameResolve) { _folderNameResolve(name); _folderNameResolve = null; }
+		});
+
+		$("#folderNameModal").on("hidden.bs.modal", function() {
+			if (_folderNameResolve) { _folderNameResolve(null); _folderNameResolve = null; }
+		});
+
+		// ---- Folder delete confirm modal helpers ----
+		var _folderDeleteResolve = null;
+
+		function ftShowFolderDeleteModal(folderPath, fileCount) {
+			var $modal = $("#folderDeleteModal");
+			$(".folder-delete-name").text(folderPath);
+			if (fileCount > 0) {
+				$(".folder-delete-message").html('<strong>This folder contains ' + fileCount + ' file' + (fileCount !== 1 ? 's' : '') + '.</strong> Deleting it will move ' + (fileCount === 1 ? 'the file' : 'all files') + ' to the root level.');
+			} else {
+				$(".folder-delete-message").text('This empty folder will be removed.');
+			}
+			$modal.modal('show');
+			return new Promise(function(resolve) {
+				_folderDeleteResolve = resolve;
+			});
+		}
+
+		$(".folder-delete-confirm-btn").on("click", function() {
+			$("#folderDeleteModal").modal('hide');
+			if (_folderDeleteResolve) { _folderDeleteResolve(true); _folderDeleteResolve = null; }
+		});
+
+		$("#folderDeleteModal").on("hidden.bs.modal", function() {
+			if (_folderDeleteResolve) { _folderDeleteResolve(false); _folderDeleteResolve = null; }
+		});
+
 		// "New Folder" button (generic for all trees)
-		$(document).on("click", ".ft-newFolderBtn", function() {
+		$(document).on("click", ".ft-newFolderBtn", async function() {
 			var treeId = $(this).attr("data-tree");
 			var state = ftGetTreeState(treeId);
 			if (!state) return;
-			var name = prompt("Enter new folder name:", "");
-			if (name && name.trim()) {
-				name = name.trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+			var name = await ftShowFolderNameModal('', 'new');
+			if (name) {
 				var ef = state.emptyFolders();
-				if (name && ef.indexOf(name) === -1) {
+				if (ef.indexOf(name) === -1) {
 					ef.push(name);
 					state.update();
 				}
@@ -7426,7 +7519,7 @@
 		}
 
 		// --- Folder rename handler ---
-		$(document).on("click", ".ft-folder-rename", function(e) {
+		$(document).on("click", ".ft-folder-rename", async function(e) {
 			e.stopPropagation();
 			var $folderRow = $(this).closest(".ft-folder-row");
 			var $tree = $(this).closest(".pkg-file-tree");
@@ -7435,14 +7528,8 @@
 			if (!state) return;
 			var oldFolder = ftResolveFolderPath($folderRow);
 			var oldName = $folderRow.attr("data-folder");
-			var newName = prompt("Rename folder:", oldName);
-			if (!newName || !newName.trim() || newName.trim() === oldName) return;
-			newName = newName.trim();
-			var validation = isValidSubdirPath(newName);
-			if (!validation.valid) {
-				alert(validation.reason);
-				return;
-			}
+			var newName = await ftShowFolderNameModal(oldName, 'rename');
+			if (!newName || newName === oldName) return;
 			// Build new folder path by replacing the last segment
 			var parentPath = oldFolder.indexOf('/') !== -1 ? oldFolder.substring(0, oldFolder.lastIndexOf('/')) : '';
 			var newFolder = parentPath ? parentPath + '/' + newName : newName;
@@ -7470,7 +7557,7 @@
 		});
 
 		// --- Folder delete handler ---
-		$(document).on("click", ".ft-folder-delete", function(e) {
+		$(document).on("click", ".ft-folder-delete", async function(e) {
 			e.stopPropagation();
 			var $folderRow = $(this).closest(".ft-folder-row");
 			var $tree = $(this).closest(".pkg-file-tree");
@@ -7487,8 +7574,9 @@
 					fileCount++;
 				}
 			});
+			var confirmed = await ftShowFolderDeleteModal(folderPath, fileCount);
+			if (!confirmed) return;
 			if (fileCount > 0) {
-				if (!confirm("Delete folder \"" + folderPath + "\" and move " + fileCount + " file(s) to the root?")) return;
 				// Move all files to root
 				state.files().forEach(function(f) {
 					var rel = state.getRelPath(f);
