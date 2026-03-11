@@ -16,7 +16,7 @@
 <ul>
   <li>Publisher identity is cryptographically verified</li>
   <li>File contents are guaranteed to be unchanged since signing</li>
-  <li>Packages from known OEM publishers display an <b>OEM Verified</b> badge</li>
+  <li>Packages from recognized publishers display a verified badge</li>
   <li>In <a href="RegulatedEnvironment.html">Regulated Environment Mode</a>, only signed packages can be imported</li>
 </ul>
 
@@ -133,7 +133,7 @@
   <li>The <b>publisher certificate</b> is stored in the library&rsquo;s database record</li>
   <li>A <span style="color:#5cb85c;">&#10004; Signed</span> badge appears on the library card</li>
   <li>The publisher name and key ID are displayed in the Library Detail Modal &rarr; Code Signing Certificate section</li>
-  <li>If the publisher name matches a known OEM keyword, an <b>OEM Verified</b> badge is displayed</li>
+  <li>If the publisher name matches a recognized vendor, a verified badge is displayed</li>
 </ul>
 
 <!-- ================================================================== -->
@@ -143,16 +143,15 @@
 <p>Library Manager automatically maintains a registry of publisher names encountered during imports. Use <a href="CLIListPublishers.html">CLI: list-publishers</a> to view all registered publishers, or view publisher information in the Library Detail Modal.</p>
 
 <!-- ================================================================== -->
-<h2>OEM Publisher Protection</h2>
+<h2>Publisher Verification</h2>
 <!-- ================================================================== -->
 
-<p>Packages that claim a <b>restricted OEM author or organization name</b> (e.g., Hamilton, Tecan, Roche, etc.) are subject to additional verification:</p>
+<p>Packages that claim a recognized vendor name as the author or organization are subject to additional verification to ensure authenticity:</p>
 <ul>
   <li>The package <b>must</b> be code-signed</li>
-  <li>The publisher certificate&rsquo;s holder name must contain the OEM keyword</li>
-  <li>OEM operations (import, create, rollback) with restricted names are only available through the GUI</li>
+  <li>The publisher certificate&rsquo;s holder name must match the claimed vendor identity</li>
 </ul>
-<p>This prevents unauthorized parties from publishing packages under established OEM brand names. See <a href="PackageSpecSchema.html">Package Spec Schema</a> for the full list of restricted keywords.</p>
+<p>This prevents unauthorized parties from publishing packages under established vendor brand names.</p>
 
 <!-- ================================================================== -->
 <h2>Regulated Environment Mode</h2>

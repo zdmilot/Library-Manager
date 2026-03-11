@@ -289,8 +289,8 @@
 <table class="phase-table">
 <tr><th colspan="2">Phase 2: Validation</th></tr>
 <tr><td class="step-label">Validate required fields</td><td>author, version, description, venus_compatibility must be present; at least 1 library file required</td></tr>
-<tr class="decision"><td class="step-label">Restricted author name?</td><td>
-  <b>Yes &rarr;</b> Block (OEM packages cannot be created via the CLI).<br/>
+<tr class="decision"><td class="step-label">Reserved author name?</td><td>
+  <b>Yes &rarr;</b> Block with error.<br/>
   <b>No &rarr;</b> Continue
 </td></tr>
 <tr><td class="step-label">Sanitize &amp; validate tags</td><td>Remove reserved words, enforce length limits, deduplicate</td></tr>
@@ -367,8 +367,8 @@
 <table class="phase-table">
 <tr><th colspan="2">Phase 3: Validation</th></tr>
 <tr><td class="step-label">Validate library name</td><td><code>isValidLibraryName()</code> &mdash; no path separators, no traversal, no reserved names</td></tr>
-<tr class="decision"><td class="step-label">Restricted author name?</td><td>
-  <b>Yes (and not a system library) &rarr;</b> Block in CLI; require GUI password prompt<br/>
+<tr class="decision"><td class="step-label">Reserved author name?</td><td>
+  <b>Yes (and not a system library) &rarr;</b> Block with error<br/>
   <b>No &rarr;</b> Continue
 </td></tr>
 <tr class="decision"><td class="step-label">Library already installed?</td><td>
@@ -407,7 +407,7 @@
 <tr><th colspan="2">Phase 6: Database &amp; Indexing</th></tr>
 <tr><td class="step-label">Version mismatch check</td><td>Compare manifest <code>app_version</code> to the running Library Manager version. If they differ, warn the user (GUI shows a confirm dialog; CLI prints a warning). Packages from a newer major version produce a stronger warning. Legacy packages with no <code>app_version</code> are noted.</td></tr>
 <tr><td class="step-label">Upsert DB record</td><td>Remove existing record if overwriting; compute SHA-256 file hashes; parse public HSL functions; extract #include dependencies; preserve <code>app_version</code>, <code>format_version</code>, <code>windows_version</code>, <code>venus_version</code>, and <code>package_lineage</code> from the manifest; copy any unrecognized manifest fields for forward compatibility; save to installed_libs.json</td></tr>
-<tr><td class="step-label">Auto-assign to group</td><td>Restricted author &rarr; gOEM group. Others &rarr; first custom group. Auto-create &ldquo;Libraries&rdquo; group if none exist.</td></tr>
+<tr><td class="step-label">Auto-assign to group</td><td>Recognized OEM vendor &rarr; OEM group. Others &rarr; first custom group. Auto-create &ldquo;Libraries&rdquo; group if none exist.</td></tr>
 </table>
 
 <p class="flow-arrow">&#9660;</p>
@@ -494,7 +494,7 @@
 <tr><td class="step-label">Unpack inner container</td><td><code>unpackContainer(entryData, MAGIC_PKG)</code> &mdash; verify inner HMAC, de-scramble</td></tr>
 <tr><td class="step-label">Parse manifest</td><td>Read manifest.json from inner ZIP</td></tr>
 <tr><td class="step-label">Verify signature</td><td><code>verifyPackageSignature()</code> on inner ZIP</td></tr>
-<tr><td class="step-label">Validate</td><td>Library name validation + restricted author check</td></tr>
+<tr><td class="step-label">Validate</td><td>Library name validation + reserved author check</td></tr>
 <tr class="decision"><td class="step-label">Already installed?</td><td>
   <b>Yes + no --force &rarr;</b> Skip this package (record as failure)<br/>
   <b>No or --force &rarr;</b> Proceed with installation
@@ -715,7 +715,7 @@
 <h2>12. Authorization &amp; Access Control</h2>
 <!-- ================================================================== -->
 
-<p>The system implements two authorization mechanisms: Windows security group-based access control for protected actions (regulated environment mode), and password-based protection for restricted author names. Windows Administrators are on a <b>super whitelist</b> and always have full access.</p>
+<p>The system implements two authorization mechanisms: Windows security group-based access control for protected actions (regulated environment mode), and reserved author name protection. Windows Administrators are on a <b>super whitelist</b> and always have full access.</p>
 
 <h3>Regulated Environment Mode</h3>
 <p>A toggle in <b>Settings &rarr; Regulated Environment</b> controls whether Windows group-based access enforcement is active. When enabled, protected actions (import, delete, rollback) require that the current Windows user belong to an authorized security group or be a Windows Administrator. When disabled, all users can perform these actions without group checks.</p>
@@ -743,10 +743,10 @@
 <h3>Authorization Decision Flow</h3>
 <img src="images/diagram-auth-decision-flow.png" alt="Authorization decision flow: check regulated mode, then ALLOW groups, DENY groups, then default deny" class="doc-diagram">
 
-<h3>Restricted Author Protection</h3>
-<p>Packages claiming a restricted OEM or laboratory automation company name as the author (case-insensitive) require additional authentication to prevent unauthorized branded packages.</p>
+<h3>Reserved Author Protection</h3>
+<p>Packages claiming a reserved vendor or laboratory automation company name as the author (case-insensitive) are blocked to prevent unauthorized branded packages.</p>
 
-<img src="images/diagram-restricted-author.png" alt="Restricted author protection flow: restricted author name check, system library bypass, password verification" class="doc-diagram">
+<img src="images/diagram-restricted-author.png" alt="Restricted author protection flow: reserved author name check and validation" class="doc-diagram">
 
 <!-- ================================================================== -->
 <a name="sec13"></a>

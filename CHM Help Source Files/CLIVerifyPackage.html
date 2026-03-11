@@ -10,7 +10,7 @@
 <div class="breadcrumb"><a href="Overview.html">Library Manager</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; verify-package</div>
 
 <h2>Description</h2>
-<p>Verifies the integrity of a <code>.hxlibpkg</code> or <code>.hxlibarch</code> file without importing it. This command validates both the outer <a href="BinaryContainerFormat.html">binary container</a> (HMAC-SHA256 over the entire file) and the inner <code>signature.json</code> (per-file integrity hashes and optional Ed25519 digital signature). For code-signed packages, publisher identity and OEM verification status are also reported. This is useful for validating packages before distribution, after file transfer, or in CI/CD pipelines.</p>
+<p>Verifies the integrity of a <code>.hxlibpkg</code> or <code>.hxlibarch</code> file without importing it. This command validates both the outer <a href="BinaryContainerFormat.html">binary container</a> (HMAC-SHA256 over the entire file) and the inner <code>signature.json</code> (per-file integrity hashes and optional Ed25519 digital signature). For code-signed packages, publisher identity is also reported. This is useful for validating packages before distribution, after file transfer, or in CI/CD pipelines.</p>
 
 <h2>Usage</h2>
 <div class="code"><pre>node cli.js verify-package --file &lt;path&gt; [--json]</pre></div>
@@ -36,7 +36,6 @@
       <li>Each recomputed hash is compared against the stored hash in <code>signature.json</code></li>
       <li>The HMAC-SHA256 is recomputed from the file hash map and compared against the stored HMAC</li>
       <li>If the signature includes an Ed25519 digital signature (<code>signature_format_version: "2.0"</code>), the Ed25519 signature is verified against the embedded publisher certificate's public key</li>
-      <li>If the publisher name matches a restricted OEM keyword, the package receives an <b>OEM Verified</b> badge</li>
     </ul>
   </li>
   <li>If all hashes, the HMAC, and any Ed25519 signature match, the result is <b>VALID</b> (exit code <code>0</code>)</li>
@@ -91,7 +90,7 @@ node cli.js verify-package --file "\\server\share\packages\LibraryA.hxlibpkg"</p
 <tr><td><code>valid</code></td><td>boolean</td><td><code>true</code> if all hashes and the HMAC matched</td></tr>
 <tr><td><code>code_signed</code></td><td>boolean</td><td><code>true</code> if the package has an Ed25519 digital signature (v2.0 format)</td></tr>
 <tr><td><code>publisher_cert</code></td><td>object|null</td><td>Publisher certificate details (publisher name, organization, key_id, fingerprint) or <code>null</code> if not code-signed</td></tr>
-<tr><td><code>oem_verified</code></td><td>boolean</td><td><code>true</code> if the publisher name matches a restricted OEM keyword, confirming OEM origin</td></tr>
+<tr><td><code>oem_verified</code></td><td>boolean</td><td><code>true</code> if the publisher is a recognized vendor</td></tr>
 <tr><td><code>errors</code></td><td>string[]</td><td>Error messages (e.g., hash mismatches, read failures)</td></tr>
 <tr><td><code>warnings</code></td><td>string[]</td><td>Non-fatal warnings</td></tr>
 </tbody>

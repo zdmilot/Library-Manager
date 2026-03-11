@@ -45,7 +45,7 @@
   <li>Looks up all cached packages for the given library name</li>
   <li>Selects the target version by <code>--version</code> or <code>--index</code></li>
   <li>Opens the cached <code>.hxlibpkg</code> and verifies its cryptographic signature</li>
-  <li>Reads the <code>manifest.json</code>; if the package author is restricted, the rollback is blocked (OEM libraries must be rolled back via the GUI)</li>
+  <li>Reads the <code>manifest.json</code> and validates the package metadata</li>
   <li>Runs the standard import flow (same as <a href="CLIImportLib.html"><code>import-lib</code></a>):
     <ul>
       <li>Extracts library files to <code>Library\&lt;LibName&gt;\</code></li>
@@ -97,7 +97,7 @@ Error: Specify which version to rollback to with --version &lt;ver&gt; or --inde
 <tr><td>Invalid index (out of range)</td><td>Error: <code>Invalid index &lt;n&gt;. Use list-versions to see available entries</code></td></tr>
 <tr><td>Cached package corrupt</td><td>Error: <code>Failed to read cached package</code></td></tr>
 <tr><td>Signature verification fails</td><td>Error: <code>Package signature verification failed</code></td></tr>
-<tr><td>Restricted author</td><td>Error: OEM libraries cannot be rolled back via the CLI</td></tr>
+<tr><td>Reserved author name</td><td>Error: Reserved author names cannot be rolled back via the CLI</td></tr>
 </tbody>
 </table>
 

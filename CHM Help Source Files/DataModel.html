@@ -55,7 +55,7 @@
 <tr><td><code>venus_compatibility</code></td><td>string</td><td>VENUS version compatibility</td></tr>
 <tr><td><code>description</code></td><td>string</td><td>Library description text</td></tr>
 <tr><td><code>github_url</code></td><td>string</td><td>GitHub repository URL for the library (optional; displayed in the GUI when <code>chk_showGitHubLinks</code> is enabled)</td></tr>
-<tr><td><code>tags</code></td><td>string[]</td><td>Searchable keyword tags. Over 60 tag keywords are reserved (case-insensitive) and rejected during package creation, including OEM and laboratory automation company names. See <a href="PackageSpecSchema.html">Package Spec JSON Schema</a> for the complete reserved list.</td></tr>
+<tr><td><code>tags</code></td><td>string[]</td><td>Searchable keyword tags. Over 60 tag keywords are reserved (case-insensitive) and rejected during package creation. See <a href="PackageSpecSchema.html">Package Spec JSON Schema</a> for the complete reserved list.</td></tr>
 <tr><td><code>created_date</code></td><td>string (ISO 8601)</td><td>Date the package was originally created</td></tr>
 <tr><td><code>format_version</code></td><td>string</td><td>Package format version from the manifest (e.g., <code>"2.0"</code>)</td></tr>
 <tr><td><code>app_version</code></td><td>string</td><td>Version of Library Manager that created the package</td></tr>
@@ -80,8 +80,7 @@
 <tr><td><code>file_hashes</code></td><td>object</td><td>Map of filename -> SHA-256 hash for integrity-tracked files</td></tr>
 <tr><td><code>public_functions</code></td><td>object[]</td><td>Parsed public function signatures from <code>.hsl</code> files (see below)</td></tr>
 <tr><td><code>required_dependencies</code></td><td>string[]</td><td>Library names extracted from <code>#include</code> directives in <code>.hsl</code> files</td></tr>
-<tr><td><code>installer_executable</code></td><td>string | null</td><td>Filename of the bundled standalone installer (<code>.exe</code>) from the package, or <code>null</code></td></tr>
-<tr><td><code>installer_info</code></td><td>object | null</td><td>Optional metadata about the bundled installer (description, source_url, authenticode_signer)</td></tr>
+
 <tr><td><code>installer_path</code></td><td>string | null</td><td>Full path where the retained installer was stored on import, or <code>null</code></td></tr>
 <tr><td><code>installer_original_name</code></td><td>string | null</td><td>Original filename of the installer executable from the package</td></tr>
 <tr><td><code>installer_size</code></td><td>number</td><td>Size of the installer executable in bytes (<code>0</code> if not present)</td></tr>
@@ -172,23 +171,23 @@
 <h2>groups Collection</h2>
 <p>Defines the navigation groups (tabs) shown in the GUI. The application uses a <b>two-tier group architecture</b>:</p>
 
-<h3>Default Groups (Hardcoded)</h3>
-<p>Seven built-in groups are defined in a <code>DEFAULT_GROUPS</code> map in the application source code. These are <b>never stored</b> in <code>groups.json</code> - they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the JSON file to prevent duplicates.</p>
+<h3>Default Groups</h3>
+<p>Seven built-in groups are defined within the application. These are <b>never stored</b> in <code>groups.json</code> - they are resolved in-memory at runtime.</p>
 
 <table>
-<thead><tr><th>ID</th><th>Name</th><th>Icon</th><th>Side</th><th>Purpose</th></tr></thead>
+<thead><tr><th>Name</th><th>Purpose</th></tr></thead>
 <tbody>
-<tr><td><code>gAll</code></td><td>All</td><td><code>fa-home</code></td><td>left</td><td>Shows all installed libraries</td></tr>
-<tr><td><code>gStarred</code></td><td>Starred</td><td><code>fa-star</code></td><td>left</td><td>User-starred (favorited) libraries. Protected &mdash; cannot be deleted or renamed.</td></tr>
-<tr><td><code>gRecent</code></td><td>Recent</td><td><code>fa-history</code></td><td>left</td><td>Recently accessed libraries</td></tr>
-<tr><td><code>gOEM</code></td><td>OEM</td><td><code>fa-check-circle</code> (solid)</td><td>left</td><td>Protected OEM-authored libraries</td></tr>
-<tr><td><code>gFolders</code></td><td>Import</td><td><code>fa-download</code></td><td>right</td><td>Import workflow tab</td></tr>
-<tr><td><code>gEditors</code></td><td>Export</td><td><code>fa-upload</code></td><td>right</td><td>Export workflow tab</td></tr>
-<tr><td><code>gHistory</code></td><td>History</td><td><code>fa-list</code></td><td>right</td><td>Action history</td></tr>
+<tr><td>All</td><td>Shows all installed libraries</td></tr>
+<tr><td>Starred</td><td>User-starred (favorited) libraries</td></tr>
+<tr><td>Recent</td><td>Recently accessed libraries</td></tr>
+<tr><td>OEM</td><td>Libraries authored by recognized OEM vendors</td></tr>
+<tr><td>Import</td><td>Import workflow tab</td></tr>
+<tr><td>Export</td><td>Export workflow tab</td></tr>
+<tr><td>History</td><td>Action history</td></tr>
 </tbody>
 </table>
 
-<p>The <code>gOEM</code> group has an additional <code>"protected": true</code> property that prevents it from being deleted or renamed. See <a href="LibraryGrouping.html">Library Grouping</a> for full details on OEM group protections.</p>
+<p>The OEM and Starred groups are protected and cannot be deleted or renamed. See <a href="LibraryGrouping.html">Library Grouping</a> for details.</p>
 
 <h3>User-Created Groups (Stored in groups.json)</h3>
 <p>User-created groups have auto-generated <code>_id</code> values and <code>"default": false</code>. Each group has a name, FontAwesome icon class, and display metadata.</p>
@@ -198,20 +197,6 @@
   "name": "All",
   "icon-class": "fa-home",
   "default": true,
-  "navbar": "left",
-  "favorite": true
-}</pre></div>
-
-<h3>Default Groups</h3>
-<p>The following default groups are <b>hardcoded</b> and not stored in <code>groups.json</code>. See the table above for the complete list. The code sample below shows what a default group entry looks like in the <code>DEFAULT_GROUPS</code> map (but this is not persisted to disk):</p>
-
-<div class="code"><pre>// In-memory only - not stored in groups.json
-{
-  "_id": "gOEM",
-  "name": "OEM",
-  "icon-class": "fa-check-circle",
-  "default": true,
-  "protected": true,
   "navbar": "left",
   "favorite": true
 }</pre></div>

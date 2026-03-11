@@ -674,10 +674,6 @@
 		<param name="Local" value="VisualIdentity.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="password protection">
-		<param name="Local" value="LibraryGrouping.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="protected group">
 		<param name="Local" value="LibraryGrouping.html">
 		</OBJECT>
@@ -806,10 +802,6 @@
 		<param name="Local" value="FileStorage.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="author password">
-		<param name="Local" value="LibraryGrouping.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="app_version">
 		<param name="Local" value="PackageFormats.html">
 		</OBJECT>
@@ -927,10 +919,6 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="publisher verification">
-		<param name="Local" value="CodeSigning.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="OEM publisher protection">
 		<param name="Local" value="CodeSigning.html">
 		</OBJECT>
 </UL>

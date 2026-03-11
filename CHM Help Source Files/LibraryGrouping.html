@@ -13,40 +13,35 @@
 <p>Library Manager supports organizing installed libraries into custom groups for easier navigation and management. Groups appear as tabs in the main window, allowing you to filter the library view to show only libraries assigned to a specific group.</p>
 
 <h2>Default Groups (Hardcoded)</h2>
-<p>The application defines six built-in groups that are <b>hardcoded</b> in the application source code via a <code>DEFAULT_GROUPS</code> map. These groups are never stored in <code>groups.json</code> - they are resolved in-memory at runtime. A startup migration automatically strips any stale default-group records from the external JSON file to prevent duplicates.</p>
+<p>The application defines six built-in groups. These groups are always present and cannot be removed. They are resolved at runtime and are never stored in <code>groups.json</code>.</p>
 
 <table>
-<thead><tr><th>ID</th><th>Name</th><th>Icon</th><th>Side</th><th>Purpose</th></tr></thead>
+<thead><tr><th>Name</th><th>Purpose</th></tr></thead>
 <tbody>
-<tr><td><code>gAll</code></td><td>All</td><td><code>fa-home</code></td><td>left</td><td>Shows all installed (non-deleted) libraries</td></tr>
-<tr><td><code>gRecent</code></td><td>Recent</td><td><code>fa-history</code></td><td>left</td><td>Recently imported libraries</td></tr>
-<tr><td><code>gOEM</code></td><td>OEM</td><td><code>fa-check-circle</code> (solid)</td><td>left</td><td>Protected OEM-authored libraries</td></tr>
-<tr><td><code>gFolders</code></td><td>Import</td><td><code>fa-download</code></td><td>right</td><td>Import workflow tab</td></tr>
-<tr><td><code>gEditors</code></td><td>Export</td><td><code>fa-upload</code></td><td>right</td><td>Export workflow tab</td></tr>
-<tr><td><code>gHistory</code></td><td>History</td><td><code>fa-list</code></td><td>right</td><td>Action history</td></tr>
+<tr><td>All</td><td>Shows all installed (non-deleted) libraries</td></tr>
+<tr><td>Recent</td><td>Recently imported libraries</td></tr>
+<tr><td>OEM</td><td>Protected OEM-authored libraries</td></tr>
+<tr><td>Import</td><td>Import workflow tab</td></tr>
+<tr><td>Export</td><td>Export workflow tab</td></tr>
+<tr><td>History</td><td>Action history</td></tr>
 </tbody>
 </table>
 
 <p>User-created groups are stored in <code>groups.json</code> with <code>"default": false</code> and auto-generated <code>_id</code> values.</p>
 
 <h2>OEM Default Group</h2>
-<p>The <b>OEM</b> group (<code>gOEM</code>) is a special protected group that ships with the application. It is designed to contain libraries authored by OEM vendors (such as Hamilton and other equipment manufacturers) and is distinguished from regular custom groups in several important ways:</p>
+<p>The <b>OEM</b> group is a special protected group that ships with the application. It contains libraries authored by recognized OEM vendors (such as Hamilton and other equipment manufacturers) and is distinguished from regular custom groups in several important ways:</p>
 
 <h3>Protection</h3>
 <ul>
-  <li><b>Non-deletable and non-renamable</b> - The OEM group has <code>"protected": true</code> in the <code>DEFAULT_GROUPS</code> map, preventing users from deleting or renaming it through the settings panel.</li>
+  <li><b>Non-deletable and non-renamable</b> - The OEM group cannot be deleted or renamed through the settings panel.</li>
   <li><b>Always visible</b> - It appears in the left-side navigation between the System libraries group and user-created groups. It cannot be hidden.</li>
-  <li><b>Solid checkmark icon</b> - Uses the Font Awesome 5 Solid <code>fa-check-circle</code> icon to visually distinguish it from user-created groups.</li>
+  <li><b>Solid checkmark icon</b> - Uses a solid checkmark icon to visually distinguish it from user-created groups.</li>
   <li><b>OEM Verified badge</b> <img src="images/blue-check.png" alt="Blue verified checkmark" style="height:14px; vertical-align:middle;"> - Individual OEM library cards display a blue verified checkmark next to the author name. Hovering the badge shows certificate details (publisher, key ID, fingerprint, algorithm, and issued date). Verified OEM libraries also include a <b>Code Signing Certificate</b> section in their detail modal. See <a href="IntegrityVerification.html">Integrity Verification</a> for full documentation.</li>
 </ul>
 
-<h3>Password-Protected Author Name</h3>
-<p>Certain <b>restricted OEM and laboratory automation company names</b> are blocked to prevent unauthorized attribution of packages. This restriction is enforced in both the GUI and CLI:</p>
-<ul>
-  <li><b>GUI:</b> When a user enters a restricted company name (case-insensitive) as the author in the Library Packager, a password prompt modal (<code>#authorPasswordModal</code>) is displayed. The modal appears when the author field loses focus. The user must enter the correct password before the package can be built. If the password is incorrect or the modal is dismissed, the author field is cleared.</li>
-  <li><b>CLI:</b> When the spec file contains a restricted company name as the author, the CLI blocks the operation with an error. OEM packages must be created and imported via the GUI.</li>
-</ul>
-<img src="images/Restricted-Organization--Hamilton.png" alt="Restricted organization password prompt for a restricted author name" class="doc-screenshot">
+<h3>Reserved Author Names</h3>
+<p>Certain author and organization names associated with OEM vendors are <b>reserved</b> and cannot be used when creating packages. This prevents unauthorized attribution of packages to established vendors. If a reserved name is entered, the application will display an error.</p>
 
 <h3>Empty State</h3>
 <p>When no OEM-authored packages are installed, the OEM tab displays a dedicated placeholder message: <i>"No OEM packages installed yet. Import an OEM-authored library package to see it here."</i></p>
@@ -77,7 +72,7 @@
 <p>Groups can be shown or hidden in the navigation using the favorite/show-hide toggle. Hidden groups and their assigned libraries still exist but are not displayed as navigation tabs.</p>
 
 <h2>Data Persistence</h2>
-<p>Default groups (All, Recent, OEM, Import, Export, History) are <b>not</b> stored in <code>groups.json</code>. They are defined in a hardcoded <code>DEFAULT_GROUPS</code> map in the application source code and resolved in-memory. Only user-created custom groups are stored in <code>groups.json</code>.</p>
+<p>Default groups (All, Recent, OEM, Import, Export, History) are <b>not</b> stored in <code>groups.json</code>. They are defined within the application and resolved in-memory. Only user-created custom groups are stored in <code>groups.json</code>.</p>
 <p>Group-to-library assignments are stored in <code>tree.json</code> within the user data directory. See <a href="DataModel.html">Data Model &amp; Persistence</a> for details.</p>
 
 <h2>Group Record Structure (User-Created Groups)</h2>
