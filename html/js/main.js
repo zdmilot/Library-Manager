@@ -1932,6 +1932,9 @@
 					// Restore scrolling now that splash is leaving
 					document.documentElement.style.overflow = '';
 					document.body.style.overflow = '';
+					// Reveal main app content (hidden via inline style to prevent unstyled flash)
+					var appContent = document.querySelector('.container-fluid');
+					if (appContent) appContent.style.visibility = 'visible';
 					var splashEl = document.getElementById('splash-screen');
 					if (splashEl) {
 						splashEl.classList.add('splash-fade-out');
@@ -15457,11 +15460,15 @@
 
 			// Check restricted OEM author on save
 			if (isRestrictedAuthor(author) || isRestrictedAuthor(organization)) {
-				if (!_oemSessionUnlocked) {
-					$("#restrictedAuthorWarningModal").modal("show");
-					return;
+				if (!ulib_oemAuthorized && !isOemKeywordsEnabled()) {
+					var pwOk = await promptAuthorPassword();
+					if (pwOk) {
+						ulib_oemAuthorized = true;
+					} else {
+						alert("Cannot save: restricted OEM author/organization name requires authorization.");
+						return;
+					}
 				}
-				ulib_oemAuthorized = true;
 			}
 
 			var tagsRaw = $("#ulib-tags").val().trim();
