@@ -111,17 +111,6 @@
         ["labware/MyCustomPlate.rck", "labware/Plates/MyDeepWell.ctr"]
       ]
     },
-    "bin_files": {
-      "type": "array",
-      "description": "Paths to binary/executable files that ship with the library. Each entry is a relative path with an optional subdirectory under the Bin root. File paths must be purely relative — no drive letters, no '//' or '\\\\'. Installed under the Hamilton Bin directory. Optional.",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      },
-      "examples": [
-        ["MyHelper.exe", "tools/MyUtility.dll"]
-      ]
-    },
     "help_files": {
       "type": "array",
       "description": "Basenames of .chm help files that ship with the library. These are installed in the library folder alongside library_files but tracked separately so the UI can surface them for quick access. If omitted, .chm files are auto-detected from library_files during import.",
@@ -163,35 +152,6 @@
       "type": "boolean",
       "default": false,
       "description": "When true, library files are installed directly into the Library root directory instead of a subdirectory named after the library. Some libraries require this for compatibility. The user can override this setting at import time."
-    },
-
-    "installer_executable": {
-      "type": "string",
-      "minLength": 1,
-      "pattern": "\\.exe$",
-      "description": "Path to an optional standalone installer executable (.exe) for this library. Resolved relative to the spec file directory. The installer is embedded in the package under the installer/ directory and can be extracted to a centralized installer store on import when the retain-installers setting is enabled. This is intended for libraries that ship their own setup programs.",
-      "examples": ["setup/MyLibrarySetup_v2.1.exe", "MyLibraryInstaller.exe"]
-    },
-
-    "installer_info": {
-      "type": "object",
-      "description": "Optional metadata about the bundled installer executable.",
-      "properties": {
-        "description": {
-          "type": "string",
-          "description": "Human-readable description of the installer."
-        },
-        "source_url": {
-          "type": "string",
-          "format": "uri",
-          "description": "URL where the installer was originally downloaded from."
-        },
-        "authenticode_signer": {
-          "type": "string",
-          "description": "Authenticode signer name from the .exe digital signature, if known."
-        }
-      },
-      "additionalProperties": true
     }
 
   },
@@ -220,11 +180,7 @@
       "help_files": [
         "MyVenusLibrary.chm"
       ],
-      "com_register_dlls": [],
-      "installer_executable": "setup/MyVenusLibrarySetup.exe",
-      "installer_info": {
-        "description": "Official standalone installer for MyVenusLibrary"
-      }
+      "com_register_dlls": []
     }
   ]
 }

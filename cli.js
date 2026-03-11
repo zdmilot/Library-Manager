@@ -1833,6 +1833,16 @@ function cmdCreatePackage(args) {
         die('Packages with restricted OEM author/organization names cannot be created via the CLI. Use the GUI application instead.');
     }
 
+    // ---- Block developer-only fields (these require OEM password via the GUI) ----
+    var developerOnlyFields = [];
+    if (spec.bin_files && spec.bin_files.length > 0)   developerOnlyFields.push('bin_files');
+    if (spec.installer_executable)                      developerOnlyFields.push('installer_executable');
+    if (spec.installer_info)                            developerOnlyFields.push('installer_info');
+    if (developerOnlyFields.length > 0) {
+        die('Developer-only fields cannot be used via the CLI: ' + developerOnlyFields.join(', ') +
+            '\nThese features are restricted to the GUI application and require OEM authorization.');
+    }
+
     // ---- Sanitize & validate tags ----
     if (spec.tags && Array.isArray(spec.tags)) {
         spec.tags = shared.sanitizeTags(spec.tags);
@@ -1849,7 +1859,6 @@ function cmdCreatePackage(args) {
     const resolvedLibFiles  = (spec.library_files    || []).map(f => path.resolve(specDir, f));
     const resolvedDemoFiles = (spec.demo_method_files || []).map(f => path.resolve(specDir, f));
     const resolvedLabwareFiles = (spec.labware_files || []).map(f => path.resolve(specDir, f));
-    const resolvedBinFiles  = (spec.bin_files || []).map(f => path.resolve(specDir, f));
     const resolvedImagePath = spec.library_image ? path.resolve(specDir, spec.library_image) : null;
 
     for (const fp of resolvedLibFiles)  {
@@ -1860,9 +1869,6 @@ function cmdCreatePackage(args) {
     }
     for (const fp of resolvedLabwareFiles) {
         if (!fs.existsSync(fp)) die(`Labware file not found: ${fp}`);
-    }
-    for (const fp of resolvedBinFiles) {
-        if (!fs.existsSync(fp)) die(`Bin file not found: ${fp}`);
     }
 
     // ---- Auto-detect library name ----
@@ -1916,24 +1922,11 @@ function cmdCreatePackage(args) {
         if (!fs.existsSync(fp)) die(`Help file not found: ${fp}`);
     }
 
-    // Resolve installer executable (optional)
-    let resolvedInstallerPath = null;
-    let installerBasename = null;
-    if (spec.installer_executable) {
-        resolvedInstallerPath = path.resolve(specDir, spec.installer_executable);
-        if (!fs.existsSync(resolvedInstallerPath)) die(`Installer executable not found: ${resolvedInstallerPath}`);
-        installerBasename = path.basename(resolvedInstallerPath);
-        if (!installerBasename.toLowerCase().endsWith('.exe')) {
-            die('installer_executable must be an .exe file: ' + installerBasename);
-        }
-    }
-
     // Build manifest - include help_files and keep CHMs in library_files for backward compat
     const libRelPaths = (spec.library_files || []).map(f => f.replace(/\\/g, '/'));
     const helpRelPaths = (spec.help_files || []).map(f => f.replace(/\\/g, '/'));
     const demoRelPaths = (spec.demo_method_files || []).map(f => f.replace(/\\/g, '/'));
     const labwareRelPaths = (spec.labware_files || []).map(f => f.replace(/\\/g, '/'));
-    const binRelPaths = (spec.bin_files || []).map(f => f.replace(/\\/g, '/'));
     const manifestLibFiles = libRelPaths.slice();
     helpRelPaths.forEach(hf => {
         if (manifestLibFiles.indexOf(hf) === -1) manifestLibFiles.push(hf);
@@ -1969,16 +1962,6 @@ function cmdCreatePackage(args) {
 
     // Add labware files to manifest if specified
     if (labwareRelPaths.length > 0) manifest.labware_files = labwareRelPaths;
-    // Add bin files to manifest if specified
-    if (binRelPaths.length > 0) manifest.bin_files = binRelPaths;
-
-    // Add installer fields to manifest if an installer was specified
-    if (installerBasename) {
-        manifest.installer_executable = installerBasename;
-        if (spec.installer_info && typeof spec.installer_info === 'object') {
-            manifest.installer_info = spec.installer_info;
-        }
-    }
 
     // Add default help file if specified in spec
     if (spec.default_help_file) {
@@ -1989,7 +1972,7 @@ function cmdCreatePackage(args) {
     const knownSpecKeys = ['library_name','author','organization','version','venus_compatibility',
         'description','github_url','tags','library_image','library_files','demo_method_files',
         'help_files','default_help_file','com_register_dlls','install_to_library_root',
-        'installer_executable','installer_info','labware_files','bin_files',
+        'labware_files','bin_files','installer_executable','installer_info',
         '$schema','_comment_paths','_comment','_comment_installer'];
     Object.keys(spec).forEach(function(k) {
         if (knownSpecKeys.indexOf(k) === -1 && !(k in manifest)) {
@@ -2034,18 +2017,7 @@ function cmdCreatePackage(args) {
         zip.addLocalFile(f, zipDir);
     });
 
-    // Add bin files under bin/ directory
-    resolvedBinFiles.forEach(function(f, i) {
-        var relPath = binRelPaths[i] || path.basename(f);
-        var relDir = path.dirname(relPath).replace(/\\/g, '/');
-        var zipDir = relDir && relDir !== '.' ? 'bin/' + relDir : 'bin';
-        zip.addLocalFile(f, zipDir);
-    });
 
-    // Add installer executable under installer/ directory
-    if (resolvedInstallerPath) {
-        zip.addLocalFile(resolvedInstallerPath, 'installer');
-    }
 
     // Sign the package (Ed25519 code signing required)
     const sigCreds = resolveSigningArgs(args);
@@ -2079,8 +2051,6 @@ function cmdCreatePackage(args) {
     console.log(`  Demo method files : ${resolvedDemoFiles.length}`);
     if (comDlls.length > 0) console.log(`  COM DLLs          : ${comDlls.join(', ')}`);
     if (resolvedLabwareFiles.length > 0) console.log(`  Labware files     : ${resolvedLabwareFiles.length}`);
-    if (resolvedBinFiles.length > 0) console.log(`  Bin files         : ${resolvedBinFiles.length}`);
-    if (installerBasename) console.log(`  Installer         : ${installerBasename}`);
     if (libraryImageFilename) console.log(`  Icon              : ${libraryImageFilename}`);
     if (sigCreds) console.log(`  Code signing      : Ed25519 (${sigCreds.cert.key_id})`);
     else          console.log(`  Code signing      : none (HMAC-only integrity)`);

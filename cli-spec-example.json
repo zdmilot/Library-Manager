@@ -33,12 +33,5 @@
   "_comment_default_help": "Optional: when multiple CHM help files are included, specify which one opens by default when the user clicks Help on the library card.",
   "default_help_file": "MyVenusLibrary.chm",
 
-  "com_register_dlls": [],
-
-  "_comment_installer": "Optional: bundle a standalone setup .exe so users can access the original installer from the package.",
-  "installer_executable": "setup/MyVenusLibrarySetup.exe",
-  "installer_info": {
-    "description": "Official standalone installer for MyVenusLibrary",
-    "source_url": "https://github.com/acme-pharma/venus-ml600-helpers/releases"
-  }
+  "com_register_dlls": []
 }
