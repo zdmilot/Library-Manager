@@ -15266,6 +15266,17 @@
 			$("#ulib-save-btn").trigger("click");
 			await new Promise(function(r) { setTimeout(r, 300); });
 
+			// Validate required fields
+			var missingFields = [];
+			if (!$("#ulib-author").val().trim()) missingFields.push("Author");
+			if (!$("#ulib-version").val().trim()) missingFields.push("Version");
+			if (!$("#ulib-venus-compat").val().trim()) missingFields.push("VENUS Compatibility");
+			if (!$("#ulib-description").val().trim()) missingFields.push("Description");
+			if (missingFields.length > 0) {
+				alert("The following required fields are missing:\n\n" + missingFields.join("\n"));
+				return;
+			}
+
 			// If demo method files exist, prompt the user for placement preference
 			if (ulib_demoMethodFiles.length > 0) {
 				var uLib = db_unsigned_libs.unsigned_libs.findOne({"_id": ulibId});
@@ -15342,6 +15353,17 @@
 			var ulibId = $("#unsignedLibDetailModal").attr("data-ulib-id");
 			if (!ulibId) return;
 
+			// Validate required fields
+			var missingFields = [];
+			if (!$("#ulib-author").val().trim()) missingFields.push("Author");
+			if (!$("#ulib-version").val().trim()) missingFields.push("Version");
+			if (!$("#ulib-venus-compat").val().trim()) missingFields.push("VENUS Compatibility");
+			if (!$("#ulib-description").val().trim()) missingFields.push("Description");
+			if (missingFields.length > 0) {
+				alert("The following required fields are missing:\n\n" + missingFields.join("\n"));
+				return;
+			}
+
 			// Save any pending metadata first
 			$("#ulib-save-btn").trigger("click");
 
@@ -15395,14 +15417,16 @@
 					if (allLibPaths.indexOf(f) === -1) allLibPaths.push(f);
 				});
 
-				// Build basenames list for the DB record (matches import format)
-				var libFileBasenames = allLibPaths.map(function(f) { return path.basename(f); });
+				// Build relative paths list for the DB record (preserves subdirectory structure)
+				var libFileRelPaths = allLibPaths.map(function(f) {
+					return libDir ? path.relative(libDir, f).replace(/\\/g, '/') : path.basename(f);
+				});
 
 				// Separate help files
 				var helpFiles = [];
 				allLibPaths.forEach(function(f) {
 					if (path.extname(f).toLowerCase() === '.chm') {
-						helpFiles.push(path.basename(f));
+						helpFiles.push(libDir ? path.relative(libDir, f).replace(/\\/g, '/') : path.basename(f));
 					}
 				});
 
@@ -15448,7 +15472,7 @@
 
 				// Compute integrity hashes
 				var fileHashes = {};
-				try { fileHashes = computeLibraryHashes(libFileBasenames, libDestDir, comDlls); } catch(e) { console.warn('Could not compute integrity hashes: ' + e.message); }
+				try { fileHashes = computeLibraryHashes(libFileRelPaths, libDestDir, comDlls); } catch(e) { console.warn('Could not compute integrity hashes: ' + e.message); }
 
 				// Build the installed library database record (same schema as import)
 				var dbRecord = {
@@ -15465,7 +15489,7 @@
 					library_image: uLib.library_image || null,
 					library_image_base64: uLib.library_image_base64 || null,
 					library_image_mime: uLib.library_image_mime || null,
-					library_files: libFileBasenames,
+					library_files: libFileRelPaths,
 					demo_method_files: demoFiles.map(function(f) { return path.basename(f); }),
 					help_files: helpFiles,
 					com_register_dlls: comDlls,
@@ -15476,8 +15500,8 @@
 					installed_date: new Date().toISOString(),
 					source_package: opts.sourcePackage || '(registered from unsigned)',
 					file_hashes: fileHashes,
-					public_functions: extractPublicFunctions(libFileBasenames, libDestDir),
-					required_dependencies: extractRequiredDependencies(libFileBasenames, libDestDir),
+					public_functions: extractPublicFunctions(libFileRelPaths, libDestDir),
+					required_dependencies: extractRequiredDependencies(libFileRelPaths, libDestDir),
 					publisher_cert: null
 				};
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
@@ -15538,7 +15562,7 @@
 						organization: uLib.organization || '',
 						lib_install_path: libDestDir,
 						source: 'unsigned_library',
-						library_files: libFileBasenames.length,
+						library_files: libFileRelPaths.length,
 						demo_files: demoFiles.length
 					}));
 				} catch(_) { /* non-critical */ }
@@ -15557,7 +15581,7 @@
 					showGenericSuccessModal({
 						title: "Library Registered!",
 						name: libName,
-						detail: libFileBasenames.length + " file" + (libFileBasenames.length !== 1 ? "s" : "") + " registered" + (demoFiles.length > 0 ? " (incl. " + demoFiles.length + " demo)" : ""),
+						detail: libFileRelPaths.length + " file" + (libFileRelPaths.length !== 1 ? "s" : "") + " registered" + (demoFiles.length > 0 ? " (incl. " + demoFiles.length + " demo)" : ""),
 						paths: successPaths,
 						statusHtml: '<i class="fas fa-check-circle mr-1"></i>Library is now signed and tracked by Library Manager',
 						statusClass: 'com-ok'
