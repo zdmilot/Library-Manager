@@ -2044,6 +2044,7 @@
 				if (!$("#pkg-lib-list").children().length) pkgUpdateLibFileList();
 				if (!$("#pkg-demo-list").children().length) pkgUpdateDemoFileList();
 				if (!$("#pkg-labware-tree").children().length) pkgUpdateLabwareFileList();
+				if (!$("#pkg-bin-tree").children().length) pkgUpdateBinFileList();
 				fitExporterHeight();
 			} else if(group_id == "gAll"){
 				// All (home) shows installed library cards with header
@@ -2300,9 +2301,11 @@
 			if (unlocked) {
 				$("#settings-oem-keywords-section").show();
 				$("#pkg-installer-exe-section").show();
+				$("#pkg-bin-files-section").show();
 			} else {
 				$("#settings-oem-keywords-section").hide();
 				$("#pkg-installer-exe-section").hide();
+				$("#pkg-bin-files-section").hide();
 			}
 		}
 
@@ -2388,6 +2391,7 @@
 			if (!$("#pkg-lib-list").children().length) pkgUpdateLibFileList();
 			if (!$("#pkg-demo-list").children().length) pkgUpdateDemoFileList();
 			if (!$("#pkg-labware-tree").children().length) pkgUpdateLabwareFileList();
+			if (!$("#pkg-bin-tree").children().length) pkgUpdateBinFileList();
 			// Refresh code signing UI for packager
 			refreshSigningUI();
 			var sigInfo = getSigningDisplayInfo();
@@ -5858,6 +5862,8 @@
 		var pkg_demoMethodFiles = [];
 		var pkg_labwareFiles = [];         // labware definition files (absolute paths)
 		var pkg_labwareSubdirs = {};       // absolutePath -> subdirectory within Labware root
+		var pkg_binFiles = [];             // bin files (absolute paths) for Hamilton\Bin
+		var pkg_binSubdirs = {};           // absolutePath -> subdirectory within Bin root
 		var pkg_fileRelPaths = {};    // absolutePath -> relative path within package (preserves subfolder structure)
 		var pkg_fileCustomDirs = {};  // absolutePath -> custom install subdir ("" = root, string = subdir, undefined = default)
 		var pkg_installSubdir = null;  // global install subdir: null = default (library name), '' = root, string = custom subdir
@@ -5936,6 +5942,14 @@
 		});
 		$(document).on("click", "#pkg-addLabwareFolder", function() {
 			$("#pkg-input-labwarefolder").trigger("click");
+		});
+
+		// ---- Bin file input button triggers ----
+		$(document).on("click", "#pkg-addBinFiles", function() {
+			$("#pkg-input-binfiles").trigger("click");
+		});
+		$(document).on("click", "#pkg-addBinFolder", function() {
+			$("#pkg-input-binfolder").trigger("click");
 		});
 
 		// ---- Installer executable file picker ----
@@ -6308,6 +6322,47 @@
 			$(this).val('');
 		});
 
+		// ---- Bin file inputs ----
+		$(document).on("change", "#pkg-input-binfiles", function() {
+			var fileInput = this;
+			for (var i = 0; i < fileInput.files.length; i++) {
+				var filePath = fileInput.files[i].path;
+				if (filePath && pkg_binFiles.indexOf(filePath) === -1) {
+					pkg_binFiles.push(filePath);
+					var parentDir = path.basename(path.dirname(filePath));
+					if (parentDir && parentDir !== '.' && parentDir !== path.parse(filePath).root) {
+						pkg_binSubdirs[filePath] = parentDir;
+					}
+				}
+			}
+			pkgUpdateBinFileList();
+			$(this).val('');
+		});
+
+		$(document).on("change", "#pkg-input-binfolder", function() {
+			var folderPath = $(this).val();
+			if (folderPath) {
+				try {
+					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
+					allFiles.forEach(function(fileInfo) {
+						var filePath = fileInfo.absolutePath;
+						if (pkg_binFiles.indexOf(filePath) === -1) {
+							pkg_binFiles.push(filePath);
+							pkg_fileRelPaths[filePath] = fileInfo.relativePath;
+							var relDir = path.dirname(fileInfo.relativePath);
+							if (relDir && relDir !== '.') {
+								pkg_binSubdirs[filePath] = relDir.replace(/\\/g, '/');
+							}
+						}
+					});
+					pkgUpdateBinFileList();
+				} catch(e) {
+					alert("Error reading folder: " + e.message);
+				}
+			}
+			$(this).val('');
+		});
+
 		// ---- Remove selected files ----
 		$(document).on("click", "#pkg-removeLibFiles", function() {
 			var selected = [];
@@ -6339,6 +6394,22 @@
 				return true;
 			});
 			pkgUpdateLabwareFileList();
+		});
+
+		$(document).on("click", "#pkg-removeBinFiles", function() {
+			var selected = [];
+			$("#pkg-bin-tree .ft-file-row.selected").each(function() {
+				selected.push($(this).attr("data-path"));
+			});
+			if (selected.length === 0) { return; }
+			pkg_binFiles = pkg_binFiles.filter(function(f) {
+				if (selected.indexOf(f) !== -1) {
+					delete pkg_binSubdirs[f];
+					return false;
+				}
+				return true;
+			});
+			pkgUpdateBinFileList();
 		});
 
 		$(document).on("click", "#pkg-removeDemoFiles", function() {
@@ -6991,6 +7062,8 @@
 				return '...\\Hamilton\\Methods\\Library Demo Methods\\' + libName + '\\';
 			} else if (treeId === 'pkg-labware-tree') {
 				return '...\\Hamilton\\Labware\\';
+			} else if (treeId === 'pkg-bin-tree') {
+				return '...\\Hamilton\\Bin\\';
 			}
 			return '';
 		}
@@ -7154,6 +7227,7 @@
 
 		// ---- Labware file list tree renderer ----
 		var pkg_labwareEmptyFolders = [];
+		var pkg_binEmptyFolders = [];
 
 		function pkgUpdateLabwareFileList() {
 			var $tree = $("#pkg-labware-tree");
@@ -7220,6 +7294,65 @@
 			$("#pkg-labware-count").text(pkg_labwareFiles.length + " file" + (pkg_labwareFiles.length !== 1 ? "s" : ""));
 		}
 
+		// ---- Bin file list tree renderer ----
+		function pkgUpdateBinFileList() {
+			var $tree = $("#pkg-bin-tree");
+			$tree.empty();
+			delete _pkgLastClickedRow['pkg-bin-tree'];
+			if (pkg_binFiles.length === 0 && pkg_binEmptyFolders.length === 0) {
+				var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
+				var emptyTree = { children: {}, files: [] };
+				emptyTree.children[libName] = { children: {}, files: [] };
+				$tree.html(ftBuildHtml(emptyTree, 'Bin', 0, function() { return ''; }, '...\\Hamilton\\Bin\\'));
+				$tree.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
+				$("#pkg-bin-count").text("0 files");
+				return;
+			}
+
+			// Build tree from subdirectory assignments
+			var tree = { children: {}, files: [] };
+			pkg_binFiles.forEach(function(f) {
+				var subdir = (pkg_binSubdirs[f] || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+				if (!subdir) {
+					tree.files.push(f);
+				} else {
+					var parts = subdir.split('/');
+					var node = tree;
+					for (var pi = 0; pi < parts.length; pi++) {
+						if (!node.children[parts[pi]]) node.children[parts[pi]] = { children: {}, files: [] };
+						node = node.children[parts[pi]];
+					}
+					node.files.push(f);
+				}
+			});
+
+			// Ensure user-created empty folders exist in the tree
+			pkg_binEmptyFolders.forEach(function(folderPath) {
+				var parts = folderPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '').split('/');
+				var node = tree;
+				for (var pi = 0; pi < parts.length; pi++) {
+					if (!node.children[parts[pi]]) node.children[parts[pi]] = { children: {}, files: [] };
+					node = node.children[parts[pi]];
+				}
+			});
+
+			var fileRowFn = function(f) {
+				var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+				var baseName = path.basename(f);
+				var ext = path.extname(f).toLowerCase();
+				var icon = ext === '.dll' ? 'fa-cog' : (ext === '.exe' ? 'fa-play' : 'fa-file');
+				var label = ext ? ext.replace('.', '').toUpperCase() : 'FILE';
+				return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '" draggable="true">' +
+					'<i class="fas ' + icon + ' ft-icon-file"></i>' +
+					'<span class="ft-label">' + escapeHtml(baseName) + '</span>' +
+					'<span class="ft-badge">' + escapeHtml(label) + '</span>' +
+					'</div>';
+			};
+
+			$tree.html(ftBuildHtml(tree, 'Bin', pkg_binFiles.length, fileRowFn, ftGetInstallPath('pkg-bin-tree')));
+			$("#pkg-bin-count").text(pkg_binFiles.length + " file" + (pkg_binFiles.length !== 1 ? "s" : ""));
+		}
+
 		// ---- Generic tree helpers for folder management across all three trees ----
 
 		/**
@@ -7265,6 +7398,22 @@
 					setEmptyFolders: function(v) { pkg_labwareEmptyFolders = v; },
 					update: function() { pkgUpdateLabwareFileList(); },
 					rootLabel: 'Labware'
+				};
+			} else if (treeId === 'pkg-bin-tree') {
+				return {
+					files: function() { return pkg_binFiles; },
+					setFiles: function(v) { pkg_binFiles = v; },
+					getRelPath: function(f) { return pkg_binSubdirs[f] ? pkg_binSubdirs[f] + '/' + path.basename(f) : path.basename(f); },
+					setRelPath: function(f, rel) {
+						var dir = path.dirname(rel).replace(/\\/g, '/');
+						if (!dir || dir === '.') { delete pkg_binSubdirs[f]; }
+						else { pkg_binSubdirs[f] = dir; }
+					},
+					clearRelPath: function(f) { delete pkg_binSubdirs[f]; },
+					emptyFolders: function() { return pkg_binEmptyFolders; },
+					setEmptyFolders: function(v) { pkg_binEmptyFolders = v; },
+					update: function() { pkgUpdateBinFileList(); },
+					rootLabel: 'Bin'
 				};
 			}
 			return null;
@@ -7609,6 +7758,9 @@
 			pkg_labwareFiles = [];
 			pkg_labwareSubdirs = {};
 			pkg_labwareEmptyFolders = [];
+			pkg_binFiles = [];
+			pkg_binSubdirs = {};
+			pkg_binEmptyFolders = [];
 			pkg_libEmptyFolders = [];
 			pkg_demoEmptyFolders = [];
 			_pkgLastClickedRow = {};
@@ -7620,6 +7772,7 @@
 			pkgUpdateLibFileList();
 			pkgUpdateDemoFileList();
 			pkgUpdateLabwareFileList();
+			pkgUpdateBinFileList();
 			$("#pkg-icon-preview").html('<i class="fas fa-image fa-2x" style="color:#ccc;"></i>').removeClass('has-image');
 			$("#pkg-icon-name").text("No image selected");
 			$("#pkg-removeIcon").hide();
@@ -8130,6 +8283,15 @@
 					});
 				}
 
+				// Bin files
+				if (pkg_binFiles.length > 0) {
+					manifest.bin_files = pkg_binFiles.map(function(f) {
+						var subdir = pkg_binSubdirs[f] || '';
+						var baseName = pkg_fileRelPaths[f] || path.basename(f);
+						return subdir ? subdir.replace(/\\/g, '/') + '/' + baseName : baseName;
+					});
+				}
+
 				// Installer executable
 				if (pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
 					manifest.installer_executable = path.basename(pkg_installerFilePath);
@@ -8183,6 +8345,13 @@
 					zip.addLocalFile(fpath, zipDir);
 				});
 
+				// Add bin files under bin/ directory (preserving subdirectory assignments)
+				pkg_binFiles.forEach(function(fpath) {
+					var subdir = pkg_binSubdirs[fpath] || '';
+					var zipDir = subdir ? 'bin/' + subdir.replace(/\\/g, '/') : 'bin';
+					zip.addLocalFile(fpath, zipDir);
+				});
+
 				// Add installer executable under installer/ directory
 				if (pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
 					zip.addLocalFile(pkg_installerFilePath, 'installer');
@@ -8208,7 +8377,8 @@
 						'Created: ' + manifest.created_date + '\r\n' +
 						'Library Files: ' + pkg_libraryFiles.length + '\r\n' +
 						'Demo Files: ' + pkg_demoMethodFiles.length + '\r\n' +
-						'Labware Files: ' + pkg_labwareFiles.length;
+						'Labware Files: ' + pkg_labwareFiles.length + '\r\n' +
+						'Bin Files: ' + pkg_binFiles.length;
 					fs.writeFileSync(savePath + ':package.metadata', metaSummary);
 				} catch (_) { /* ADS write not critical - may fail on non-NTFS */ }
 
@@ -8231,6 +8401,8 @@
 						demo_file_names: pkg_demoMethodFiles.map(function(f) { return path.basename(f); }).join(', '),
 						labware_files:   pkg_labwareFiles.length,
 						labware_file_names: pkg_labwareFiles.map(function(f) { return path.basename(f); }).join(', '),
+						bin_files:       pkg_binFiles.length,
+						bin_file_names:  pkg_binFiles.map(function(f) { return path.basename(f); }).join(', '),
 						com_dlls:        (manifest.com_register_dlls || []),
 						install_to_root: !!manifest.install_to_library_root,
 						custom_install_subdir: manifest.custom_install_subdir || '',
@@ -8246,7 +8418,7 @@
 				showGenericSuccessModal({
 					title: "Package Created Successfully!",
 					name: libName,
-					detail: pkg_libraryFiles.length + " library file" + (pkg_libraryFiles.length !== 1 ? "s" : "") + ", " + pkg_demoMethodFiles.length + " demo method file" + (pkg_demoMethodFiles.length !== 1 ? "s" : "") + ", " + pkg_labwareFiles.length + " labware file" + (pkg_labwareFiles.length !== 1 ? "s" : ""),
+					detail: pkg_libraryFiles.length + " library file" + (pkg_libraryFiles.length !== 1 ? "s" : "") + ", " + pkg_demoMethodFiles.length + " demo method file" + (pkg_demoMethodFiles.length !== 1 ? "s" : "") + ", " + pkg_labwareFiles.length + " labware file" + (pkg_labwareFiles.length !== 1 ? "s" : "") + (pkg_binFiles.length > 0 ? ", " + pkg_binFiles.length + " bin file" + (pkg_binFiles.length !== 1 ? "s" : "") : ""),
 					paths: [
 						{ label: "Saved To", value: savePath }
 					]
@@ -10236,6 +10408,11 @@
 				})();
 				var labwareFiles = manifest.labware_files || [];
 
+				// Bin destination
+				var binFolder = db_links.links.findOne({"_id":"bin-folder"});
+				var binBasePath = binFolder ? binFolder.path : 'C:\\Program Files (x86)\\HAMILTON\\Bin';
+				var binFiles = manifest.bin_files || [];
+
 				var origLibFiles = manifest.library_files || [];
 				var demoFiles = manifest.demo_method_files || [];
 				var comDlls = manifest.com_register_dlls || [];
@@ -10317,6 +10494,16 @@
 						var fname = entry.entryName.substring("labware/".length);
 						if (fname) {
 							var safePath = safeZipExtractPath(labwareBasePath, fname);
+							if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+							var parentDir = path.dirname(safePath);
+							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+							fs.writeFileSync(safePath, entry.getData());
+							extractedCount++;
+						}
+					} else if (entry.entryName.indexOf("bin/") === 0) {
+						var fname = entry.entryName.substring("bin/".length);
+						if (fname) {
+							var safePath = safeZipExtractPath(binBasePath, fname);
 							if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 							var parentDir = path.dirname(safePath);
 							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
@@ -10418,6 +10605,8 @@
 					required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
 					labware_files: labwareFiles,
 					labware_install_path: labwareFiles.length > 0 ? labwareBasePath : null,
+					bin_files: binFiles,
+					bin_install_path: binFiles.length > 0 ? binBasePath : null,
 					publisher_cert: (rollbackSig && rollbackSig.code_signed && rollbackSig.valid && rollbackSig.publisher_cert) ? rollbackSig.publisher_cert : null,
 					installer_executable: manifest.installer_executable || null,
 					installer_info: manifest.installer_info || null,
@@ -10934,6 +11123,8 @@
 				var comDlls = lib.com_register_dlls || [];
 				var labwareFiles = lib.labware_files || [];
 				var labwareInstallPath = lib.labware_install_path || 'C:\\Program Files (x86)\\HAMILTON\\Labware';
+				var binFiles = lib.bin_files || [];
+				var binInstallPath = lib.bin_install_path || 'C:\\Program Files (x86)\\HAMILTON\\Bin';
 
 				// Verify library files exist
 				for (var i = 0; i < libraryFiles.length; i++) {
@@ -10987,6 +11178,7 @@
 				if (lib.installer_executable) manifest.installer_executable = lib.installer_executable;
 				if (lib.installer_info) manifest.installer_info = lib.installer_info;
 				if (labwareFiles.length > 0) manifest.labware_files = labwareFiles.slice();
+				if (binFiles.length > 0) manifest.bin_files = binFiles.slice();
 
 				// Sanitize all file paths in manifest to ensure only safe relative paths
 				try {
@@ -11043,6 +11235,14 @@
 					var fullPath = path.join(labwareInstallPath, f);
 					if (fs.existsSync(fullPath)) {
 						zip.addLocalFile(fullPath, zipSubdir('labware', f));
+					}
+				});
+
+				// Add bin files
+				binFiles.forEach(function(f) {
+					var fullPath = path.join(binInstallPath, f);
+					if (fs.existsSync(fullPath)) {
+						zip.addLocalFile(fullPath, zipSubdir('bin', f));
 					}
 				});
 
@@ -11830,6 +12030,8 @@
 					var sibling = path.join(hamiltonDir, 'Labware');
 					return fs.existsSync(sibling) ? sibling : 'C:\\Program Files (x86)\\HAMILTON\\Labware';
 				})();
+				var binFolderArch = db_links.links.findOne({"_id":"bin-folder"});
+				var binBasePathArch = binFolderArch ? binFolderArch.path : 'C:\\Program Files (x86)\\HAMILTON\\Bin';
 
 				// Track all COM DLL paths across all packages for batch registration
 				var allComDllPaths = [];     // { dllPath, libName, savedId }
@@ -11977,6 +12179,16 @@
 									fs.writeFileSync(outPath, entry.getData());
 									extractedCount++;
 								}
+							} else if (entry.entryName.indexOf("bin/") === 0) {
+								var fname = entry.entryName.substring("bin/".length);
+								if (fname) {
+									var outPath = safeZipExtractPath(binBasePathArch, fname);
+									if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+									var parentDir = path.dirname(outPath);
+									if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+									fs.writeFileSync(outPath, entry.getData());
+									extractedCount++;
+								}
 							}
 						});
 
@@ -12024,6 +12236,8 @@
 							required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
 							labware_files: labwareFiles,
 							labware_install_path: labwareFiles.length > 0 ? labwareBasePathArch : null,
+							bin_files: manifest.bin_files || [],
+							bin_install_path: (manifest.bin_files || []).length > 0 ? binBasePathArch : null,
 							publisher_cert: (innerSig && innerSig.code_signed && innerSig.valid && innerSig.publisher_cert) ? innerSig.publisher_cert : null
 						};
 						// Forward-compat: preserve unknown manifest fields in DB record
@@ -12833,6 +13047,9 @@
 					return fs.existsSync(sibling) ? sibling : 'C:\\Program Files (x86)\\HAMILTON\\Labware';
 				})();
 				var labwareFiles = manifest.labware_files || [];
+				var binFolderImp = db_links.links.findOne({"_id":"bin-folder"});
+				var binBasePathImp = binFolderImp ? binFolderImp.path : 'C:\\Program Files (x86)\\HAMILTON\\Bin';
+				var binFiles = manifest.bin_files || [];
 
 				// ---- Populate the import preview modal ----
 				var $modal = $("#importPreviewModal");
@@ -12981,6 +13198,23 @@
 					$modal.find(".imp-preview-help-section").addClass("d-none");
 				}
 
+				// Bin files list
+				var $binFilesList = $modal.find(".imp-preview-bin-files");
+				$binFilesList.empty();
+				if (binFiles.length > 0) {
+					binFiles.forEach(function(f) {
+						var destFile = path.join(binBasePathImp, f);
+						$binFilesList.append(
+							'<div class="pkg-file-item" style="flex-wrap:wrap;"><i class="fas fa-cogs pkg-file-icon" style="color:var(--medium);"></i><span class="pkg-file-name">' + escapeHtml(f) + '</span>'
+							+ '<div class="hampkg-file-dirs"><span class="hampkg-file-to" title="' + escapeHtml(destFile) + '"><i class="fas fa-sign-in-alt mr-1"></i>' + escapeHtml(destFile) + '</span></div>'
+							+ '</div>'
+						);
+					});
+					$modal.find(".imp-preview-bin-section").removeClass("d-none");
+				} else {
+					$modal.find(".imp-preview-bin-section").addClass("d-none");
+				}
+
 				// Package signature status
 				var $sigStatus = $modal.find(".imp-preview-signature-status");
 				if ($sigStatus.length > 0) {
@@ -13067,6 +13301,8 @@
 				$modal.data("imp-sigResult", sigResult);
 				$modal.data("imp-labwareBasePath", labwareBasePathImp);
 				$modal.data("imp-labwareFiles", labwareFiles);
+				$modal.data("imp-binBasePath", binBasePathImp);
+				$modal.data("imp-binFiles", binFiles);
 
 				$modal.modal("show");
 
@@ -13108,6 +13344,8 @@
 			var demoFiles = manifest.demo_method_files || [];
 			var labwareFiles = manifest.labware_files || [];
 			var labwareBasePathImp = $modal.data("imp-labwareBasePath") || 'C:\\Program Files (x86)\\HAMILTON\\Labware';
+			var binFiles = manifest.bin_files || [];
+			var binBasePathImp = $modal.data("imp-binBasePath") || 'C:\\Program Files (x86)\\HAMILTON\\Bin';
 			var comDlls = manifest.com_register_dlls || [];
 			var comWarning = false;  // tracks if COM registration failed but user chose to proceed
 
@@ -13245,6 +13483,16 @@
 							fs.writeFileSync(outPath, entry.getData());
 							extractedCount++;
 						}
+					} else if (entry.entryName.indexOf("bin/") === 0) {
+						var fname = entry.entryName.substring("bin/".length);
+						if (fname) {
+							var outPath = safeZipExtractPath(binBasePathImp, fname);
+							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+							var parentDir = path.dirname(outPath);
+							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+							fs.writeFileSync(outPath, entry.getData());
+							extractedCount++;
+						}
 					}
 				});
 
@@ -13333,7 +13581,9 @@
 					installer_original_name: impInstallerOriginalName || null,
 					installer_size: impInstallerSize || 0,
 					labware_files: labwareFiles,
-					labware_install_path: labwareFiles.length > 0 ? labwareBasePathImp : null
+					labware_install_path: labwareFiles.length > 0 ? labwareBasePathImp : null,
+					bin_files: binFiles,
+					bin_install_path: binFiles.length > 0 ? binBasePathImp : null
 				};
 				// Forward-compat: preserve unknown manifest fields in DB record
 				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });

@@ -111,6 +111,17 @@
         ["labware/MyCustomPlate.rck", "labware/Plates/MyDeepWell.ctr"]
       ]
     },
+    "bin_files": {
+      "type": "array",
+      "description": "Paths to binary/executable files that ship with the library. Each entry is a relative path with an optional subdirectory under the Bin root. File paths must be purely relative — no drive letters, no '//' or '\\\\'. Installed under the Hamilton Bin directory. Optional.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "examples": [
+        ["MyHelper.exe", "tools/MyUtility.dll"]
+      ]
+    },
     "help_files": {
       "type": "array",
       "description": "Basenames of .chm help files that ship with the library. These are installed in the library folder alongside library_files but tracked separately so the UI can surface them for quick access. If omitted, .chm files are auto-detected from library_files during import.",

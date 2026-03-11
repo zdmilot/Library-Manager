@@ -356,6 +356,27 @@
 								</div>
 							</div>
 
+							<!-- Bin Files Section (optional, developer-only) -->
+							<div class="card mb-3 exporter-card" id="pkg-bin-files-section" style="display:none;">
+								<div class="card-header">
+									<i class="fas fa-cogs mr-2 color-medium"></i>Bin Files
+									<span class="text-muted ml-2 text-sm font-weight-normal">(optional)</span>
+								</div>
+								<div class="card-body">
+									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>Add files to be installed under <b>Hamilton\Bin</b>. Use the tree to organize files into the root, a custom subdirectory, or the library-named directory.</p>
+									<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
+										<button class="btn btn-sm btn-outlined" id="pkg-addBinFiles">Add Files...</button>
+										<button class="btn btn-sm btn-outlined" id="pkg-addBinFolder">Add Folder...</button>
+										<button class="btn btn-sm btn-outlined" id="pkg-removeBinFiles">Remove Selected</button>
+										<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="pkg-bin-tree"><i class="fas fa-folder-plus mr-1"></i>New Folder</button>
+										<span class="text-muted text-sm ml-2" id="pkg-bin-count">0 files</span>
+										<input type="file" class="d-none" id="pkg-input-binfiles" multiple>
+										<input type="file" class="d-none" id="pkg-input-binfolder" nwdirectory>
+									</div>
+									<div class="pkg-file-tree" id="pkg-bin-tree"></div>
+								</div>
+							</div>
+
 							<!-- Installer Executable Section (optional, developer-only) -->
 							<div class="card mb-3 exporter-card" id="pkg-installer-exe-section" style="display:none;">
 								<div class="card-header">
@@ -1997,6 +2018,11 @@
 					<div class="detail-section imp-preview-help-section d-none">
 						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>
 						<div class="pkg-file-list imp-preview-help-files"></div>
+					</div>
+					<!-- Bin Files -->
+					<div class="detail-section imp-preview-bin-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-cogs mr-1" style="color:var(--medium)"></i>Bin Files</h6>
+						<div class="pkg-file-list imp-preview-bin-files"></div>
 					</div>
 					<!-- Package Signature Status -->
 					<div class="detail-section imp-preview-signature-section d-none">
