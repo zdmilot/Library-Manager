@@ -3648,18 +3648,19 @@
 		 * If there are multiple CHM files and NO default_help_file is set, renders a Bootstrap
 		 * dropdown so the user can pick which help file to open.
 		 */
-		function buildCardHelpLinkHtml(chmFiles, libId, defaultHelpFile) {
+		function buildCardHelpLinkHtml(chmFiles, libId, defaultHelpFile, isSystem) {
 			if (!chmFiles || chmFiles.length === 0) return '<span></span>';
+			var helpColor = isSystem ? 'color:var(--medium);' : 'color:#007bff;';
 			if (chmFiles.length === 1) {
-				return '<a href="#" class="text-sm imp-lib-card-help-link" style="color:var(--medium);" data-lib-id="' + libId + '" title="Help"><i class="fas fa-question-circle"></i></a>';
+				return '<a href="#" class="text-sm imp-lib-card-help-link" style="' + helpColor + '" data-lib-id="' + libId + '" title="Help"><i class="fas fa-question-circle"></i></a>';
 			}
 			// Multiple CHM files with a default - render a direct link targeting the default
 			if (defaultHelpFile) {
-				return '<a href="#" class="text-sm imp-lib-card-help-link" style="color:var(--medium);" data-lib-id="' + libId + '" data-default-chm="' + escapeHtml(defaultHelpFile) + '" title="Help"><i class="fas fa-question-circle"></i></a>';
+				return '<a href="#" class="text-sm imp-lib-card-help-link" style="' + helpColor + '" data-lib-id="' + libId + '" data-default-chm="' + escapeHtml(defaultHelpFile) + '" title="Help"><i class="fas fa-question-circle"></i></a>';
 			}
 			// Multiple CHM files, no default - render a dropdown
 			var html = '<div class="dropdown imp-help-dropdown" style="display:inline-block;">';
-			html += '<a href="#" class="text-sm dropdown-toggle imp-lib-card-help-link" style="color:var(--medium);" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-lib-id="' + libId + '" title="Help"><i class="fas fa-question-circle"></i></a>';
+			html += '<a href="#" class="text-sm dropdown-toggle imp-lib-card-help-link" style="' + helpColor + '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-lib-id="' + libId + '" title="Help"><i class="fas fa-question-circle"></i></a>';
 			html += '<div class="dropdown-menu imp-help-dropdown-menu">';
 			for (var i = 0; i < chmFiles.length; i++) {
 				var fname = chmFiles[i];
@@ -3755,7 +3756,7 @@
 				convertedBadge = buildConvertedBadge(false, lib.source_certificate || null, lib.conversion_source || '');
 			}
 
-			var helpLinkHtml = buildCardHelpLinkHtml(chmHelpFiles, lib._id, lib.default_help_file || null);
+			var helpLinkHtml = buildCardHelpLinkHtml(chmHelpFiles, lib._id, lib.default_help_file || null, false);
 
 			return '<div class="col-md-4 col-xl-3 d-flex align-items-stretch imp-lib-card-container" data-lib-id="' + lib._id + '">' +
 				'<div class="m-2 pl-3 pr-3 pt-3 pb-2 link-card imp-lib-card w-100' + cardExtraClass + '"' + cardTooltipAttr + '>' +
@@ -9710,7 +9711,7 @@
 							(shortDesc ? '<p class="text-muted mt-2 mb-1" style="font-size:0.85em;">' + shortDesc + '</p>' : '') +
 							'<div class="imp-lib-card-tags mt-1">' + tagsHtml + '<span class="imp-tag-ellipsis" data-lib-id="' + lib._id + '" title="View all tags">&hellip;</span></div>' +
 							'<div class="imp-lib-card-footer">' +
-								(hasChmHelp ? buildCardHelpLinkHtml(chmHelpFiles, lib._id, lib.default_help_file || null) : '<span></span>') +
+								(hasChmHelp ? buildCardHelpLinkHtml(chmHelpFiles, lib._id, lib.default_help_file || null, false) : '<span></span>') +
 								'<span class="imp-lib-star" data-lib-id="' + lib._id + '" title="' + (isLibStarred(lib._id) ? 'Unstar' : 'Star') + '"><i class="' + (isLibStarred(lib._id) ? 'fas' : 'far') + ' fa-star"></i></span>' +
 							'</div>' +
 						'</div>' +
@@ -9898,7 +9899,7 @@
 						'<p class="text-muted mt-2 mb-1" style="font-size:0.85em;">' + shortDesc + '</p>' +
 						'<div class="imp-lib-card-tags mt-1">' + typeBadges + '</div>' +
 						'<div class="imp-lib-card-footer">' +
-							buildCardHelpLinkHtml(sysChmFiles, sLib._id, null) +
+							buildCardHelpLinkHtml(sysChmFiles, sLib._id, null, true) +
 							'<span class="imp-lib-star" data-lib-id="' + sLib._id + '" title="' + (isLibStarred(sLib._id) ? 'Unstar' : 'Star') + '"><i class="' + (isLibStarred(sLib._id) ? 'fas' : 'far') + ' fa-star"></i></span>' +
 						'</div>' +
 					'</div>' +
