@@ -3240,6 +3240,9 @@ body.dark-mode .imp-help-dropdown-menu .dropdown-item:hover {
 	height: 150px;
 	margin-bottom: 28px;
 	object-fit: contain;
+	will-change: transform;
+	transform: translateZ(0);
+	backface-visibility: hidden;
 }
 
 .splash-title {
