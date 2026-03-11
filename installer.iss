@@ -460,6 +460,10 @@ var
   Json: String;
   RegVal, DarkVal: String;
 begin
+  // Do not overwrite existing settings on upgrade — only write on fresh install
+  if FileExists(SettingsPath) then
+    Exit;
+
   if RegulatedCheckbox.Checked then
     RegVal := 'true'
   else
@@ -847,14 +851,16 @@ Source: "db\unsigned_libs.json"; DestDir: "{app}\db"; Flags: ignoreversion unins
 ; The installer grants write permissions to the Users group via icacls
 ; so that non-admin users can read/write application data.
 ; Marked uninsneveruninstall so the three-tier uninstaller controls removal.
-Source: "local\installed_libs.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
-Source: "local\groups.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
-Source: "local\settings.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
-Source: "local\tree.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
-Source: "local\links.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
-Source: "local\unsigned_libs.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
-Source: "local\publisher_registry.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
-Source: "local\audit_trail.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
+; USER DATA FILES — only deployed on fresh install; preserved on upgrade.
+; The onlyifdoesntexist flag prevents overwriting user data when upgrading.
+Source: "local\installed_libs.json"; DestDir: "{app}\local"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "local\groups.json"; DestDir: "{app}\local"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "local\settings.json"; DestDir: "{app}\local"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "local\tree.json"; DestDir: "{app}\local"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "local\links.json"; DestDir: "{app}\local"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "local\unsigned_libs.json"; DestDir: "{app}\local"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "local\publisher_registry.json"; DestDir: "{app}\local"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "local\audit_trail.json"; DestDir: "{app}\local"; Flags: onlyifdoesntexist uninsneveruninstall
 
 ; Help file
 Source: "Library Manager.chm"; DestDir: "{app}"; Flags: ignoreversion
