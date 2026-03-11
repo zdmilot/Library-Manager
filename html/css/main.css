@@ -1579,6 +1579,23 @@ body {
 	cursor: pointer;
 }
 
+/* Default Help radio inline in file row */
+.ft-default-help-label {
+	margin-left: auto;
+	font-size: 0.72rem;
+	color: #999;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	flex-shrink: 0;
+	padding: 0 2px;
+}
+.ft-default-help-label input[type="radio"] {
+	margin: 0;
+	cursor: pointer;
+}
+
 /* Collapsed branch */
 .ft-branch.collapsed {
 	display: none;
@@ -3696,6 +3713,9 @@ body.dark-mode .ft-count {
 	color: #5a6a7a;
 }
 body.dark-mode .ft-com-label {
+	color: #6a7a8a;
+}
+body.dark-mode .ft-default-help-label {
 	color: #6a7a8a;
 }
 body.dark-mode .pkg-file-tree.ft-dragover {

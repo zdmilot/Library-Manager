@@ -1941,10 +1941,15 @@ function cmdCreatePackage(args) {
         }
     }
 
+    // Add default help file if specified in spec
+    if (spec.default_help_file) {
+        manifest.default_help_file = spec.default_help_file;
+    }
+
     // Preserve any extra user-supplied spec fields for forward compatibility
     const knownSpecKeys = ['library_name','author','organization','version','venus_compatibility',
         'description','github_url','tags','library_image','library_files','demo_method_files',
-        'help_files','com_register_dlls','install_to_library_root',
+        'help_files','default_help_file','com_register_dlls','install_to_library_root',
         'installer_executable','installer_info',
         '$schema','_comment_paths','_comment','_comment_installer'];
     Object.keys(spec).forEach(function(k) {

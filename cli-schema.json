@@ -124,6 +124,16 @@
       ]
     },
 
+    "default_help_file": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\.chm$",
+      "description": "Basename of the .chm help file to open by default when the user clicks Help on the library card. Only meaningful when the library contains multiple .chm help files. When set, clicking Help opens this file directly instead of showing a menu of all help files. Must match a basename in help_files (or a .chm in library_files).",
+      "examples": [
+        "MyVenusLibrary.chm"
+      ]
+    },
+
     "com_register_dlls": {
       "type": "array",
       "description": "Basenames (not full paths) of DLL files listed in library_files that must be registered as COM objects using RegAsm.exe /codebase. Administrator rights are required at import time. DLL names must exactly match basenames of entries in library_files.",

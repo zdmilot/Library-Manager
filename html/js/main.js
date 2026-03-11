@@ -3626,15 +3626,22 @@
 
 		/**
 		 * Build the Help link HTML for a library card.
-		 * If there is one CHM file, renders a simple link.
-		 * If there are multiple CHM files, renders a Bootstrap dropdown so the user can pick.
+		 * If there is one CHM file, renders a simple link that opens it directly.
+		 * If there are multiple CHM files and a default_help_file is set, renders a simple link
+		 * that opens the default file directly.
+		 * If there are multiple CHM files and NO default_help_file is set, renders a Bootstrap
+		 * dropdown so the user can pick which help file to open.
 		 */
-		function buildCardHelpLinkHtml(chmFiles, libId) {
+		function buildCardHelpLinkHtml(chmFiles, libId, defaultHelpFile) {
 			if (!chmFiles || chmFiles.length === 0) return '<span></span>';
 			if (chmFiles.length === 1) {
 				return '<a href="#" class="text-sm imp-lib-card-help-link" style="color:var(--medium);" data-lib-id="' + libId + '">Help</a>';
 			}
-			// Multiple CHM files - render a dropdown
+			// Multiple CHM files with a default - render a direct link targeting the default
+			if (defaultHelpFile) {
+				return '<a href="#" class="text-sm imp-lib-card-help-link" style="color:var(--medium);" data-lib-id="' + libId + '" data-default-chm="' + escapeHtml(defaultHelpFile) + '">Help</a>';
+			}
+			// Multiple CHM files, no default - render a dropdown
 			var html = '<div class="dropdown imp-help-dropdown" style="display:inline-block;">';
 			html += '<a href="#" class="text-sm dropdown-toggle imp-lib-card-help-link" style="color:var(--medium);" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-lib-id="' + libId + '">Help</a>';
 			html += '<div class="dropdown-menu imp-help-dropdown-menu">';
@@ -3732,7 +3739,7 @@
 				convertedBadge = buildConvertedBadge(false, lib.source_certificate || null, lib.conversion_source || '');
 			}
 
-			var helpLinkHtml = buildCardHelpLinkHtml(chmHelpFiles, lib._id);
+			var helpLinkHtml = buildCardHelpLinkHtml(chmHelpFiles, lib._id, lib.default_help_file || null);
 
 			return '<div class="col-md-4 col-xl-3 d-flex align-items-stretch imp-lib-card-container" data-lib-id="' + lib._id + '">' +
 				'<div class="m-2 pl-3 pr-3 pt-3 pb-2 link-card imp-lib-card w-100' + cardExtraClass + '"' + cardTooltipAttr + '>' +
@@ -5875,6 +5882,7 @@
 		var pkg_iconDismissedAuto = false;    // true if user explicitly dismissed the auto-detected image
 		var pkg_comRegisterDlls = [];  // DLL filenames selected for COM registration via RegAsm
 		var pkg_installerFilePath = null;  // optional .exe installer to embed in the package
+		var pkg_defaultHelpFile = null;  // basename of CHM file selected as default help for multi-CHM libraries
 		var _pkgLastClickedRow = {};  // per-tree last clicked .ft-file-row element for shift-select
 
 		/**
@@ -6137,7 +6145,7 @@
 			var folderPath = $(this).val();
 			if (folderPath) {
 				try {
-					var allFiles = getFilesRecursive(folderPath, folderPath);
+					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
 					var newDlls = [];
 					var medFiles = [];
 					allFiles.forEach(function(fileInfo) {
@@ -6229,7 +6237,7 @@
 			var folderPath = $(this).val();
 			if (folderPath) {
 				try {
-					var allFiles = getFilesRecursive(folderPath, folderPath);
+					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
 					var dllFiles = [];
 					allFiles.forEach(function(fileInfo) {
 						var filePath = fileInfo.absolutePath;
@@ -6292,7 +6300,7 @@
 			var folderPath = $(this).val();
 			if (folderPath) {
 				try {
-					var allFiles = getFilesRecursive(folderPath, folderPath);
+					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
 					allFiles.forEach(function(fileInfo) {
 						var filePath = fileInfo.absolutePath;
 						if (pkg_labwareFiles.indexOf(filePath) === -1) {
@@ -7031,11 +7039,23 @@
 						node = node.children[parts[pi]];
 					}
 				});
+				// Count CHM help files to determine if default help radio should be shown
+				var chmCount = pkg_libraryFiles.filter(function(f) {
+					return path.extname(f).toLowerCase() === '.chm';
+				}).length;
+				// Clear default help file if it refers to a file that was removed
+				if (pkg_defaultHelpFile) {
+					var stillExists = pkg_libraryFiles.some(function(f) {
+						return path.basename(f) === pkg_defaultHelpFile;
+					});
+					if (!stillExists) pkg_defaultHelpFile = null;
+				}
 				var fileRowFn = function(f) {
 					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 					var baseName = path.basename(f);
 					var ext = path.extname(baseName).toLowerCase();
 					var isDll = ext === '.dll';
+					var isChm = ext === '.chm';
 					var isChecked = pkg_comRegisterDlls.indexOf(baseName) !== -1;
 					var comHtml = '';
 					if (isDll) {
@@ -7043,12 +7063,20 @@
 							'<input type="checkbox" class="pkg-com-checkbox" data-dll="' + baseName.replace(/"/g, '&quot;') + '"' + (isChecked ? ' checked' : '') + '>' +
 							'<span>COM</span></label>';
 					}
-					var icon = isDll ? 'fa-cog' : (ext === '.hsl' || ext === '.hs_' || ext === '.hsi' ? 'fa-code' : (ext === '.smt' ? 'fa-microchip' : 'fa-file'));
+					var defaultHelpHtml = '';
+					if (isChm && chmCount > 1) {
+						var isDefaultHelp = pkg_defaultHelpFile === baseName;
+						defaultHelpHtml = '<label class="ft-default-help-label" title="Set as the default help file. When set, clicking Help on the library card will open this file directly instead of showing a menu.">' +
+							'<input type="radio" name="pkg-default-help" class="pkg-default-help-radio" data-chm="' + baseName.replace(/"/g, '&quot;') + '"' + (isDefaultHelp ? ' checked' : '') + '>' +
+							'<span>Default</span></label>';
+					}
+					var icon = isDll ? 'fa-cog' : (isChm ? 'fa-question-circle' : (ext === '.hsl' || ext === '.hs_' || ext === '.hsi' ? 'fa-code' : (ext === '.smt' ? 'fa-microchip' : 'fa-file')));
 					var label = ext ? ext.replace('.', '').toUpperCase() : 'FILE';
 					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '" draggable="true">' +
 						'<i class="fas ' + icon + ' ft-icon-file"></i>' +
 						'<span class="ft-label">' + escapeHtml(baseName) + '</span>' +
 						comHtml +
+						defaultHelpHtml +
 						'<span class="ft-badge">' + escapeHtml(label) + '</span>' +
 						'</div>';
 				};
@@ -7075,6 +7103,20 @@
 
 		// Prevent checkbox click from toggling file selection
 		$(document).on("click", ".ft-com-label", function(e) {
+			e.stopPropagation();
+		});
+
+		// ---- Default help file radio handler ----
+		$(document).on("change", ".pkg-default-help-radio", function(e) {
+			e.stopPropagation();
+			var chmName = $(this).attr("data-chm");
+			if ($(this).is(":checked")) {
+				pkg_defaultHelpFile = chmName;
+			}
+		});
+
+		// Prevent radio click from toggling file selection
+		$(document).on("click", ".ft-default-help-label", function(e) {
 			e.stopPropagation();
 		});
 
@@ -7576,6 +7618,7 @@
 			pkg_iconDismissedAuto = false;
 			pkg_comRegisterDlls = [];
 			pkg_installerFilePath = null;
+			pkg_defaultHelpFile = null;
 			pkg_labwareFiles = [];
 			pkg_labwareSubdirs = {};
 			pkg_labwareEmptyFolders = [];
@@ -8087,6 +8130,9 @@
 				if (customSubdir && !manifest.install_to_library_root) manifest.custom_install_subdir = customSubdir;
 				var changelog = $("#pkg-changelog").val().trim();
 				if (changelog) manifest.changelog = changelog;
+
+				// Default help file (for multi-CHM libraries)
+				if (pkg_defaultHelpFile) manifest.default_help_file = pkg_defaultHelpFile;
 
 				// Labware files
 				if (pkg_labwareFiles.length > 0) {
@@ -9496,7 +9542,7 @@
 							(shortDesc ? '<p class="text-muted mt-2 mb-1" style="font-size:0.85em;">' + shortDesc + '</p>' : '') +
 							(tagsHtml ? '<div class="mt-1 mb-2">' + tagsHtml + '</div>' : '') +
 							'<div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #eee;">' +
-								(hasChmHelp ? '<a href="#" class="text-sm imp-lib-card-help-link" style="color:var(--medium);" data-lib-id="' + lib._id + '">Help</a>' : '<span></span>') +
+								(hasChmHelp ? buildCardHelpLinkHtml(chmHelpFiles, lib._id, lib.default_help_file || null) : '<span></span>') +
 								'<span class="imp-lib-star" data-lib-id="' + lib._id + '" title="' + (isLibStarred(lib._id) ? 'Unstar' : 'Star') + '"><i class="' + (isLibStarred(lib._id) ? 'fas' : 'far') + ' fa-star"></i></span>' +
 							'</div>' +
 						'</div>' +
@@ -9683,7 +9729,7 @@
 						'<p class="text-muted mt-2 mb-1" style="font-size:0.85em;">' + shortDesc + '</p>' +
 						'<div class="mt-1 mb-1">' + typeBadges + '</div>' +
 						'<div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px solid #eee;">' +
-							buildCardHelpLinkHtml(sysChmFiles, sLib._id) +
+							buildCardHelpLinkHtml(sysChmFiles, sLib._id, null) +
 							'<span class="imp-lib-star" data-lib-id="' + sLib._id + '" title="' + (isLibStarred(sLib._id) ? 'Unstar' : 'Star') + '"><i class="' + (isLibStarred(sLib._id) ? 'fas' : 'far') + ' fa-star"></i></span>' +
 						'</div>' +
 					'</div>' +
@@ -12211,13 +12257,16 @@
 		});
 
 		// ---- Open CHM help file when clicking the Help link on a card ----
-		// Single-CHM: direct click opens the file. Multi-CHM: dropdown-toggle is handled by Bootstrap,
+		// Single-CHM: direct click opens the file. Multi-CHM with default: opens the default file.
+		// Multi-CHM without default: dropdown-toggle is handled by Bootstrap,
 		// and individual items are handled by .imp-help-dropdown-item below.
 		$(document).on("click", ".imp-lib-card-help-link:not(.dropdown-toggle)", function(e) {
 			e.preventDefault();
 			e.stopPropagation();
 			var libId = $(this).attr("data-lib-id");
 			if (!libId) return;
+
+			var defaultChm = $(this).attr("data-default-chm") || '';
 
 			// Check if it's a system library
 			if (isSystemLibrary(libId)) {
@@ -12229,7 +12278,15 @@
 					return path.extname(f).toLowerCase() === '.chm';
 				});
 				if (chmFiles.length > 0) {
-					var relPath = chmFiles[0].replace(/^Library[\\\/]/i, '');
+					// Use default CHM if specified, otherwise first
+					var targetChm = chmFiles[0];
+					if (defaultChm) {
+						var matched = chmFiles.find(function(f) {
+							return f.replace(/\\/g, '/').split('/').pop() === defaultChm || f === defaultChm;
+						});
+						if (matched) targetChm = matched;
+					}
+					var relPath = targetChm.replace(/^Library[\\\/]/i, '');
 					var fullPath = path.join(sysLibDir, relPath);
 					if (fs.existsSync(fullPath)) {
 						safeOpenItem(fullPath);
@@ -12239,7 +12296,13 @@
 				var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
 				if (!lib) return;
 				var helpFiles = lib.help_files || [];
-				var chmFile = helpFiles.find(function(f) { return path.extname(f).toLowerCase() === '.chm'; });
+				var chmFile;
+				if (defaultChm) {
+					chmFile = helpFiles.find(function(f) { return f === defaultChm || path.basename(f) === defaultChm; });
+				}
+				if (!chmFile) {
+					chmFile = helpFiles.find(function(f) { return path.extname(f).toLowerCase() === '.chm'; });
+				}
 				if (chmFile) {
 					var libBasePath = lib.lib_install_path || '';
 					var fullPath = libBasePath ? path.join(libBasePath, chmFile) : chmFile;
