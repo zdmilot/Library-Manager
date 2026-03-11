@@ -1922,7 +1922,9 @@
 				// Track when splash animation and init are both done
 				var _splashAnimDone = false;
 				var _splashInitDone = false;
-				var _splashStartTime = Date.now();
+				// Use the real animation start time recorded in index.html,
+				// not Date.now() (main.js loads late due to deferred script loading)
+				var _splashStartTime = window._splashStartTime || Date.now();
 				var SPLASH_ANIM_MS = 2300; // match SVG animation duration (~2273ms) + small buffer
 
 				function dismissSplashIfReady() {
