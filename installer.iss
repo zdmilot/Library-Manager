@@ -853,6 +853,7 @@ Source: "local\tree.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsnev
 Source: "local\links.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
 Source: "local\unsigned_libs.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
 Source: "local\publisher_registry.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
+Source: "local\audit_trail.json"; DestDir: "{app}\local"; Flags: ignoreversion uninsneveruninstall
 
 ; Help file
 Source: "Library Manager.chm"; DestDir: "{app}"; Flags: ignoreversion

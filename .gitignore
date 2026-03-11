@@ -1,1 +1,10 @@
 node_modules
+
+# Runtime data (created by app, not shipped in installer)
+local/packages/
+local/exports/
+local/installers/
+
+# Mac OS X resource forks
+._*
+.DS_Store

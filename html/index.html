@@ -1699,15 +1699,6 @@
 							</div>
 						</div>
 
-						<div class="settings-section col-md-12 p-3 no-gutters" id="settings-make-pretty-section" style="display:none;">
-							<h6>Make Library Pretty</h6>
-							<p class="text-sm text-muted mb-2">Scans the VENUS Library folder for unsigned (unmanaged) files and organizes them into named subdirectories based on their library name. Files already belonging to installed or system libraries are not affected.</p>
-							<div class="d-flex align-items-center">
-								<button class="btn btn-sm btn-outlined btn-make-library-pretty"><i class="fas fa-magic mr-1"></i>Make Library Pretty...</button>
-								<span class="ml-3 text-sm pretty-status-text text-muted" style="display:none;"></span>
-							</div>
-						</div>
-
 						<div class="settings-section col-md-12 p-3 no-gutters" id="settings-oem-keywords-section" style="display:none;">
 							<h6><i class="fas fa-industry mr-1"></i>OEM Keywords</h6>
 							<small class="text-muted d-block mb-2">When enabled, restricted OEM author and organization keywords can be used for library packaging without being prompted for a password each time. Authorization is required to enable this setting.</small>
@@ -1726,54 +1717,6 @@
 		</div>
 	</div>
 	<!---- Modal Settings end --->
-
-	<!---- Modal Make Library Pretty Confirmation start --->
-	<div class="modal" tabindex="-1" role="dialog" id="prettyConfirmModal">
-		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:620px;">
-			<div class="modal-content delete-confirm-content">
-				<div class="modal-header delete-confirm-header">
-					<div class="d-flex align-items-center">
-						<div class="delete-confirm-icon mr-3">
-							<i class="fas fa-exclamation-triangle fa-2x"></i>
-						</div>
-						<div>
-							<h5 class="modal-title mb-0">Make Library Pretty</h5>
-							<span class="text-muted text-sm">Select libraries to organize into subdirectories</span>
-						</div>
-					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
-				<div class="modal-body delete-confirm-body">
-					<div class="delete-confirm-warning-box">
-						<p class="mb-2"><strong><i class="fas fa-exclamation-circle mr-1"></i>Warning: This is a destructive action.</strong></p>
-						<p class="mb-2">Selected libraries will have their files moved into named subdirectories. Unchecked libraries will be left in place (e.g. integral libraries that must remain at the root level).</p>
-						<p class="mb-0 text-danger"><strong>Back up your VENUS Library folder before proceeding if you want to be able to revert.</strong></p>
-					</div>
-					<div class="mt-3">
-						<label class="text-sm font-weight-bold mb-1">Libraries found (<span class="pretty-lib-count">0</span>):</label>
-						<div class="d-flex mb-2">
-							<button class="btn btn-sm btn-outline-secondary mr-2 pretty-select-all"><i class="far fa-check-square mr-1"></i>Select All</button>
-							<button class="btn btn-sm btn-outline-secondary pretty-deselect-all"><i class="far fa-square mr-1"></i>Deselect All</button>
-						</div>
-						<div class="pretty-lib-selector-list" style="max-height:280px; overflow-y:auto; border:1px solid #dee2e6; border-radius:4px; background:#f8f9fa;"></div>
-					</div>
-					<div class="delete-item-input-section mt-3">
-						<label class="delete-confirm-label">To confirm, type "<strong>I Accept</strong>" in the box below</label>
-						<input type="text" class="form-control delete-confirm-input pretty-confirm-input" autocomplete="off" spellcheck="false" placeholder="Type I Accept">
-					</div>
-				</div>
-				<div class="modal-footer delete-confirm-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-danger btn-pretty-confirm" disabled>
-						<i class="fas fa-magic mr-1"></i>I understand, make library pretty
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<!---- Modal Make Library Pretty Confirmation end --->
 
 	<!---- Modal Unsigned Library Detail start --->
 	<div class="modal" tabindex="-1" role="dialog" id="unsignedLibDetailModal">
