@@ -3393,6 +3393,9 @@ body.dark-mode .imp-help-dropdown-menu .dropdown-item:hover {
 	justify-content: center;
 	background: linear-gradient(150deg, #002e48 0%, #0a4a6e 40%, #255a85 100%);
 	transition: opacity 0.6s ease, visibility 0.6s ease;
+	contain: strict;
+	isolation: isolate;
+	transform: translateZ(0);
 }
 
 #splash-screen.splash-fade-out {
@@ -3411,7 +3414,6 @@ body.dark-mode .imp-help-dropdown-menu .dropdown-item:hover {
 	width: 150px;
 	height: 150px;
 	margin-bottom: 28px;
-	object-fit: contain;
 	will-change: transform;
 	transform: translateZ(0);
 	backface-visibility: hidden;
