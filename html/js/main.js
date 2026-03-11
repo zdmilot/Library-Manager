@@ -5875,6 +5875,7 @@
 		var pkg_iconDismissedAuto = false;    // true if user explicitly dismissed the auto-detected image
 		var pkg_comRegisterDlls = [];  // DLL filenames selected for COM registration via RegAsm
 		var pkg_installerFilePath = null;  // optional .exe installer to embed in the package
+		var _pkgLastClickedRow = {};  // per-tree last clicked .ft-file-row element for shift-select
 
 		/**
 		 * Recursively collects all files under a directory.
@@ -6357,18 +6358,36 @@
 			pkgUpdateDemoFileList();
 		});
 
-		// ---- Toggle file selection in trees (click = single, ctrl+click = multi) ----
+		// ---- Toggle file selection in trees (click = single, ctrl+click = multi, shift+click = range) ----
 		$(document).on("click", ".ft-file-row", function(e) {
 			var $tree = $(this).closest(".pkg-file-tree");
-			if (e.ctrlKey || e.metaKey) {
+			var treeId = $tree.attr("id");
+			var $allRows = $tree.find(".ft-file-row");
+			var clickedIdx = $allRows.index(this);
+
+			if (e.shiftKey && _pkgLastClickedRow[treeId] !== undefined) {
+				// Shift-click: select/deselect range between anchor and current
+				var anchorIdx = _pkgLastClickedRow[treeId];
+				if (anchorIdx !== clickedIdx && anchorIdx >= 0 && anchorIdx < $allRows.length) {
+					var start = Math.min(anchorIdx, clickedIdx);
+					var end = Math.max(anchorIdx, clickedIdx);
+					var targetState = $allRows.eq(anchorIdx).hasClass("selected");
+					for (var ri = start; ri <= end; ri++) {
+						if (targetState) {
+							$allRows.eq(ri).addClass("selected");
+						} else {
+							$allRows.eq(ri).removeClass("selected");
+						}
+					}
+				}
+			} else if (e.ctrlKey || e.metaKey) {
 				$(this).toggleClass("selected");
 			} else {
 				var wasSelected = $(this).hasClass("selected");
 				$tree.find(".ft-file-row").removeClass("selected");
 				if (!wasSelected) $(this).addClass("selected");
 			}
-			var _treeId = $tree.attr("id");
-			// Selection done
+			_pkgLastClickedRow[treeId] = clickedIdx;
 		});
 
 		// Expand/collapse folder: click on the folder row (shared across all trees)
@@ -6991,6 +7010,7 @@
 		function pkgUpdateLibFileList() {
 			var $list = $("#pkg-lib-list");
 			$list.empty();
+			delete _pkgLastClickedRow['pkg-lib-list'];
 			if (pkg_libraryFiles.length === 0 && pkg_libEmptyFolders.length === 0) {
 				var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
 				var emptyTree = { children: {}, files: [] };
@@ -7061,6 +7081,7 @@
 		function pkgUpdateDemoFileList() {
 			var $list = $("#pkg-demo-list");
 			$list.empty();
+			delete _pkgLastClickedRow['pkg-demo-list'];
 			if (pkg_demoMethodFiles.length === 0 && pkg_demoEmptyFolders.length === 0) {
 				var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
 				var emptyTree = { children: {}, files: [] };
@@ -7108,6 +7129,7 @@
 		function pkgUpdateLabwareFileList() {
 			var $tree = $("#pkg-labware-tree");
 			$tree.empty();
+			delete _pkgLastClickedRow['pkg-labware-tree'];
 			if (pkg_labwareFiles.length === 0 && pkg_labwareEmptyFolders.length === 0) {
 				var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
 				var emptyTree = { children: {}, files: [] };
@@ -7559,6 +7581,7 @@
 			pkg_labwareEmptyFolders = [];
 			pkg_libEmptyFolders = [];
 			pkg_demoEmptyFolders = [];
+			_pkgLastClickedRow = {};
 			$(".pkg-installer-detail").hide();
 			$(".pkg-installer-empty-msg").show();
 			$(".pkg-installer-filename").text('');
