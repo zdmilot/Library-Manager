@@ -1,10 +1,10 @@
 ; ============================================================================
 ; Inno Setup Script for Library Manager
-; Version: 1.9.8
+; Version: 1.9.9
 ; ============================================================================
 
 #define MyAppName "Library Manager"
-#define MyAppVersion "1.9.8"
+#define MyAppVersion "1.9.9"
 #define MyAppPublisher "Zachary Milot"
 #define MyAppURL "https://github.com/zdmilot/Library-Manager"
 #define MyAppExeName "Library Manager.exe"
@@ -25,6 +25,7 @@ DisableProgramGroupPage=yes
 OutputBaseFilename=LibraryManager_v{#MyAppVersion}_Setup
 SetupIconFile={#MyAppIcon}
 UninstallDisplayIcon={app}\{#MyAppIcon}
+OutputDir=C:\Users\admin\Desktop
 UninstallFilesDir={app}
 WizardImageFile=WizardImage.bmp
 WizardSmallImageFile=WizardSmallImage.bmp

@@ -1,5 +1,5 @@
 ﻿
-		// main.js v1.9.8
+		// main.js v1.9.9
 		// Author: Zachary Milot
 
 		var gui = require('nw.gui');
@@ -1922,7 +1922,7 @@
 				var _splashAnimDone = false;
 				var _splashInitDone = false;
 				var _splashStartTime = Date.now();
-				var SPLASH_ANIM_MS = 2300; // match SVG animation duration (2300ms)
+				var SPLASH_ANIM_MS = 2300; // match SVG animation duration (~2273ms) + small buffer
 
 				function dismissSplashIfReady() {
 					if (!_splashAnimDone || !_splashInitDone) return;
@@ -16134,7 +16134,11 @@
 			if (isNaN(idx) || idx < 0 || idx >= _hampkgFiles.length) return;
 
 			if (e.shiftKey && _hampkgLastClickedIdx >= 0 && _hampkgLastClickedIdx !== idx) {
-				// Shift-click: select all visible files between anchor and current
+				// Shift-click: select/deselect all files between last clicked and current
+				var start = Math.min(_hampkgLastClickedIdx, idx);
+				var end = Math.max(_hampkgLastClickedIdx, idx);
+				// Determine target state from the anchor item
+				var targetState = _hampkgFiles[_hampkgLastClickedIdx].selected;
 				// Build set of currently visible indices (respecting category filter)
 				var activeCat = $(".hampkg-cat-btn.active").data("cat") || "all";
 				var visibleIndices = [];
@@ -16152,23 +16156,19 @@
 						if (vm) visibleIndices.push(vi);
 					}
 				}
-				// Find positions of anchor and current click within visible list
-				var anchorPos = visibleIndices.indexOf(_hampkgLastClickedIdx);
-				var currentPos = visibleIndices.indexOf(idx);
-				if (anchorPos >= 0 && currentPos >= 0) {
-					var startPos = Math.min(anchorPos, currentPos);
-					var endPos = Math.max(anchorPos, currentPos);
-					for (var ri = startPos; ri <= endPos; ri++) {
-						_hampkgFiles[visibleIndices[ri]].selected = true;
+				// Apply target state to all visible files in the range
+				for (var ri = 0; ri < visibleIndices.length; ri++) {
+					var rIdx = visibleIndices[ri];
+					if (rIdx >= start && rIdx <= end) {
+						_hampkgFiles[rIdx].selected = targetState;
 					}
 				}
-				// Do not update anchor on shift-click so subsequent shift-clicks extend from same anchor
 			} else {
 				// Normal click: toggle single file
 				_hampkgFiles[idx].selected = !_hampkgFiles[idx].selected;
-				_hampkgLastClickedIdx = idx;
 			}
 
+			_hampkgLastClickedIdx = idx;
 			hampkgBuildFileList();
 			hampkgUpdateSummary();
 			hampkgUpdateInstallPath();
