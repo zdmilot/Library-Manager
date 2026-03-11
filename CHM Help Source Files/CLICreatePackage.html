@@ -23,7 +23,6 @@
 <tr><td><code>--output &lt;path&gt;</code></td><td><span class="badge badge-required">Required</span></td><td>Output <code>.hxlibpkg</code> file path</td></tr>
 <tr><td><code>--sign-key &lt;path&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Path to an Ed25519 private key PEM file for code signing. When provided, the package receives both HMAC and Ed25519 digital signatures. The matching <code>.cert.json</code> is auto-detected from the key filename unless <code>--sign-cert</code> is specified.</td></tr>
 <tr><td><code>--sign-cert &lt;path&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Path to the publisher <code>.cert.json</code> certificate. Only needed if the certificate filename does not match the key filename. Requires <code>--sign-key</code>.</td></tr>
-<tr><td><code>--author-password &lt;pw&gt;</code></td><td><span class="badge badge-optional">Optional</span></td><td>Required when the author is a restricted OEM or laboratory automation company name. Authorizes use of the restricted author name.</td></tr>
 </tbody>
 </table>
 
@@ -100,7 +99,7 @@ node cli.js create-package --spec MyLib.spec.json --output MyLib.hxlibpkg --sign
   <li><code>library_files</code> must contain at least one entry</li>
   <li>All referenced library files must exist on disk</li>
   <li>All referenced help files must exist on disk</li>
-  <li>Restricted OEM author or organization names require <code>--author-password</code></li>
+  <li>Restricted OEM author or organization names cannot be used via the CLI (use the GUI instead)</li>
   <li>Tags must not contain any of the 60+ reserved keywords (case-insensitive substring match). See <a href="PackageSpecSchema.html">Package Spec JSON Schema</a> for the full reserved list.</li>
   <li>Library name (explicit or auto-detected) must be valid (only alphanumeric characters, spaces, dashes, and underscores are allowed)</li>
 </ul>

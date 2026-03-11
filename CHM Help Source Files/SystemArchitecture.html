@@ -290,7 +290,7 @@
 <tr><th colspan="2">Phase 2: Validation</th></tr>
 <tr><td class="step-label">Validate required fields</td><td>author, version, description, venus_compatibility must be present; at least 1 library file required</td></tr>
 <tr class="decision"><td class="step-label">Restricted author name?</td><td>
-  <b>Yes &rarr;</b> Require author password. Invalid password aborts.<br/>
+  <b>Yes &rarr;</b> Block (OEM packages cannot be created via the CLI).<br/>
   <b>No &rarr;</b> Continue
 </td></tr>
 <tr><td class="step-label">Sanitize &amp; validate tags</td><td>Remove reserved words, enforce length limits, deduplicate</td></tr>
@@ -368,7 +368,7 @@
 <tr><th colspan="2">Phase 3: Validation</th></tr>
 <tr><td class="step-label">Validate library name</td><td><code>isValidLibraryName()</code> &mdash; no path separators, no traversal, no reserved names</td></tr>
 <tr class="decision"><td class="step-label">Restricted author name?</td><td>
-  <b>Yes (and not a system library) &rarr;</b> Require <code>--author-password</code> or GUI password prompt<br/>
+  <b>Yes (and not a system library) &rarr;</b> Block in CLI; require GUI password prompt<br/>
   <b>No &rarr;</b> Continue
 </td></tr>
 <tr class="decision"><td class="step-label">Library already installed?</td><td>
@@ -812,12 +812,12 @@
 <thead><tr><th>Command</th><th>Auth Required</th><th>Required Options</th><th>Key Optional Flags</th></tr></thead>
 <tbody>
 <tr><td><code>list-libs</code></td><td>No</td><td>(none)</td><td><code>--include-deleted</code>, <code>--json</code></td></tr>
-<tr style="background-color:#e8f0fd;"><td><code>import-lib</code></td><td><b>Yes</b></td><td><code>--file</code></td><td><code>--lib-dir</code>, <code>--met-dir</code>, <code>--force</code>, <code>--no-group</code>, <code>--no-cache</code>, <code>--author-password</code></td></tr>
-<tr style="background-color:#e8f0fd;"><td><code>import-archive</code></td><td><b>Yes</b></td><td><code>--file</code></td><td><code>--lib-dir</code>, <code>--met-dir</code>, <code>--force</code>, <code>--no-group</code>, <code>--no-cache</code>, <code>--author-password</code></td></tr>
+<tr style="background-color:#e8f0fd;"><td><code>import-lib</code></td><td><b>Yes</b></td><td><code>--file</code></td><td><code>--lib-dir</code>, <code>--met-dir</code>, <code>--force</code>, <code>--no-group</code>, <code>--no-cache</code></td></tr>
+<tr style="background-color:#e8f0fd;"><td><code>import-archive</code></td><td><b>Yes</b></td><td><code>--file</code></td><td><code>--lib-dir</code>, <code>--met-dir</code>, <code>--force</code>, <code>--no-group</code>, <code>--no-cache</code></td></tr>
 <tr><td><code>export-lib</code></td><td>No</td><td><code>--name</code> or <code>--id</code>, <code>--output</code></td><td>(none)</td></tr>
 <tr><td><code>export-archive</code></td><td>No</td><td><code>--all</code> or <code>--names</code> or <code>--ids</code>, <code>--output</code></td><td>(none)</td></tr>
 <tr style="background-color:#fce4ec;"><td><code>delete-lib</code></td><td><b>Yes</b></td><td><code>--name</code> or <code>--id</code>, <code>--yes</code></td><td><code>--hard</code>, <code>--keep-files</code></td></tr>
-<tr><td><code>create-package</code></td><td>No</td><td><code>--spec</code>, <code>--output</code></td><td><code>--author-password</code></td></tr>
+<tr><td><code>create-package</code></td><td>No</td><td><code>--spec</code>, <code>--output</code></td><td>(none)</td></tr>
 <tr><td><code>list-versions</code></td><td>No</td><td><code>--name</code></td><td><code>--json</code></td></tr>
 <tr style="background-color:#fff8e1;"><td><code>rollback-lib</code></td><td><b>Yes</b></td><td><code>--name</code></td><td><code>--version</code>, <code>--index</code>, <code>--lib-dir</code>, <code>--met-dir</code></td></tr>
 <tr><td><code>generate-syslib-hashes</code></td><td>No</td><td><code>--source-dir</code></td><td><code>--output</code></td></tr>

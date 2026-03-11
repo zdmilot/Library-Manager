@@ -196,7 +196,7 @@ The **OEM** group (`gOEM`) is a special protected group that ships with the appl
 - **Solid checkmark icon** - Uses `fas fa-check-circle` (Font Awesome 5 Solid) to visually distinguish it from user-created groups.
 - **Password-protected author/organization names** - A comprehensive list of restricted OEM and laboratory automation company names (Hamilton, Tecan, Thermo Fisher, Beckman Coulter, Roche, Siemens, Agilent, and many more) is maintained in `RESTRICTED_AUTHOR_KEYWORDS`. When a user enters any of these names as the author or organization, a password prompt modal is displayed. The matching is case-insensitive, whitespace-insensitive, and character-insensitive - the input is normalized by stripping all non-alphanumeric characters and lowercasing, then checked for whether it **contains** any restricted keyword as a substring. For example, "NotHamilton" would be blocked because it contains "hamilton".
   - **GUI:** The `#authorPasswordModal` is triggered when the author or organization field loses focus (`blur` event) and the normalized value contains a restricted keyword. The user must enter the password or clear the field.
-  - **CLI:** The `--author-password` flag must be supplied when the spec or package contains a restricted OEM name as author or organization. If the password is missing or incorrect, the CLI exits with an error.
+  - **CLI:** The CLI does not support OEM-restricted operations. If a restricted OEM name is used as author or organization, the CLI exits with an error directing the user to the GUI.
 - **Empty state message** - When no OEM packages are installed, the OEM tab displays a dedicated placeholder message: *"No OEM packages installed yet. Import an OEM-authored library package to see it here."**
 ## 10) Recent/history and housekeeping
 
@@ -622,7 +622,6 @@ node cli.js rollback-lib --name <name> (--version <ver> | --index <n>) [options]
 | `--index <n>` | 1-based index from `list-versions` output |
 | `--no-group` | Skip auto-assigning to a library group |
 | `--no-subdir` | Install directly to library root instead of subdirectory |
-| `--author-password <pw>` | Required when the library has a restricted OEM author/organization |
 | `--lib-dir <path>` | Override library install root |
 | `--met-dir <path>` | Override methods (demo) install root |
 
@@ -648,7 +647,6 @@ node cli.js generate-keypair --publisher <name> [options]
 | `--organization <name>` | Organization or company name |
 | `--output-dir <dir>` | Directory for output files (default: current working directory) |
 | `--force` | Overwrite existing key/certificate files |
-| `--author-password <pw>` | Required when publisher or organization is a restricted OEM name |
 
 **Example**
 ```bat

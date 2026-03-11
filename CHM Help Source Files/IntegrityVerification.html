@@ -370,7 +370,7 @@
 <h2>OEM Certificate Verification</h2>
 <!-- ================================================================== -->
 
-<p>Libraries that claim an OEM author or organization name (e.g., "Hamilton", "Tecan", "Roche") are subject to an additional layer of protection beyond the OEM author password. This prevents bad actors from distributing libraries under a legitimate OEM name even if they possess the author password.</p>
+<p>Libraries that claim an OEM author or organization name (e.g., "Hamilton", "Tecan", "Roche") are subject to an additional layer of protection. This prevents bad actors from distributing libraries under a legitimate OEM name.</p>
 
 <h3>How It Works</h3>
 <ol>
@@ -399,14 +399,14 @@
 <h3>Where This Check Applies</h3>
 <ul>
   <li><b>GUI import</b> &mdash; after the OEM author password prompt</li>
-  <li><b>CLI <code>import-lib</code></b> &mdash; after <code>--author-password</code> validation</li>
-  <li><b>CLI <code>import-archive</code></b> &mdash; for each package within the archive</li>
-  <li><b>CLI <code>rollback-lib</code></b> &mdash; when rolling back to a cached OEM package</li>
+  <li><b>CLI <code>import-lib</code></b> &mdash; OEM packages are blocked (CLI does not support OEM operations)</li>
+  <li><b>CLI <code>import-archive</code></b> &mdash; OEM packages within the archive are skipped</li>
+  <li><b>CLI <code>rollback-lib</code></b> &mdash; OEM packages are blocked (CLI does not support OEM operations)</li>
   <li><b>COM object</b> &mdash; via the service layer</li>
 </ul>
 
 <h3>Why Both Password and Certificate?</h3>
-<p>The OEM author password provides a first layer of protection, preventing casual misuse of OEM names. The certificate verification adds cryptographic proof of identity &mdash; even if the password is shared or leaked, only the holder of the OEM's actual Ed25519 private key can produce a valid code-signed package that passes this check. This defense-in-depth approach ensures that only genuine OEM entities can distribute libraries under their name.</p>
+<p>The certificate verification provides cryptographic proof of identity &mdash; only the holder of the OEM's actual Ed25519 private key can produce a valid code-signed package that passes this check. This ensures that only genuine OEM entities can distribute libraries under their name.</p>
 
 <div class="note">
 <p><b>Note:</b> System libraries (those listed in <code>system_libraries.json</code>) are exempt from this check as they are distributed with the VENUS installation itself.</p>

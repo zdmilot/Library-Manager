@@ -28,7 +28,6 @@
 <tr><td><code>--no-subdir</code></td><td>No</td><td>Install library files directly into the library root directory instead of a named subdirectory</td></tr>
 <tr><td><code>--db-path &lt;dir&gt;</code></td><td>No</td><td>Override the user data directory path</td></tr>
 <tr><td><code>--store-dir &lt;dir&gt;</code></td><td>No</td><td>Override the package store directory</td></tr>
-<tr><td><code>--author-password &lt;pw&gt;</code></td><td>No</td><td>Authorize importing packages with a restricted OEM or laboratory automation company author or organization name</td></tr>
 </tbody>
 </table>
 
@@ -78,8 +77,7 @@ node cli.js import-lib --file MyLibrary.hxlibpkg --no-cache</pre></div>
   <li>Invalid library name (only alphanumeric characters, spaces, dashes, and underscores are allowed) -> error</li>
   <li>Author name shorter than 3 or longer than 500 characters, or contains invalid characters -> error</li>
   <li>Organization name shorter than 3 or longer than 500 characters, or contains invalid characters (if provided) -> error</li>
-  <li>Restricted OEM author/organization without <code>--author-password</code> -> error</li>
-  <li>Incorrect <code>--author-password</code> for restricted author -> error</li>
+  <li>Restricted OEM author/organization &rarr; error (OEM packages must be imported via the GUI)</li>
 </ul>
 
 <h2>Related</h2>

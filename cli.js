@@ -149,12 +149,6 @@ function isSystemLibraryByName(libName) {
 // Re-export from shared for local use
 const isRestrictedAuthor = shared.isRestrictedAuthor;
 
-/**
- * Validate CLI --author-password against the restricted author password.
- * Delegates to shared.validateAuthorPassword for consistent behaviour.
- */
-const validateAuthorPassword = shared.validateAuthorPassword;
-
 // ---------------------------------------------------------------------------
 // Minimal argument parser
 // Supports:  --flag           (boolean true)
@@ -1030,12 +1024,7 @@ function cmdImportLib(args) {
 
     // ---- Restricted author/OEM check ----
     if (isRestrictedAuthor(importAuthor) || isRestrictedAuthor(importOrg)) {
-        if (!args['author-password']) {
-            die('The package author/organization is a restricted OEM name. Use --author-password <password> to authorize.');
-        }
-        if (!validateAuthorPassword(args['author-password'])) {
-            die('Incorrect author password. Importing packages with restricted OEM names requires valid authorization.');
-        }
+        die('Packages with restricted OEM author/organization names cannot be imported via the CLI. Use the GUI application instead.');
     }
 
     // Check for existing installation
@@ -1179,12 +1168,7 @@ function cmdImportArchive(args) {
                 if (!archOrgCheck.valid) throw new Error('Package "' + libName + '": ' + archOrgCheck.reason);
             }
             if (isRestrictedAuthor(archAuthor) || isRestrictedAuthor(archOrg)) {
-                if (!args['author-password']) {
-                    throw new Error('Package "' + libName + '" has a restricted OEM author/organization. Use --author-password <password> to authorize.');
-                }
-                if (!validateAuthorPassword(args['author-password'])) {
-                    throw new Error('Incorrect author password for restricted OEM package "' + libName + '".');
-                }
+                throw new Error('Package "' + libName + '" has a restricted OEM author/organization. OEM packages cannot be imported via the CLI. Use the GUI application instead.');
             }
 
             // ---- Validate manifest paths ----
@@ -1801,12 +1785,7 @@ function cmdCreatePackage(args) {
 
     // ---- Restricted author/organization check ----
     if (isRestrictedAuthor(spec.author) || isRestrictedAuthor(spec.organization)) {
-        if (!args['author-password']) {
-            die('The specified author/organization is a restricted OEM name. Use --author-password <password> to authorize.');
-        }
-        if (!validateAuthorPassword(args['author-password'])) {
-            die('Incorrect author password. Creating packages with restricted OEM names requires valid authorization.');
-        }
+        die('Packages with restricted OEM author/organization names cannot be created via the CLI. Use the GUI application instead.');
     }
 
     // ---- Sanitize & validate tags ----
@@ -2414,12 +2393,7 @@ function cmdRollbackLib(args) {
     const rbAuthor = (manifest.author || '').trim();
     const rbOrg = (manifest.organization || '').trim();
     if (isRestrictedAuthor(rbAuthor) || isRestrictedAuthor(rbOrg)) {
-        if (!args['author-password']) {
-            die('This library has a restricted OEM author/organization. Use --author-password <password> to authorize rollback.');
-        }
-        if (!validateAuthorPassword(args['author-password'])) {
-            die('Incorrect author password. Rolling back libraries with restricted OEM names requires valid authorization.');
-        }
+        die('Libraries with restricted OEM author/organization names cannot be rolled back via the CLI. Use the GUI application instead.');
     }
 
     // ---- Signature verification ----
@@ -2614,8 +2588,6 @@ create-package
   --sign-key <path>             Path to Ed25519 private key (.key.pem) for code signing
   --sign-cert <path>            Path to publisher certificate (.cert.json)
                                 Auto-detected from --sign-key if omitted
-  --author-password <pw>        Required when author/organization is a restricted OEM name
-
   The spec file describes all metadata and which files to bundle.
   See cli-schema.json for the full JSON Schema definition.
   See cli-spec-example.json for a worked example.
@@ -2720,8 +2692,6 @@ generate-keypair
   --organization <name>             Organization or company name
   --output-dir <dir>                Directory for output files (default: current dir)
   --force                           Overwrite existing key files
-  --author-password <pw>            Required for restricted OEM publisher names
-
   Examples:
     node cli.js generate-keypair --publisher "Jane Smith"
     node cli.js generate-keypair --publisher "Lab Team" --organization "Acme Pharma"
@@ -2928,12 +2898,7 @@ function cmdGenerateKeypair(args) {
 
     // Restricted author check
     if (shared.isRestrictedAuthor(publisher) || shared.isRestrictedAuthor(organization)) {
-        if (!args['author-password']) {
-            die('The specified publisher/organization is a restricted OEM name. Use --author-password <password> to authorize.');
-        }
-        if (!shared.validateAuthorPassword(args['author-password'])) {
-            die('Incorrect author password.');
-        }
+        die('Key pairs for restricted OEM publisher/organization names cannot be generated via the CLI. Use the GUI application instead.');
     }
 
     console.log('Generating Ed25519 signing key pair...');
