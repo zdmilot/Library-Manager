@@ -2093,7 +2093,7 @@ body.dark-mode .imp-sort-select {
 	cursor: pointer;
 	display: flex;
 	flex-direction: column;
-	margin: 8px !important;
+	margin: 6px !important;
 }
 
 .imp-lib-card:hover {
