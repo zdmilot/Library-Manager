@@ -13112,6 +13112,533 @@
 			impBatchImportPackages(packages, archives);
 		});
 
+		// ---- Batch import multiple .hxlibpkg files (with single UAC for COM) ----
+		async function impBatchImportPackages(packagePaths, archivePaths) {
+			var accessCheck = canManageLibraries();
+			if (!accessCheck.allowed) {
+				showAccessDeniedModal('Import Library', accessCheck.reason);
+				return;
+			}
+
+			if (_isImporting) {
+				alert("An import is already in progress. Please wait for it to complete.");
+				return;
+			}
+			_isImporting = true;
+
+			try {
+				// ---- Pre-scan all packages: parse manifests, check duplicates, detect COM ----
+				var pkgInfos = [];
+				var parseErrors = [];
+
+				for (var pi = 0; pi < packagePaths.length; pi++) {
+					try {
+						var rawBuffer = fs.readFileSync(packagePaths[pi]);
+						var zipBuffer = unpackContainer(rawBuffer, CONTAINER_MAGIC_PKG);
+						var zip = new AdmZip(zipBuffer);
+						var manifestEntry = zip.getEntry("manifest.json");
+						if (!manifestEntry) {
+							parseErrors.push(path.basename(packagePaths[pi]) + ": manifest.json not found");
+							continue;
+						}
+						var manifest = JSON.parse(zip.readAsText(manifestEntry));
+						var libName = manifest.library_name || "Unknown";
+
+						if (!isValidLibraryName(libName)) {
+							parseErrors.push(path.basename(packagePaths[pi]) + ": invalid library name");
+							continue;
+						}
+
+						// Validate author/organization
+						var batchAuthor = (manifest.author || '').trim();
+						var batchOrg = (manifest.organization || '').trim();
+						if (batchAuthor) {
+							var batchAuthorChk = shared.isValidAuthorName(batchAuthor);
+							if (!batchAuthorChk.valid) {
+								parseErrors.push(libName + ": " + batchAuthorChk.reason);
+								continue;
+							}
+						}
+						if (batchOrg) {
+							var batchOrgChk = shared.isValidOrganizationName(batchOrg);
+							if (!batchOrgChk.valid) {
+								parseErrors.push(libName + ": " + batchOrgChk.reason);
+								continue;
+							}
+						}
+
+						// Validate manifest paths
+						var pathValidation = shared.validateManifestPaths(manifest);
+						if (!pathValidation.valid) {
+							parseErrors.push(libName + ": unsafe file paths detected");
+							continue;
+						}
+
+						// Verify signature
+						var sigResult = verifyPackageSignature(zip);
+						if (sigResult.signed && !sigResult.valid) {
+							parseErrors.push(libName + ": signature verification FAILED (" + sigResult.errors.join("; ") + ")");
+							continue;
+						}
+
+						pkgInfos.push({
+							filePath: packagePaths[pi],
+							zip: zip,
+							manifest: manifest,
+							sigResult: sigResult,
+							libName: libName,
+							comDlls: manifest.com_register_dlls || []
+						});
+					} catch (e) {
+						parseErrors.push(path.basename(packagePaths[pi]) + ": " + e.message);
+					}
+				}
+
+				if (pkgInfos.length === 0 && archivePaths.length === 0) {
+					var errMsg = "No valid packages found to import.";
+					if (parseErrors.length > 0) errMsg += "\n\n" + parseErrors.join("\n");
+					alert(errMsg);
+					return;
+				}
+
+				// ---- Confirmation prompt ----
+				var confirmMsg = "You selected " + pkgInfos.length + " package" + (pkgInfos.length !== 1 ? "s" : "");
+				if (archivePaths.length > 0) {
+					confirmMsg += " and " + archivePaths.length + " archive" + (archivePaths.length !== 1 ? "s" : "");
+				}
+				confirmMsg += " to import:\n\n";
+				pkgInfos.forEach(function(info) {
+					var ver = info.manifest.version ? " (v" + info.manifest.version + ")" : "";
+					confirmMsg += "  - " + info.libName + ver + "\n";
+				});
+				archivePaths.forEach(function(ap) {
+					confirmMsg += "  - " + path.basename(ap) + " (archive)\n";
+				});
+				if (parseErrors.length > 0) {
+					confirmMsg += "\nSkipped (" + parseErrors.length + " error" + (parseErrors.length !== 1 ? "s" : "") + "):\n";
+					parseErrors.forEach(function(e) { confirmMsg += "  x " + e + "\n"; });
+				}
+				confirmMsg += "\nDo you want to install " + (pkgInfos.length > 1 ? "all " + pkgInfos.length + " packages" : "this package");
+				if (archivePaths.length > 0) confirmMsg += " and import the archive" + (archivePaths.length !== 1 ? "s" : "");
+				confirmMsg += "?";
+
+				if (!confirm(confirmMsg)) return;
+
+				// ---- Duplicate detection ----
+				var batchDuplicates = [];
+				var batchSkipIndices = {};
+				for (var di = 0; di < pkgInfos.length; di++) {
+					var dupExisting = db_installed_libs.installed_libs.findOne({"library_name": pkgInfos[di].libName});
+					if (dupExisting && !dupExisting.deleted) {
+						batchDuplicates.push({
+							index: di,
+							libName: pkgInfos[di].libName,
+							incomingVersion: pkgInfos[di].manifest.version || '?',
+							existingVersion: dupExisting.version || '?'
+						});
+					}
+				}
+
+				if (batchDuplicates.length > 0) {
+					var dupMsg = batchDuplicates.length + " librar" + (batchDuplicates.length !== 1 ? "ies are" : "y is") + " already installed:\n\n";
+					batchDuplicates.forEach(function(d) {
+						if (d.existingVersion !== '?' && d.incomingVersion !== '?' && d.existingVersion === d.incomingVersion) {
+							dupMsg += "  \u2022 " + d.libName + " (same version: v" + d.existingVersion + ")\n";
+						} else {
+							dupMsg += "  \u2022 " + d.libName + " (installed: v" + d.existingVersion + " -> importing: v" + d.incomingVersion + ")\n";
+						}
+					});
+					dupMsg += "\nClick OK to replace " + (batchDuplicates.length !== 1 ? "these libraries" : "this library") + ", or Cancel to skip " + (batchDuplicates.length !== 1 ? "them" : "it") + ".";
+					if (!confirm(dupMsg)) {
+						batchDuplicates.forEach(function(d) { batchSkipIndices[d.index] = true; });
+						var remaining = pkgInfos.filter(function(_, idx) { return !batchSkipIndices[idx]; });
+						if (remaining.length === 0 && archivePaths.length === 0) {
+							alert("All selected packages are already installed. No changes were made.");
+							return;
+						}
+					}
+				}
+
+				// ---- COM DLL pre-scan: detect all COM registrations across all packages ----
+				var batchComDllCount = 0;
+				var batchComPkgNames = [];
+				for (var ci = 0; ci < pkgInfos.length; ci++) {
+					if (batchSkipIndices[ci]) continue;
+					if (pkgInfos[ci].comDlls.length > 0) {
+						batchComDllCount += pkgInfos[ci].comDlls.length;
+						batchComPkgNames.push(pkgInfos[ci].libName);
+					}
+				}
+
+				if (batchComDllCount > 0) {
+					var comPromptMsg = "This batch contains " + batchComDllCount + " COM DLL" + (batchComDllCount !== 1 ? "s" : "") +
+						" across " + batchComPkgNames.length + " package" + (batchComPkgNames.length !== 1 ? "s" : "") +
+						" that require administrator rights to register:\n\n";
+					batchComPkgNames.forEach(function(n) { comPromptMsg += "  \u2022 " + n + "\n"; });
+					comPromptMsg += "\nYou will be prompted for administrator rights once to register all COM objects.\n\nDo you want to continue?";
+					if (!confirm(comPromptMsg)) return;
+				}
+
+				// ---- Install each package ----
+				var results = { success: [], failed: parseErrors.slice() };
+				var allComDllPaths = [];
+
+				var libFolder = db_links.links.findOne({"_id":"lib-folder"});
+				var metFolder = db_links.links.findOne({"_id":"met-folder"});
+				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
+				var labFolderBatch = db_links.links.findOne({"_id":"labware-folder"});
+				var labwareBasePathBatch = labFolderBatch ? labFolderBatch.path : (function() {
+					var hamiltonDir = path.dirname(libBasePath);
+					var sibling = path.join(hamiltonDir, 'Labware');
+					return fs.existsSync(sibling) ? sibling : 'C:\\Program Files (x86)\\HAMILTON\\Labware';
+				})();
+				var binFolderBatch = db_links.links.findOne({"_id":"bin-folder"});
+				var binBasePathBatch = binFolderBatch ? binFolderBatch.path : 'C:\\Program Files (x86)\\HAMILTON\\Bin';
+
+				for (var ii = 0; ii < pkgInfos.length; ii++) { (function() {
+					var info = pkgInfos[ii];
+					if (batchSkipIndices[ii]) {
+						results.failed.push(info.libName + ": skipped (already installed)");
+						return;
+					}
+
+					try {
+						var zip = info.zip;
+						var manifest = info.manifest;
+						var libName = info.libName;
+						var comDlls = info.comDlls;
+						var sigResult = info.sigResult;
+
+						var origLibFiles = manifest.library_files || [];
+						var demoFiles = manifest.demo_method_files || [];
+
+						// Auto-detect .chm help files
+						var declaredHelp = manifest.help_files || [];
+						var helpFiles = declaredHelp.slice();
+						var libFiles = [];
+						origLibFiles.forEach(function(f) {
+							if (path.extname(f).toLowerCase() === '.chm') {
+								if (helpFiles.indexOf(f) === -1) helpFiles.push(f);
+							} else {
+								libFiles.push(f);
+							}
+						});
+
+						var installToRoot = !!manifest.install_to_library_root;
+						var customSubdir = manifest.custom_install_subdir || '';
+						var libDestDir;
+						if (installToRoot) {
+							libDestDir = libBasePath;
+						} else if (customSubdir) {
+							libDestDir = path.join(libBasePath, customSubdir);
+						} else {
+							libDestDir = path.join(libBasePath, libName);
+						}
+						var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
+						var labwareFiles = manifest.labware_files || [];
+						var binFiles = manifest.bin_files || [];
+						var extractedCount = 0;
+
+						// Create destination directories
+						if ((libFiles.length > 0 || helpFiles.length > 0) && !fs.existsSync(libDestDir)) {
+							fs.mkdirSync(libDestDir, { recursive: true });
+						}
+						if (demoFiles.length > 0 && !fs.existsSync(demoDestDir)) {
+							fs.mkdirSync(demoDestDir, { recursive: true });
+						}
+
+						// Extract files
+						var zipEntries = zip.getEntries();
+						zipEntries.forEach(function(entry) {
+							if (entry.entryName === "manifest.json" || entry.entryName === "signature.json") return;
+							if (entry.entryName.indexOf("library/") === 0) {
+								var fname = entry.entryName.substring("library/".length);
+								if (fname) {
+									var outPath = safeZipExtractPath(libDestDir, fname);
+									if (!outPath) return;
+									var parentDir = path.dirname(outPath);
+									if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+									fs.writeFileSync(outPath, entry.getData());
+									extractedCount++;
+								}
+							} else if (entry.entryName.indexOf("demo_methods/") === 0) {
+								var fname = entry.entryName.substring("demo_methods/".length);
+								if (fname) {
+									var outPath = safeZipExtractPath(demoDestDir, fname);
+									if (!outPath) return;
+									var parentDir = path.dirname(outPath);
+									if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+									fs.writeFileSync(outPath, entry.getData());
+									extractedCount++;
+								}
+							} else if (entry.entryName.indexOf("help_files/") === 0) {
+								var fname = entry.entryName.substring("help_files/".length);
+								if (fname) {
+									var outPath = safeZipExtractPath(libDestDir, fname);
+									if (!outPath) return;
+									var parentDir = path.dirname(outPath);
+									if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+									fs.writeFileSync(outPath, entry.getData());
+									extractedCount++;
+								}
+							} else if (entry.entryName.indexOf("labware/") === 0) {
+								var fname = entry.entryName.substring("labware/".length);
+								if (fname) {
+									var outPath = safeZipExtractPath(labwareBasePathBatch, fname);
+									if (!outPath) return;
+									var parentDir = path.dirname(outPath);
+									if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+									fs.writeFileSync(outPath, entry.getData());
+									extractedCount++;
+								}
+							} else if (entry.entryName.indexOf("bin/") === 0) {
+								var fname = entry.entryName.substring("bin/".length);
+								if (fname) {
+									var outPath = safeZipExtractPath(binBasePathBatch, fname);
+									if (!outPath) return;
+									var parentDir = path.dirname(outPath);
+									if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+									fs.writeFileSync(outPath, entry.getData());
+									extractedCount++;
+								}
+							}
+						});
+
+						// Update or insert DB record
+						var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
+						if (existing) {
+							db_installed_libs.installed_libs.remove({"_id": existing._id});
+						}
+
+						var fileHashes = {};
+						try { fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls); } catch(e) {}
+
+						var dbRecord = {
+							library_name: manifest.library_name || "",
+							author: manifest.author || "",
+							organization: manifest.organization || "",
+							installed_by: getWindowsUsername(),
+							version: manifest.version || "",
+							venus_compatibility: manifest.venus_compatibility || "",
+							description: manifest.description || "",
+							github_url: manifest.github_url || "",
+							tags: manifest.tags || [],
+							created_date: manifest.created_date || "",
+							app_version: manifest.app_version || "",
+							format_version: manifest.format_version || "1.0",
+							windows_version: manifest.windows_version || "",
+							venus_version: manifest.venus_version || "",
+							package_lineage: manifest.package_lineage || [],
+							library_image: manifest.library_image || null,
+							library_image_base64: manifest.library_image_base64 || null,
+							library_image_mime: manifest.library_image_mime || null,
+							library_files: libFiles,
+							demo_method_files: manifest.demo_method_files || [],
+							help_files: helpFiles,
+							com_register_dlls: comDlls,
+							com_warning: comDlls.length > 0,
+							com_registered: false,
+							lib_install_path: libDestDir,
+							demo_install_path: demoDestDir,
+							install_to_library_root: !!manifest.install_to_library_root,
+							custom_install_subdir: manifest.custom_install_subdir || '',
+							installed_date: new Date().toISOString(),
+							source_package: path.basename(info.filePath),
+							file_hashes: fileHashes,
+							public_functions: extractPublicFunctions(libFiles, libDestDir),
+							required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
+							publisher_cert: (sigResult && sigResult.code_signed && sigResult.valid && sigResult.publisher_cert) ? sigResult.publisher_cert : null,
+							converted_from_executable: !!(sigResult && sigResult.converted),
+							source_certificate: (sigResult && sigResult.converted && sigResult.source_certificate) ? sigResult.source_certificate : null,
+							conversion_source: (sigResult && sigResult.converted && sigResult.conversion_source) ? sigResult.conversion_source : null,
+							labware_files: labwareFiles,
+							labware_install_path: labwareFiles.length > 0 ? labwareBasePathBatch : null,
+							bin_files: binFiles,
+							bin_install_path: binFiles.length > 0 ? binBasePathBatch : null
+						};
+						Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
+						var saved = db_installed_libs.installed_libs.save(dbRecord);
+
+						try { shared.updateMarkerForLibrary(dbRecord); } catch(_) {}
+
+						registerPublisher(manifest.author || '');
+						registerPublisher(manifest.organization || '');
+						registerTags(manifest.tags || []);
+
+						// Collect COM DLL paths for deferred batch registration
+						if (comDlls.length > 0) {
+							var dllPaths = comDlls.map(function(d) { return path.join(libDestDir, d); })
+								.filter(function(p) { return fs.existsSync(p); });
+							for (var cdi = 0; cdi < dllPaths.length; cdi++) {
+								allComDllPaths.push({dllPath: dllPaths[cdi], libName: libName, savedId: saved._id});
+							}
+						}
+
+						// Add to appropriate group
+						var navtree = db_tree.tree.find();
+						var targetGroupId = null;
+						var batchSavedAuthor = (manifest.author || '').trim();
+						var batchSavedOrg = (manifest.organization || '').trim();
+
+						if (isRestrictedAuthor(batchSavedAuthor) || isRestrictedAuthor(batchSavedOrg)) {
+							targetGroupId = addToOemTreeGroup(saved._id);
+						} else {
+							for (var ti = 0; ti < navtree.length; ti++) {
+								var gEntry = getGroupById(navtree[ti]["group-id"]);
+								if (gEntry && !gEntry["default"]) {
+									targetGroupId = navtree[ti]["group-id"];
+									var existingIds = (navtree[ti]["method-ids"] || []).slice();
+									existingIds.push(saved._id);
+									db_tree.tree.update({"group-id": targetGroupId}, {"method-ids": existingIds}, {multi: false, upsert: false});
+									break;
+								}
+							}
+						}
+						if (!targetGroupId) {
+							var newGroup = db_groups.groups.save({
+								"name": "Libraries",
+								"icon-class": "fa-book",
+								"default": false,
+								"navbar": "left",
+								"favorite": true
+							});
+							db_tree.tree.save({
+								"group-id": newGroup._id,
+								"method-ids": [saved._id],
+								"locked": false
+							});
+						}
+
+						// Cache package
+						try {
+							var pkgBuffer = fs.readFileSync(info.filePath);
+							cachePackageToStore(pkgBuffer, libName, manifest.version);
+						} catch(cacheErr) {}
+
+						results.success.push(libName + " (" + extractedCount + " files)");
+
+						// Audit trail
+						try {
+							var sigStatus = 'unsigned';
+							if (sigResult && sigResult.signed) sigStatus = sigResult.valid ? 'valid' : 'failed';
+							if (sigResult && sigResult.code_signed) sigStatus = 'code_signed_' + sigStatus;
+							appendAuditTrailEntry(buildAuditTrailEntry('library_imported', {
+								library_name: libName,
+								version: manifest.version || '',
+								author: manifest.author || '',
+								organization: manifest.organization || '',
+								source_file: info.filePath,
+								lib_install_path: libDestDir,
+								demo_install_path: demoDestDir,
+								files_extracted: extractedCount,
+								signature_status: sigStatus,
+								batch_import: true
+							}));
+						} catch(_) {}
+
+					} catch(e) {
+						results.failed.push(info.libName + ": " + e.message);
+					}
+				})(); }
+
+				// ---- Batch COM registration: single UAC prompt for ALL COM DLLs ----
+				if (allComDllPaths.length > 0) {
+					var allDllPathsFlat = allComDllPaths.map(function(c) { return c.dllPath; });
+					try {
+						var batchComResult = await comRegisterMultipleDlls(allDllPathsFlat, true);
+
+						var comResultMap = {};
+						for (var cri = 0; cri < batchComResult.results.length; cri++) {
+							comResultMap[batchComResult.results[cri].dll] = batchComResult.results[cri];
+						}
+
+						var processedLibs = {};
+						for (var cli = 0; cli < allComDllPaths.length; cli++) {
+							var comEntry = allComDllPaths[cli];
+							if (!processedLibs[comEntry.libName]) {
+								processedLibs[comEntry.libName] = { savedId: comEntry.savedId, allOk: true };
+							}
+							var dllResult = comResultMap[comEntry.dllPath];
+							if (!dllResult || !dllResult.success) {
+								processedLibs[comEntry.libName].allOk = false;
+							}
+						}
+
+						Object.keys(processedLibs).forEach(function(pLibName) {
+							var pInfo = processedLibs[pLibName];
+							if (pInfo.allOk) {
+								db_installed_libs.installed_libs.update(
+									{"_id": pInfo.savedId},
+									{"com_warning": false, "com_registered": true},
+									{multi: false, upsert: false}
+								);
+							}
+						});
+
+						if (!batchComResult.allSuccess) {
+							var comWarningLibs = [];
+							Object.keys(processedLibs).forEach(function(pLibName) {
+								if (!processedLibs[pLibName].allOk) comWarningLibs.push(pLibName);
+							});
+							if (comWarningLibs.length > 0) {
+								results.comWarnings = comWarningLibs;
+							}
+						}
+					} catch(comErr) {
+						console.warn('[batch-import] COM batch registration error: ' + comErr.message);
+					}
+				}
+
+				// ---- Process any archives after packages ----
+				if (archivePaths.length > 0) {
+					for (var ai = 0; ai < archivePaths.length; ai++) {
+						await impArchImportArchive(archivePaths[ai]);
+					}
+				}
+
+				// ---- Show results ----
+				var batchListHtml = '<div style="text-align:left;">';
+				if (results.success.length > 0) {
+					results.success.forEach(function(n) {
+						batchListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-check text-success mr-1"></i>' + escapeHtml(n) + '</div>';
+					});
+				}
+				if (results.failed.length > 0) {
+					results.failed.forEach(function(n) {
+						batchListHtml += '<div style="margin-bottom:4px;"><i class="fas fa-times text-danger mr-1"></i>' + escapeHtml(n) + '</div>';
+					});
+				}
+				batchListHtml += '</div>';
+
+				var batchTitle = results.failed.length > 0 ? "Batch Import Complete" : "All Packages Imported Successfully!";
+
+				var batchStatusHtml = null;
+				var batchStatusClass = null;
+				if (results.comWarnings && results.comWarnings.length > 0) {
+					batchStatusHtml = '<i class="fas fa-exclamation-triangle mr-1"></i>COM registration failed for: ' + results.comWarnings.map(function(n) { return escapeHtml(n); }).join(', ');
+					batchStatusClass = 'com-warning';
+					batchTitle = "Batch Import Complete";
+				}
+
+				showGenericSuccessModal({
+					title: batchTitle,
+					detail: results.success.length + " succeeded" + (results.failed.length > 0 ? ", " + results.failed.length + " failed" : ""),
+					listHtml: batchListHtml,
+					statusHtml: batchStatusHtml,
+					statusClass: batchStatusClass
+				});
+
+				impBuildLibraryCards();
+				fitImporterHeight();
+
+			} catch(e) {
+				alert("Error during batch import:\n" + e.message);
+			} finally {
+				_isImporting = false;
+			}
+		}
+
 		// ---- Load, preview, confirm and install package ----
 		async function impLoadAndInstall(filePath) {
 			// ---- Access control check ----

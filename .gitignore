@@ -1,4 +1,5 @@
 node_modules
+.vscode/
 
 # Runtime data (created by app, not shipped in installer)
 local/packages/
