@@ -8563,6 +8563,10 @@
 					appendAuditTrailEntry(buildAuditTrailEntry('package_created', auditData));
 				} catch(_) { /* non-critical */ }
 
+				// Clear the form and navigate home before showing the success modal
+				$('#pkg-reset').trigger('click');
+				navigateHome();
+
 				showGenericSuccessModal({
 					title: "Package Created Successfully!",
 					name: libName,
@@ -8571,9 +8575,6 @@
 						{ label: "Saved To", value: savePath }
 					]
 				});
-
-				// Clear the form so the user knows the operation completed
-				$('#pkg-reset').trigger('click');
 
 			} catch(e) {
 				alert("Error creating package:\n" + e.message);
