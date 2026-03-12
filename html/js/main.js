@@ -2315,6 +2315,7 @@
 		// OEM override state is session-only (in-memory); resets on app restart
 		var _oemSessionUnlocked = false;
 		var _oemSessionKeywordsEnabled = false;
+		var _oemSessionPasswordValidated = false;
 		var _flaskClickCount = 0;
 		var _flaskClickTimer = null;
 		$(document).on("click", "#about-flask-icon", async function () {
@@ -2333,10 +2334,11 @@
 					$(".oem-keywords-status").html('');
 					alert('Developer settings disabled.');
 				} else {
-					// Enabling developer mode requires OEM password
-					var pwOk = await promptAuthorPassword();
+					// Enabling developer mode requires OEM password (once per session)
+					var pwOk = _oemSessionPasswordValidated || await promptAuthorPassword();
 					if (pwOk) {
 						$("#aboutModal").modal('hide');
+						_oemSessionPasswordValidated = true;
 						_oemSessionUnlocked = true;
 						applyOemSettingsVisibility(true);
 						alert('Developer settings enabled.');
@@ -5646,19 +5648,11 @@
 		}
 
 		// ---- OEM Keywords toggle handler: require password to enable ----
-		$(document).on("click", "#chk_oemKeywordsEnabled", async function () {
+		$(document).on("click", "#chk_oemKeywordsEnabled", function () {
 			var isChecked = $(this).is(":checked");
 			if (isChecked) {
-				// Require OEM password to enable
-				var pwOk = await promptAuthorPassword();
-				if (pwOk) {
-					_oemSessionKeywordsEnabled = true;
-					$(".oem-keywords-status").html('<i class="fas fa-check-circle text-success mr-1"></i>OEM keywords authorized. Password prompt is bypassed.');
-				} else {
-					$(this).prop("checked", false);
-					$(".oem-keywords-status").html('<i class="fas fa-times-circle text-danger mr-1"></i>Authorization failed.');
-					setTimeout(function() { $(".oem-keywords-status").html(''); }, 3000);
-				}
+				_oemSessionKeywordsEnabled = true;
+				$(".oem-keywords-status").html('<i class="fas fa-check-circle text-success mr-1"></i>OEM restricted authors and organizations enabled.');
 			} else {
 				_oemSessionKeywordsEnabled = false;
 				$(".oem-keywords-status").html('');
@@ -16113,9 +16107,6 @@
 			// Title
 			$modal.find(".unsigned-lib-detail-name").text(uLib.library_name || "Unknown");
 
-			// Update install path subtitles in card headers
-			$modal.find(".ulib-path-libname").text(uLib.library_name || "libraryname");
-
 			// Populate editable fields
 			$("#ulib-name").val(uLib.library_name || "");
 			$("#ulib-author").val(uLib.author || "");
@@ -16498,6 +16489,20 @@
 				return true;
 			});
 
+			// Build relative path maps for additional files and demo files
+			var additionalFileRelPaths = {};
+			additionalLibFiles.forEach(function(f) {
+				if (ulib_fileRelPaths[f]) {
+					additionalFileRelPaths[f] = ulib_fileRelPaths[f];
+				}
+			});
+			var demoFileRelPaths = {};
+			ulib_demoMethodFiles.forEach(function(f) {
+				if (ulib_fileRelPaths[f]) {
+					demoFileRelPaths[f] = ulib_fileRelPaths[f];
+				}
+			});
+
 			var updates = {
 				author: author,
 				organization: organization,
@@ -16507,13 +16512,17 @@
 				github_url: $("#ulib-github-url").val().trim(),
 				tags: tags,
 				additional_library_files: additionalLibFiles,
+				additional_file_rel_paths: additionalFileRelPaths,
 				demo_method_files: ulib_demoMethodFiles.slice(),
+				demo_file_rel_paths: demoFileRelPaths,
 				com_register_dlls: ulib_comRegisterDlls.slice(),
 				library_image: ulib_iconFilename,
 				library_image_base64: ulib_iconBase64,
 				library_image_mime: ulib_iconMime,
 				install_to_library_root: ulib_installSubdir === '',
-				custom_install_subdir: (ulib_installSubdir && ulib_installSubdir !== '') ? ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '') : ''
+				custom_install_subdir: (ulib_installSubdir && ulib_installSubdir !== '') ? ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '') : '',
+				lib_empty_folders: ulib_libEmptyFolders.slice(),
+				demo_empty_folders: ulib_demoEmptyFolders.slice()
 			};
 
 			// Update in DB
