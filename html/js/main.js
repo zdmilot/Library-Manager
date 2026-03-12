@@ -2086,6 +2086,7 @@
 				if (!$("#pkg-demo-list").children().length) pkgUpdateDemoFileList();
 				if (!$("#pkg-labware-tree").children().length) pkgUpdateLabwareFileList();
 				if (!$("#pkg-bin-tree").children().length) pkgUpdateBinFileList();
+				$("#imp-sort-row").addClass("d-none");
 				fitExporterHeight();
 			} else if(group_id == "gAll"){
 				// All (home) shows installed library cards with header
@@ -2093,6 +2094,7 @@
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-none").addClass("d-flex");
+				$("#imp-sort-row").removeClass("d-none");
 				impBuildLibraryCards();
 				fitImporterHeight();
 			} else if(group_id == "gRecent"){
@@ -2101,6 +2103,7 @@
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-flex").addClass("d-none");
+				$("#imp-sort-row").addClass("d-none");
 				impBuildLibraryCards(null, true);
 				fitImporterHeight();
 			} else if(group_id == "gFolders"){
@@ -2117,6 +2120,7 @@
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-flex").addClass("d-none");
+				$("#imp-sort-row").removeClass("d-none");
 				impBuildLibraryCards(null, false, false, false, true);
 				fitImporterHeight();
 			} else if(group_id == "gSystem"){
@@ -2125,6 +2129,7 @@
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-flex").addClass("d-none");
+				$("#imp-sort-row").removeClass("d-none");
 				impBuildLibraryCards(null, false, true);
 				fitImporterHeight();
 			} else if(group_id == "gUnsigned"){
@@ -2133,6 +2138,7 @@
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-flex").addClass("d-none");
+				$("#imp-sort-row").removeClass("d-none");
 				impBuildLibraryCards(null, false, false, true);
 				fitImporterHeight();
 			} else {
@@ -13068,29 +13074,6 @@
 			// Close the modal and rebuild the card list
 			$("#libDetailModal").modal("hide");
 			impBuildLibraryCards();
-		});
-
-		// ---- Sort dropdown handler ----
-		$(document).on("change", "#imp-sort-select", function() {
-			_currentSortOrder = $(this).val();
-			// Re-render current view with new sort order
-			var activeNav = $(".navbar-custom .nav-item.active, .navbar-custom .dropdown-navitem.active");
-			var gid = activeNav.attr("data-group-id") || "gAll";
-			if (_searchActive) return; // search mode manages its own results
-			if (gid === "gAll") {
-				impBuildLibraryCards();
-			} else if (gid === "gRecent") {
-				impBuildLibraryCards(null, true);
-			} else if (gid === "gSystem") {
-				impBuildLibraryCards(null, false, true);
-			} else if (gid === "gStarred") {
-				impBuildLibraryCards(null, false, false, false, true);
-			} else if (gid === "gUnsigned") {
-				impBuildLibraryCards(null, false, false, true);
-			} else {
-				impBuildLibraryCards(gid);
-			}
-			fitImporterHeight();
 		});
 
 		// ---- Browse for .hxlibpkg or .hxlibarch file ----
