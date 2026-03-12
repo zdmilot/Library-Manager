@@ -2336,6 +2336,7 @@
 					// Enabling developer mode requires OEM password
 					var pwOk = await promptAuthorPassword();
 					if (pwOk) {
+						$("#aboutModal").modal('hide');
 						_oemSessionUnlocked = true;
 						applyOemSettingsVisibility(true);
 						alert('Developer settings enabled.');
@@ -6973,14 +6974,16 @@
 		 */
 		function ulibGetFileDestPath(absPath) {
 			var libName = $("#ulib-name").val().trim() || "<libraryname>";
-			var relDir = '';
-			var fileName = path.basename(absPath);
+			var relPath = ulib_fileRelPaths[absPath] || path.basename(absPath);
+			var fileName = path.basename(relPath);
+			var relDir = path.dirname(relPath).replace(/\\/g, '/');
+			var relDirPrefix = (relDir && relDir !== '.') ? relDir.replace(/\//g, '\\') + '\\' : '';
 			if (ulib_installSubdir !== null) {
-				if (ulib_installSubdir === '') return '...\\Hamilton\\Library\\' + fileName;
+				if (ulib_installSubdir === '') return '...\\Hamilton\\Library\\' + relDirPrefix + fileName;
 				var sanitized = ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-				return '...\\Hamilton\\Library\\' + sanitized + '\\' + fileName;
+				return '...\\Hamilton\\Library\\' + sanitized + '\\' + relDirPrefix + fileName;
 			}
-			return '...\\Hamilton\\Library\\' + libName + '\\' + fileName;
+			return '...\\Hamilton\\Library\\' + libName + '\\' + relDirPrefix + fileName;
 		}
 
 		// ---- Shared tree rendering helpers ----
@@ -7441,6 +7444,30 @@
 					setEmptyFolders: function(v) { pkg_binEmptyFolders = v; },
 					update: function() { pkgUpdateBinFileList(); },
 					rootLabel: 'Bin'
+				};
+			} else if (treeId === 'ulib-file-list') {
+				return {
+					files: function() { return ulib_allLibFiles; },
+					setFiles: function(v) { ulib_allLibFiles = v; },
+					getRelPath: function(f) { return ulib_fileRelPaths[f] || path.basename(f); },
+					setRelPath: function(f, rel) { ulib_fileRelPaths[f] = rel; },
+					clearRelPath: function(f) { delete ulib_fileRelPaths[f]; },
+					emptyFolders: function() { return ulib_libEmptyFolders; },
+					setEmptyFolders: function(v) { ulib_libEmptyFolders = v; },
+					update: function() { ulibUpdateLibFileList(); ulibUpdateComWarning(); },
+					rootLabel: 'Library'
+				};
+			} else if (treeId === 'ulib-demo-list') {
+				return {
+					files: function() { return ulib_demoMethodFiles; },
+					setFiles: function(v) { ulib_demoMethodFiles = v; },
+					getRelPath: function(f) { return ulib_fileRelPaths[f] || path.basename(f); },
+					setRelPath: function(f, rel) { ulib_fileRelPaths[f] = rel; },
+					clearRelPath: function(f) { delete ulib_fileRelPaths[f]; },
+					emptyFolders: function() { return ulib_demoEmptyFolders; },
+					setEmptyFolders: function(v) { ulib_demoEmptyFolders = v; },
+					update: function() { ulibUpdateDemoFileList(); },
+					rootLabel: 'Demo Methods'
 				};
 			}
 			return null;
@@ -15588,6 +15615,9 @@
 		var ulib_demoMethodFiles = [];    // user-added demo method files (absolute paths)
 		var ulib_comRegisterDlls = [];    // DLL basenames selected for COM registration
 		var ulib_fileCustomDirs = {};     // absolutePath -> custom install subdir ("" = root, string = subdir, undefined = default)
+		var ulib_fileRelPaths = {};       // absolutePath -> relative path within tree (preserves subfolder structure)
+		var ulib_libEmptyFolders = [];    // empty folders for library file tree
+		var ulib_demoEmptyFolders = [];   // empty folders for demo method file tree
 		var ulib_installSubdir = null;    // global install subdir: null = default (library name), '' = root, string = custom subdir
 		var ulib_iconBase64 = null;       // base64-encoded icon data (user-picked or from DB)
 		var ulib_iconMime = null;         // MIME type of the icon
@@ -15595,23 +15625,27 @@
 		var ulib_iconFilePath = null;     // path of the user-picked icon file (null if from DB)
 
 		/**
-		 * Update the install path hint in the unsigned library detail modal header
-		 * based on the install-to-root checkbox state.
+		 * Update the install path hints in the unsigned library detail modal.
+		 * Re-renders the file trees to reflect the current install path.
 		 */
 		function ulibUpdateInstallPathHint() {
-			var libName = $("#ulib-name").val().trim() || "libraryname";
-			if (ulib_installSubdir !== null) {
-				if (ulib_installSubdir === '') {
-					$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\');
-				} else {
-					var sanitized = ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-					$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="ulib-path-libname"></span>');
-					$(".ulib-path-libname").text(sanitized);
+			ulibUpdateLibFileList();
+			ulibUpdateDemoFileList();
+		}
+
+		/** Get the install path string for a ulib tree section. */
+		function ulibGetInstallPath(treeId) {
+			var libName = $("#ulib-name").val() || '<libraryname>';
+			if (treeId === 'ulib-file-list') {
+				if (ulib_installSubdir !== null) {
+					var sub = ulib_installSubdir === '' ? '' : ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+					return '...\\Hamilton\\Library\\' + (sub ? sub + '\\' : '');
 				}
-			} else {
-				$("#ulib-lib-path-hint").html('Installed to: ...\\Hamilton\\Library\\<span class="ulib-path-libname"></span>');
-				$(".ulib-path-libname").text(libName);
+				return '...\\Hamilton\\Library\\' + libName + '\\';
+			} else if (treeId === 'ulib-demo-list') {
+				return '...\\Hamilton\\Methods\\Library Demo Methods\\' + libName + '\\';
 			}
+			return '';
 		}
 
 		/**
@@ -15621,29 +15655,49 @@
 		function ulibUpdateLibFileList() {
 			var $list = $("#ulib-file-list");
 			$list.empty();
-			if (ulib_allLibFiles.length === 0) {
-				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>');
+			delete _pkgLastClickedRow['ulib-file-list'];
+			if (ulib_allLibFiles.length === 0 && ulib_libEmptyFolders.length === 0) {
+				var libName = $("#ulib-name").val().trim() || '<libraryname>';
+				var emptyTree = { children: {}, files: [] };
+				emptyTree.children[libName] = { children: {}, files: [] };
+				var rootPath = ulib_installSubdir !== null ? ulibGetInstallPath('ulib-file-list') : '...\\Hamilton\\Library\\';
+				$list.html(ftBuildHtml(emptyTree, 'Library', 0, function() { return ''; }, rootPath));
+				$list.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
 			} else {
-				ulib_allLibFiles.forEach(function(f) {
+				var tree = ftBuildTree(ulib_allLibFiles, function(f) {
+					return ulib_fileRelPaths[f] || path.basename(f);
+				});
+				// Ensure user-created empty folders exist in the tree
+				ulib_libEmptyFolders.forEach(function(folderPath) {
+					var parts = folderPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '').split('/');
+					var node = tree;
+					for (var pi = 0; pi < parts.length; pi++) {
+						if (!node.children[parts[pi]]) node.children[parts[pi]] = { children: {}, files: [] };
+						node = node.children[parts[pi]];
+					}
+				});
+				var fileRowFn = function(f) {
 					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 					var baseName = path.basename(f);
-					var isDll = baseName.toLowerCase().endsWith('.dll');
+					var ext = path.extname(baseName).toLowerCase();
+					var isDll = ext === '.dll';
 					var isChecked = ulib_comRegisterDlls.indexOf(baseName) !== -1;
-					var comCheckbox = '';
+					var comHtml = '';
 					if (isDll) {
-						comCheckbox = '<label class="pkg-com-checkbox-label mb-0 ml-auto mr-2" title="Register this DLL as a COM object using RegAsm.exe /codebase during import. Requires administrator rights.">' +
-							'<input type="checkbox" class="pkg-com-checkbox mr-1" data-dll="' + baseName.replace(/"/g, '&quot;') + '"' + (isChecked ? ' checked' : '') + '>' +
-							'<span class="text-xs text-muted">COM Register</span>' +
-						'</label>';
+						comHtml = '<label class="ft-com-label" title="Register this DLL as a COM object using RegAsm.exe /codebase during import. Requires administrator rights.">' +
+							'<input type="checkbox" class="pkg-com-checkbox" data-dll="' + baseName.replace(/"/g, '&quot;') + '"' + (isChecked ? ' checked' : '') + '>' +
+							'<span>COM</span></label>';
 					}
-					$list.append(
-						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
-						'<i class="far fa-file pkg-file-icon"></i>' +
-						'<span class="pkg-file-name">' + escapeHtml(baseName) + '</span>' +
-						comCheckbox +
-						'</div>'
-					);
-				});
+					var icon = isDll ? 'fa-cog' : (ext === '.chm' ? 'fa-question-circle' : (ext === '.hsl' || ext === '.hs_' || ext === '.hsi' ? 'fa-code' : (ext === '.smt' ? 'fa-microchip' : 'fa-file')));
+					var label = ext ? ext.replace('.', '').toUpperCase() : 'FILE';
+					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '" draggable="true">' +
+						'<i class="fas ' + icon + ' ft-icon-file"></i>' +
+						'<span class="ft-label">' + escapeHtml(baseName) + '</span>' +
+						comHtml +
+						'<span class="ft-badge">' + escapeHtml(label) + '</span>' +
+						'</div>';
+				};
+				$list.html(ftBuildHtml(tree, 'Library', ulib_allLibFiles.length, fileRowFn, ulibGetInstallPath('ulib-file-list')));
 			}
 			$("#ulib-lib-count").text(ulib_allLibFiles.length + " file" + (ulib_allLibFiles.length !== 1 ? "s" : ""));
 		}
@@ -15655,18 +15709,44 @@
 		function ulibUpdateDemoFileList() {
 			var $list = $("#ulib-demo-list");
 			$list.empty();
-			if (ulib_demoMethodFiles.length === 0) {
-				$list.html('<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No demo method files added</div>');
+			delete _pkgLastClickedRow['ulib-demo-list'];
+			if (ulib_demoMethodFiles.length === 0 && ulib_demoEmptyFolders.length === 0) {
+				var libName = $("#ulib-name").val().trim() || '<libraryname>';
+				var emptyTree = { children: {}, files: [] };
+				emptyTree.children[libName] = { children: {}, files: [] };
+				$list.html(ftBuildHtml(emptyTree, 'Demo Methods', 0, function() { return ''; }, '...\\Hamilton\\Methods\\Library Demo Methods\\'));
+				$list.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
 			} else {
-				ulib_demoMethodFiles.forEach(function(f) {
-					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-					$list.append(
-						'<div class="pkg-file-item" data-path="' + escapedPath + '">' +
-						'<i class="far fa-file pkg-file-icon"></i>' +
-						'<span class="pkg-file-name">' + escapeHtml(path.basename(f)) + '</span>' +
-						'</div>'
-					);
+				var extIcons = {
+					'.hsl': 'fa-code', '.hs_': 'fa-code', '.hsi': 'fa-code',
+					'.stp': 'fa-play', '.med': 'fa-play', '.wfl': 'fa-project-diagram',
+					'.csv': 'fa-table', '.txt': 'fa-file-alt'
+				};
+				var tree = ftBuildTree(ulib_demoMethodFiles, function(f) {
+					return ulib_fileRelPaths[f] || path.basename(f);
 				});
+				// Ensure user-created empty folders exist in the tree
+				ulib_demoEmptyFolders.forEach(function(folderPath) {
+					var parts = folderPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '').split('/');
+					var node = tree;
+					for (var pi = 0; pi < parts.length; pi++) {
+						if (!node.children[parts[pi]]) node.children[parts[pi]] = { children: {}, files: [] };
+						node = node.children[parts[pi]];
+					}
+				});
+				var fileRowFn = function(f) {
+					var escapedPath = f.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+					var baseName = path.basename(f);
+					var ext = path.extname(baseName).toLowerCase();
+					var icon = extIcons[ext] || 'fa-file';
+					var label = ext ? ext.replace('.', '').toUpperCase() : 'FILE';
+					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '" draggable="true">' +
+						'<i class="fas ' + icon + ' ft-icon-file"></i>' +
+						'<span class="ft-label">' + escapeHtml(baseName) + '</span>' +
+						'<span class="ft-badge">' + escapeHtml(label) + '</span>' +
+						'</div>';
+				};
+				$list.html(ftBuildHtml(tree, 'Demo Methods', ulib_demoMethodFiles.length, fileRowFn, ulibGetInstallPath('ulib-demo-list')));
 			}
 			$("#ulib-demo-count").text(ulib_demoMethodFiles.length + " file" + (ulib_demoMethodFiles.length !== 1 ? "s" : ""));
 		}
@@ -16055,6 +16135,29 @@
 			ulib_demoMethodFiles = (uLib.demo_method_files || []).slice();
 			ulib_comRegisterDlls = (uLib.com_register_dlls || []).slice();
 
+			// Initialize relative path map from DB record
+			ulib_fileRelPaths = {};
+			// Discovered files: relative paths are the library_files entries themselves
+			(uLib.library_files || []).forEach(function(f) {
+				var absPath = path.join(libDir, f);
+				var rel = f.replace(/\\/g, '/');
+				if (rel !== path.basename(rel)) {
+					ulib_fileRelPaths[absPath] = rel;
+				}
+			});
+			// Restore saved relative paths for additional files
+			var savedRelPaths = uLib.additional_file_rel_paths || {};
+			Object.keys(savedRelPaths).forEach(function(absPath) {
+				ulib_fileRelPaths[absPath] = savedRelPaths[absPath];
+			});
+			// Restore saved relative paths for demo files
+			var savedDemoRelPaths = uLib.demo_file_rel_paths || {};
+			Object.keys(savedDemoRelPaths).forEach(function(absPath) {
+				ulib_fileRelPaths[absPath] = savedDemoRelPaths[absPath];
+			});
+			ulib_libEmptyFolders = (uLib.lib_empty_folders || []).slice();
+			ulib_demoEmptyFolders = (uLib.demo_empty_folders || []).slice();
+
 			// Initialize icon state from DB record
 			ulib_iconFilePath = null; // will be set if user picks a new image
 			ulib_iconBase64 = uLib.library_image_base64 || null;
@@ -16177,18 +16280,18 @@
 			var folderPath = $(this).val();
 			if (folderPath) {
 				try {
-					var files = fs.readdirSync(folderPath);
+					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
 					var newDlls = [];
-					files.forEach(function(file) {
-						var filePath = path.join(folderPath, file);
-						try {
-							if (fs.statSync(filePath).isFile() && ulib_allLibFiles.indexOf(filePath) === -1) {
-								ulib_allLibFiles.push(filePath);
-								if (file.toLowerCase().endsWith('.dll')) {
-									newDlls.push(file);
-								}
+					allFiles.forEach(function(fileInfo) {
+						var filePath = fileInfo.absolutePath;
+						var file = path.basename(filePath);
+						if (ulib_allLibFiles.indexOf(filePath) === -1) {
+							ulib_allLibFiles.push(filePath);
+							ulib_fileRelPaths[filePath] = fileInfo.relativePath;
+							if (file.toLowerCase().endsWith('.dll')) {
+								newDlls.push(file);
 							}
-						} catch(e) {}
+						}
 					});
 					if (newDlls.length === 1 && ulib_comRegisterDlls.indexOf(newDlls[0]) === -1) {
 						ulib_comRegisterDlls.push(newDlls[0]);
@@ -16218,14 +16321,13 @@
 			var folderPath = $(this).val();
 			if (folderPath) {
 				try {
-					var files = fs.readdirSync(folderPath);
-					files.forEach(function(file) {
-						var filePath = path.join(folderPath, file);
-						try {
-							if (fs.statSync(filePath).isFile() && ulib_demoMethodFiles.indexOf(filePath) === -1) {
-								ulib_demoMethodFiles.push(filePath);
-							}
-						} catch(e) {}
+					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
+					allFiles.forEach(function(fileInfo) {
+						var filePath = fileInfo.absolutePath;
+						if (ulib_demoMethodFiles.indexOf(filePath) === -1) {
+							ulib_demoMethodFiles.push(filePath);
+							ulib_fileRelPaths[filePath] = fileInfo.relativePath;
+						}
 					});
 					ulibUpdateDemoFileList();
 				} catch(e) {
@@ -16238,13 +16340,14 @@
 		// ---- Unsigned lib: remove selected files ----
 		$(document).on("click", "#ulib-removeLibFiles", function() {
 			var selected = [];
-			$("#ulib-file-list .pkg-file-item.selected").each(function() {
+			$("#ulib-file-list .ft-file-row.selected").each(function() {
 				selected.push($(this).attr("data-path"));
 			});
 			if (selected.length === 0) return;
 			ulib_allLibFiles = ulib_allLibFiles.filter(function(f) {
 				if (selected.indexOf(f) !== -1) {
 					delete ulib_fileCustomDirs[f];
+					delete ulib_fileRelPaths[f];
 					return false;
 				}
 				return true;
@@ -16258,24 +16361,18 @@
 
 		$(document).on("click", "#ulib-removeDemoFiles", function() {
 			var selected = [];
-			$("#ulib-demo-list .pkg-file-item.selected").each(function() {
+			$("#ulib-demo-list .ft-file-row.selected").each(function() {
 				selected.push($(this).attr("data-path"));
 			});
 			if (selected.length === 0) return;
 			ulib_demoMethodFiles = ulib_demoMethodFiles.filter(function(f) {
-				return selected.indexOf(f) === -1;
+				if (selected.indexOf(f) !== -1) {
+					delete ulib_fileRelPaths[f];
+					return false;
+				}
+				return true;
 			});
 			ulibUpdateDemoFileList();
-		});
-
-		// ---- Unsigned lib: toggle file selection (click / ctrl+click) ----
-		$(document).on("click", "#unsignedLibDetailModal .pkg-file-item", function(e) {
-			if (e.ctrlKey || e.metaKey) {
-				$(this).toggleClass("selected");
-			} else {
-				$(this).siblings().removeClass("selected");
-				$(this).toggleClass("selected");
-			}
 		});
 
 		// ---- Unsigned lib: COM register checkbox handler ----
@@ -16292,7 +16389,7 @@
 			ulibUpdateComWarning();
 		});
 
-		$(document).on("click", "#unsignedLibDetailModal .pkg-com-checkbox-label", function(e) {
+		$(document).on("click", "#unsignedLibDetailModal .ft-com-label", function(e) {
 			e.stopPropagation();
 		});
 

@@ -1881,22 +1881,20 @@
 					<div class="card mb-3 exporter-card">
 						<div class="card-header">
 							<i class="fas fa-book mr-2 color-medium"></i>Library Files
-							<span class="text-muted ml-2 text-sm font-weight-normal" id="ulib-lib-path-hint">Installed to: ...\Hamilton\Library\<span class="ulib-path-libname">&lt;libraryname&gt;</span></span>
 						</div>
 						<div class="card-body">
-							<div class="mb-2">
+							<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
+							<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 								<button class="btn btn-sm btn-outlined" id="ulib-addLibFiles">Add Files...</button>
 								<button class="btn btn-sm btn-outlined" id="ulib-addLibFolder">Add Folder...</button>
-								<button class="btn btn-sm btn-outlined" id="ulib-changeLibPath"><i class="fas fa-folder-open mr-1"></i>Change Path</button>
 								<button class="btn btn-sm btn-outlined" id="ulib-removeLibFiles">Remove Selected</button>
+								<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="ulib-file-list"><i class="fas fa-folder-plus mr-1"></i>New Folder</button>
+								<button class="btn btn-sm btn-outlined" id="ulib-changeLibPath"><i class="fas fa-folder-open mr-1"></i>Change Path</button>
 								<span class="text-muted text-sm ml-2" id="ulib-lib-count">0 files</span>
 								<input type="file" class="d-none" id="ulib-input-libfiles" multiple>
 								<input type="file" class="d-none" id="ulib-input-libfolder" nwdirectory>
 							</div>
-							<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
-							<div class="pkg-file-list" id="ulib-file-list">
-								<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No library files added</div>
-							</div>
+							<div class="pkg-file-tree" id="ulib-file-list"></div>
 						</div>
 					</div>
 
@@ -1904,20 +1902,18 @@
 					<div class="card mb-3 exporter-card">
 						<div class="card-header">
 							<i class="fas fa-flask mr-2 color-medium"></i>Demo Method Files
-							<span class="text-muted ml-2 text-sm font-weight-normal">Installed to: ...\Hamilton\Methods\Library Demo Methods\<span class="ulib-path-libname">&lt;libraryname&gt;</span></span>
 						</div>
 						<div class="card-body">
-							<div class="mb-2">
+							<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 								<button class="btn btn-sm btn-outlined" id="ulib-addDemoFiles">Add Files...</button>
 								<button class="btn btn-sm btn-outlined" id="ulib-addDemoFolder">Add Folder...</button>
 								<button class="btn btn-sm btn-outlined" id="ulib-removeDemoFiles">Remove Selected</button>
+								<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="ulib-demo-list"><i class="fas fa-folder-plus mr-1"></i>New Folder</button>
 								<span class="text-muted text-sm ml-2" id="ulib-demo-count">0 files</span>
 								<input type="file" class="d-none" id="ulib-input-demofiles" multiple accept=".hsl,.stp,.csv,.txt,.med,.wfl">
 								<input type="file" class="d-none" id="ulib-input-demofolder" nwdirectory>
 							</div>
-							<div class="pkg-file-list" id="ulib-demo-list">
-								<div class="text-muted text-center py-3 pkg-empty-msg"><i class="fas fa-inbox mr-2"></i>No demo method files added</div>
-							</div>
+							<div class="pkg-file-tree" id="ulib-demo-list"></div>
 						</div>
 					</div>
 				</div>
@@ -2216,8 +2212,8 @@
 					</button>
 				</div>
 				<div class="modal-body">
-					<p class="mb-2">The author/organization name you entered is <strong>restricted</strong> to authorized OEM and first-party libraries.</p>
-					<p class="text-muted mb-3" style="font-size: 0.85rem;">Enter the authorization password to continue. This prevents unauthorized use of restricted OEM author identities.</p>
+					<p class="mb-2">Developer mode is for <strong>OEM and authorized first-party library developers only</strong>.</p>
+					<p class="text-muted mb-3" style="font-size: 0.85rem;">Enter the authorization password to continue.</p>
 					<div class="form-group mb-1">
 						<label for="author-password-input" class="sr-only">Password</label>
 						<input type="password" class="form-control" id="author-password-input" placeholder="Enter password">
