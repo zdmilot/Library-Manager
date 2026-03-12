@@ -2123,17 +2123,22 @@ body.dark-mode .imp-sort-select {
 	flex-shrink: 0;
 	font-size: 0.85rem;
 	font-weight: 600;
-	color: var(--medium, #6c757d);
+	color: #6c757d;
 	cursor: pointer;
-	padding: 0.1rem 0.3rem;
+	padding: 0.2rem 0.4rem;
 	display: none;
 	text-decoration: none;
-	line-height: 1;
+	line-height: 1.1;
 	letter-spacing: 1px;
+	border: 0;
+	background-color: rgba(0, 0, 0, 0.05);
+	border-radius: 0.25rem;
 }
 
 .imp-tag-ellipsis:hover {
-	color: var(--medium2, #495057);
+	color: #495057;
+	background-color: rgba(0, 0, 0, 0.08);
+	text-decoration: none;
 }
 
 .imp-lib-card-footer {
