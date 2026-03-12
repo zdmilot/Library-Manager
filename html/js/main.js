@@ -7021,6 +7021,7 @@
 				html += '<i class="fas fa-folder-open ft-icon-folder"></i>';
 				html += '<span class="ft-label">' + escapeHtml(name) + '</span>';
 				html += '<span class="ft-count">' + total + '</span>';
+				html += '<span class="ft-folder-actions"><i class="fas fa-trash-alt ft-folder-delete" title="Delete folder and its contents"></i></span>';
 				html += '</div>';
 				html += '<ul class="ft-branch">';
 				html += ftRenderNode(child, fileRowFn);
@@ -7449,6 +7450,55 @@
 					state.update();
 				}
 			}
+		});
+
+		// ---- Delete folder button handler ----
+		$(document).on("click", ".ft-folder-delete", function(e) {
+			e.stopPropagation();
+			var $folderRow = $(this).closest(".ft-folder-row");
+			var $tree = $folderRow.closest(".pkg-file-tree");
+			var treeId = $tree.attr("id");
+			var state = ftGetTreeState(treeId);
+			if (!state) return;
+
+			var folderPath = ftResolveFolderPath($folderRow);
+			if (!folderPath) return;
+
+			// Collect files inside this folder
+			var filesToRemove = [];
+			$folderRow.next(".ft-branch").find(".ft-file-row").each(function() {
+				filesToRemove.push($(this).attr("data-path"));
+			});
+
+			var msg = 'Delete folder "' + folderPath + '"';
+			if (filesToRemove.length > 0) {
+				msg += ' and its ' + filesToRemove.length + ' file' + (filesToRemove.length !== 1 ? 's' : '') + '?';
+			} else {
+				msg += '?';
+			}
+			if (!confirm(msg)) return;
+
+			// Remove files contained in this folder
+			if (filesToRemove.length > 0) {
+				var removeSet = {};
+				filesToRemove.forEach(function(f) { removeSet[f] = true; });
+				state.setFiles(state.files().filter(function(f) {
+					if (removeSet[f]) {
+						state.clearRelPath(f);
+						if (treeId === 'pkg-lib-list') delete pkg_fileCustomDirs[f];
+						return false;
+					}
+					return true;
+				}));
+			}
+
+			// Remove matching empty folders (the folder itself and any children)
+			var ef = state.emptyFolders();
+			state.setEmptyFolders(ef.filter(function(fp) {
+				return fp !== folderPath && fp.indexOf(folderPath + '/') !== 0;
+			}));
+
+			state.update();
 		});
 
 		// ================================================================
