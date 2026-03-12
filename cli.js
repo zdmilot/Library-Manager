@@ -1006,25 +1006,7 @@ function cmdImportLib(args) {
         console.log('  Signature: unsigned');
     }
 
-    // ---- Version compatibility warnings ----
-    const pkgAppVersion = manifest.app_version || '';
-    const pkgFormatVersion = manifest.format_version || '1.0';
-    const currentAppVersion = shared.getAppVersion();
-    if (pkgAppVersion && currentAppVersion && pkgAppVersion !== currentAppVersion) {
-        console.log('  NOTE: Package was created with Library Manager v' + pkgAppVersion +
-            ' (you are running v' + currentAppVersion + ').');
-        // Simple semver major comparison
-        const pkgMajor = parseInt(pkgAppVersion.split('.')[0], 10) || 0;
-        const curMajor = parseInt(currentAppVersion.split('.')[0], 10) || 0;
-        if (pkgMajor > curMajor) {
-            console.log('  WARNING: Package is from a NEWER major version. Some fields or features may not be recognized.');
-        } else if (pkgMajor < curMajor) {
-            console.log('  WARNING: Package is from an OLDER major version. Some fields may be missing.');
-        }
-    }
-    if (!pkgAppVersion && pkgFormatVersion !== shared.FORMAT_VERSION) {
-        console.log('  NOTE: Legacy package (format_version ' + pkgFormatVersion + ', no app version stamp). Lineage and extended metadata will not be available.');
-    }
+
 
     const libName = manifest.library_name || 'Unknown';
 

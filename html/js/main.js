@@ -12247,16 +12247,7 @@
 							}
 						}
 
-						// Version mismatch check for inner package
-						var _archPkgVer = manifest.app_version || '';
-						var _archCurVer = shared.getAppVersion();
-						if (_archPkgVer) {
-							var _archPkgMajor = parseInt((_archPkgVer.split('.')[0] || '0'), 10);
-							var _archCurMajor = parseInt((_archCurVer.split('.')[0] || '0'), 10);
-							if (_archPkgMajor > _archCurMajor) {
-								console.warn('[archive-import] Package ' + libName + ' was created with newer major version (v' + _archPkgVer + ' > v' + _archCurVer + ')');
-							}
-						}
+
 
 						// Verify inner package signature
 						var innerSig = verifyPackageSignature(innerZip);
@@ -13077,21 +13068,48 @@
 
 		$(document).on("change", "#imp-input-file", function() {
 			var fileInput = this;
-			var filePath = "";
+			var filePaths = [];
 			if (fileInput.files && fileInput.files.length > 0) {
-				filePath = fileInput.files[0].path;
+				for (var fi = 0; fi < fileInput.files.length; fi++) {
+					filePaths.push(fileInput.files[fi].path);
+				}
 			} else {
-				filePath = $(this).val();
+				var val = $(this).val();
+				if (val) filePaths.push(val);
 			}
 			$(this).val('');
-			if (!filePath) return;
+			if (filePaths.length === 0) return;
 
-			var ext = path.extname(filePath).toLowerCase();
-			if (ext === ".hxlibarch") {
-				impArchImportArchive(filePath);
-			} else {
-				impLoadAndInstall(filePath);
+			// Separate archives from packages
+			var archives = [];
+			var packages = [];
+			filePaths.forEach(function(fp) {
+				var ext = path.extname(fp).toLowerCase();
+				if (ext === ".hxlibarch") {
+					archives.push(fp);
+				} else {
+					packages.push(fp);
+				}
+			});
+
+			// If only one package and no archives, use the existing single-file preview flow
+			if (packages.length === 1 && archives.length === 0) {
+				impLoadAndInstall(packages[0]);
+				return;
 			}
+
+			// If only archives and no packages, import archives sequentially
+			if (packages.length === 0 && archives.length > 0) {
+				(async function() {
+					for (var ai = 0; ai < archives.length; ai++) {
+						await impArchImportArchive(archives[ai]);
+					}
+				})();
+				return;
+			}
+
+			// Multiple packages (possibly with archives): use batch import
+			impBatchImportPackages(packages, archives);
 		});
 
 		// ---- Load, preview, confirm and install package ----
@@ -13130,21 +13148,7 @@
 					if (!confirm(sigMsg)) { _isImporting = false; return; }
 				}
 
-				// ---- Version mismatch warning ----
-				var _pkgAppVer = manifest.app_version || '';
-				var _curAppVer = shared.getAppVersion();
-				if (_pkgAppVer && _pkgAppVer !== _curAppVer) {
-					var _pkgMajor = parseInt((_pkgAppVer.split('.')[0] || '0'), 10);
-					var _curMajor = parseInt((_curAppVer.split('.')[0] || '0'), 10);
-					var _vmMsg = 'This package was created with Library Manager v' + _pkgAppVer + '.\nYou are running v' + _curAppVer + '.';
-					if (_pkgMajor > _curMajor) {
-						_vmMsg += '\n\nWARNING: The package was created with a NEWER major version.\nSome features or metadata may not be fully supported.';
-					}
-					_vmMsg += '\n\nDo you want to continue?';
-					if (!confirm(_vmMsg)) { _isImporting = false; return; }
-				} else if (!_pkgAppVer && manifest.format_version && manifest.format_version !== shared.FORMAT_VERSION) {
-					console.warn('[import] Legacy package detected (format_version ' + manifest.format_version + ', no app_version). Current format: ' + shared.FORMAT_VERSION);
-				}
+
 
 				// ---- Author/organization length validation on import ----
 				var importAuthor = (manifest.author || '').trim();
