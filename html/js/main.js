@@ -2086,7 +2086,6 @@
 				if (!$("#pkg-demo-list").children().length) pkgUpdateDemoFileList();
 				if (!$("#pkg-labware-tree").children().length) pkgUpdateLabwareFileList();
 				if (!$("#pkg-bin-tree").children().length) pkgUpdateBinFileList();
-				$("#imp-sort-row").addClass("d-none");
 				fitExporterHeight();
 			} else if(group_id == "gAll"){
 				// All (home) shows installed library cards with header
@@ -2094,7 +2093,6 @@
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-none").addClass("d-flex");
-				$("#imp-sort-row").removeClass("d-none");
 				impBuildLibraryCards();
 				fitImporterHeight();
 			} else if(group_id == "gRecent"){
@@ -2103,7 +2101,6 @@
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-flex").addClass("d-none");
-				$("#imp-sort-row").addClass("d-none");
 				impBuildLibraryCards(null, true);
 				fitImporterHeight();
 			} else if(group_id == "gFolders"){
@@ -2120,7 +2117,6 @@
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-flex").addClass("d-none");
-				$("#imp-sort-row").removeClass("d-none");
 				impBuildLibraryCards(null, false, false, false, true);
 				fitImporterHeight();
 			} else if(group_id == "gSystem"){
@@ -2129,7 +2125,6 @@
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-flex").addClass("d-none");
-				$("#imp-sort-row").removeClass("d-none");
 				impBuildLibraryCards(null, false, true);
 				fitImporterHeight();
 			} else if(group_id == "gUnsigned"){
@@ -2138,7 +2133,6 @@
 				$(".exporter-container").addClass("d-none");
 				$(".importer-container").removeClass("d-none");
 				$("#imp-header").removeClass("d-flex").addClass("d-none");
-				$("#imp-sort-row").removeClass("d-none");
 				impBuildLibraryCards(null, false, false, true);
 				fitImporterHeight();
 			} else {
