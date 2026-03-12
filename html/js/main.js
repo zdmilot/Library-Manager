@@ -13446,29 +13446,49 @@
 
 				// ---- Duplicate detection ----
 				var batchDuplicates = [];
+				var batchSameVersionIndices = {};
 				var batchSkipIndices = {};
 				for (var di = 0; di < pkgInfos.length; di++) {
 					var dupExisting = db_installed_libs.installed_libs.findOne({"library_name": pkgInfos[di].libName});
 					if (dupExisting && !dupExisting.deleted) {
-						batchDuplicates.push({
-							index: di,
-							libName: pkgInfos[di].libName,
-							incomingVersion: pkgInfos[di].manifest.version || '?',
-							existingVersion: dupExisting.version || '?'
-						});
+						var dupExistingVer = dupExisting.version || '?';
+						var dupIncomingVer = pkgInfos[di].manifest.version || '?';
+						var dupIsSameVer = (dupExistingVer !== '?' && dupIncomingVer !== '?' && dupExistingVer === dupIncomingVer);
+						if (dupIsSameVer) {
+							// Same version: always skip — cannot reinstall the same version
+							batchSameVersionIndices[di] = true;
+							batchSkipIndices[di] = true;
+						} else {
+							batchDuplicates.push({
+								index: di,
+								libName: pkgInfos[di].libName,
+								incomingVersion: dupIncomingVer,
+								existingVersion: dupExistingVer
+							});
+						}
 					}
+				}
+
+				// Notify user about same-version packages that were auto-skipped
+				var sameVersionCount = Object.keys(batchSameVersionIndices).length;
+				if (sameVersionCount > 0) {
+					var sameVerNames = pkgInfos.filter(function(_, idx) { return batchSameVersionIndices[idx]; }).map(function(p) { return p.libName; });
+					alert(sameVersionCount + ' package' + (sameVersionCount !== 1 ? 's were' : ' was') + ' skipped because the same version is already installed:\n\n' + sameVerNames.join('\n'));
 				}
 
 				if (batchDuplicates.length > 0) {
 					var replaceDups = await _batchShowDupModal(batchDuplicates);
 					if (!replaceDups) {
 						batchDuplicates.forEach(function(d) { batchSkipIndices[d.index] = true; });
-						var remaining = pkgInfos.filter(function(_, idx) { return !batchSkipIndices[idx]; });
-						if (remaining.length === 0 && archivePaths.length === 0) {
-							$bm.modal("hide");
-							alert("All selected packages are already installed. No changes were made.");
-							return;
-						}
+					}
+				}
+
+				{
+					var remaining = pkgInfos.filter(function(_, idx) { return !batchSkipIndices[idx]; });
+					if (remaining.length === 0 && archivePaths.length === 0) {
+						$bm.modal("hide");
+						alert("All selected packages are already installed. No changes were made.");
+						return;
 					}
 				}
 
@@ -14216,23 +14236,24 @@
 
 				// Check for existing library
 				var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
-				if (existing) {
+				if (existing && !existing.deleted) {
 					var existingVer = existing.version || '?';
 					var incomingVer = manifest.version || '?';
 					var isSameVersion = (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer);
 					$modal.find(".imp-preview-overwrite-warning").removeClass("d-none");
 					if (isSameVersion) {
-						$modal.find(".imp-preview-overwrite-warning .alert").removeClass("alert-warning").addClass("alert-info");
-						$modal.find(".imp-preview-overwrite-text").text('A library named "' + libName + '" with the same version (v' + existingVer + ') is already installed. Importing will replace the existing copy.');
+						$modal.find(".imp-preview-overwrite-warning .alert").removeClass("alert-warning alert-info").addClass("alert-warning");
+						$modal.find(".imp-preview-overwrite-text").text('Library "' + libName + '" v' + existingVer + ' is already installed. You cannot install the same version again.');
+						$("#imp-preview-confirm").html('<i class="fas fa-ban mr-2"></i>Already Installed').prop('disabled', true);
 					} else {
 						$modal.find(".imp-preview-overwrite-warning .alert").removeClass("alert-info").addClass("alert-warning");
 						$modal.find(".imp-preview-overwrite-text").text('A library named "' + libName + '" is already installed (v' + existingVer + '). Importing will replace it with v' + incomingVer + '.');
+						$("#imp-preview-confirm").html('<i class="fas fa-sync-alt mr-2"></i>Replace Library').prop('disabled', false);
 					}
-					$("#imp-preview-confirm").html('<i class="fas fa-sync-alt mr-2"></i>Replace Library');
 				} else {
 					$modal.find(".imp-preview-overwrite-warning").addClass("d-none");
 					$modal.find(".imp-preview-overwrite-warning .alert").removeClass("alert-info").addClass("alert-warning");
-					$("#imp-preview-confirm").html('<i class="fas fa-file-import mr-2"></i>Install Library');
+					$("#imp-preview-confirm").html('<i class="fas fa-file-import mr-2"></i>Install Library').prop('disabled', false);
 				}
 
 				// Store data for confirm handler
