@@ -757,6 +757,11 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         autoAddToGroup(db, saved._id, manifest.author);
     }
 
+    // Write .libmgr marker file (non-system libraries only)
+    if (!isSystemLibraryByName(manifest.library_name || '')) {
+        try { shared.updateMarkerForLibrary(dbRecord); } catch (_) { /* non-critical */ }
+    }
+
     return { extractedCount, libName: manifest.library_name };
 }
 
@@ -1652,6 +1657,8 @@ function cmdDeleteLib(args) {
                     process.stderr.write(`  Warning: could not delete ${f}: ${e.message}\n`);
                 }
             });
+            // Remove .libmgr marker entry before empty-directory check
+            try { shared.removeMarkerEntry(libPath, displayName); } catch (_) { /* non-critical */ }
             try {
                 if (fs.existsSync(libPath) && fs.readdirSync(libPath).length === 0) {
                     fs.rmdirSync(libPath);
@@ -2523,6 +2530,8 @@ COMMANDS
   verify-package     Verify integrity signature of a .hxlibpkg or .hxlibarch
   generate-keypair   Generate an Ed25519 signing key pair for code signing
   list-publishers    List registered publisher certificates
+  verify-markers     Verify .libmgr marker integrity for installed libraries
+  scan-markers       Scan directories for .libmgr markers and report status
   help               Show this help text
 
 GLOBAL OPTIONS
@@ -2757,6 +2766,33 @@ list-publishers
     node cli.js list-publishers --json
 
 ──────────────────────────────────────────────────────────────────────────────
+verify-markers
+  Verify .libmgr marker file integrity for installed libraries.
+  Checks that each non-system library has a .libmgr marker in its install
+  directory, and that all file hashes in the marker match the files on disk.
+
+  --name <name>       Verify a single library by name
+  --json              Output results as JSON
+
+  Examples:
+    node cli.js verify-markers
+    node cli.js verify-markers --name "MyLibrary"
+    node cli.js verify-markers --json
+
+──────────────────────────────────────────────────────────────────────────────
+scan-markers
+  Scan a directory tree for .libmgr marker files and report all managed
+  libraries found. Useful for recovery after reinstall or database loss.
+
+  --dir <path>        Directory to scan (default: HAMILTON\\Library)
+  --json              Output results as JSON
+
+  Examples:
+    node cli.js scan-markers
+    node cli.js scan-markers --dir "D:\\Hamilton\\Library"
+    node cli.js scan-markers --json
+
+──────────────────────────────────────────────────────────────────────────────
 `);
 }
 
@@ -2927,6 +2963,164 @@ function resolveSigningArgs(args) {
 }
 
 // ===========================================================================
+// COMMAND: verify-markers
+// ===========================================================================
+/** Verify .libmgr marker integrity for installed libraries. */
+function cmdVerifyMarkers(args) {
+    const db = connectDB(resolveDBPath(args));
+    const allLibs = db.installed_libs.find() || [];
+    const targetName = args['name'] || null;
+    const jsonOutput = args['json'] || false;
+
+    const results = [];
+
+    allLibs.forEach(function (lib) {
+        if (lib.deleted) return;
+        if (isSystemLibrary(lib._id)) return;
+        if (isSystemLibraryByName(lib.library_name)) return;
+        if (targetName && lib.library_name !== targetName) return;
+
+        const libName = lib.library_name || '(unknown)';
+        const libPath = lib.lib_install_path || '';
+
+        if (!libPath) {
+            results.push({ library: libName, status: 'no_path', message: 'No install path recorded' });
+            return;
+        }
+
+        const verification = shared.verifyMarkerIntegrity(libPath, libName);
+        if (!verification.found) {
+            results.push({ library: libName, status: 'no_marker', message: 'No .libmgr marker found', path: libPath });
+        } else if (!verification.valid) {
+            results.push({
+                library: libName, status: 'invalid', path: libPath,
+                missing: verification.missing, tampered: verification.tampered,
+                errors: verification.errors
+            });
+        } else {
+            results.push({ library: libName, status: 'ok', path: libPath, version: verification.entry.version });
+        }
+    });
+
+    if (targetName && results.length === 0) {
+        die('Library "' + targetName + '" not found.');
+    }
+
+    if (jsonOutput) {
+        console.log(JSON.stringify(results, null, 2));
+        return;
+    }
+
+    if (results.length === 0) {
+        console.log('No non-system libraries found.');
+        return;
+    }
+
+    const ok      = results.filter(function (r) { return r.status === 'ok'; });
+    const missing = results.filter(function (r) { return r.status === 'no_marker'; });
+    const invalid = results.filter(function (r) { return r.status === 'invalid'; });
+    const noPath  = results.filter(function (r) { return r.status === 'no_path'; });
+
+    console.log('Marker Verification Results');
+    console.log('══════════════════════════════════════════════════');
+    console.log('  Valid:      ' + ok.length);
+    console.log('  No marker:  ' + missing.length);
+    console.log('  Invalid:    ' + invalid.length);
+    if (noPath.length > 0) console.log('  No path:    ' + noPath.length);
+    console.log('');
+
+    if (ok.length > 0) {
+        console.log('✓ Valid:');
+        ok.forEach(function (r) { console.log('    ' + r.library + ' (v' + r.version + ')'); });
+        console.log('');
+    }
+    if (missing.length > 0) {
+        console.log('⚠ Missing markers:');
+        missing.forEach(function (r) { console.log('    ' + r.library + '  →  ' + r.path); });
+        console.log('');
+    }
+    if (invalid.length > 0) {
+        console.log('✗ Failed verification:');
+        invalid.forEach(function (r) {
+            console.log('    ' + r.library);
+            (r.missing || []).forEach(function (f) { console.log('      Missing: ' + f); });
+            (r.tampered || []).forEach(function (f) { console.log('      Tampered: ' + f); });
+            (r.errors || []).forEach(function (e) { console.log('      Error: ' + e); });
+        });
+        console.log('');
+    }
+}
+
+// ===========================================================================
+// COMMAND: scan-markers
+// ===========================================================================
+/** Scan a directory tree for .libmgr marker files. */
+function cmdScanMarkers(args) {
+    const jsonOutput = args['json'] || false;
+
+    // Resolve scan root: --dir override, or default HAMILTON\Library
+    let scanDir = args['dir'];
+    if (!scanDir) {
+        const db = connectDB(resolveDBPath(args));
+        const libFolderRec = db.links.findOne({ _id: 'lib-folder' });
+        scanDir = (libFolderRec && libFolderRec.path) ? libFolderRec.path : 'C:\\Program Files (x86)\\HAMILTON\\Library';
+    }
+    scanDir = path.resolve(scanDir);
+
+    if (!fs.existsSync(scanDir)) {
+        die('Directory not found: ' + scanDir);
+    }
+
+    const found = [];
+
+    // Check the scan root itself
+    const rootHit = shared.scanDirectoryMarker(scanDir);
+    if (rootHit) found.push(rootHit);
+
+    // Scan one level of subdirectories (libraries live in immediate subdirs)
+    try {
+        const entries = fs.readdirSync(scanDir, { withFileTypes: true });
+        entries.forEach(function (entry) {
+            if (!entry.isDirectory()) return;
+            const subDir = path.join(scanDir, entry.name);
+            const hit = shared.scanDirectoryMarker(subDir);
+            if (hit) found.push(hit);
+        });
+    } catch (e) {
+        process.stderr.write('Warning: could not scan directory: ' + e.message + '\n');
+    }
+
+    if (jsonOutput) {
+        console.log(JSON.stringify(found, null, 2));
+        return;
+    }
+
+    if (found.length === 0) {
+        console.log('No .libmgr markers found in: ' + scanDir);
+        return;
+    }
+
+    let totalLibs = 0;
+    console.log('Marker Scan Results');
+    console.log('══════════════════════════════════════════════════');
+    console.log('Scan root: ' + scanDir);
+    console.log('');
+
+    found.forEach(function (marker) {
+        const libNames = Object.keys(marker.libraries);
+        totalLibs += libNames.length;
+        console.log('  ' + marker.dirPath);
+        libNames.forEach(function (name) {
+            const e = marker.libraries[name];
+            console.log('    • ' + name + '  v' + (e.version || '?') + '  (' + (e.author || 'unknown') + ')');
+        });
+    });
+
+    console.log('');
+    console.log('Found ' + totalLibs + ' managed library(ies) across ' + found.length + ' directory(ies).');
+}
+
+// ===========================================================================
 // COMMAND: generate-keypair
 // ===========================================================================
 /** Handler for the `generate-keypair` CLI command. */
@@ -3063,6 +3257,8 @@ switch (command) {
     case 'verify-package':          cmdVerifyPackage(args);          break;
     case 'generate-keypair':        cmdGenerateKeypair(args);        break;
     case 'list-publishers':         cmdListPublishers(args);         break;
+    case 'verify-markers':          cmdVerifyMarkers(args);          break;
+    case 'scan-markers':            cmdScanMarkers(args);            break;
     case 'help':
     case '--help':
     case '-h':

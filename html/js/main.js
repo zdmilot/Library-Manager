@@ -10627,6 +10627,9 @@
 				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
 
+				// Write .libmgr marker file
+				try { shared.updateMarkerForLibrary(dbRecord); } catch(_) { /* non-critical */ }
+
 				// Update publisher registry
 				registerPublisher(manifest.author || '');
 				registerPublisher(manifest.organization || '');
@@ -12253,6 +12256,9 @@
 						Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
 						var saved = db_installed_libs.installed_libs.save(dbRecord);
 
+						// Write .libmgr marker file
+						try { shared.updateMarkerForLibrary(dbRecord); } catch(_) { /* non-critical */ }
+
 						// Update publisher registry
 						registerPublisher(manifest.author || '');
 						registerPublisher(manifest.organization || '');
@@ -12843,6 +12849,9 @@
 					} catch (ex) { console.warn("Could not delete help file: " + f, ex); }
 				});
 			}
+
+			// Remove .libmgr marker entry for this library
+			try { shared.removeMarkerEntry(libPath, libName); } catch(_) { /* non-critical */ }
 
 			// Remove the library folder if it is now empty
 			if (libPath) {
@@ -13597,6 +13606,9 @@
 				// Forward-compat: preserve unknown manifest fields in DB record
 				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
+
+				// Write .libmgr marker file
+				try { shared.updateMarkerForLibrary(dbRecord); } catch(_) { /* non-critical */ }
 
 				// Update publisher registry
 				registerPublisher(manifest.author || '');
@@ -15795,6 +15807,9 @@
 				};
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
 
+				// Write .libmgr marker file
+				try { shared.updateMarkerForLibrary(dbRecord); } catch(_) { /* non-critical */ }
+
 				// Update publisher registry
 				registerPublisher(uLib.author || '');
 				registerPublisher(uLib.organization || '');
@@ -16812,6 +16827,9 @@
 				}
 
 				var saved = db_installed_libs.installed_libs.save(dbRecord);
+
+				// Write .libmgr marker file
+				try { shared.updateMarkerForLibrary(dbRecord); } catch(_) { /* non-critical */ }
 
 				// Update publisher registry
 				registerPublisher(author);
