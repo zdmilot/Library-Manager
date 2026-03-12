@@ -2281,6 +2281,128 @@
 	</div>
 	<!---- Modal Access Denied end --->
 
+	<!---- Modal Batch Import start --->
+	<div class="modal" tabindex="-1" role="dialog" id="batchImportModal" data-backdrop="static" data-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:520px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<div class="d-flex align-items-center">
+						<div class="detail-modal-icon mr-3">
+							<i class="fas fa-file-import fa-2x"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0 batch-import-header-title">Preparing Import&hellip;</h5>
+							<small class="batch-import-header-subtitle" style="opacity:0.7;"></small>
+						</div>
+					</div>
+					<button type="button" class="close batch-import-cancel-x" style="display:none;" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body detail-modal-body batch-import-body" style="max-height:50vh;">
+					<!-- Phase 1: Scanning progress -->
+					<div class="batch-import-phase-scan">
+						<div class="batch-import-scan-status mb-2" style="font-size:0.9rem; color:var(--medium2);">
+							Scanning packages&hellip;
+						</div>
+						<div class="progress" style="height:8px; border-radius:4px;">
+							<div class="progress-bar batch-import-progress-bar" role="progressbar"
+								style="width:0%; background:var(--solid-button-background); transition: width 0.2s ease;"
+								aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+						</div>
+					</div>
+					<!-- Phase 2: Confirm list -->
+					<div class="batch-import-phase-confirm d-none">
+						<div class="batch-import-pkg-list"></div>
+						<div class="batch-import-errors d-none mt-3"></div>
+					</div>
+					<!-- Phase 3: Installing progress -->
+					<div class="batch-import-phase-install d-none">
+						<div class="batch-import-install-status mb-2" style="font-size:0.9rem; color:var(--medium2);">
+							Installing packages&hellip;
+						</div>
+						<div class="progress" style="height:8px; border-radius:4px;">
+							<div class="progress-bar batch-import-install-bar" role="progressbar"
+								style="width:0%; background:#28a745; transition: width 0.2s ease;"
+								aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+						</div>
+						<div class="batch-import-install-current mt-2" style="font-size:0.85rem; color:#6c757d;"></div>
+					</div>
+				</div>
+				<div class="modal-footer detail-modal-footer batch-import-footer" style="display:none;">
+					<button type="button" class="btn btn-outlined batch-import-cancel-btn">Cancel</button>
+					<button type="button" class="btn solid-button batch-import-confirm-btn">
+						<i class="fas fa-file-import mr-1"></i>Import All
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Batch Import end --->
+
+	<!---- Modal Batch Duplicates start --->
+	<div class="modal" tabindex="-1" role="dialog" id="batchDuplicateModal" data-backdrop="static" data-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:480px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header" style="background:#8a6d1b; color:#fff3cd; border-bottom:3px solid #ffc107; padding:20px 24px; border-radius:12px 12px 0 0;">
+					<div class="d-flex align-items-center">
+						<div class="mr-3">
+							<i class="fas fa-exclamation-triangle fa-2x" style="color:#ffc107;"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Duplicate Libraries Found</h5>
+							<small style="opacity:0.8;" class="batch-dup-subtitle"></small>
+						</div>
+					</div>
+				</div>
+				<div class="modal-body detail-modal-body" style="max-height:40vh;">
+					<div class="batch-dup-warning-box" style="background:#fff8e1; border:1px solid #ffc107; border-radius:8px; padding:16px; margin-bottom:12px;">
+						<p class="mb-0" style="font-size:0.9rem;"><strong>The following libraries are already installed.</strong> Click <strong>Replace</strong> to overwrite them, or <strong>Skip</strong> to keep the existing versions.</p>
+					</div>
+					<div class="batch-dup-list"></div>
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-end" style="gap:8px;">
+					<button type="button" class="btn btn-outlined batch-dup-skip-btn">Skip Duplicates</button>
+					<button type="button" class="btn solid-button batch-dup-replace-btn">
+						<i class="fas fa-sync-alt mr-1"></i>Replace All
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Batch Duplicates end --->
+
+	<!---- Modal Batch COM start --->
+	<div class="modal" tabindex="-1" role="dialog" id="batchComModal" data-backdrop="static" data-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:480px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<div class="d-flex align-items-center">
+						<div class="detail-modal-icon mr-3">
+							<i class="fas fa-shield-alt fa-2x"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">COM Registration Required</h5>
+							<small style="opacity:0.7;">Administrator rights needed</small>
+						</div>
+					</div>
+				</div>
+				<div class="modal-body detail-modal-body">
+					<p style="font-size:0.9rem;" class="batch-com-message mb-3"></p>
+					<div class="batch-com-list"></div>
+					<p class="mt-3 mb-0" style="font-size:0.85rem; color:#6c757d;">You will be prompted for administrator rights once to register all COM objects.</p>
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-end" style="gap:8px;">
+					<button type="button" class="btn btn-outlined batch-com-cancel-btn">Cancel</button>
+					<button type="button" class="btn solid-button batch-com-continue-btn">
+						<i class="fas fa-check mr-1"></i>Continue
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Batch COM end --->
+
 	<!---- Modal Generic Success start --->
 	<div class="modal" tabindex="-1" role="dialog" id="genericSuccessModal">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:480px;">

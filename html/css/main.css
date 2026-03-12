@@ -1220,6 +1220,123 @@ body {
 }
 /* ---- End Import Success Modal ---- */
 
+/* ---- Batch Import Modal ---- */
+.batch-import-pkg-list .batch-import-pkg-item {
+	display: flex;
+	align-items: center;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--body-background);
+	font-size: 0.9rem;
+}
+.batch-import-pkg-list .batch-import-pkg-item:last-child {
+	border-bottom: none;
+}
+.batch-import-pkg-item .batch-pkg-icon {
+	color: var(--medium);
+	margin-right: 10px;
+	font-size: 0.85rem;
+}
+.batch-import-pkg-item .batch-pkg-name {
+	font-weight: 600;
+	color: var(--dark1);
+}
+.batch-import-pkg-item .batch-pkg-version {
+	color: #6c757d;
+	margin-left: 6px;
+	font-size: 0.82rem;
+}
+.batch-import-pkg-item .batch-pkg-archive {
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	background: var(--body-background);
+	color: var(--medium2);
+	padding: 1px 6px;
+	border-radius: 4px;
+	margin-left: 8px;
+	font-weight: 600;
+}
+.batch-import-errors {
+	background: #fff5f5;
+	border: 1px solid #f5c6cb;
+	border-radius: 8px;
+	padding: 12px 16px;
+}
+.batch-import-error-title {
+	font-weight: 600;
+	color: #842029;
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 6px;
+}
+.batch-import-error-item {
+	font-size: 0.85rem;
+	color: #842029;
+	padding: 2px 0;
+}
+.batch-dup-list .batch-dup-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--body-background);
+	font-size: 0.9rem;
+}
+.batch-dup-list .batch-dup-item:last-child {
+	border-bottom: none;
+}
+.batch-dup-item .batch-dup-name {
+	font-weight: 600;
+	color: var(--dark1);
+}
+.batch-dup-item .batch-dup-versions {
+	font-size: 0.82rem;
+	color: #6c757d;
+}
+.batch-com-list .batch-com-item {
+	padding: 4px 12px;
+	font-size: 0.9rem;
+	color: var(--dark1);
+}
+.batch-com-item i {
+	color: var(--medium);
+	margin-right: 8px;
+}
+/* Dark mode: batch import */
+body.dark-mode .batch-import-pkg-item .batch-pkg-name,
+body.dark-mode .batch-dup-item .batch-dup-name,
+body.dark-mode .batch-com-item {
+	color: #c8d6e5;
+}
+body.dark-mode .batch-import-pkg-item .batch-pkg-archive {
+	background: #16213e;
+	color: #7a8ba0;
+}
+body.dark-mode .batch-import-errors {
+	background: rgba(215, 58, 73, 0.12);
+	border-color: #5c1a1a;
+}
+body.dark-mode .batch-import-error-title {
+	color: #ef6b6b;
+}
+body.dark-mode .batch-import-error-item {
+	color: #ef8a8a;
+}
+body.dark-mode .batch-dup-warning-box {
+	background: rgba(255, 193, 7, 0.1);
+	border-color: #5c4a1a;
+	color: #f0c850;
+}
+body.dark-mode .batch-dup-warning-box p {
+	color: #f0c850;
+}
+body.dark-mode #batchDuplicateModal .modal-header {
+	background: #3a2e0f;
+	color: #f0c850;
+}
+/* ---- End Batch Import Modal ---- */
+
 .link-card .link-info-trigger {
 	cursor: pointer;
 	color: var(--gray_blue);
@@ -1976,6 +2093,7 @@ body.dark-mode .imp-sort-select {
 	cursor: pointer;
 	display: flex;
 	flex-direction: column;
+	margin: 8px !important;
 }
 
 .imp-lib-card:hover {
@@ -1990,11 +2108,14 @@ body.dark-mode .imp-sort-select {
 
 .imp-lib-card-tags {
 	display: flex;
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
 	overflow: hidden;
-	align-items: center;
-	min-height: 26px;
+	align-items: flex-start;
+	/* Reserve space for exactly two rows of chips */
+	min-height: 2.7rem;
+	max-height: 2.7rem;
 	gap: 0.25rem;
+	position: relative;
 }
 
 .imp-lib-card-tags .imp-tag-badge {

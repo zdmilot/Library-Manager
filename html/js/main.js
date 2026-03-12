@@ -12610,9 +12610,9 @@
 				if ($ellipsis.length === 0) return;
 				// Temporarily hide ellipsis to measure natural overflow
 				$ellipsis.hide();
-				var hasOverflow = el.scrollWidth > el.clientWidth;
-				// Also check if there are any tag badges at all
 				var hasTags = $(el).children(".imp-tag-badge").length > 0;
+				// Check if content overflows the two-row max-height
+				var hasOverflow = el.scrollHeight > el.clientHeight;
 				if (hasOverflow && hasTags) {
 					$ellipsis.css("display", "inline-flex");
 				} else {
@@ -13108,11 +13108,61 @@
 				return;
 			}
 
-			// Multiple packages (possibly with archives): use batch import
-			impBatchImportPackages(packages, archives);
+			// Defer heavy work to let file dialog close immediately
+			setTimeout(function() {
+				impBatchImportPackages(packages, archives);
+			}, 50);
 		});
 
 		// ---- Batch import multiple .hxlibpkg files (with single UAC for COM) ----
+
+		// Promise-based modal helpers for batch import
+		function _batchShowConfirmModal() {
+			return new Promise(function(resolve) {
+				var $m = $("#batchImportModal");
+				$m.find(".batch-import-footer").show();
+				$m.find(".batch-import-cancel-x").show();
+				$m.find(".batch-import-confirm-btn").off("click.batch").on("click.batch", function() { resolve(true); });
+				$m.find(".batch-import-cancel-btn").off("click.batch").on("click.batch", function() { resolve(false); });
+				$m.find(".batch-import-cancel-x").off("click.batch").on("click.batch", function() { resolve(false); });
+			});
+		}
+		function _batchShowDupModal(duplicates) {
+			return new Promise(function(resolve) {
+				var $m = $("#batchDuplicateModal");
+				$m.find(".batch-dup-subtitle").text(duplicates.length + " librar" + (duplicates.length !== 1 ? "ies" : "y"));
+				var listHtml = '';
+				duplicates.forEach(function(d) {
+					var verText = '';
+					if (d.existingVersion !== '?' && d.incomingVersion !== '?' && d.existingVersion === d.incomingVersion) {
+						verText = 'same version: v' + escapeHtml(d.existingVersion);
+					} else {
+						verText = 'v' + escapeHtml(d.existingVersion) + ' &rarr; v' + escapeHtml(d.incomingVersion);
+					}
+					listHtml += '<div class="batch-dup-item"><div><span class="batch-dup-name">' + escapeHtml(d.libName) + '</span></div><div class="batch-dup-versions">' + verText + '</div></div>';
+				});
+				$m.find(".batch-dup-list").html(listHtml);
+				$m.find(".batch-dup-replace-btn").off("click.batch").on("click.batch", function() { $m.modal("hide"); resolve(true); });
+				$m.find(".batch-dup-skip-btn").off("click.batch").on("click.batch", function() { $m.modal("hide"); resolve(false); });
+				$m.modal("show");
+			});
+		}
+		function _batchShowComModal(dllCount, pkgNames) {
+			return new Promise(function(resolve) {
+				var $m = $("#batchComModal");
+				$m.find(".batch-com-message").text("This batch contains " + dllCount + " COM DLL" + (dllCount !== 1 ? "s" : "") + " across " + pkgNames.length + " package" + (pkgNames.length !== 1 ? "s" : "") + " that require registration:");
+				var listHtml = '';
+				pkgNames.forEach(function(n) { listHtml += '<div class="batch-com-item"><i class="fas fa-cube"></i>' + escapeHtml(n) + '</div>'; });
+				$m.find(".batch-com-list").html(listHtml);
+				$m.find(".batch-com-continue-btn").off("click.batch").on("click.batch", function() { $m.modal("hide"); resolve(true); });
+				$m.find(".batch-com-cancel-btn").off("click.batch").on("click.batch", function() { $m.modal("hide"); resolve(false); });
+				$m.modal("show");
+			});
+		}
+		function _batchYield() {
+			return new Promise(function(resolve) { setTimeout(resolve, 0); });
+		}
+
 		async function impBatchImportPackages(packagePaths, archivePaths) {
 			var accessCheck = canManageLibraries();
 			if (!accessCheck.allowed) {
@@ -13126,12 +13176,34 @@
 			}
 			_isImporting = true;
 
+			// Show batch import modal immediately with scanning progress
+			var $bm = $("#batchImportModal");
+			$bm.find(".batch-import-header-title").text("Preparing Import\u2026");
+			$bm.find(".batch-import-header-subtitle").text(packagePaths.length + " file" + (packagePaths.length !== 1 ? "s" : "") + " selected");
+			$bm.find(".batch-import-phase-scan").removeClass("d-none");
+			$bm.find(".batch-import-phase-confirm").addClass("d-none");
+			$bm.find(".batch-import-phase-install").addClass("d-none");
+			$bm.find(".batch-import-footer").hide();
+			$bm.find(".batch-import-cancel-x").hide();
+			$bm.find(".batch-import-progress-bar").css("width", "0%");
+			$bm.find(".batch-import-scan-status").text("Scanning packages\u2026");
+			$bm.modal("show");
+
 			try {
 				// ---- Pre-scan all packages: parse manifests, check duplicates, detect COM ----
 				var pkgInfos = [];
 				var parseErrors = [];
+				var totalFiles = packagePaths.length;
 
 				for (var pi = 0; pi < packagePaths.length; pi++) {
+					// Update progress
+					var pct = Math.round(((pi + 1) / totalFiles) * 100);
+					$bm.find(".batch-import-progress-bar").css("width", pct + "%");
+					$bm.find(".batch-import-scan-status").text("Scanning package " + (pi + 1) + " of " + totalFiles + "\u2026");
+
+					// Yield to UI to keep responsive
+					await _batchYield();
+
 					try {
 						var rawBuffer = fs.readFileSync(packagePaths[pi]);
 						var zipBuffer = unpackContainer(rawBuffer, CONTAINER_MAGIC_PKG);
@@ -13195,34 +13267,58 @@
 				}
 
 				if (pkgInfos.length === 0 && archivePaths.length === 0) {
+					$bm.modal("hide");
 					var errMsg = "No valid packages found to import.";
 					if (parseErrors.length > 0) errMsg += "\n\n" + parseErrors.join("\n");
 					alert(errMsg);
 					return;
 				}
 
-				// ---- Confirmation prompt ----
-				var confirmMsg = "You selected " + pkgInfos.length + " package" + (pkgInfos.length !== 1 ? "s" : "");
-				if (archivePaths.length > 0) {
-					confirmMsg += " and " + archivePaths.length + " archive" + (archivePaths.length !== 1 ? "s" : "");
-				}
-				confirmMsg += " to import:\n\n";
+				// ---- Switch to confirmation phase ----
+				$bm.find(".batch-import-phase-scan").addClass("d-none");
+				$bm.find(".batch-import-phase-confirm").removeClass("d-none");
+				$bm.find(".batch-import-header-title").text("Confirm Import");
+
+				// Build package list HTML
+				var listHtml = '';
 				pkgInfos.forEach(function(info) {
-					var ver = info.manifest.version ? " (v" + info.manifest.version + ")" : "";
-					confirmMsg += "  - " + info.libName + ver + "\n";
+					var ver = info.manifest.version ? 'v' + escapeHtml(info.manifest.version) : '';
+					listHtml += '<div class="batch-import-pkg-item">';
+					listHtml += '<i class="fas fa-cube batch-pkg-icon"></i>';
+					listHtml += '<span class="batch-pkg-name">' + escapeHtml(info.libName) + '</span>';
+					if (ver) listHtml += '<span class="batch-pkg-version">' + ver + '</span>';
+					listHtml += '</div>';
 				});
 				archivePaths.forEach(function(ap) {
-					confirmMsg += "  - " + path.basename(ap) + " (archive)\n";
+					listHtml += '<div class="batch-import-pkg-item">';
+					listHtml += '<i class="fas fa-archive batch-pkg-icon"></i>';
+					listHtml += '<span class="batch-pkg-name">' + escapeHtml(path.basename(ap)) + '</span>';
+					listHtml += '<span class="batch-pkg-archive">archive</span>';
+					listHtml += '</div>';
 				});
-				if (parseErrors.length > 0) {
-					confirmMsg += "\nSkipped (" + parseErrors.length + " error" + (parseErrors.length !== 1 ? "s" : "") + "):\n";
-					parseErrors.forEach(function(e) { confirmMsg += "  x " + e + "\n"; });
-				}
-				confirmMsg += "\nDo you want to install " + (pkgInfos.length > 1 ? "all " + pkgInfos.length + " packages" : "this package");
-				if (archivePaths.length > 0) confirmMsg += " and import the archive" + (archivePaths.length !== 1 ? "s" : "");
-				confirmMsg += "?";
+				$bm.find(".batch-import-pkg-list").html(listHtml);
 
-				if (!confirm(confirmMsg)) return;
+				// errors section
+				var $errors = $bm.find(".batch-import-errors");
+				if (parseErrors.length > 0) {
+					var errHtml = '<div class="batch-import-error-title"><i class="fas fa-times-circle mr-1"></i>Skipped (' + parseErrors.length + ')</div>';
+					parseErrors.forEach(function(e) { errHtml += '<div class="batch-import-error-item"><i class="fas fa-times mr-1"></i>' + escapeHtml(e) + '</div>'; });
+					$errors.html(errHtml).removeClass("d-none");
+				} else {
+					$errors.addClass("d-none");
+				}
+
+				// Update button text
+				var totalImportable = pkgInfos.length + archivePaths.length;
+				$bm.find(".batch-import-confirm-btn").html('<i class="fas fa-file-import mr-1"></i>Import ' + (totalImportable > 1 ? 'All ' + totalImportable : ''));
+				$bm.find(".batch-import-header-subtitle").text(pkgInfos.length + " package" + (pkgInfos.length !== 1 ? "s" : "") + (archivePaths.length > 0 ? " + " + archivePaths.length + " archive" + (archivePaths.length !== 1 ? "s" : "") : ""));
+
+				// Wait for user confirmation
+				var confirmed = await _batchShowConfirmModal();
+				if (!confirmed) {
+					$bm.modal("hide");
+					return;
+				}
 
 				// ---- Duplicate detection ----
 				var batchDuplicates = [];
@@ -13240,19 +13336,12 @@
 				}
 
 				if (batchDuplicates.length > 0) {
-					var dupMsg = batchDuplicates.length + " librar" + (batchDuplicates.length !== 1 ? "ies are" : "y is") + " already installed:\n\n";
-					batchDuplicates.forEach(function(d) {
-						if (d.existingVersion !== '?' && d.incomingVersion !== '?' && d.existingVersion === d.incomingVersion) {
-							dupMsg += "  \u2022 " + d.libName + " (same version: v" + d.existingVersion + ")\n";
-						} else {
-							dupMsg += "  \u2022 " + d.libName + " (installed: v" + d.existingVersion + " -> importing: v" + d.incomingVersion + ")\n";
-						}
-					});
-					dupMsg += "\nClick OK to replace " + (batchDuplicates.length !== 1 ? "these libraries" : "this library") + ", or Cancel to skip " + (batchDuplicates.length !== 1 ? "them" : "it") + ".";
-					if (!confirm(dupMsg)) {
+					var replaceDups = await _batchShowDupModal(batchDuplicates);
+					if (!replaceDups) {
 						batchDuplicates.forEach(function(d) { batchSkipIndices[d.index] = true; });
 						var remaining = pkgInfos.filter(function(_, idx) { return !batchSkipIndices[idx]; });
 						if (remaining.length === 0 && archivePaths.length === 0) {
+							$bm.modal("hide");
 							alert("All selected packages are already installed. No changes were made.");
 							return;
 						}
@@ -13271,13 +13360,20 @@
 				}
 
 				if (batchComDllCount > 0) {
-					var comPromptMsg = "This batch contains " + batchComDllCount + " COM DLL" + (batchComDllCount !== 1 ? "s" : "") +
-						" across " + batchComPkgNames.length + " package" + (batchComPkgNames.length !== 1 ? "s" : "") +
-						" that require administrator rights to register:\n\n";
-					batchComPkgNames.forEach(function(n) { comPromptMsg += "  \u2022 " + n + "\n"; });
-					comPromptMsg += "\nYou will be prompted for administrator rights once to register all COM objects.\n\nDo you want to continue?";
-					if (!confirm(comPromptMsg)) return;
+					var comConfirmed = await _batchShowComModal(batchComDllCount, batchComPkgNames);
+					if (!comConfirmed) {
+						$bm.modal("hide");
+						return;
+					}
 				}
+
+				// ---- Switch to install phase with progress ----
+				$bm.find(".batch-import-phase-confirm").addClass("d-none");
+				$bm.find(".batch-import-phase-install").removeClass("d-none");
+				$bm.find(".batch-import-footer").hide();
+				$bm.find(".batch-import-cancel-x").hide();
+				$bm.find(".batch-import-header-title").text("Installing\u2026");
+				$bm.find(".batch-import-install-bar").css("width", "0%");
 
 				// ---- Install each package ----
 				var results = { success: [], failed: parseErrors.slice() };
@@ -13296,12 +13392,23 @@
 				var binFolderBatch = db_links.links.findOne({"_id":"bin-folder"});
 				var binBasePathBatch = binFolderBatch ? binFolderBatch.path : 'C:\\Program Files (x86)\\HAMILTON\\Bin';
 
-				for (var ii = 0; ii < pkgInfos.length; ii++) { (function() {
+				var installableCount = pkgInfos.filter(function(_, idx) { return !batchSkipIndices[idx]; }).length;
+				var installedSoFar = 0;
+
+				for (var ii = 0; ii < pkgInfos.length; ii++) { await (async function() {
 					var info = pkgInfos[ii];
 					if (batchSkipIndices[ii]) {
 						results.failed.push(info.libName + ": skipped (already installed)");
 						return;
 					}
+
+					// Update install progress
+					installedSoFar++;
+					var installPct = Math.round((installedSoFar / installableCount) * 100);
+					$bm.find(".batch-import-install-bar").css("width", installPct + "%");
+					$bm.find(".batch-import-install-status").text("Installing package " + installedSoFar + " of " + installableCount + "\u2026");
+					$bm.find(".batch-import-install-current").text(info.libName);
+					await _batchYield();
 
 					try {
 						var zip = info.zip;
@@ -13544,6 +13651,10 @@
 
 				// ---- Batch COM registration: single UAC prompt for ALL COM DLLs ----
 				if (allComDllPaths.length > 0) {
+					$bm.find(".batch-import-install-status").text("Registering COM objects\u2026");
+					$bm.find(".batch-import-install-current").text("");
+					await _batchYield();
+
 					var allDllPathsFlat = allComDllPaths.map(function(c) { return c.dllPath; });
 					try {
 						var batchComResult = await comRegisterMultipleDlls(allDllPathsFlat, true);
@@ -13592,12 +13703,17 @@
 
 				// ---- Process any archives after packages ----
 				if (archivePaths.length > 0) {
+					$bm.find(".batch-import-install-status").text("Importing archives\u2026");
+					$bm.find(".batch-import-install-current").text("");
+					await _batchYield();
 					for (var ai = 0; ai < archivePaths.length; ai++) {
 						await impArchImportArchive(archivePaths[ai]);
 					}
 				}
 
-				// ---- Show results ----
+				// ---- Hide batch modal and show results ----
+				$bm.modal("hide");
+
 				var batchListHtml = '<div style="text-align:left;">';
 				if (results.success.length > 0) {
 					results.success.forEach(function(n) {
@@ -13633,6 +13749,7 @@
 				fitImporterHeight();
 
 			} catch(e) {
+				$bm.modal("hide");
 				alert("Error during batch import:\n" + e.message);
 			} finally {
 				_isImporting = false;
