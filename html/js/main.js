@@ -12612,31 +12612,44 @@
 				var $tags = $(el).children(".imp-tag-badge");
 
 				// Reset: show all tags, clear height constraints so we can measure
-				$tags.css("display", "");
+				$tags.show();
 				if ($ellipsis.length) $ellipsis.hide();
 				el.style.overflow = "visible";
 				el.style.maxHeight = "none";
-				el.style.minHeight = "";
+				el.style.minHeight = "0";
 
 				if ($tags.length === 0) {
 					// No tags — still reserve two-row height for consistency
-					el.style.minHeight = "2rem";
-					el.style.maxHeight = "2rem";
+					var fallbackH = 36;
+					el.style.minHeight = fallbackH + "px";
+					el.style.maxHeight = fallbackH + "px";
 					el.style.overflow = "hidden";
 					return;
 				}
 
-				// Measure first badge to derive row height
-				var tagHeight = $tags[0].offsetHeight;
-				var gapVal = window.getComputedStyle(el).rowGap;
-				var gap = (gapVal && gapVal !== 'normal') ? parseFloat(gapVal) : 4;
-				var twoRowHeight = (tagHeight * 2) + gap;
-				var row3Top = $tags[0].offsetTop + 2 * (tagHeight + gap);
+				// Measure actual row positions from real tag offsets
+				var firstTop = $tags[0].offsetTop;
+				var tagH = $tags[0].offsetHeight;
+				var rowStep = 0; // actual vertical step between row 1 and row 2
+
+				// Find the first tag on a different row to get real row step
+				for (var i = 1; i < $tags.length; i++) {
+					if ($tags[i].offsetTop > firstTop + 1) {
+						rowStep = $tags[i].offsetTop - firstTop;
+						break;
+					}
+				}
+
+				// If all tags fit on one row, estimate row step from tag height
+				if (rowStep === 0) rowStep = tagH + 4;
+
+				var twoRowHeight = tagH + rowStep;
+				var row3Cutoff = firstTop + rowStep + rowStep - 1;
 
 				// Hide any tag whose top places it on row 3 or beyond
 				var hiddenAny = false;
 				$tags.each(function() {
-					if (this.offsetTop >= row3Top - 1) {
+					if (this.offsetTop > row3Cutoff) {
 						$(this).hide();
 						hiddenAny = true;
 					}
@@ -12644,11 +12657,13 @@
 
 				if (hiddenAny && $ellipsis.length) {
 					$ellipsis.css("display", "inline-flex");
-					// If ellipsis itself landed on row 3, remove tags until it fits
-					while ($ellipsis[0].offsetTop >= row3Top - 1) {
+					// If ellipsis itself landed on row 3, pull back visible tags until it fits
+					var safety = 0;
+					while ($ellipsis[0].offsetTop > row3Cutoff && safety < 50) {
 						var $last = $tags.filter(":visible").last();
 						if ($last.length === 0) break;
 						$last.hide();
+						safety++;
 					}
 				}
 

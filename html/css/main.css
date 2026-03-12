@@ -2111,13 +2111,12 @@ body.dark-mode .imp-sort-select {
 	flex-wrap: wrap;
 	overflow: hidden;
 	align-items: flex-start;
-	gap: 0.25rem;
 	position: relative;
 }
 
 .imp-lib-card-tags .imp-tag-badge {
 	flex-shrink: 0;
-	margin-bottom: 0;
+	margin: 0 4px 4px 0;
 }
 
 .imp-tag-ellipsis {
