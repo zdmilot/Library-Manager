@@ -38,6 +38,7 @@
 		const os = require("os");
 		const crypto = require('crypto');
 		const shared = require('../lib/shared');
+		const SearchIndex = require('../lib/search-index');
 
 		/** Shared MIME type lookup for image file extensions (from shared.js) */
 		var IMAGE_MIME_MAP = shared.IMAGE_MIME_MAP;
@@ -1524,6 +1525,41 @@
 
 		// Rebuild publisher registry at startup (after system libs are loaded)
 		rebuildPublisherRegistry();
+
+		// ---- Full-text Search Index ----
+		var _searchIndex = new SearchIndex();
+		var _searchIndexDirty = true; // flag to lazily rebuild before next search
+
+		/**
+		 * Rebuild the search index from all installed + system libraries.
+		 * Called lazily before search when _searchIndexDirty is true.
+		 */
+		function rebuildSearchIndex() {
+			_searchIndex.clear();
+
+			// Index user-installed libraries
+			var userLibs = db_installed_libs.installed_libs.find() || [];
+			userLibs.forEach(function(lib) {
+				if (lib.deleted || isSystemLibrary(lib._id)) return;
+				_searchIndex.addLibrary(lib, 'user');
+			});
+
+			// Index system libraries (with cached function names)
+			var fnCache = _buildSysLibFnCache();
+			var sysLibs = getAllSystemLibraries();
+			sysLibs.forEach(function(sLib) {
+				// System libs get a virtual 'system' tag injected for #system search
+				var augmented = Object.create(sLib);
+				augmented.tags = ['system'].concat(sLib.tags || []);
+				_searchIndex.addLibrary(augmented, 'system', fnCache[sLib._id] || '');
+			});
+
+			_searchIndexDirty = false;
+		}
+
+		function markSearchIndexDirty() {
+			_searchIndexDirty = true;
+		}
 
 		// ---- Package Store - cache .hxlibpkg files for repair & version rollback ----
 		// Stored under local/packages/<LibraryName>/ within the app directory
@@ -3538,62 +3574,38 @@
 			var hasAuthorFilters = authorFilters.length > 0;
 			var hasTextQuery = textQuery.length > 0;
 
-			// Build combined search results: all user libs + all system libs
+			// Build combined search results using the full-text search index
 			var $container = $("#imp-cards-container");
 			$container.empty();
 
-			// Gather all user-installed libraries (non-deleted)
-			var userLibs = db_installed_libs.installed_libs.find() || [];
-			userLibs = userLibs.filter(function(l) { return !l.deleted && !isSystemLibrary(l._id); });
+			// Lazily rebuild search index if dirty
+			if (_searchIndexDirty) rebuildSearchIndex();
 
-			// Gather all system libraries
-			var sysLibs = getAllSystemLibraries();
-
-			// Build combined list of {name, html} for filtering
-			var allCards = [];
-
-			function matchesTagFilters(tags) {
-				if (!hasTagFilters) return true;
-				var normalizedTags = (tags || []).map(function(t) { return (t || '').toLowerCase(); });
-				return tagFilters.every(function(filterTag) {
-					return normalizedTags.some(function(tag) { return tag.indexOf(filterTag) !== -1; });
-				});
-			}
-
-			function matchesAuthorFilters(author, organization) {
-				if (!hasAuthorFilters) return true;
-				var authorParts = (author || '').split(',').map(function(s) { return s.trim().toLowerCase(); }).filter(Boolean);
-				var orgParts = (organization || '').split(',').map(function(s) { return s.trim().toLowerCase(); }).filter(Boolean);
-				return authorFilters.every(function(filter) {
-					return authorParts.some(function(part) { return part.indexOf(filter) !== -1; }) ||
-						orgParts.some(function(part) { return part.indexOf(filter) !== -1; });
-				});
-			}
-
-			// User library cards
-			userLibs.forEach(function(lib) {
-				if (!matchesTagFilters(lib.tags || [])) return;
-				if (!matchesAuthorFilters(lib.author, lib.organization)) return;
-				if (hasTextQuery) {
-					var fnNames = (lib.public_functions || []).map(function(fn) { return fn.qualifiedName || fn.name || ''; }).join(' ');
-					var searchText = ((lib.library_name || '') + ' ' + (lib.author || '') + ' ' + (lib.description || '') + ' ' + (lib.tags || []).join(' ') + ' ' + fnNames).toLowerCase();
-					if (searchText.indexOf(textQuery) === -1) return;
-				}
-				allCards.push({ type: 'user', html: impBuildSingleCardHtml(lib) });
+			// Run the indexed search (handles tag filters, author filters, text query)
+			var indexResults = _searchIndex.search(textQuery, {
+				tagFilters: tagFilters,
+				authorFilters: authorFilters
 			});
 
-			// System library cards - include public function names in search
-			// System libs carry a virtual "system" tag so #system matches them.
-			var fnCache = hasTextQuery ? _buildSysLibFnCache() : null;
-			sysLibs.forEach(function(sLib) {
-				if (!matchesTagFilters(['system'])) return;
-				if (!matchesAuthorFilters(sLib.author, sLib.organization)) return;
-				if (hasTextQuery) {
-					var fnNames = fnCache[sLib._id] || '';
-					var searchText = ((sLib.display_name || sLib.canonical_name || '') + ' ' + (sLib.author || '') + ' ' + (sLib.resource_types || []).join(' ') + ' ' + fnNames).toLowerCase();
-					if (searchText.indexOf(textQuery) === -1) return;
+			// Build lookup maps for quick access to library records
+			var userLibMap = {};
+			var userLibs = db_installed_libs.installed_libs.find() || [];
+			userLibs.forEach(function(l) {
+				if (!l.deleted && !isSystemLibrary(l._id)) userLibMap[l._id] = l;
+			});
+			var sysLibMap = {};
+			getAllSystemLibraries().forEach(function(s) { sysLibMap[s._id] = s; });
+
+			// Render cards in relevance-ranked order
+			var allCards = [];
+			indexResults.forEach(function(result) {
+				if (result.type === 'user') {
+					var lib = userLibMap[result.id];
+					if (lib) allCards.push({ type: 'user', html: impBuildSingleCardHtml(lib) });
+				} else {
+					var sLib = sysLibMap[result.id];
+					if (sLib) allCards.push({ type: 'system', html: buildSystemLibraryCard(sLib) });
 				}
-				allCards.push({ type: 'system', html: buildSystemLibraryCard(sLib) });
 			});
 
 			if (allCards.length === 0) {
@@ -7485,7 +7497,6 @@
 				state.setFiles(state.files().filter(function(f) {
 					if (removeSet[f]) {
 						state.clearRelPath(f);
-						if (treeId === 'pkg-lib-list') delete pkg_fileCustomDirs[f];
 						return false;
 					}
 					return true;
@@ -9502,7 +9513,7 @@
 		// These are cleared whenever libraries are installed, deleted, or reimported.
 		var _integrityCache = {};   // lib._id -> verifyLibraryIntegrity() result
 		var _depCache = {};         // lib._id -> extractRequiredDependencies() result
-		function invalidateLibCaches() { _integrityCache = {}; _depCache = {}; }
+		function invalidateLibCaches() { _integrityCache = {}; _depCache = {}; markSearchIndexDirty(); }
 
 		// ---- Build installed library cards from DB ----
 		function impBuildLibraryCards(groupId, recentMode, systemMode, unsignedMode, starredMode) {

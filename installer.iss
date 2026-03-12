@@ -564,10 +564,15 @@ begin
   if CurStep = ssPostInstall then
   begin
     // On upgrade, preserve existing settings — only write on fresh install.
+    // Also guard against the case where the registry key is missing but data
+    // folders still exist from a previous installation (e.g. manual uninstall
+    // or registry cleanup).  Never overwrite existing settings files.
     if not gIsUpgrade then
     begin
-      WriteSettingsFile(ExpandConstant('{app}\local\settings.json'));
-      WriteSettingsFile(ExpandConstant('{app}\db\settings.json'));
+      if not FileExists(ExpandConstant('{app}\local\settings.json')) then
+        WriteSettingsFile(ExpandConstant('{app}\local\settings.json'));
+      if not FileExists(ExpandConstant('{app}\db\settings.json')) then
+        WriteSettingsFile(ExpandConstant('{app}\db\settings.json'));
     end;
 
     // Grant the Users group Modify permissions on the local data directory.
