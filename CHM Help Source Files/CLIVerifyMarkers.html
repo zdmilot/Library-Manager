@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CLI: verify-markers</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">CLI: verify-markers</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; verify-markers</div>
+
+<h2>Description</h2>
+<p>Verifies the integrity of <code>.libmgr</code> marker files for installed libraries. Each non-system library managed by Library Manager has a <code>.libmgr</code> marker file in its install directory that records file hashes at install time. This command checks that each marker exists and that all recorded file hashes still match the files on disk, detecting any post-installation tampering or accidental modification.</p>
+
+<h2>Usage</h2>
+<div class="code"><pre>node cli.js verify-markers [--name &lt;name&gt;] [--json]</pre></div>
+
+<h2>Options</h2>
+<table>
+<thead><tr><th>Flag</th><th>Required</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>--name &lt;name&gt;</code></td><td>No</td><td>Verify a single library by name. If omitted, all non-system installed libraries are verified.</td></tr>
+<tr><td><code>--json</code></td><td>No</td><td>Print machine-readable JSON output instead of human-readable text</td></tr>
+</tbody>
+</table>
+
+<h2>Verification Process</h2>
+<ol>
+  <li>All installed libraries are loaded from the database (soft-deleted and system libraries are excluded)</li>
+  <li>For each library, the tool checks for a <code>.libmgr</code> marker file in the library&rsquo;s install directory</li>
+  <li>If the marker exists, recorded file hashes are compared against the current files on disk</li>
+  <li>Results are categorized as: <b>ok</b> (all hashes match), <b>no_marker</b> (marker file missing), <b>invalid</b> (hash mismatch or missing files), or <b>no_path</b> (no install path recorded)</li>
+</ol>
+
+<h2>Possible Outcomes</h2>
+<table>
+<thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>ok</b></td><td>Marker exists and all file hashes match &mdash; library is intact</td></tr>
+<tr><td><b>no_marker</b></td><td>No <code>.libmgr</code> marker file found in the install directory (library may have been installed before markers were introduced, or the marker was deleted)</td></tr>
+<tr><td><b>invalid</b></td><td>Marker exists but one or more files are missing or have been modified since installation</td></tr>
+<tr><td><b>no_path</b></td><td>The library&rsquo;s database record has no install path (unusual &mdash; may indicate a corrupt database entry)</td></tr>
+</tbody>
+</table>
+
+<h2>Examples</h2>
+<div class="code"><pre>:: Verify all installed libraries
+node cli.js verify-markers
+
+:: Verify a single library
+node cli.js verify-markers --name "MyLibrary"
+
+:: Machine-readable output for scripting
+node cli.js verify-markers --json</pre></div>
+
+<h2>JSON Output Format</h2>
+<p>When <code>--json</code> is specified, the output is a JSON array of result objects:</p>
+<div class="code"><pre>[
+  {
+    "library": "MyLibrary",
+    "status": "ok",
+    "path": "C:\\Program Files (x86)\\HAMILTON\\Library\\MyLibrary",
+    "version": "1.0.0"
+  },
+  {
+    "library": "OtherLib",
+    "status": "no_marker",
+    "message": "No .libmgr marker found",
+    "path": "C:\\Program Files (x86)\\HAMILTON\\Library\\OtherLib"
+  },
+  {
+    "library": "ModifiedLib",
+    "status": "invalid",
+    "path": "C:\\Program Files (x86)\\HAMILTON\\Library\\ModifiedLib",
+    "missing": ["helper.hs_"],
+    "tampered": ["main.hsl"],
+    "errors": []
+  }
+]</pre></div>
+
+<h2>Human-Readable Output</h2>
+<div class="code"><pre>Marker Verification Results
+══════════════════════════════════════════════════
+  Valid:      3
+  No marker:  1
+  Invalid:    1
+
+✓ Valid:
+    MyLibrary (v1.0.0)
+    AnotherLib (v2.1.0)
+    ThirdLib (v1.3.0)
+
+⚠ Missing markers:
+    OldLib  →  C:\Program Files (x86)\HAMILTON\Library\OldLib
+
+✗ Failed verification:
+    ModifiedLib
+      Tampered: main.hsl</pre></div>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="CLIScanMarkers.html">scan-markers</a> &mdash; Scan directories for <code>.libmgr</code> markers</li>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a></li>
+</ul>
+
+</div>
+<div class="footer">
+<p>Library Manager Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

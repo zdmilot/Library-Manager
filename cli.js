@@ -2654,11 +2654,6 @@ create-package
   With --sign-key, an Ed25519 digital signature is embedded that
   cryptographically binds the publisher's identity to the package content.
 
-  To bundle a standalone installer executable, add "installer_executable"
-  to the spec JSON pointing to the .exe file path (relative to the spec).
-  The installer is stored under the installer/ directory in the package
-  and extracted to local/installers/<LibName>/ on import.
-
   Examples:
     node cli.js create-package --spec MyLib.spec.json --output MyLib.hxlibpkg
     node cli.js create-package --spec specs/proj.json --output dist/proj.hxlibpkg

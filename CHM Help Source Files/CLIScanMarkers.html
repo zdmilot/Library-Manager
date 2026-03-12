@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CLI: scan-markers</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">CLI: scan-markers</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager</a> &raquo; <a href="CLIReference.html">CLI Reference</a> &raquo; scan-markers</div>
+
+<h2>Description</h2>
+<p>Scans a directory tree for <code>.libmgr</code> marker files and reports all managed libraries found. This is useful for discovering which libraries are installed in a given folder without relying on the Library Manager database. Typical use cases include recovery after a database loss, auditing a shared library folder, or verifying a fresh installation.</p>
+
+<h2>Usage</h2>
+<div class="code"><pre>node cli.js scan-markers [--dir &lt;path&gt;] [--json]</pre></div>
+
+<h2>Options</h2>
+<table>
+<thead><tr><th>Flag</th><th>Required</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>--dir &lt;path&gt;</code></td><td>No</td><td>Directory to scan. Defaults to the configured Hamilton Library path (typically <code>C:\Program Files (x86)\HAMILTON\Library</code>)</td></tr>
+<tr><td><code>--json</code></td><td>No</td><td>Print machine-readable JSON output instead of human-readable text</td></tr>
+</tbody>
+</table>
+
+<h2>How It Works</h2>
+<ol>
+  <li>The scan root directory is resolved from <code>--dir</code> or the configured library path</li>
+  <li>The root directory itself is checked for a <code>.libmgr</code> marker</li>
+  <li>Each immediate subdirectory is checked for a <code>.libmgr</code> marker</li>
+  <li>For each marker found, the embedded library metadata (name, version, author) is extracted and reported</li>
+</ol>
+<p>The scan checks only one level of subdirectories, since libraries are installed directly under the Library root folder.</p>
+
+<h2>Examples</h2>
+<div class="code"><pre>:: Scan the default library directory
+node cli.js scan-markers
+
+:: Scan a specific directory
+node cli.js scan-markers --dir "D:\Hamilton\Library"
+
+:: Machine-readable output for scripting
+node cli.js scan-markers --json</pre></div>
+
+<h2>JSON Output Format</h2>
+<p>When <code>--json</code> is specified, the output is a JSON array of marker objects, one per directory containing a marker:</p>
+<div class="code"><pre>[
+  {
+    "dirPath": "C:\\Program Files (x86)\\HAMILTON\\Library\\MyLibrary",
+    "libraries": {
+      "MyLibrary": {
+        "version": "1.0.0",
+        "author": "Jane Smith"
+      }
+    }
+  }
+]</pre></div>
+
+<h2>Human-Readable Output</h2>
+<div class="code"><pre>Marker Scan Results
+══════════════════════════════════════════════════
+Scan root: C:\Program Files (x86)\HAMILTON\Library
+
+  C:\Program Files (x86)\HAMILTON\Library\MyLibrary
+    • MyLibrary  v1.0.0  (Jane Smith)
+
+  C:\Program Files (x86)\HAMILTON\Library\AnotherLib
+    • AnotherLib  v2.1.0  (Automation Team)
+
+Found 2 managed library(ies) across 2 directory(ies).</pre></div>
+
+<h2>Use Cases</h2>
+<ul>
+  <li><b>Database recovery:</b> If the Library Manager database is lost or corrupted, scan-markers can identify which libraries are installed on disk so they can be re-registered</li>
+  <li><b>Auditing:</b> Verify which managed libraries exist in a shared or networked library folder</li>
+  <li><b>Migration:</b> Before migrating to a new machine, scan the library folder to inventory installed libraries</li>
+</ul>
+
+<h2>See Also</h2>
+<ul>
+  <li><a href="CLIVerifyMarkers.html">verify-markers</a> &mdash; Verify marker file hashes against files on disk</li>
+  <li><a href="IntegrityVerification.html">Integrity Verification</a></li>
+</ul>
+
+</div>
+<div class="footer">
+<p>Library Manager Help</p>
+</div>
+<script src="help.js"></script>
+</body>
+</html>

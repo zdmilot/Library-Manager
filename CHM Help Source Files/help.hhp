@@ -46,6 +46,8 @@ CLIVerifySyslibHashes.html
 CLIVerifyPackage.html
 CLIGenerateKeypair.html
 CLIListPublishers.html
+CLIVerifyMarkers.html
+CLIScanMarkers.html
 LibraryAuditLog.html
 UnsignedLibraries.html
 VisualIdentity.html
