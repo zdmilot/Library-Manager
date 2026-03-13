@@ -65,17 +65,15 @@
 			}
 		}
 
-		// ---- Windows Security Group Detection & Regulated Environment Access Control ----
+		// ---- Windows Security Group Detection & Access Control ----
 		// Detects the current user's Windows group membership via `whoami /groups`.
 		// Used to enforce access control on protected library management actions
-		// (import, delete, rollback) when regulated environment mode is enabled.
+		// (import, delete, rollback).
 		//
 		// Precedence (allow overrides deny):
 		//   1. User is in Lab Method Programmer OR Lab Service => ALLOWED
 		//   2. User is in Lab Operator, Lab Operator 2, or Lab Remote Service => DENIED
-		//   3. User is not in any Hamilton group:
-		//      - Regulated mode ON  => DENIED  (strict default deny)
-		//      - Regulated mode OFF => ALLOWED (compatibility default allow)
+		//   3. User is not in any Hamilton group => ALLOWED (default allow)
 
 		var ALLOW_GROUPS = ['lab method programmer', 'lab service'];
 		var DENY_GROUPS  = ['lab operator', 'lab operator 2', 'lab remote service'];
@@ -165,12 +163,7 @@
 		 * Check if the current user is allowed to perform a protected library
 		 * management action (import, delete, rollback).
 		 *
-		 * When regulated environment mode is OFF (default):
-		 *   Users not in any Hamilton group are ALLOWED (compatibility mode).
-		 *
-		 * When regulated environment mode is ON:
-		 *   Users not in any Hamilton group are DENIED (strict default deny).
-		 *
+		 * Users not in any Hamilton group are ALLOWED (default allow).
 		 * In both modes, allow groups override deny groups.
 		 *
 		 * @returns {{ allowed: boolean, reason: string }}
@@ -191,50 +184,10 @@
 				return { allowed: false, reason: 'Your user group does not have permission to manage libraries.\n\nAuthorized groups: Lab Method Programmer, Lab Service.\nYour group assignment restricts this action.' };
 			}
 
-			// Step 3: Not in any Hamilton group - check regulated mode
-			var regulatedMode = false;
-			try {
-				var s = db_settings.settings.findOne({"_id":"0"});
-				regulatedMode = !!(s && s.chk_regulatedEnvironment);
-			} catch(e) { console.warn('Could not read regulated mode setting: ' + e.message); }
-
-			if (regulatedMode) {
-				return { allowed: false, reason: 'Regulated environment mode is enabled.\n\nOnly users assigned to authorized groups (Lab Method Programmer, Lab Service) can manage libraries.\nContact your system administrator for access.' };
-			}
-
-			// Compatibility mode - allow by default
-			return { allowed: true, reason: 'Compatibility mode (no group restriction)' };
+			// Default - allow
+			return { allowed: true, reason: 'Default allow (no group restriction)' };
 		}
 
-		/**
-		 * Check if the current user is allowed to change the regulated environment setting.
-		 * Administrators and members of authorized groups (Lab Method Programmer, Lab Service)
-		 * can toggle this setting. In unregulated mode, any user can change all other settings,
-		 * but only authorized group members or admins can toggle regulated mode ON, preventing
-		 * false/accidental enabling of this mode.
-		 * @returns {boolean}
-		 */
-		function canToggleRegulatedMode() {
-			return isWindowsAdmin() || isInAnyGroup(ALLOW_GROUPS);
-		}
-
-		/**
-		 * Check if the current user can change general settings (non-regulated-mode settings).
-		 * In unregulated mode: any user can change all settings except toggling regulated mode on.
-		 * In regulated mode: only authorized groups or admins can change settings.
-		 * Administrators always have full settings access (super whitelist).
-		 * @returns {boolean}
-		 */
-		function canChangeSettings() {
-			if (isWindowsAdmin()) return true;
-			var regulatedMode = false;
-			try {
-				var s = db_settings.settings.findOne({"_id":"0"});
-				regulatedMode = !!(s && s.chk_regulatedEnvironment);
-			} catch(e) { console.warn('Could not read regulated mode setting: ' + e.message); }
-			if (!regulatedMode) return true; // Unregulated: any user can change settings
-			return isInAnyGroup(ALLOW_GROUPS); // Regulated: only authorized groups
-		}
 
 		/**
 		 * Show the Access Denied modal with the given reason.
@@ -3817,101 +3770,11 @@
 
 		//Settings > Display - Show GitHub repository links
 		$(document).on("click", "#chk_showGitHubLinks", function(e){
-			// In regulated mode, GitHub links cannot be enabled
-			var regulatedMode = false;
-			try {
-				var s = db_settings.settings.findOne({"_id":"0"});
-				regulatedMode = !!(s && s.chk_regulatedEnvironment);
-			} catch(ex) { console.warn('Could not read regulated mode setting: ' + ex.message); }
-			if (regulatedMode) {
-				e.preventDefault();
-				$(this).prop("checked", false);
-				alert('GitHub links cannot be enabled in regulated environment mode.\n\nExternal links are not permitted when regulated environment mode is active.');
-				return;
-			}
 			saveSetting($(this).attr("id"), $(this).prop("checked"));
-		});
-
-		//Settings > Regulated Environment toggle
-		$(document).on("click", "#chk_regulatedEnvironment", function(e){
-			if (!canToggleRegulatedMode()) {
-				e.preventDefault();
-				$(this).prop("checked", !$(this).prop("checked")); // revert
-				showAccessDeniedModal("Change Regulated Environment Setting",
-					"Only users in authorized groups (Administrators, Lab Method Programmer, Lab Service) can enable or disable regulated environment mode.");
-				return;
-			}
-			var checked = $(this).prop("checked");
-			// Immediately revert - the modal will apply the change if confirmed
-			$(this).prop("checked", !checked);
-			e.preventDefault();
-
-			showRegulatedModeConfirmModal(checked).then(function(confirmed) {
-				if (!confirmed) return;
-				$("#chk_regulatedEnvironment").prop("checked", checked);
-				saveSetting("chk_regulatedEnvironment", checked);
-				console.log('Regulated environment mode ' + (checked ? 'ENABLED' : 'DISABLED') + ' by ' + getWindowsUsername());
-
-				// Update the regulated env status indicator
-				var userIsAdmin = isWindowsAdmin();
-				if (userIsAdmin && !isInAnyGroup(ALLOW_GROUPS)) {
-					$(".regulated-env-status").html('<i class="fas fa-unlock mr-1"></i>You have access as a Windows Administrator (super whitelist).');
-				} else {
-					$(".regulated-env-status").html('<i class="fas fa-unlock mr-1"></i>You are authorized to change this setting.');
-				}
-
-				// Show/hide green unlock badges based on new regulated state
-				if (checked && canToggleRegulatedMode()) {
-					$(".settings-admin-badge").show();
-				} else {
-					$(".settings-admin-badge").hide();
-				}
-
-				// When enabling regulated mode, force-disable unsigned libraries
-				if (checked) {
-					$("#chk_includeUnsignedLibs").prop("checked", false).prop("disabled", true);
-					saveSetting("chk_includeUnsignedLibs", false);
-					$("#btn-scan-unsigned-libs").prop("disabled", true);
-					$(".unsigned-scan-status").text("");
-					$(".unsigned-scan-spinner").hide();
-					$(".unsigned-scan-done").hide();
-					$(".unsigned-regulated-status").html('<i class="fas fa-lock mr-1 text-warning"></i>Unsigned libraries cannot be enabled in regulated environment mode. All packages must be signed.');
-					// Force-disable GitHub links
-					$("#chk_showGitHubLinks").prop("checked", false).prop("disabled", true);
-					saveSetting("chk_showGitHubLinks", false);
-					$(".github-links-regulated-status").html('<i class="fas fa-lock mr-1 text-warning"></i>GitHub links cannot be enabled in regulated environment mode.');
-					// Hide Report Issue menu item in regulated mode (no external links)
-					$(".overflow-report-issue").hide();
-					invalidateNavBar();
-					console.log('Unsigned libraries and GitHub links disabled: regulated mode requires all packages to be signed.');
-				} else {
-					$("#chk_includeUnsignedLibs").prop("disabled", false);
-					$(".unsigned-regulated-status").html('');
-					// Re-enable GitHub links toggle
-					$("#chk_showGitHubLinks").prop("disabled", false);
-					$(".github-links-regulated-status").html('');
-					// Show Report Issue menu item when not in regulated mode
-					$(".overflow-report-issue").show();
-				}
-			}).catch(function(err) {
-				console.error('Regulated mode confirmation error:', err);
-			});
 		});
 
 		//Settings > Unsigned Libraries checkbox
 		$(document).on("click", "#chk_includeUnsignedLibs", function(e){
-			// In regulated mode, unsigned files cannot be enabled
-			var regulatedMode = false;
-			try {
-				var s = db_settings.settings.findOne({"_id":"0"});
-				regulatedMode = !!(s && s.chk_regulatedEnvironment);
-			} catch(ex) { console.warn('Could not read regulated mode setting: ' + ex.message); }
-			if (regulatedMode) {
-				e.preventDefault();
-				$(this).prop("checked", false);
-				alert('Unsigned libraries cannot be enabled in regulated environment mode.\n\nAll packages must be signed when regulated environment mode is active. Disable regulated environment mode first to enable unsigned library scanning.');
-				return;
-			}
 			var checked = $(this).prop("checked");
 			saveSetting("chk_includeUnsignedLibs", checked);
 			$("#btn-scan-unsigned-libs").prop("disabled", !checked);
@@ -5528,70 +5391,19 @@
 			//setting - Display: hide system libraries
 			$("#chk_hideSystemLibraries").prop("checked", !!settings["chk_hideSystemLibraries"]);
 
-			//setting - Regulated environment mode (must be resolved before GitHub links & unsigned settings)
-			var regulatedMode = !!settings["chk_regulatedEnvironment"];
-
 			//setting - Display: show GitHub repository links (default on)
-			// In regulated mode, GitHub links are always disabled
-			if (regulatedMode) {
-				$("#chk_showGitHubLinks").prop("checked", false).prop("disabled", true);
-				saveSetting("chk_showGitHubLinks", false);
-				$(".github-links-regulated-status").html('<i class="fas fa-lock mr-1 text-warning"></i>GitHub links cannot be enabled in regulated environment mode.');
-				// Hide Report Issue menu item in regulated mode (no external links)
-				$(".overflow-report-issue").hide();
-			} else {
-				$("#chk_showGitHubLinks").prop("checked", settings["chk_showGitHubLinks"] !== false).prop("disabled", false);
-				$(".github-links-regulated-status").html('');
-				// Show Report Issue menu item when not in regulated mode
-				$(".overflow-report-issue").show();
-			}
+			$("#chk_showGitHubLinks").prop("checked", settings["chk_showGitHubLinks"] !== false);
 
 			//setting - Unsigned libraries
 			var unsignedEnabled = !!settings["chk_includeUnsignedLibs"];
-			// In regulated mode, unsigned files cannot be enabled - all packages must be signed
-			if (regulatedMode && unsignedEnabled) {
-				unsignedEnabled = false;
-				saveSetting("chk_includeUnsignedLibs", false);
-				console.log('Unsigned libraries disabled automatically: regulated environment mode requires all packages to be signed.');
-			}
 			$("#chk_includeUnsignedLibs").prop("checked", unsignedEnabled);
 			$("#btn-scan-unsigned-libs").prop("disabled", !unsignedEnabled);
-			// In regulated mode, disable the unsigned toggle entirely
-			if (regulatedMode) {
-				$("#chk_includeUnsignedLibs").prop("disabled", true);
-				$(".unsigned-regulated-status").html('<i class="fas fa-lock mr-1 text-warning"></i>Unsigned libraries cannot be enabled in regulated environment mode. All packages must be signed.');
-			} else {
-				$("#chk_includeUnsignedLibs").prop("disabled", false);
-				$(".unsigned-regulated-status").html('');
-			}
 			if (unsignedEnabled) {
 				var ulibCount = (db_unsigned_libs.unsigned_libs.find() || []).length;
 				if (ulibCount > 0) {
 					$(".unsigned-scan-status").text(ulibCount + " unsigned librar" + (ulibCount === 1 ? "y" : "ies") + " tracked");
 				}
 
-			}
-
-			//setting - Regulated Environment
-			var regulatedEnabled = regulatedMode;
-			$("#chk_regulatedEnvironment").prop("checked", regulatedEnabled);
-			// Only authorized group members or administrators can toggle this setting
-			var canToggle = canToggleRegulatedMode();
-			var userIsAdmin = isWindowsAdmin();
-			$("#chk_regulatedEnvironment").prop("disabled", !canToggle);
-			if (!canToggle) {
-				$(".regulated-env-status").html('<i class="fas fa-lock mr-1"></i>Only authorized users (Administrators, Lab Method Programmer, Lab Service) can change this setting.');
-			} else if (userIsAdmin && !isInAnyGroup(ALLOW_GROUPS)) {
-				$(".regulated-env-status").html('<i class="fas fa-unlock mr-1"></i>You have access as a Windows Administrator (super whitelist).');
-			} else {
-				$(".regulated-env-status").html('<i class="fas fa-unlock mr-1"></i>You are authorized to change this setting.');
-			}
-
-			// Show unlock icons on settings sections only in regulated mode for whitelisted users
-			if (regulatedEnabled && canToggle) {
-				$(".settings-admin-badge").show();
-			} else {
-				$(".settings-admin-badge").hide();
 			}
 
 			//setting - Data Location (read-only, always local/)
@@ -10282,9 +10094,8 @@
 				$("#libDetailModal .lib-detail-desc-section").addClass("d-none");
 			}
 
-			// GitHub URL (respect display setting - always hidden in regulated mode)
-			var ghRegulated = !!getSettingValue("chk_regulatedEnvironment");
-			if (lib.github_url && !ghRegulated && getSettingValue("chk_showGitHubLinks") !== false) {
+			// GitHub URL (respect display setting)
+			if (lib.github_url && getSettingValue("chk_showGitHubLinks") !== false) {
 				var ghValidation = shared.validateGitHubRepoUrl(lib.github_url);
 				if (ghValidation.valid) {
 					$("#libDetailModal .lib-detail-github-link").attr("href", lib.github_url).text(lib.github_url);
@@ -13037,77 +12848,6 @@
 			});
 		}
 
-		// ---- Show regulated mode confirmation modal (requires typing "I Accept") ----
-		function showRegulatedModeConfirmModal(enabling) {
-			return new Promise(function(resolve) {
-				var $modal = $("#regulatedModeConfirmModal");
-				var expectedText = "I Accept";
-				var resolved = false;
-
-				// Set modal content based on enable/disable
-				if (enabling) {
-					$modal.find(".reg-confirm-title").text("Enable Regulated Environment Mode");
-					$modal.find(".reg-confirm-icon i").removeClass("fa-unlock").addClass("fa-lock");
-					$modal.find(".reg-confirm-header").css("background", "#5f1616").css("border-bottom-color", "#d73a49");
-					$modal.find(".reg-confirm-warning-box").html(
-						'<p class="mb-2"><strong><i class="fas fa-exclamation-triangle mr-1"></i>This is a potentially destructive action that affects all users on this system.</strong></p>' +
-						'<p class="mb-2">Enabling regulated environment mode will <b>restrict library management actions</b> (import, delete, rollback) to only users who belong to authorized Windows security groups (Lab Method Programmer, Lab Service) or Windows Administrators.</p>' +
-						'<p class="mb-2"><b>All other users will be immediately locked out</b> of these actions. Unsigned library scanning will be automatically disabled, as all packages must be signed in regulated mode.</p>' +
-						'<p class="mb-0">Ensure that all necessary users are assigned to the correct Windows security groups before proceeding.</p>'
-					);
-					$modal.find(".reg-confirm-btn").html('<i class="fas fa-lock mr-1"></i>I understand, enable regulated mode');
-					$modal.find(".reg-confirm-btn").removeClass("btn-success").addClass("btn-danger");
-					$modal.find(".reg-confirm-disclaimer-box").html(
-						'<p class="mb-1"><strong><i class="fas fa-info-circle mr-1"></i>Important Disclaimer</strong></p>' +
-						'<p class="mb-1">Regulated environment mode is provided as an optional feature intended to help reduce certain operational risks (for example, by disabling optional behaviors). ' +
-						'It <b>does not</b> guarantee compliance with any law, regulation, guidance, or internal policy, and <b>does not</b> replace required validation/qualification, documentation, change control, audit readiness, or security controls in your environment.</p>' +
-						'<p class="mb-0">The developer makes no warranties or representations regarding regulated use, and assumes no liability arising from reliance on or use of regulated environment mode.</p>'
-					).show();
-				} else {
-					$modal.find(".reg-confirm-title").text("Disable Regulated Environment Mode");
-					$modal.find(".reg-confirm-icon i").removeClass("fa-lock").addClass("fa-unlock");
-					$modal.find(".reg-confirm-header").css("background", "#1a3a1a").css("border-bottom-color", "#28a745");
-					$modal.find(".reg-confirm-warning-box").html(
-						'<p class="mb-2"><strong><i class="fas fa-exclamation-triangle mr-1"></i>This is a potentially destructive action that affects all users on this system.</strong></p>' +
-						'<p class="mb-2">Disabling regulated environment mode will <b>remove all access restrictions</b>. Every user on this system will be able to import, delete, and roll back libraries regardless of their Windows security group membership.</p>' +
-						'<p class="mb-0">Users in explicitly denied groups (Lab Operator, Lab Operator 2, Lab Remote Service) will still be blocked, but all other users &mdash; including those without any group assignment &mdash; will gain full access.</p>'
-					);
-					$modal.find(".reg-confirm-btn").html('<i class="fas fa-unlock mr-1"></i>I understand, disable regulated mode');
-					$modal.find(".reg-confirm-btn").removeClass("btn-danger").addClass("btn-success");
-					$modal.find(".reg-confirm-disclaimer-box").hide();
-				}
-
-				// Reset input and button state
-				$modal.find(".reg-confirm-input").val("");
-				$modal.find(".reg-confirm-btn").prop("disabled", true);
-
-				// Enable/disable the confirm button based on typed input
-				$modal.find(".reg-confirm-input").off("input.regConfirm").on("input.regConfirm", function() {
-					var typed = $(this).val().trim();
-					$modal.find(".reg-confirm-btn").prop("disabled", typed !== expectedText);
-				});
-
-				// Confirm button handler
-				$modal.find(".reg-confirm-btn").off("click.regConfirm").on("click.regConfirm", function() {
-					if (!resolved) {
-						resolved = true;
-						$modal.modal("hide");
-						resolve(true);
-					}
-				});
-
-				// Cancel / dismiss handler
-				$modal.off("hidden.bs.modal.regConfirm").on("hidden.bs.modal.regConfirm", function() {
-					if (!resolved) {
-						resolved = true;
-						resolve(false);
-					}
-				});
-
-				$modal.modal("show");
-			});
-		}
-
 		// ---- Delete library from detail modal ----
 		$(document).on("click", ".lib-detail-delete-btn", async function(e) {
 			e.preventDefault();
@@ -14175,8 +13915,7 @@
 				}
 
 				// GitHub URL (respect display setting, validate to prevent javascript: XSS)
-				var ghRegulated2 = !!getSettingValue("chk_regulatedEnvironment");
-				if (manifest.github_url && !ghRegulated2 && getSettingValue("chk_showGitHubLinks") !== false) {
+				if (manifest.github_url && getSettingValue("chk_showGitHubLinks") !== false) {
 					var ghCheck = shared.validateGitHubRepoUrl(manifest.github_url);
 					if (ghCheck.valid) {
 						$modal.find(".imp-preview-github-link").attr("href", manifest.github_url).text(manifest.github_url);

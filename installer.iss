@@ -56,23 +56,17 @@ WelcomeLabel2=This will install [name/ver] on your computer.%n%nLibrary Manager 
 ; The upgrade welcome text is set dynamically in InitializeWizard.
 
 ; ============================================================================
-; Custom Pages (Pascal Script tasks: Regulated Mode, Dark Mode)
+; Custom Pages (Pascal Script tasks: Dark Mode)
 ; ============================================================================
 
 [Code]
 var
   ConfigPage: TWizardPage;
-  RegulatedCheckbox: TNewCheckBox;
   DarkModeCheckbox: TNewCheckBox;
-  RegulatedInfoLabel: TNewStaticText;
-  IsRegulatedMode: Boolean;
   IsDarkMode: Boolean;
   TermsPage: TWizardPage;
   TermsMemo: TNewMemo;
   AcceptCheckbox: TNewCheckBox;
-  RegulatedWarningPage: TWizardPage;
-  RegulatedWarningMemo: TNewMemo;
-  RegulatedAcceptCheckbox: TNewCheckBox;
   UninstallMode: Integer;
   gIsUpgrade: Boolean;
   gPreviousVersion: String;
@@ -243,58 +237,9 @@ begin
   WizardForm.NextButton.Enabled := AcceptCheckbox.Checked;
 end;
 
-procedure RegulatedAcceptCheckboxClick(Sender: TObject);
-begin
-  WizardForm.NextButton.Enabled := RegulatedAcceptCheckbox.Checked;
-end;
-
-procedure RegulatedCheckboxClick(Sender: TObject);
-var
-  Confirmed: Boolean;
-begin
-  if RegulatedCheckbox.Checked then
-  begin
-    Confirmed := (MsgBox(
-      'Are you sure you want to enable Regulated Environment Mode?' + #13#10 + #13#10 +
-      'Enabling this mode has the following consequences:' + #13#10 + #13#10 +
-      '  - Only users in authorized Windows groups (Lab Method Programmer, ' + #13#10 +
-      '    Lab Service) or Administrators can manage libraries' + #13#10 +
-      '  - Unsigned libraries will be disabled (all packages must be signed)' + #13#10 +
-      '  - An audit log is maintained for all library operations' + #13#10 +
-      '  - Import/export operations require authorized group membership' + #13#10 +
-      '  - Action comments and signatures may be enforced' + #13#10 + #13#10 +
-      'This mode is designed for regulated laboratory environments ' +
-      'where strict access control and traceability are required.' + #13#10 + #13#10 +
-      'Click Yes to enable Regulated Environment Mode, or No to leave it disabled.',
-      mbConfirmation, MB_YESNO) = IDYES);
-    if not Confirmed then
-    begin
-      RegulatedCheckbox.Checked := False;
-    end
-    else
-    begin
-      RegulatedInfoLabel.Caption :=
-        'Regulated mode is ENABLED. Unsigned ' +
-        'libraries are not permitted. Only authorized Windows group members ' +
-        'can manage libraries.';
-      RegulatedInfoLabel.Font.Color := $000080; // Dark red
-    end;
-  end
-  else
-  begin
-    RegulatedInfoLabel.Caption :=
-      'Regulated mode is disabled. All users can manage libraries freely.';
-    RegulatedInfoLabel.Font.Color := clGray;
-    // Reset the disclaimer acceptance when regulated mode is unchecked
-    RegulatedAcceptCheckbox.Checked := False;
-  end;
-end;
-
 procedure InitializeWizard();
 var
   SectionLabel: TNewStaticText;
-  DividerBevel: TBevel;
-  DividerBevel2: TBevel;
   TermsText, PrivacyText: AnsiString;
 begin
   // ----- Dynamic welcome text for upgrades -----
@@ -375,100 +320,12 @@ begin
   DarkModeCheckbox.Left := 8;
   DarkModeCheckbox.Width := ConfigPage.SurfaceWidth - 16;
   DarkModeCheckbox.Checked := False;
-
-  // --- Divider ---
-  DividerBevel := TBevel.Create(WizardForm);
-  DividerBevel.Parent := ConfigPage.Surface;
-  DividerBevel.Top := DarkModeCheckbox.Top + DarkModeCheckbox.Height + 16;
-  DividerBevel.Left := 0;
-  DividerBevel.Width := ConfigPage.SurfaceWidth;
-  DividerBevel.Height := 2;
-  DividerBevel.Shape := bsBottomLine;
-
-  // === Section 2: Regulated Environment Mode ===
-  SectionLabel := TNewStaticText.Create(WizardForm);
-  SectionLabel.Parent := ConfigPage.Surface;
-  SectionLabel.Caption := 'Regulated Environment Mode';
-  SectionLabel.Top := DividerBevel.Top + DividerBevel.Height + 12;
-  SectionLabel.Left := 0;
-  SectionLabel.Font.Style := [fsBold];
-  SectionLabel.Font.Size := 9;
-
-  RegulatedCheckbox := TNewCheckBox.Create(WizardForm);
-  RegulatedCheckbox.Parent := ConfigPage.Surface;
-  RegulatedCheckbox.Caption := 'Enable Regulated Environment Mode';
-  RegulatedCheckbox.Top := SectionLabel.Top + SectionLabel.Height + 8;
-  RegulatedCheckbox.Left := 8;
-  RegulatedCheckbox.Width := ConfigPage.SurfaceWidth - 16;
-  RegulatedCheckbox.Checked := False;
-  RegulatedCheckbox.OnClick := @RegulatedCheckboxClick;
-
-  RegulatedInfoLabel := TNewStaticText.Create(WizardForm);
-  RegulatedInfoLabel.Parent := ConfigPage.Surface;
-  RegulatedInfoLabel.Caption :=
-    'Regulated mode is disabled. All users can manage libraries freely.';
-  RegulatedInfoLabel.Top := RegulatedCheckbox.Top + RegulatedCheckbox.Height + 4;
-  RegulatedInfoLabel.Left := 24;
-  RegulatedInfoLabel.Width := ConfigPage.SurfaceWidth - 32;
-  RegulatedInfoLabel.WordWrap := True;
-  RegulatedInfoLabel.Font.Color := clGray;
-  RegulatedInfoLabel.Font.Size := 8;
-
-  // -----------------------------------------------------------------------
-  // Regulated Environment Warning page (shown only when regulated mode is selected)
-  // -----------------------------------------------------------------------
-  RegulatedWarningPage := CreateCustomPage(
-    ConfigPage.ID,
-    'Regulated Environment Mode Disclaimer',
-    'Please read the following important disclaimer before continuing.'
-  );
-
-  RegulatedWarningMemo := TNewMemo.Create(WizardForm);
-  RegulatedWarningMemo.Parent := RegulatedWarningPage.Surface;
-  RegulatedWarningMemo.Left := 0;
-  RegulatedWarningMemo.Top := 0;
-  RegulatedWarningMemo.Width := RegulatedWarningPage.SurfaceWidth;
-  RegulatedWarningMemo.Height := RegulatedWarningPage.SurfaceHeight - ScaleY(30);
-  RegulatedWarningMemo.ScrollBars := ssVertical;
-  RegulatedWarningMemo.ReadOnly := True;
-  RegulatedWarningMemo.WordWrap := True;
-  RegulatedWarningMemo.TabStop := False;
-  RegulatedWarningMemo.Anchors := [akLeft, akTop, akRight, akBottom];
-  RegulatedWarningMemo.Text :=
-    'IMPORTANT DISCLAIMER' + #13#10 +
-    '════════════════════════════════════════════════' + #13#10 + #13#10 +
-    'You have selected Regulated Environment Mode.' + #13#10 + #13#10 +
-    'If the App provides a "regulated environment mode," it is provided as an ' +
-    'optional feature intended to help reduce certain operational risks (for ' +
-    'example, by disabling optional behaviors). Regulated environment mode does ' +
-    'not guarantee compliance with any law, regulation, guidance, or internal ' +
-    'policy, and does not replace required validation/qualification, documentation, ' +
-    'change control, audit readiness, or security controls in your environment.' + #13#10 + #13#10 +
-    'The developer makes no warranties or representations regarding regulated use, ' +
-    'and assumes no liability arising from reliance on or use of regulated ' +
-    'environment mode.' + #13#10 + #13#10 +
-    '════════════════════════════════════════════════' + #13#10 + #13#10 +
-    'By clicking Next, you acknowledge that you have read and understood this ' +
-    'disclaimer and that enabling regulated environment mode does not constitute ' +
-    'compliance with any regulatory requirements.';
-
-  RegulatedAcceptCheckbox := TNewCheckBox.Create(WizardForm);
-  RegulatedAcceptCheckbox.Parent := RegulatedWarningPage.Surface;
-  RegulatedAcceptCheckbox.Caption := 'I have read and accept the regulated environment mode disclaimer';
-  RegulatedAcceptCheckbox.Top := RegulatedWarningMemo.Top + RegulatedWarningMemo.Height + ScaleY(6);
-  RegulatedAcceptCheckbox.Left := 0;
-  RegulatedAcceptCheckbox.Width := RegulatedWarningPage.SurfaceWidth;
-  RegulatedAcceptCheckbox.Anchors := [akLeft, akBottom, akRight];
-  RegulatedAcceptCheckbox.Checked := False;
-  RegulatedAcceptCheckbox.OnClick := @RegulatedAcceptCheckboxClick;
 end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = TermsPage.ID then
     WizardForm.NextButton.Enabled := AcceptCheckbox.Checked
-  else if CurPageID = RegulatedWarningPage.ID then
-    WizardForm.NextButton.Enabled := RegulatedAcceptCheckbox.Checked
   else
     WizardForm.NextButton.Enabled := True;
 end;
@@ -477,22 +334,17 @@ function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   Result := False;
 
-  // On upgrade, skip Terms, Configuration, and Regulated Warning pages
+  // On upgrade, skip Terms and Configuration pages
   // — user data and settings are preserved from the previous install.
   if gIsUpgrade then
   begin
     if (PageID = TermsPage.ID) or
-       (PageID = ConfigPage.ID) or
-       (PageID = RegulatedWarningPage.ID) then
+       (PageID = ConfigPage.ID) then
     begin
       Result := True;
       Exit;
     end;
   end;
-
-  // Skip the regulated warning page if regulated mode is not selected
-  if PageID = RegulatedWarningPage.ID then
-    Result := not RegulatedCheckbox.Checked;
 end;
 
 // -----------------------------------------------------------------------
@@ -567,27 +419,12 @@ begin
 
   // Application Configuration Summary
   Memo := Memo + 'Application Configuration:' + NewLine;
-  Memo := Memo + Space + 'Regulated Environment Mode: ';
-  if RegulatedCheckbox.Checked then
-    Memo := Memo + 'Enabled' + NewLine
-  else
-    Memo := Memo + 'Disabled' + NewLine;
 
   Memo := Memo + Space + 'Theme: ';
   if DarkModeCheckbox.Checked then
     Memo := Memo + 'Always Dark Mode' + NewLine
   else
     Memo := Memo + 'Use System Setting' + NewLine;
-
-  if RegulatedCheckbox.Checked then
-  begin
-    Memo := Memo + NewLine;
-    Memo := Memo + 'IMPORTANT - Regulated Environment Mode Consequences:' + NewLine;
-    Memo := Memo + Space + '- Only authorized Windows group members can manage libraries' + NewLine;
-    Memo := Memo + Space + '- All packages must be signed (unsigned libraries disabled)' + NewLine;
-    Memo := Memo + Space + '- Full audit log is maintained for all operations' + NewLine;
-    Memo := Memo + Space + '- Import/export requires authorized group membership' + NewLine;
-  end;
 
   Result := Memo;
 end;
@@ -598,13 +435,8 @@ end;
 procedure WriteSettingsFile(const SettingsPath: String);
 var
   Json: String;
-  RegVal, DarkVal: String;
+  DarkVal: String;
 begin
-  if RegulatedCheckbox.Checked then
-    RegVal := 'true'
-  else
-    RegVal := 'false';
-
   if DarkModeCheckbox.Checked then
     DarkVal := 'dark'
   else
@@ -621,7 +453,6 @@ begin
     '"starred_libs":[],' +
     '"chk_requireActionComment":true,' +
     '"chk_requireActionSignature":false,' +
-    '"chk_regulatedEnvironment":' + RegVal + ',' +
     '"themeMode":"' + DarkVal + '",' +
     '"chk_showGitHubLinks":false' +
     '}]';

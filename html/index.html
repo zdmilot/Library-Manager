@@ -1372,48 +1372,7 @@
 	</div>
 	<!---- Modal Delete Library Confirmation end --->
 
-	<!---- Modal Regulated Mode Confirmation start --->
-	<div class="modal" tabindex="-1" role="dialog" id="regulatedModeConfirmModal">
-		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document" style="max-width:500px;">
-			<div class="modal-content delete-confirm-content">
-				<div class="modal-header reg-confirm-header">
-					<div class="d-flex align-items-center">
-						<div class="reg-confirm-icon mr-3">
-							<i class="fas fa-lock fa-2x"></i>
-						</div>
-						<div>
-							<h5 class="modal-title mb-0 reg-confirm-title">Enable Regulated Environment Mode</h5>
-							<span class="reg-confirm-subtitle">This change affects all users on this system</span>
-						</div>
-					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
-				<div class="modal-body reg-confirm-body">
-					<div class="reg-confirm-warning-box">
-					</div>
-					<div class="mt-3 reg-confirm-info-box">
-						<i class="fas fa-users mr-1"></i>
-						<strong>Affected scope:</strong> All user accounts on this PC will be subject to the new access control policy immediately.
-					</div>
-					<div class="reg-confirm-disclaimer-box mt-3" style="display:none;">
-					</div>
-					<div class="mt-3">
-						<label class="reg-confirm-label">To confirm, type "<strong>I Accept</strong>" in the box below</label>
-						<input type="text" class="form-control reg-confirm-input delete-confirm-input" autocomplete="off" spellcheck="false" placeholder="">
-					</div>
-				</div>
-				<div class="modal-footer delete-confirm-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-danger reg-confirm-btn" disabled>
-						<i class="fas fa-lock mr-1"></i>I understand, enable regulated mode
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<!---- Modal Regulated Mode Confirmation end --->
+
 
 	<!---- Modal Upgrade Library Confirmation start --->
 	<div class="modal" tabindex="-1" role="dialog" id="upgradeLibConfirmModal">
@@ -1624,7 +1583,7 @@
 				<div class="modal-body detail-modal-body">
 					<div class="settings-settings row no-gutters col-md-12">
 						<div class="settings-section col-md-12 p-3 no-gutters">
-							<h6>Installation <span class="settings-admin-badge" style="display:none;" title="You have access to this setting as a Windows Administrator"><i class="fas fa-unlock text-success ml-1" style="font-size:0.85em;"></i></span></h6>
+							<h6>Installation</h6>
 							<div class="custom-control custom-checkbox">
 								<input type="checkbox" class="custom-control-input" id="chk_confirmBeforeInstall" checked>
 								<label class="custom-control-label" for="chk_confirmBeforeInstall">Show preview and confirmation before installing a library</label>
@@ -1636,17 +1595,9 @@
 							<small class="text-muted ml-4 d-block">When enabled, installer executables bundled inside packages are extracted and stored locally for later use.</small>
 
 						</div>
+
 						<div class="settings-section col-md-12 p-3 no-gutters">
-							<h6>Regulated Environment <span class="settings-admin-badge" style="display:none;" title="You have access to this setting as a Windows Administrator"><i class="fas fa-unlock text-success ml-1" style="font-size:0.85em;"></i></span></h6>
-							<small class="text-muted d-block mb-2">When enabled, only users in authorized Windows security groups (Lab Method Programmer, Lab Service) can perform library management actions such as import, delete, and rollback. Users not assigned to any recognized group will be denied access. This setting can only be changed by authorized users.</small>
-							<div class="custom-control custom-checkbox">
-								<input type="checkbox" class="custom-control-input" id="chk_regulatedEnvironment">
-								<label class="custom-control-label" for="chk_regulatedEnvironment">Enable regulated environment mode</label>
-							</div>
-							<small class="text-muted ml-4 d-block regulated-env-status"></small>
-						</div>
-						<div class="settings-section col-md-12 p-3 no-gutters">
-							<h6>Audit Trail Enforcement <span class="settings-admin-badge" style="display:none;" title="You have access to this setting as a Windows Administrator"><i class="fas fa-unlock text-success ml-1" style="font-size:0.85em;"></i></span></h6>
+							<h6>Audit Trail Enforcement</h6>
 							<small class="text-muted d-block mb-2">Actions are always logged in history, but these options ensure comments and signatures are included for audit trail accountability.</small>
 							<div class="custom-control custom-checkbox">
 								<input type="checkbox" class="custom-control-input" id="chk_requireActionComment">
@@ -1658,7 +1609,7 @@
 							</div>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
-							<h6>Display <span class="settings-admin-badge" style="display:none;" title="You have access to this setting as a Windows Administrator"><i class="fas fa-unlock text-success ml-1" style="font-size:0.85em;"></i></span></h6>
+							<h6>Display</h6>
 							<div class="custom-control custom-checkbox">
 								<input type="checkbox" class="custom-control-input" id="chk_useSystemTheme">
 								<label class="custom-control-label" for="chk_useSystemTheme">Use system theme (follows your Windows light/dark setting)</label>
@@ -1673,8 +1624,7 @@
 								<input type="checkbox" class="custom-control-input" id="chk_showGitHubLinks" checked>
 								<label class="custom-control-label" for="chk_showGitHubLinks">Show GitHub repository links in library details</label>
 							</div>
-							<small class="text-muted ml-4 d-block">External links to source repositories. This setting is automatically disabled in regulated environment mode.</small>
-							<small class="text-muted ml-4 d-block github-links-regulated-status"></small>
+							<small class="text-muted ml-4 d-block">External links to source repositories.</small>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
 							<h6>Data Location</h6>
@@ -1687,8 +1637,8 @@
 							</div>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
-							<h6>Unsigned Libraries <span class="settings-admin-badge" style="display:none;" title="You have access to this setting as a Windows Administrator"><i class="fas fa-unlock text-success ml-1" style="font-size:0.85em;"></i></span></h6>
-							<small class="text-muted d-block mb-2 unsigned-regulated-status"></small>
+							<h6>Unsigned Libraries</h6>
+
 							<div class="custom-control custom-checkbox">
 								<input type="checkbox" class="custom-control-input" id="chk_includeUnsignedLibs">
 								<label class="custom-control-label" for="chk_includeUnsignedLibs">Include existing unsigned libraries on the front page</label>

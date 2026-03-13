@@ -45,29 +45,6 @@
 <h3>4. Application Configuration</h3>
 <p>This custom page lets you set initial preferences that are written into the application&rsquo;s settings files on install. The page is divided into three sections:</p>
 
-<h4>Environment Mode</h4>
-<table>
-<thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
-<tbody>
-<tr>
-  <td><b>Enable Regulated Environment Mode</b></td>
-  <td>Off</td>
-  <td>
-    Turns on strict access controls designed for regulated laboratories. When enabled:
-    <ul>
-      <li>Only users in authorized Windows groups (<i>Lab Method Programmer</i>, <i>Lab Service</i>) or Administrators can manage libraries</li>
-      <li>GitHub repository links are disabled and cannot be re-enabled</li>
-      <li>Unsigned libraries are not permitted &mdash; all packages must be signed</li>
-      <li>A full audit log is maintained for all operations</li>
-      <li>Import/export operations require authorized group membership</li>
-      <li>Action comments and signatures may be enforced</li>
-    </ul>
-    A confirmation dialog is shown before enabling. See <a href="RegulatedEnvironment.html">Regulated Environment Mode</a> for details.
-  </td>
-</tr>
-</tbody>
-</table>
-
 <h4>Appearance</h4>
 <table>
 <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
@@ -87,7 +64,7 @@
 <tr>
   <td><b>Show GitHub Repository Links</b></td>
   <td>Off</td>
-  <td>When checked, GitHub repository links are displayed in library detail views. This option is automatically disabled and locked when Regulated Environment Mode is enabled.</td>
+  <td>When checked, GitHub repository links are displayed in library detail views.</td>
 </tr>
 </tbody>
 </table>
@@ -96,7 +73,7 @@
 <p>Optionally create a desktop shortcut for Library Manager. This is unchecked by default.</p>
 
 <h3>6. Ready to Install</h3>
-<p>Displays a summary of all selected options &mdash; install directory, Start Menu group, and the configuration choices made on the Application Configuration page. If Regulated Environment Mode is enabled, a prominent notice lists the consequences. Review the summary and click <b>Install</b> to begin.</p>
+<p>Displays a summary of all selected options &mdash; install directory, Start Menu group, and the configuration choices made on the Application Configuration page. Review the summary and click <b>Install</b> to begin.</p>
 
 <h3>7. Installation Progress</h3>
 <p>Files are copied to the destination directory. The following post-install steps happen automatically:</p>
@@ -143,7 +120,7 @@
 <p>The installer supports Inno Setup&rsquo;s standard silent-install switches:</p>
 <div class="code"><pre>LibraryManager_v1.93.25_Setup.exe /SILENT
 LibraryManager_v1.93.25_Setup.exe /VERYSILENT /SUPPRESSMSGBOXES</pre></div>
-<p>In silent mode, default configuration values are used (Regulated Mode off, system theme, GitHub links hidden). To create a desktop shortcut in silent mode, add <code>/TASKS="desktopicon"</code>.</p>
+<p>In silent mode, default configuration values are used (system theme, GitHub links hidden). To create a desktop shortcut in silent mode, add <code>/TASKS="desktopicon"</code>.</p>
 <p><b>Note:</b> The Hamilton VENUS 6+ prerequisite check runs in both interactive and silent modes. If VENUS 6 or later is not installed, the silent installer will exit with a non-zero return code without installing anything.</p>
 
 <h2>Upgrading from a Previous Version</h2>
@@ -154,7 +131,6 @@ LibraryManager_v1.93.25_Setup.exe /VERYSILENT /SUPPRESSMSGBOXES</pre></div>
   <li><a href="Uninstallation.html">Uninstallation</a></li>
   <li><a href="GettingStarted.html">Getting Started</a></li>
   <li><a href="FileStorage.html">File Storage &amp; Data Management</a></li>
-  <li><a href="RegulatedEnvironment.html">Regulated Environment Mode</a></li>
   <li><a href="SystemArchitecture.html">System Architecture</a></li>
 </ul>
 

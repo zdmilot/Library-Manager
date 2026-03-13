@@ -25,7 +25,7 @@
 <table>
 <thead><tr><th>Path</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td><code>local/settings.json</code></td><td>JSON file</td><td>Global application settings (singleton record with <code>_id: "0"</code>). Stores all checkbox preferences, recent-max count, dark mode preference, regulated environment state, and feature flags.</td></tr>
+<tr><td><code>local/settings.json</code></td><td>JSON file</td><td>Global application settings (singleton record with <code>_id: "0"</code>). Stores all checkbox preferences, recent-max count, dark mode preference, and feature flags.</td></tr>
 <tr><td><code>local/installed_libs.json</code></td><td>JSON file</td><td>Registry of all installed <code>.hxlibpkg</code> libraries with metadata (name, version, author, install date, file hashes).</td></tr>
 <tr><td><code>local/groups.json</code></td><td>JSON file</td><td>User-created custom library groups (name, icon, color).</td></tr>
 <tr><td><code>local/tree.json</code></td><td>JSON file</td><td>Group-to-library membership tree. Maps which libraries belong to which groups.</td></tr>
@@ -60,7 +60,6 @@
 <thead><tr><th>Setting Key</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td><code>chk_confirmBeforeInstall</code></td><td>boolean</td><td>Show preview and confirmation before installing a library</td></tr>
-<tr><td><code>chk_regulatedEnvironment</code></td><td>boolean</td><td>Enable <a href="RegulatedEnvironment.html">regulated environment mode</a> (Windows group-based access control)</td></tr>
 <tr><td><code>chk_requireActionComment</code></td><td>boolean</td><td>Require comment for destructive actions</td></tr>
 <tr><td><code>chk_requireActionSignature</code></td><td>boolean</td><td>Require user signature for destructive actions</td></tr>
 <tr><td><code>chk_darkMode</code></td><td>boolean</td><td>Enable night mode (dark theme) &mdash; retained between sessions</td></tr>
@@ -117,7 +116,6 @@
 <h2>Related Topics</h2>
 <ul>
   <li><a href="SystemArchitecture.html">System Architecture</a></li>
-  <li><a href="RegulatedEnvironment.html">Regulated Environment Mode</a></li>
   <li><a href="LibraryAuditLog.html">Library Audit Log</a></li>
   <li><a href="IntegrityVerification.html">Integrity Verification</a></li>
   <li><a href="VersionRollback.html">Version Rollback</a></li>

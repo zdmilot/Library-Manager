@@ -43,11 +43,9 @@ You may use the App for lawful purposes and you are responsible for:
 - maintaining backups of important files and configuration;
 - implementing appropriate access controls on the machines where the App is used.
 
-7) Regulated and high-stakes environments
+7) High-stakes environments
 
-You are solely responsible for determining whether the App is appropriate for use in regulated or controlled environments and for completing any required validation, qualification, change control, audit readiness, and compliance activities (including, where applicable, 21 CFR Part 11 expectations and your organization's SOPs and IT/security policies).
-
-If the App provides a "regulated environment mode," it is provided as an optional feature intended to help reduce certain operational risks (for example, by disabling optional behaviors, removing external links, etc). Regulated environment mode does not guarantee compliance with any law, regulation, guidance, or internal policy, and does not replace required validation/qualification, documentation, change control, audit readiness, or security controls in your environment. The developer makes no warranties or representations regarding regulated use, and assumes no liability arising from reliance on or use of regulated environment mode.
+You are solely responsible for determining whether the App is appropriate for use in controlled environments and for completing any required validation, qualification, change control, audit readiness, and compliance activities (including, where applicable, 21 CFR Part 11 expectations and your organization's SOPs and IT/security policies).
 
 8) External links and third-party services
 

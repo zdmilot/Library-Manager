@@ -762,30 +762,6 @@
 		<param name="Local" value="GUIOverview.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="regulated environment">
-		<param name="Local" value="RegulatedEnvironment.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="user authorization">
-		<param name="Local" value="RegulatedEnvironment.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Windows security groups">
-		<param name="Local" value="RegulatedEnvironment.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="regulated environment mode">
-		<param name="Local" value="RegulatedEnvironment.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Lab Method Programmer">
-		<param name="Local" value="RegulatedEnvironment.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="access denied">
-		<param name="Local" value="RegulatedEnvironment.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="file storage">
 		<param name="Local" value="FileStorage.html">
 		</OBJECT>

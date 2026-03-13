@@ -92,9 +92,8 @@
 <tr><td><code>chk_includeUnsignedLibs</code></td><td>boolean</td><td>Include unsigned libraries in library listing</td></tr>
 <tr><td><code>chk_scanUnsignedOnLaunch</code></td><td>boolean</td><td>Automatically scan for unsigned libraries on each launch</td></tr>
 <tr><td><code>chk_showGitHubLinks</code></td><td>boolean</td><td>Display GitHub repository links on library cards</td></tr>
-<tr><td><code>chk_requireActionComment</code></td><td>boolean</td><td>Regulated environment: require comment for every action</td></tr>
-<tr><td><code>chk_requireActionSignature</code></td><td>boolean</td><td>Regulated environment: require signature for every action</td></tr>
-<tr><td><code>chk_regulatedEnvironment</code></td><td>boolean</td><td>Regulated environment mode: enable Windows group-based access control</td></tr>
+<tr><td><code>chk_requireActionComment</code></td><td>boolean</td><td>Require comment for every action</td></tr>
+<tr><td><code>chk_requireActionSignature</code></td><td>boolean</td><td>Require signature for every action</td></tr>
 <tr><td><code>chk_darkMode</code></td><td>boolean</td><td>Night mode (dark theme): retained between sessions</td></tr>
 <tr><td><code>chk_useSystemTheme</code></td><td>boolean</td><td>Follow the Windows system light/dark theme</td></tr>
 <tr><td><code>chk_settingHistoryCleanup</code></td><td>boolean</td><td>Enable automatic audit trail history cleanup</td></tr>
@@ -715,15 +714,10 @@
 <h2>12. Authorization &amp; Access Control</h2>
 <!-- ================================================================== -->
 
-<p>The system implements two authorization mechanisms: Windows security group-based access control for protected actions (regulated environment mode), and reserved author name protection. Windows Administrators are on a <b>super whitelist</b> and always have full access.</p>
-
-<h3>Regulated Environment Mode</h3>
-<p>A toggle in <b>Settings &rarr; Regulated Environment</b> controls whether Windows group-based access enforcement is active. When enabled, protected actions (import, delete, rollback) require that the current Windows user belong to an authorized security group or be a Windows Administrator. When disabled, all users can perform these actions without group checks.</p>
-
-<p>Only users who are themselves authorized (i.e., members of an allow-listed group or Windows Administrators) may toggle this setting on or off. In an unregulated installation, any user can change all other settings freely, but only authorized users can enable regulated mode &mdash; preventing accidental or false activation. A confirmation dialog is shown before the change is applied.</p>
+<p>The system implements two authorization mechanisms: Windows security group-based access control for protected actions, and reserved author name protection. Windows Administrators are on a <b>super whitelist</b> and always have full access.</p>
 
 <h3>Role-Based Access (Windows Groups)</h3>
-<p>When regulated environment mode is enabled, the system detects group membership via <code>whoami /groups /fo csv /nh</code> (cached for 15 seconds) and applies the following rules:</p>
+<p>The system detects group membership via <code>whoami /groups /fo csv /nh</code> (cached for 15 seconds) and applies the following rules:</p>
 
 <table>
 <thead><tr><th>Check</th><th>Groups</th><th>Result</th></tr></thead>
@@ -731,17 +725,14 @@
 <tr><td><b>Super whitelist</b></td><td>Administrators (BUILTIN\Administrators)</td><td style="background-color:#e8f5e9;"><b>ALLOWED</b> (highest priority)</td></tr>
 <tr><td><b>Allow list</b></td><td>Lab Method Programmer, Lab Service</td><td style="background-color:#e8f5e9;"><b>ALLOWED</b></td></tr>
 <tr><td><b>Deny list</b></td><td>Lab Operator, Lab Operator 2, Lab Remote Service</td><td style="background-color:#fce4ec;"><b>DENIED</b></td></tr>
-<tr><td><b>Not in any list (regulated mode ON)</b></td><td>(any other groups)</td><td style="background-color:#fce4ec;"><b>DENIED</b> (default deny)</td></tr>
-<tr><td><b>Regulated mode OFF</b></td><td>(all users)</td><td style="background-color:#e8f5e9;"><b>ALLOWED</b> (no enforcement)</td></tr>
+<tr><td><b>Not in any list</b></td><td>(any other groups)</td><td style="background-color:#e8f5e9;"><b>ALLOWED</b> (default allow)</td></tr>
 </tbody>
 </table>
 
 <p>When a user is denied access, a modal dialog is displayed showing the action attempted, the reason for denial, the current Windows username, and the detected Windows group memberships.</p>
 
-<p><b>Note:</b> When regulated mode is enabled, unsigned library scanning is automatically disabled and cannot be re-enabled. All packages must be signed in regulated mode.</p>
-
 <h3>Authorization Decision Flow</h3>
-<img src="images/diagram-auth-decision-flow.png" alt="Authorization decision flow: check regulated mode, then ALLOW groups, DENY groups, then default deny" class="doc-diagram">
+<img src="images/diagram-auth-decision-flow.png" alt="Authorization decision flow: check ALLOW groups, DENY groups, then default allow" class="doc-diagram">
 
 <h3>Reserved Author Protection</h3>
 <p>Packages claiming a reserved vendor or laboratory automation company name as the author (case-insensitive) are blocked to prevent unauthorized branded packages.</p>
@@ -793,7 +784,7 @@
 <tr><td><b>Export Choice</b></td><td>Export format selection</td><td>Single .hxlibpkg or with-dependencies .hxlibarch</td></tr>
 <tr><td><b>Archive Export</b></td><td>Multi-library export</td><td>Multi-select checkboxes, Select All toggle</td></tr>
 <tr><td><b>Verify &amp; Repair</b></td><td>Integrity management</td><td>Per-library integrity status, repair from cache</td></tr>
-<tr><td><b>Settings</b></td><td>Application configuration</td><td>Regulated environment toggles, data directory config, feature flags</td></tr>
+<tr><td><b>Settings</b></td><td>Application configuration</td><td>Data directory config, feature flags</td></tr>
 </tbody>
 </table>
 

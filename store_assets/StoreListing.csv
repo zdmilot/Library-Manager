@@ -2,7 +2,7 @@
 ProductName,Text,Library Manager
 Description,Text,"Library Manager is a powerful desktop application for managing, versioning, importing, exporting, and packaging Hamilton VENUS liquid handling libraries.
 
-Designed for laboratory automation professionals, it provides a complete solution for organizing HSL libraries used with Hamilton VENUS 6 software. Whether you work in a regulated environment or an open research lab, Library Manager adapts to your workflow.
+Designed for laboratory automation professionals, it provides a complete solution for organizing HSL libraries used with Hamilton VENUS 6 software. Library Manager adapts to your workflow.
 
 Key capabilities include:
 
@@ -12,7 +12,7 @@ Key capabilities include:
 • Maintain a complete audit trail with automatic version history and rollback support
 • Organize libraries into custom groups with drag-and-drop sorting
 • Search and filter libraries by name, author, organization, or version
-• Regulated Environment Mode enforces organization-level restrictions, password-protected settings, and integrity verification via SHA-256 hashing
+• Windows security group-based access control for protected library management actions
 • Full command-line interface (CLI) for scripting and CI/CD pipeline integration
 • Dark mode support for comfortable extended use
 • Built-in CHM help documentation
@@ -21,39 +21,39 @@ Library Manager runs as a native Windows desktop application built on NW.js. It 
 
 This tool is ideal for:
 - Lab automation engineers managing Hamilton VENUS method libraries
-- Quality teams enforcing library integrity in regulated environments
+- Quality teams enforcing library integrity
 - System integrators packaging and distributing libraries across instruments
 
-Version 1.8.6 includes security improvements, regulated mode enhancements, and numerous bug fixes."
-WhatsNew,Text,"Version 1.8.6 - Security and stability improvements: enhanced password hashing for regulated mode, fixed organization enforcement bypass, improved system library integrity verification, and over 10 bug fixes across import/export and CLI operations."
+Version 1.8.6 includes security improvements and numerous bug fixes."
+WhatsNew,Text,"Version 1.8.6 - Security and stability improvements: improved system library integrity verification, and over 10 bug fixes across import/export and CLI operations."
 ProductFeatures1,Text,Import and export Hamilton VENUS HSL libraries with version tracking
 ProductFeatures2,Text,Create signed library packages (.hxlibpkg) for secure distribution
 ProductFeatures3,Text,Bundle libraries into archive files (.hxlibarch) for bulk deployment
 ProductFeatures4,Text,Full version history with one-click rollback to any previous version
-ProductFeatures5,Text,Regulated Environment Mode with organization-level access controls
+ProductFeatures5,Text,Windows security group-based access control for library management
 ProductFeatures6,Text,SHA-256 integrity verification for system library protection
-ProductFeatures7,Text,Password-protected settings in regulated environments
-ProductFeatures8,Text,Custom library groups with drag-and-drop organization
-ProductFeatures9,Text,Powerful search and filtering by name author or organization
-ProductFeatures10,Text,Complete command-line interface (CLI) for automation and scripting
-ProductFeatures11,Text,Dark mode for comfortable extended use
-ProductFeatures12,Text,Works fully offline - no internet connection required
-ProductFeatures13,Text,Complete audit trail for every library change
-ProductFeatures14,Text,Built-in CHM help documentation
-ProductFeatures15,Text,Binary container format for efficient library packaging
+ProductFeatures7,Text,Custom library groups with drag-and-drop organization
+ProductFeatures8,Text,Powerful search and filtering by name author or organization
+ProductFeatures9,Text,Complete command-line interface (CLI) for automation and scripting
+ProductFeatures10,Text,Dark mode for comfortable extended use
+ProductFeatures11,Text,Works fully offline - no internet connection required
+ProductFeatures12,Text,Complete audit trail for every library change
+ProductFeatures13,Text,Built-in CHM help documentation
+ProductFeatures14,Text,Binary container format for efficient library packaging
+ProductFeatures15,Text,
 ProductFeatures16,Text,
 ProductFeatures17,Text,
 ProductFeatures18,Text,
 ProductFeatures19,Text,
 ProductFeatures20,Text,
-ShortDescription,Text,"Manage, version, import, export, and package Hamilton VENUS 6 liquid handling libraries. Supports regulated environments, signed packages, version rollback, and CLI automation."
+ShortDescription,Text,"Manage, version, import, export, and package Hamilton VENUS 6 liquid handling libraries. Supports signed packages, version rollback, and CLI automation."
 SearchTerms1,Text,Hamilton VENUS
 SearchTerms2,Text,library manager
 SearchTerms3,Text,lab automation
 SearchTerms4,Text,liquid handling
 SearchTerms5,Text,HSL library
 SearchTerms6,Text,laboratory
-SearchTerms7,Text,regulated environment
+SearchTerms7,Text,library package
 Applicable license terms,Text,https://github.com/zdmilot/Library-Manager/blob/main/LICENSE
 Copyright,Text,Copyright (c) 2026 Zachary Milot. All rights reserved.
 DevelopedBy,Text,Zachary Milot
