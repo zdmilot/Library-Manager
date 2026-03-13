@@ -672,6 +672,31 @@ body {
 	padding: 12px 24px;
 }
 
+/* ---- Resizable Detail Modals ---- */
+#detailModal .modal-dialog,
+#libDetailModal .modal-dialog,
+#unsignedLibDetailModal .modal-dialog {
+	max-width: 95vw;
+}
+
+#detailModal .detail-modal-content,
+#libDetailModal .detail-modal-content,
+#unsignedLibDetailModal .detail-modal-content {
+	resize: both;
+	overflow: hidden;
+	min-width: 500px;
+	min-height: 300px;
+	width: 800px;
+}
+
+#detailModal .detail-modal-body,
+#libDetailModal .detail-modal-body,
+#unsignedLibDetailModal .detail-modal-body {
+	flex: 1 1 auto;
+	max-height: none !important;
+	overflow-y: auto;
+}
+
 /* ---- Delete Library Confirmation Modal (GitHub-style) ---- */
 .delete-confirm-content {
 	border: none;

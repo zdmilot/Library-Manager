@@ -16531,6 +16531,12 @@
 		$("#unsignedLibDetailModal").on("hidden.bs.modal", function() {
 			ulib_oemAuthorized = false;
 			_ulibExportInProgress = false;
+			$(this).find(".detail-modal-content").css({ width: "", height: "" });
+		});
+
+		// Reset resizable modal size on close
+		$("#detailModal, #libDetailModal").on("hidden.bs.modal", function() {
+			$(this).find(".detail-modal-content").css({ width: "", height: "" });
 		});
 
 		// ---- Save unsigned library metadata ----
