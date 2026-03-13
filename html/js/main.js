@@ -2382,11 +2382,6 @@
 			$('#updateModal').removeAttr('data-backdrop').removeAttr('data-keyboard');
 		});
 
-		// Simulate showing the update badge on startup after a short delay
-		setTimeout(function () {
-			_showUpdateAvailableIndicators(_getAppVersion());
-		}, 3000);
-
 		/** Show all update-available indicators (badge, settings dot, settings section) */
 		function _showUpdateAvailableIndicators(newVersion) {
 			$('#update-badge').text('1').removeClass('d-none');
