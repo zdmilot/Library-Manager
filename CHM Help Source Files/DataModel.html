@@ -81,7 +81,7 @@
 <tr><td><code>public_functions</code></td><td>object[]</td><td>Parsed public function signatures from <code>.hsl</code> files (see below)</td></tr>
 <tr><td><code>required_dependencies</code></td><td>string[]</td><td>Library names extracted from <code>#include</code> directives in <code>.hsl</code> files</td></tr>
 
-<tr><td><code>installer_path</code></td><td>string | null</td><td>Full path where the retained installer was stored on import, or <code>null</code></td></tr>
+<tr><td><code>installer_path</code></td><td>string | null</td><td>Full path where the installer executable was stored on import, or <code>null</code></td></tr>
 <tr><td><code>installer_original_name</code></td><td>string | null</td><td>Original filename of the installer executable from the package</td></tr>
 <tr><td><code>installer_size</code></td><td>number</td><td>Size of the installer executable in bytes (<code>0</code> if not present)</td></tr>
 <tr><td><code>deleted</code></td><td>boolean</td><td>Soft-delete flag. <code>true</code> means the library has been deleted</td></tr>
@@ -248,7 +248,6 @@
 <tr><td><code>chk_confirmBeforeInstall</code></td><td>boolean</td><td>Prompt for confirmation before importing</td></tr>
 <tr><td><code>chk_hideSystemLibraries</code></td><td>boolean</td><td>Hide system libraries on the front page (libraries with warnings still shown)</td></tr>
 <tr><td><code>chk_showGitHubLinks</code></td><td>boolean</td><td>Show GitHub repository links in library detail views. Defaults to <code>false</code>. Enable to display repository links; disable when external links should not appear. See <a href="GitHubRepository.html">GitHub Repository</a>.</td></tr>
-<tr><td><code>chk_retainInstallers</code></td><td>boolean</td><td><b>Deprecated.</b> Embedded installer executables are now always retained when importing packages. This setting is no longer used; installers bundled inside packages are unconditionally extracted to the centralized installer store directory.</td></tr>
 <tr><td><code>chk_requireActionComment</code></td><td>boolean</td><td>Require audit comment fields for destructive/potentially destructive GUI actions</td></tr>
 <tr><td><code>chk_requireActionSignature</code></td><td>boolean</td><td>Require operator signature fields for destructive/potentially destructive GUI actions</td></tr>
 <tr><td><code>chk_includeUnsignedLibs</code></td><td>boolean</td><td>Enable unsigned library scanning and display (see <a href="UnsignedLibraries.html">Unsigned Libraries</a>)</td></tr>
