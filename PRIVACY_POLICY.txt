@@ -64,30 +64,24 @@ Repository: https://github.com/zdmilot/Library-Manager
 
 Recommendation: Do not include sensitive information (such as usernames, machine names, domain names, file paths, license keys, regulated data, or proprietary method/library contents) in public issue reports.
 
-6) Regulated environment mode
-
-The App may include a "regulated environment mode" intended for use in controlled or regulated workflows. When enabled, the App may disable features that could increase information-sharing risk (for example, opening external issue-reporting links).
-
-Regardless of mode, the App does not transmit operational data to the developer.
-
-7) Device, file system, and privilege access
+6) Device, file system, and privilege access
 
 To perform library management workflows, the App may access local file paths and system locations you direct it to use.
 
 Certain operations (for example, installing to protected locations or interacting with COM components) may require administrator approval depending on your configuration and the actions you choose.
 
-8) Data retention and deletion
+7) Data retention and deletion
 
 Local data remains on your device until you remove it, uninstall the App, or use any cleanup options you choose (including uninstaller options, if provided). The developer does not have access to your local data.
 
-9) Security
+8) Security
 
 The App may include integrity, hashing, and signature verification features for package workflows. You remain responsible for endpoint security, OS access controls, and backups in your environment.
 
-10) Children
+9) Children
 
 The App is intended for professional/enterprise use and is not directed to children.
 
-11) Changes to this policy
+10) Changes to this policy
 
 We may update this policy from time to time. The latest version will be provided in the Store listing and/or in product documentation.

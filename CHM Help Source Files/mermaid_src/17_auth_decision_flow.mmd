@@ -6,21 +6,17 @@ flowchart TD
     classDef denied fill:#fce4ec,color:#c0392b,stroke:#ef5350,font-weight:bold
 
     START["Protected Action<br/>(import / delete / rollback)"]:::action
-    CHK_REG{"Regulated environment<br/>mode enabled?"}:::decision
     GROUPS["getWindowsGroups()<br/>via whoami (cached 15s)"]:::process
     CHK_ALLOW{"Member of<br/>ALLOW groups?"}:::decision
     CHK_DENY{"Member of<br/>DENY groups?"}:::decision
 
-    ALLOW1["✅ ALLOWED"]:::allowed
-    ALLOW2["✅ ALLOWED<br/>(mode disabled)"]:::allowed
-    DENY1["❌ DENIED"]:::denied
-    DENY2["❌ DENIED<br/>(default deny)"]:::denied
+    ALLOW1["ALLOWED"]:::allowed
+    ALLOW2["ALLOWED<br/>(default allow)"]:::allowed
+    DENY1["DENIED"]:::denied
 
-    START --> CHK_REG
-    CHK_REG -- "No" --> ALLOW2
-    CHK_REG -- "Yes" --> GROUPS
+    START --> GROUPS
     GROUPS --> CHK_ALLOW
     CHK_ALLOW -- "Yes" --> ALLOW1
     CHK_ALLOW -- "No" --> CHK_DENY
     CHK_DENY -- "Yes" --> DENY1
-    CHK_DENY -- "No" --> DENY2
+    CHK_DENY -- "No" --> ALLOW2

@@ -3484,18 +3484,6 @@
           "section": null
         },
         {
-          "line": 291,
-          "name": "canToggleRegulatedMode",
-          "documented": true,
-          "section": null
-        },
-        {
-          "line": 302,
-          "name": "canChangeSettings",
-          "documented": true,
-          "section": null
-        },
-        {
           "line": 318,
           "name": "showAccessDeniedModal",
           "documented": true,
@@ -7340,12 +7328,6 @@
         {
           "line": 10397,
           "name": "if",
-          "documented": false,
-          "section": null
-        },
-        {
-          "line": 10408,
-          "name": "showRegulatedModeConfirmModal",
           "documented": false,
           "section": null
         },

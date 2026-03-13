@@ -206,8 +206,6 @@
 | Line | Function | Purpose |
 |------|----------|---------|
 | L10360| `showDeleteConfirmModal(name, dlls)` | Delete confirmation |
-| L10413| `showRegulatedModeConfirmModal(enabling)` | Regulated mode confirm |
-
 ### Import (L10663-11335)
 | Line | Function | Purpose |
 |------|----------|---------|
