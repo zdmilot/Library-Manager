@@ -204,6 +204,11 @@
 								<i class="fas fa-moon"></i><i class="fas fa-sun"></i>
 							</button>
 
+							<button class="btn btn-sm btn-update-check" type="button" title="Check for Updates" id="btn-update-check">
+								<i class="fas fa-arrows-rotate"></i>
+								<span class="update-badge d-none" id="update-badge">1</span>
+							</button>
+
 							<div class="dropdown btn-overflow-menu">
 								<button class="btn btn-sm btn-overflow-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 									<i class="fas fa-ellipsis-v"></i>
@@ -2646,6 +2651,115 @@
 		</div>
 	</div>
 	<!---- Modal About end --->
+
+	<!---- Modal Update start --->
+	<div class="modal" tabindex="-1" role="dialog" id="updateModal">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:520px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<div class="d-flex align-items-center">
+						<div class="detail-modal-icon mr-3">
+							<i class="fas fa-arrows-rotate fa-2x" style="color:var(--medium);"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Software Update</h5>
+							<span class="text-muted text-sm" style="color:rgba(255,255,255,0.6)!important;">Check for and install the latest version</span>
+						</div>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body update-modal-body">
+					<!-- State: Checking -->
+					<div class="update-state update-state-checking d-none">
+						<div class="text-center py-4">
+							<div class="update-spinner mb-3"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:var(--medium);"></i></div>
+							<div class="text-muted">Checking for updates...</div>
+						</div>
+					</div>
+					<!-- State: Update Available -->
+					<div class="update-state update-state-available d-none">
+						<div class="update-available-card">
+							<div class="d-flex align-items-center mb-3">
+								<div class="update-new-icon mr-3"><i class="fas fa-gift fa-lg"></i></div>
+								<div>
+									<div class="update-available-title">A new version is available!</div>
+									<div class="text-muted text-sm">Review the changes below and update when ready.</div>
+								</div>
+							</div>
+							<div class="update-version-compare mb-3">
+								<div class="update-version-box">
+									<div class="update-version-label">Current</div>
+									<div class="update-version-number" id="update-current-version">-</div>
+								</div>
+								<div class="update-version-arrow"><i class="fas fa-arrow-right"></i></div>
+								<div class="update-version-box update-version-box-new">
+									<div class="update-version-label">New</div>
+									<div class="update-version-number" id="update-new-version">-</div>
+								</div>
+							</div>
+							<div class="update-release-notes">
+								<div class="update-release-notes-label mb-1"><i class="fas fa-file-alt mr-1"></i>Release Notes</div>
+								<div class="update-release-notes-body" id="update-release-notes">No release notes available.</div>
+							</div>
+						</div>
+					</div>
+					<!-- State: Downloading -->
+					<div class="update-state update-state-downloading d-none">
+						<div class="text-center py-3">
+							<div class="mb-2" style="font-weight:600;">Downloading update...</div>
+							<div class="progress update-download-progress mx-auto" style="max-width:360px; height:8px;">
+								<div class="progress-bar bg-info update-download-bar" role="progressbar" style="width:0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+							</div>
+							<div class="text-muted text-sm mt-2 update-download-pct">0%</div>
+						</div>
+					</div>
+					<!-- State: Installing -->
+					<div class="update-state update-state-installing d-none">
+						<div class="text-center py-4">
+							<div class="update-spinner mb-3"><i class="fas fa-cog fa-spin fa-2x" style="color:var(--medium);"></i></div>
+							<div style="font-weight:600;">Installing update...</div>
+							<div class="text-muted text-sm mt-1">Please do not close the application.</div>
+						</div>
+					</div>
+					<!-- State: Complete -->
+					<div class="update-state update-state-complete d-none">
+						<div class="text-center py-4">
+							<div class="mb-3"><i class="fas fa-check-circle fa-3x" style="color:#28a745;"></i></div>
+							<div style="font-weight:600; font-size:1.05rem;">Update complete!</div>
+							<div class="text-muted text-sm mt-1">Library Manager is now up to date.</div>
+							<div class="update-complete-version mt-2"></div>
+						</div>
+					</div>
+					<!-- State: Up to date -->
+					<div class="update-state update-state-uptodate d-none">
+						<div class="text-center py-4">
+							<div class="mb-3"><i class="fas fa-check-circle fa-3x" style="color:var(--medium);"></i></div>
+							<div style="font-weight:600; font-size:1.05rem;">You're up to date!</div>
+							<div class="text-muted text-sm mt-1">Library Manager <span class="update-uptodate-ver"></span> is the latest version.</div>
+						</div>
+					</div>
+					<!-- State: Error -->
+					<div class="update-state update-state-error d-none">
+						<div class="text-center py-4">
+							<div class="mb-3"><i class="fas fa-exclamation-triangle fa-3x" style="color:#e8a317;"></i></div>
+							<div style="font-weight:600;">Update check failed</div>
+							<div class="text-muted text-sm mt-1 update-error-msg">Could not reach the update server. Please check your internet connection.</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
+					<span class="text-muted text-sm update-footer-info"></span>
+					<div>
+						<button type="button" class="btn btn-outlined mr-2" data-dismiss="modal" id="update-close-btn">Close</button>
+						<button type="button" class="btn solid-button d-none" id="update-install-btn"><i class="fas fa-download mr-1"></i>Update Now</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Update end --->
 
 	<!---- Modal Report Issue start --->
 	<div class="modal" tabindex="-1" role="dialog" id="reportIssueModal">

@@ -2264,6 +2264,103 @@
 			$("#aboutModal").modal("show");
 		});
 
+		// ====================================================================
+		// Update Check - Simulated update flow (frontend only)
+		// ====================================================================
+
+		/** Get the current app version string */
+		function _getAppVersion() {
+			try {
+				if (typeof nw !== 'undefined' && nw.App && nw.App.manifest && nw.App.manifest.version) {
+					return nw.App.manifest.version;
+				}
+				var pkgPath = path.join(path.dirname(process.execPath), 'package.json');
+				return JSON.parse(fs.readFileSync(pkgPath, 'utf8')).version || '0.0.0';
+			} catch (_) { return '0.0.0'; }
+		}
+
+		/** Show a specific update state and hide all others */
+		function _showUpdateState(stateName) {
+			$('.update-state').addClass('d-none');
+			$('.update-state-' + stateName).removeClass('d-none');
+		}
+
+		// Click the update toolbar button
+		$(document).on("click", "#btn-update-check", function () {
+			// Reset modal state
+			$('#update-install-btn').addClass('d-none');
+			$('#update-close-btn').text('Close');
+			$('.update-footer-info').text('');
+			_showUpdateState('checking');
+			$('#updateModal').modal('show');
+
+			// Simulate checking for updates (1.5 second delay)
+			setTimeout(function () {
+				var currentVer = _getAppVersion();
+				// Simulate: pretend an update is available (same version for demo)
+				$('#update-current-version').text('v' + currentVer);
+				$('#update-new-version').text('v' + currentVer);
+				$('#update-release-notes').html(
+					'<ul style="margin:0; padding-left:18px;">' +
+					'<li>Performance improvements and bug fixes</li>' +
+					'<li>Updated security patches</li>' +
+					'<li>Minor UI refinements</li>' +
+					'</ul>'
+				);
+				$('.update-footer-info').text('Released just now');
+				$('#update-install-btn').removeClass('d-none');
+				_showUpdateState('available');
+			}, 1500);
+		});
+
+		// Click "Update Now" button
+		$(document).on("click", "#update-install-btn", function () {
+			$('#update-install-btn').addClass('d-none');
+			$('#update-close-btn').prop('disabled', true);
+			$('#updateModal').attr('data-backdrop', 'static').attr('data-keyboard', 'false');
+
+			// Phase 1: Simulate download with progress bar
+			_showUpdateState('downloading');
+			var pct = 0;
+			var dlInterval = setInterval(function () {
+				pct += Math.floor(Math.random() * 12) + 5;
+				if (pct > 100) pct = 100;
+				$('.update-download-bar').css('width', pct + '%').attr('aria-valuenow', pct);
+				$('.update-download-pct').text(pct + '%');
+				if (pct >= 100) {
+					clearInterval(dlInterval);
+					// Phase 2: Simulate installing
+					setTimeout(function () {
+						_showUpdateState('installing');
+						// Phase 3: Complete after 2.5 seconds
+						setTimeout(function () {
+							var currentVer = _getAppVersion();
+							$('.update-complete-version').text('v' + currentVer);
+							$('.update-footer-info').text('');
+							$('#update-close-btn').prop('disabled', false).text('Done');
+							$('#updateModal').removeAttr('data-backdrop').removeAttr('data-keyboard');
+							// Hide the badge after successful "update"
+							$('#update-badge').addClass('d-none');
+							_showUpdateState('complete');
+						}, 2500);
+					}, 600);
+				}
+			}, 200);
+		});
+
+		// Reset modal state when hidden
+		$('#updateModal').on('hidden.bs.modal', function () {
+			$('.update-download-bar').css('width', '0%').attr('aria-valuenow', 0);
+			$('.update-download-pct').text('0%');
+			$('#update-close-btn').prop('disabled', false).text('Close');
+			$('#updateModal').removeAttr('data-backdrop').removeAttr('data-keyboard');
+		});
+
+		// Simulate showing the update badge on startup after a short delay
+		setTimeout(function () {
+			$('#update-badge').text('1').removeClass('d-none');
+		}, 3000);
+
 		// ---- Secret flask icon click handler: 8 clicks to toggle OEM/developer settings ----
 		// OEM override state is session-only (in-memory); resets on app restart
 		var _oemSessionUnlocked = false;

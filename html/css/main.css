@@ -4575,6 +4575,169 @@ body.dark-mode .btn-dark-mode-toggle .fa-sun {
 	box-shadow: none;
 }
 
+/* ── Update Check Button & Badge ──────────────────────────────────────────── */
+
+.btn-update-check {
+	background: transparent;
+	border: none;
+	color: var(--navbar-font);
+	font-size: 15px;
+	padding: 4px 8px;
+	margin-right: 2px;
+	border-radius: 4px;
+	line-height: 1;
+	position: relative;
+}
+.btn-update-check:hover,
+.btn-update-check:focus {
+	background-color: rgba(255,255,255,0.12);
+	color: var(--navbar-font-over);
+	outline: none;
+	box-shadow: none;
+}
+.update-badge {
+	position: absolute;
+	top: -2px;
+	right: -4px;
+	background: #dc3545;
+	color: #fff;
+	font-size: 9px;
+	font-weight: 700;
+	min-width: 15px;
+	height: 15px;
+	line-height: 15px;
+	text-align: center;
+	border-radius: 3px;
+	padding: 0 3px;
+	pointer-events: none;
+}
+
+/* ── Update Modal ─────────────────────────────────────────────────────────── */
+
+.update-modal-body {
+	padding: 20px 24px;
+	background: var(--method-background);
+}
+
+.update-available-card {
+	background: var(--body-background);
+	border: 1px solid rgba(0,0,0,0.08);
+	border-radius: 10px;
+	padding: 20px;
+}
+.update-new-icon {
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	background: linear-gradient(135deg, #0275d8, #00b4d8);
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+.update-available-title {
+	font-weight: 700;
+	font-size: 1.05rem;
+}
+
+/* Version comparison banner */
+.update-version-compare {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+}
+.update-version-box {
+	background: var(--method-background);
+	border: 1px solid rgba(0,0,0,0.08);
+	border-radius: 8px;
+	padding: 10px 20px;
+	text-align: center;
+	min-width: 110px;
+}
+.update-version-box-new {
+	border-color: #0275d8;
+	box-shadow: 0 0 0 2px rgba(2, 117, 216, 0.15);
+}
+.update-version-label {
+	font-size: 0.7rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--text-muted);
+	margin-bottom: 2px;
+}
+.update-version-number {
+	font-weight: 700;
+	font-size: 1.1rem;
+	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+.update-version-arrow {
+	color: var(--text-muted);
+	font-size: 1.1rem;
+}
+
+/* Release notes */
+.update-release-notes {
+	background: var(--method-background);
+	border: 1px solid rgba(0,0,0,0.06);
+	border-radius: 6px;
+	padding: 12px 14px;
+}
+.update-release-notes-label {
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: var(--text-muted);
+}
+.update-release-notes-body {
+	font-size: 0.85rem;
+	color: var(--font-color);
+	line-height: 1.55;
+	max-height: 140px;
+	overflow-y: auto;
+}
+
+/* Download progress */
+.update-download-progress {
+	border-radius: 4px;
+	background: rgba(0,0,0,0.06);
+}
+.update-download-bar {
+	transition: width 0.3s ease;
+}
+
+/* Complete state highlight */
+.update-complete-version {
+	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+	font-size: 0.9rem;
+	color: var(--text-muted);
+}
+
+/* ── Update Modal dark mode ───────────────────────────────────────────────── */
+
+body.dark-mode .update-available-card {
+	background: #1e2a3a;
+	border-color: rgba(255,255,255,0.08);
+}
+body.dark-mode .update-version-box {
+	background: #162030;
+	border-color: rgba(255,255,255,0.1);
+}
+body.dark-mode .update-version-box-new {
+	border-color: #2196f3;
+	box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+body.dark-mode .update-release-notes {
+	background: #162030;
+	border-color: rgba(255,255,255,0.06);
+}
+body.dark-mode .update-new-icon {
+	background: linear-gradient(135deg, #1565c0, #0097a7);
+}
+body.dark-mode .update-download-progress {
+	background: rgba(255,255,255,0.08);
+}
+
 /* ── Import HamPkg Modal ──────────────────────────────────────────────────── */
 
 .hampkg-modal-body {
