@@ -150,6 +150,50 @@
 		})();
 	</script>
 
+	<!-- Update splash screen overlay -->
+	<div id="update-splash" class="d-none">
+		<div class="update-splash-content">
+			<img class="update-splash-logo" src="img/LibraryManagerForVenus6Animated.svg" alt="Library Manager">
+			<div class="update-splash-title">Library Manager</div>
+			<div class="update-splash-subtitle">FOR VENUS 6</div>
+			<div class="update-splash-status" id="update-splash-status">Downloading update...</div>
+			<div class="update-splash-progress">
+				<div class="update-splash-progress-bar" id="update-splash-bar"></div>
+			</div>
+			<div class="update-splash-pct" id="update-splash-pct"></div>
+		</div>
+	</div>
+
+	<!-- Update complete: release notes overlay -->
+	<div id="update-release-overlay" class="d-none">
+		<div class="update-release-card">
+			<div class="update-release-header">
+				<div class="update-release-icon"><i class="fas fa-check-circle"></i></div>
+				<div>
+					<div class="update-release-heading">Update Complete</div>
+					<div class="update-release-version" id="update-release-version">Library Manager is now up to date.</div>
+				</div>
+			</div>
+			<div class="update-release-notes-section">
+				<div class="update-release-notes-label"><i class="fas fa-file-alt mr-1"></i>What's New</div>
+				<div class="update-release-notes-body" id="update-release-notes-body">
+					<ul>
+						<li>Performance improvements and bug fixes</li>
+						<li>Updated security patches</li>
+						<li>Minor UI refinements</li>
+					</ul>
+				</div>
+			</div>
+			<div class="update-release-footer">
+				<div class="custom-control custom-checkbox">
+					<input type="checkbox" class="custom-control-input" id="chk_showReleaseNotes_overlay">
+					<label class="custom-control-label text-muted" for="chk_showReleaseNotes_overlay" style="font-size:.82rem;">Don't show release notes after updates</label>
+				</div>
+				<button type="button" class="btn solid-button" id="btn-update-release-dismiss"><i class="fas fa-check mr-1"></i>Got it</button>
+			</div>
+		</div>
+	</div>
+
 	<div class="container-fluid p-0">
 		<div class="methods-page no-gutters">
 			<div class="row header2 no-gutters">
@@ -1610,6 +1654,10 @@
 							<div class="custom-control custom-checkbox mt-3">
 								<input type="checkbox" class="custom-control-input" id="chk_autoUpdate" checked>
 								<label class="custom-control-label" for="chk_autoUpdate">Automatically check for updates on startup</label>
+							</div>
+							<div class="custom-control custom-checkbox mt-1">
+								<input type="checkbox" class="custom-control-input" id="chk_showReleaseNotes" checked>
+								<label class="custom-control-label" for="chk_showReleaseNotes">Show release notes after updates</label>
 							</div>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">

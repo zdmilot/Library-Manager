@@ -2332,39 +2332,72 @@
 			$('#updateModal').modal('show');
 		});
 
-		// Click "Update Now" button
+		// Click "Update Now" button - show full-screen update splash
 		$(document).on("click", "#update-install-btn", function () {
-			$('#update-install-btn').addClass('d-none');
-			$('#update-close-btn').prop('disabled', true);
-			$('#updateModal').attr('data-backdrop', 'static').attr('data-keyboard', 'false');
+			// Close the update modal and settings modal
+			$('#updateModal').modal('hide');
+			$('#settingsModal').modal('hide');
 
-			// Phase 1: Simulate download with progress bar
-			_showUpdateState('downloading');
+			// Show full-screen update splash
+			$('#update-splash').removeClass('d-none');
+			$('#update-splash-status').text('Downloading update...');
+			$('#update-splash-bar').css('width', '0%');
+			$('#update-splash-pct').text('0%');
+
+			// Phase 1: Download (4 seconds total)
 			var pct = 0;
-			var dlInterval = setInterval(function () {
-				pct += Math.floor(Math.random() * 12) + 5;
+			var dlDuration = 4000;
+			var dlInterval = 100;
+			var dlStep = 100 / (dlDuration / dlInterval);
+			var dlTimer = setInterval(function () {
+				pct += dlStep + (Math.random() * dlStep * 0.3 - dlStep * 0.15);
 				if (pct > 100) pct = 100;
-				$('.update-download-bar').css('width', pct + '%').attr('aria-valuenow', pct);
-				$('.update-download-pct').text(pct + '%');
+				$('#update-splash-bar').css('width', pct + '%');
+				$('#update-splash-pct').text(Math.round(pct) + '%');
 				if (pct >= 100) {
-					clearInterval(dlInterval);
-					// Phase 2: Simulate installing
-					setTimeout(function () {
-						_showUpdateState('installing');
-						// Phase 3: Complete after 2.5 seconds
-						setTimeout(function () {
-							var currentVer = _getAppVersion();
-							$('.update-complete-version').text('v' + currentVer);
-							$('.update-footer-info').text('');
-							$('#update-close-btn').prop('disabled', false).text('Done');
-							$('#updateModal').removeAttr('data-backdrop').removeAttr('data-keyboard');
-							// Hide all update indicators after successful "update"
+					clearInterval(dlTimer);
+					// Phase 2: Installing (5 seconds)
+					$('#update-splash-status').text('Installing update...');
+					$('#update-splash-pct').text('');
+					$('#update-splash-bar').css('width', '0%');
+					var iPct = 0;
+					var iDuration = 5000;
+					var iInterval = 120;
+					var iStep = 100 / (iDuration / iInterval);
+					var iTimer = setInterval(function () {
+						iPct += iStep + (Math.random() * iStep * 0.4 - iStep * 0.2);
+						if (iPct > 100) iPct = 100;
+						$('#update-splash-bar').css('width', iPct + '%');
+						if (iPct >= 100) {
+							clearInterval(iTimer);
 							_hideUpdateAvailableIndicators();
-							_showUpdateState('complete');
-						}, 2500);
-					}, 600);
+							// Fade out splash, show release notes
+							setTimeout(function () {
+								$('#update-splash').addClass('d-none');
+								var currentVer = _getAppVersion();
+								// Check if user wants to see release notes
+								var showNotes = true;
+								try { showNotes = getSettingValue('chk_showReleaseNotes') !== false; } catch(_) {}
+								if (showNotes) {
+									$('#update-release-version').text('v' + currentVer + ' has been installed successfully.');
+									$('#chk_showReleaseNotes_overlay').prop('checked', false);
+									$('#update-release-overlay').removeClass('d-none');
+								}
+							}, 400);
+						}
+					}, iInterval);
 				}
-			}, 200);
+			}, dlInterval);
+		});
+
+		// Dismiss release notes overlay
+		$(document).on("click", "#btn-update-release-dismiss", function () {
+			// If the "don't show" checkbox is checked, save to settings
+			if ($('#chk_showReleaseNotes_overlay').prop('checked')) {
+				saveSetting('chk_showReleaseNotes', false);
+				$('#chk_showReleaseNotes').prop('checked', false);
+			}
+			$('#update-release-overlay').addClass('d-none');
 		});
 
 		// When update modal shows on top of settings, adjust backdrop z-index
@@ -3987,6 +4020,11 @@
 
 		//Settings > Software Update: auto-check for updates
 		$(document).on("click", "#chk_autoUpdate", function(){
+			saveSetting($(this).attr("id"), $(this).prop("checked"));
+		});
+
+		//Settings > Software Update: show release notes after updates
+		$(document).on("click", "#chk_showReleaseNotes", function(){
 			saveSetting($(this).attr("id"), $(this).prop("checked"));
 		});
 
@@ -5621,6 +5659,9 @@
 
 			//setting - Software Update: auto-check for updates (default on)
 			$("#chk_autoUpdate").prop("checked", settings["chk_autoUpdate"] !== false);
+
+			//setting - Software Update: show release notes after updates (default on)
+			$("#chk_showReleaseNotes").prop("checked", settings["chk_showReleaseNotes"] !== false);
 
 			//setting - Display: hide system libraries
 			$("#chk_hideSystemLibraries").prop("checked", !!settings["chk_hideSystemLibraries"]);

@@ -4660,6 +4660,198 @@ body.dark-mode .pkg-com-label {
 	z-index: 1060;
 }
 
+/* ── Update Splash Screen ────────────────────────────────────────────────── */
+
+#update-splash {
+	position: fixed;
+	top: 0; left: 0;
+	width: 100vw; height: 100vh;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(150deg, #002e48 0%, #0a4a6e 40%, #255a85 100%);
+	transition: opacity 0.5s ease;
+}
+
+.update-splash-content {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	user-select: none;
+}
+
+.update-splash-logo {
+	width: 120px;
+	height: 120px;
+	margin-bottom: 24px;
+}
+
+.update-splash-title {
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: #fff;
+	letter-spacing: 0.5px;
+	margin-bottom: 2px;
+}
+
+.update-splash-subtitle {
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	font-size: 0.75rem;
+	font-weight: 400;
+	color: rgba(255,255,255,0.5);
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	margin-bottom: 36px;
+}
+
+.update-splash-status {
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	font-size: 0.85rem;
+	color: rgba(255,255,255,0.7);
+	letter-spacing: 0.3px;
+	margin-bottom: 16px;
+}
+
+.update-splash-progress {
+	width: 280px;
+	height: 4px;
+	background: rgba(255,255,255,0.15);
+	border-radius: 2px;
+	overflow: hidden;
+}
+
+.update-splash-progress-bar {
+	height: 100%;
+	width: 0%;
+	background: linear-gradient(90deg, #0275d8, #00b4d8);
+	border-radius: 2px;
+	transition: width 0.2s ease;
+}
+
+.update-splash-pct {
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	font-size: 0.72rem;
+	color: rgba(255,255,255,0.4);
+	margin-top: 8px;
+	letter-spacing: 0.3px;
+}
+
+/* ── Update Release Notes Overlay ─────────────────────────────────────────── */
+
+#update-release-overlay {
+	position: fixed;
+	top: 0; left: 0;
+	width: 100vw; height: 100vh;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(150deg, #002e48 0%, #0a4a6e 40%, #255a85 100%);
+	animation: update-release-fadein 0.4s ease;
+}
+
+@keyframes update-release-fadein {
+	from { opacity: 0; }
+	to   { opacity: 1; }
+}
+
+.update-release-card {
+	background: #fff;
+	border-radius: 14px;
+	box-shadow: 0 12px 48px rgba(0,0,0,0.3);
+	width: 480px;
+	max-width: 92vw;
+	overflow: hidden;
+}
+
+.update-release-header {
+	display: flex;
+	align-items: center;
+	padding: 28px 28px 20px;
+	gap: 16px;
+}
+
+.update-release-icon {
+	font-size: 2.2rem;
+	color: #28a745;
+	flex-shrink: 0;
+}
+
+.update-release-heading {
+	font-weight: 700;
+	font-size: 1.2rem;
+	color: #1a1a1a;
+}
+
+.update-release-version {
+	font-size: 0.85rem;
+	color: #666;
+	margin-top: 2px;
+}
+
+.update-release-notes-section {
+	padding: 0 28px 20px;
+}
+
+.update-release-notes-label {
+	font-weight: 600;
+	font-size: 0.82rem;
+	color: #888;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 8px;
+}
+
+.update-release-notes-body {
+	background: #f8f9fa;
+	border: 1px solid #e9ecef;
+	border-radius: 8px;
+	padding: 14px 18px;
+	font-size: 0.9rem;
+	color: #333;
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+.update-release-notes-body ul {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.update-release-notes-body li {
+	margin-bottom: 4px;
+}
+
+.update-release-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 28px;
+	border-top: 1px solid #e9ecef;
+	background: #fafbfc;
+}
+
+body.dark-mode .update-release-card {
+	background: #1e2a35;
+}
+body.dark-mode .update-release-heading {
+	color: #e0e0e0;
+}
+body.dark-mode .update-release-version {
+	color: #999;
+}
+body.dark-mode .update-release-notes-body {
+	background: #162029;
+	border-color: #2a3a4a;
+	color: #ccc;
+}
+body.dark-mode .update-release-footer {
+	background: #162029;
+	border-top-color: #2a3a4a;
+}
+
 .update-modal-body {
 	padding: 20px 24px;
 	background: var(--method-background);
