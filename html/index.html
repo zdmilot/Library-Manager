@@ -2599,22 +2599,25 @@
 						<span aria-hidden="true">&times;</span>
 					</button>
 				</div>
-				<div class="modal-body" style="padding:16px 20px; background:var(--method-background);">
-					<div class="imp-search-bar">
-						<div class="input-group input-group-sm">
-							<div class="input-group-prepend">
-								<span class="input-group-text imp-search-icon"><i class="fas fa-search"></i></span>
+				<div class="modal-body" style="padding:0; background:var(--method-background);">
+					<div style="padding:16px 20px 12px;">
+						<div class="imp-search-bar">
+							<div class="input-group input-group-sm">
+								<div class="input-group-prepend">
+									<span class="input-group-text imp-search-icon"><i class="fas fa-search"></i></span>
+								</div>
+								<div class="imp-search-flow">
+									<div class="imp-search-chip-wrap d-none" id="imp-search-chip-wrap"></div>
+									<input type="text" class="form-control imp-search-input" id="imp-search-input" placeholder="Search Libraries..." autocomplete="off">
+								</div>
+								<div class="input-group-append imp-search-clear-wrap d-none">
+									<button class="btn btn-outline-secondary imp-search-clear" type="button"><i class="fas fa-times"></i></button>
+								</div>
 							</div>
-							<div class="imp-search-flow">
-								<div class="imp-search-chip-wrap d-none" id="imp-search-chip-wrap"></div>
-								<input type="text" class="form-control imp-search-input" id="imp-search-input" placeholder="Search Libraries..." autocomplete="off">
-							</div>
-							<div class="input-group-append imp-search-clear-wrap d-none">
-								<button class="btn btn-outline-secondary imp-search-clear" type="button"><i class="fas fa-times"></i></button>
-							</div>
+							<div class="imp-search-autocomplete d-none" id="imp-search-autocomplete"></div>
 						</div>
-						<div class="imp-search-autocomplete d-none" id="imp-search-autocomplete"></div>
 					</div>
+					<div class="search-modal-results" id="search-modal-results"></div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-end">
 					<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>

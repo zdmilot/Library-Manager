@@ -2023,15 +2023,7 @@
 			$(".navbar-custom .nav-item, .navbar-custom .dropdown-navitem").removeClass("active");
             $(this).addClass("active");
 
-			// Clear search bar when switching tabs
-			$("#imp-search-input").val("");
-			$(".imp-search-clear-wrap").addClass("d-none");
-			_searchInlineTokens = [];
-			renderSearchInlineTokens();
-			hideSearchAutocomplete();
-			_searchActive = false;
-			_preSearchGroupId = null;
-			$("#btn-open-search").removeClass("search-active");
+			// Close search modal if open when switching tabs
 			$('#searchModal').modal('hide');
             
 			//display links group
@@ -3280,17 +3272,84 @@
 
 			clearTimeout(_searchTimeout);
 			_searchTimeout = setTimeout(function() {
-					if (state.hasSearch) {
-					impEnterSearchMode(state.displayQuery, {
-						tagFilters: state.tagFilters,
-						authorFilters: state.authorFilters,
-						textQuery: state.textQuery,
-						displayQueryHtml: state.displayQueryHtml
-					});
-				} else {
-					impExitSearchMode();
-				}
+				renderSearchModalResults(state);
 			}, 150);
+		}
+
+		function renderSearchModalResults(state) {
+			var $results = $("#search-modal-results");
+			if (!state || !state.hasSearch) {
+				$results.empty();
+				return;
+			}
+
+			var tagFilters = [];
+			(state.tagFilters || []).forEach(function(rawTag) {
+				var sanitized = shared.sanitizeTag(rawTag || '');
+				if (sanitized && tagFilters.indexOf(sanitized) === -1) tagFilters.push(sanitized);
+			});
+			var authorFilters = [];
+			(state.authorFilters || []).forEach(function(rawAuthor) {
+				var a = (rawAuthor || '').trim().toLowerCase();
+				if (a && authorFilters.indexOf(a) === -1) authorFilters.push(a);
+			});
+			var textQuery = ((state.textQuery || '') + '').toLowerCase().trim();
+
+			if (_searchIndexDirty) rebuildSearchIndex();
+
+			var indexResults = _searchIndex.search(textQuery, {
+				tagFilters: tagFilters,
+				authorFilters: authorFilters
+			});
+
+			var userLibMap = {};
+			var userLibs = db_installed_libs.installed_libs.find() || [];
+			userLibs.forEach(function(l) {
+				if (!l.deleted && !isSystemLibrary(l._id)) userLibMap[l._id] = l;
+			});
+			var sysLibMap = {};
+			getAllSystemLibraries().forEach(function(s) { sysLibMap[s._id] = s; });
+
+			var results = [];
+			indexResults.forEach(function(result) {
+				if (result.type === 'user') {
+					var lib = userLibMap[result.id];
+					if (lib) results.push({ type: 'user', id: lib._id, name: lib.library_name || 'Unknown', version: lib.version || '', author: lib.author || '', isSystem: false });
+				} else {
+					var sLib = sysLibMap[result.id];
+					if (sLib) results.push({ type: 'system', id: sLib._id, name: sLib.display_name || sLib.canonical_name || 'Unknown', version: '', author: sLib.author || 'Hamilton', isSystem: true });
+				}
+			});
+
+			if (results.length === 0) {
+				var noResultsDisplay = state.displayQueryHtml || ('<b>' + escapeHtml(state.displayQuery) + '</b>');
+				$results.html(
+					'<div class="text-center py-4">' +
+						'<i class="fas fa-search fa-2x" style="color:#ccc;"></i>' +
+						'<p class="text-muted mt-2 mb-0">No libraries matching "' + noResultsDisplay + '"</p>' +
+					'</div>'
+				);
+				return;
+			}
+
+			var html = '<div class="search-modal-count text-muted text-sm px-3 py-1">' + results.length + ' result' + (results.length !== 1 ? 's' : '') + '</div>';
+			results.forEach(function(r) {
+				var icon = r.isSystem
+					? '<i class="fas fa-lock" style="color:#adb5bd;"></i>'
+					: '<i class="fas fa-book" style="color:var(--medium);"></i>';
+				var versionHtml = r.version ? '<span class="search-modal-result-version">' + escapeHtml(r.version) + '</span>' : '';
+				var authorHtml = r.author ? '<span class="search-modal-result-author">' + escapeHtml(r.author) + '</span>' : '';
+				html += '<div class="search-modal-result" data-lib-id="' + escapeHtml(r.id) + '">' +
+					'<div class="search-modal-result-icon">' + icon + '</div>' +
+					'<div class="search-modal-result-info">' +
+						'<div class="search-modal-result-name">' + escapeHtml(r.name) + versionHtml + '</div>' +
+						(authorHtml ? '<div class="search-modal-result-meta">' + authorHtml + '</div>' : '') +
+					'</div>' +
+					'<i class="fas fa-chevron-right search-modal-result-arrow"></i>' +
+				'</div>';
+			});
+
+			$results.html(html);
 		}
 
 		// ---- Search Autocomplete ----
@@ -3840,16 +3899,24 @@
 		});
 
 		$('#searchModal').on('hidden.bs.modal', function() {
-			// If no active search, exit search mode
-			var state = getSearchStateFromInput();
-			if (!state.hasSearch) {
-				impExitSearchMode();
-				$("#btn-open-search").removeClass("search-active");
-			}
+			// Clear search state when modal closes
+			_searchInlineTokens = [];
+			renderSearchInlineTokens();
+			hideSearchAutocomplete();
+			$("#imp-search-input").val("");
+			$(".imp-search-clear-wrap").addClass("d-none");
+			$("#search-modal-results").empty();
 		});
 
 		$(document).on("click", "#btn-open-search", function() {
 			openSearchModal();
+		});
+
+		$(document).on("click", ".search-modal-result", function() {
+			var libId = $(this).attr("data-lib-id");
+			if (!libId) return;
+			$('#searchModal').modal('hide');
+			impShowLibDetail(libId);
 		});
 
 		function impEnterSearchMode(query, options) {
