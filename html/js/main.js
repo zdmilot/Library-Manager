@@ -4106,10 +4106,7 @@
 			saveSetting($(this).attr("id"), $(this).prop("checked"));
 		});
 
-		//Settings > Installation: retain embedded installers
-		$(document).on("click", "#chk_retainInstallers", function(){
-			saveSetting($(this).attr("id"), $(this).prop("checked"));
-		});
+
 
 		//Settings > Software Update: auto-check for updates
 		$(document).on("click", "#chk_autoUpdate", function(){
@@ -5747,8 +5744,7 @@
 			//setting - Installation checkboxes
 			$("#chk_confirmBeforeInstall").prop("checked", settings["chk_confirmBeforeInstall"] !== false);
 
-			//setting - Installation: retain embedded installers on import
-			$("#chk_retainInstallers").prop("checked", !!settings["chk_retainInstallers"]);
+
 
 			//setting - Software Update: auto-check for updates (default on)
 			$("#chk_autoUpdate").prop("checked", settings["chk_autoUpdate"] !== false);
@@ -10508,7 +10504,7 @@
 				} else if (lib.installer_path) {
 					_instHtml += '<div class="text-muted mt-1"><i class="fas fa-exclamation-triangle text-warning mr-1"></i>Installer file not found on disk</div>';
 				} else {
-					_instHtml += '<div class="text-muted mt-1">Installer not extracted (enable <em>Retain embedded installers</em> in Settings)</div>';
+					_instHtml += '<div class="text-muted mt-1">Installer location not recorded</div>';
 				}
 				_instHtml += '</div>';
 				$("#libDetailModal .lib-detail-installer-info").html(_instHtml);
@@ -11009,8 +11005,7 @@
 				var rbInstallerPath = null;
 				var rbInstallerOriginalName = null;
 				var rbInstallerSize = null;
-				var retainInstallers = !!getSettingValue('chk_retainInstallers');
-				if (manifest.installer_executable && retainInstallers) {
+				if (manifest.installer_executable) {
 					var installerLibDir = path.join(INSTALLER_STORE_DIR, (rLibName || 'Unknown').replace(/[<>:"\/\\|?*]/g, '_'));
 					zipEntries.forEach(function(entry) {
 						if (entry.isDirectory) return;
@@ -14676,8 +14671,7 @@
 				var impInstallerPath = null;
 				var impInstallerOriginalName = null;
 				var impInstallerSize = 0;
-				var retainInstallers = !!getSettingValue('chk_retainInstallers');
-				if (manifest.installer_executable && retainInstallers) {
+				if (manifest.installer_executable) {
 					var installerLibDir = path.join(INSTALLER_STORE_DIR, (libName || 'Unknown').replace(/[<>:"\/\\|?*]/g, '_'));
 					zipEntries.forEach(function(entry) {
 						if (entry.isDirectory) return;

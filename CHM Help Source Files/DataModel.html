@@ -248,7 +248,7 @@
 <tr><td><code>chk_confirmBeforeInstall</code></td><td>boolean</td><td>Prompt for confirmation before importing</td></tr>
 <tr><td><code>chk_hideSystemLibraries</code></td><td>boolean</td><td>Hide system libraries on the front page (libraries with warnings still shown)</td></tr>
 <tr><td><code>chk_showGitHubLinks</code></td><td>boolean</td><td>Show GitHub repository links in library detail views. Defaults to <code>false</code>. Enable to display repository links; disable when external links should not appear. See <a href="GitHubRepository.html">GitHub Repository</a>.</td></tr>
-<tr><td><code>chk_retainInstallers</code></td><td>boolean</td><td>Retain embedded installer executables when importing packages. When enabled, <code>.exe</code> installers bundled inside packages are extracted to a centralized installer store directory.</td></tr>
+<tr><td><code>chk_retainInstallers</code></td><td>boolean</td><td><b>Deprecated.</b> Embedded installer executables are now always retained when importing packages. This setting is no longer used; installers bundled inside packages are unconditionally extracted to the centralized installer store directory.</td></tr>
 <tr><td><code>chk_requireActionComment</code></td><td>boolean</td><td>Require audit comment fields for destructive/potentially destructive GUI actions</td></tr>
 <tr><td><code>chk_requireActionSignature</code></td><td>boolean</td><td>Require operator signature fields for destructive/potentially destructive GUI actions</td></tr>
 <tr><td><code>chk_includeUnsignedLibs</code></td><td>boolean</td><td>Enable unsigned library scanning and display (see <a href="UnsignedLibraries.html">Unsigned Libraries</a>)</td></tr>
