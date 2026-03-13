@@ -2026,8 +2026,13 @@
 			// Clear search bar when switching tabs
 			$("#imp-search-input").val("");
 			$(".imp-search-clear-wrap").addClass("d-none");
+			_searchInlineTokens = [];
+			renderSearchInlineTokens();
+			hideSearchAutocomplete();
 			_searchActive = false;
 			_preSearchGroupId = null;
+			$("#btn-open-search").removeClass("search-active");
+			$('#searchModal').modal('hide');
             
 			//display links group
 			var group_id = $(this).attr('data-group-id');
@@ -3815,19 +3820,36 @@
 			}
 		});
 
-		// Keyboard shortcut: Ctrl+F focuses search bar
+		// Keyboard shortcut: Ctrl+F opens search modal
 		$(document).on("keydown", function(e) {
 			if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
 				// Only intercept if importer or system view is visible
 				if (!$(".importer-container").hasClass("d-none") || !$('.group-container').not('.d-none').length) {
 					e.preventDefault();
-					$("#imp-search-input").focus().select();
+					openSearchModal();
 				}
 			}
-			// Escape clears search
-			if (e.key === 'Escape' && $("#imp-search-input").is(":focus")) {
-				$("#imp-search-input").val("").trigger("input").blur();
+		});
+
+		function openSearchModal() {
+			$('#searchModal').modal('show');
+		}
+
+		$('#searchModal').on('shown.bs.modal', function() {
+			$("#imp-search-input").focus();
+		});
+
+		$('#searchModal').on('hidden.bs.modal', function() {
+			// If no active search, exit search mode
+			var state = getSearchStateFromInput();
+			if (!state.hasSearch) {
+				impExitSearchMode();
+				$("#btn-open-search").removeClass("search-active");
 			}
+		});
+
+		$(document).on("click", "#btn-open-search", function() {
+			openSearchModal();
 		});
 
 		function impEnterSearchMode(query, options) {
@@ -3838,6 +3860,7 @@
 				_preSearchGroupId = activeNav.attr("data-group-id") || "gAll";
 				_searchActive = true;
 			}
+			$("#btn-open-search").addClass("search-active");
 
 			// Switch to importer container, hide header & nav highlight
 			$(".links-container").addClass("d-none");
@@ -3947,6 +3970,7 @@
 		function impExitSearchMode() {
 			if (!_searchActive) return;
 			_searchActive = false;
+			$("#btn-open-search").removeClass("search-active");
 
 			// Restore the previous tab
 			var gid = _preSearchGroupId || "gAll";
@@ -12924,6 +12948,7 @@
 			var tag = $(this).attr("data-tag");
 			if (!tag) return;
 			$("#imp-search-input").val("#" + tag).trigger("input");
+			openSearchModal();
 		});
 
 		$(document).on("mouseenter", ".imp-tag-badge", function() {

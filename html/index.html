@@ -228,21 +228,9 @@
 								</div>
 							</div>
 
-							<div class="imp-search-bar mr-2">
-								<div class="input-group input-group-sm">
-									<div class="input-group-prepend">
-										<span class="input-group-text imp-search-icon"><i class="fas fa-search"></i></span>
-									</div>
-										<div class="imp-search-flow">
-											<div class="imp-search-chip-wrap d-none" id="imp-search-chip-wrap"></div>
-											<input type="text" class="form-control imp-search-input" id="imp-search-input" placeholder="Search Libraries..." autocomplete="off">
-										</div>
-									<div class="input-group-append imp-search-clear-wrap d-none">
-										<button class="btn btn-outline-secondary imp-search-clear" type="button"><i class="fas fa-times"></i></button>
-									</div>
-								</div>
-								<div class="imp-search-autocomplete d-none" id="imp-search-autocomplete"></div>
-							</div>
+							<button class="btn btn-sm btn-navbar-search" type="button" id="btn-open-search" title="Search Libraries">
+								<i class="fas fa-search"></i>
+							</button>
 
 							<button class="btn btn-sm btn-navbar-import" type="button" id="imp-browse" title="Import Library">
 								<i class="fas fa-file-import"></i>
@@ -2592,6 +2580,49 @@
 		</div>
 	</div>
 	<!---- Modal Audit Verify Result end --->
+
+	<!---- Modal Search start --->
+	<div class="modal" tabindex="-1" role="dialog" id="searchModal">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:520px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<div class="d-flex align-items-center">
+						<div class="mr-3">
+							<i class="fas fa-search fa-3x" style="color:var(--medium)"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Search Libraries</h5>
+							<span class="text-muted text-sm" style="color:rgba(255,255,255,0.6)!important;">Search by name, tag, or author</span>
+						</div>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body" style="padding:16px 20px; background:var(--method-background);">
+					<div class="imp-search-bar">
+						<div class="input-group input-group-sm">
+							<div class="input-group-prepend">
+								<span class="input-group-text imp-search-icon"><i class="fas fa-search"></i></span>
+							</div>
+							<div class="imp-search-flow">
+								<div class="imp-search-chip-wrap d-none" id="imp-search-chip-wrap"></div>
+								<input type="text" class="form-control imp-search-input" id="imp-search-input" placeholder="Search Libraries..." autocomplete="off">
+							</div>
+							<div class="input-group-append imp-search-clear-wrap d-none">
+								<button class="btn btn-outline-secondary imp-search-clear" type="button"><i class="fas fa-times"></i></button>
+							</div>
+						</div>
+						<div class="imp-search-autocomplete d-none" id="imp-search-autocomplete"></div>
+					</div>
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-end">
+					<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Search end --->
 
 	<!---- Modal Event History start --->
 	<div class="modal" tabindex="-1" role="dialog" id="eventHistoryModal">
