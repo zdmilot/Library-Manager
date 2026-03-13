@@ -3404,38 +3404,54 @@
 			indexResults.forEach(function(result) {
 				if (result.type === 'user') {
 					var lib = userLibMap[result.id];
-					if (lib) results.push({
-						type: 'user', id: lib._id,
-						name: lib.library_name || 'Unknown',
-						version: lib.version || '',
-						author: lib.author || '',
-						organization: lib.organization || '',
-						description: lib.description || '',
-						tags: lib.tags || [],
-						installedDate: lib.installed_date || '',
-						imageBase64: lib.library_image_base64 || '',
-						imageMime: lib.library_image_mime || '',
-						imageFile: lib.library_image || '',
-						publisherCert: lib.publisher_cert || null,
-						isSystem: false
-					});
+					if (lib) {
+						// Resolve icon HTML for user libraries
+						var uIconHtml;
+						if (lib.library_image_base64) {
+							var uMime = lib.library_image_mime || 'image/bmp';
+							if (!lib.library_image_mime && lib.library_image) {
+								var uExt = (lib.library_image || '').split('.').pop().toLowerCase();
+								if (IMAGE_MIME_MAP[uExt]) uMime = IMAGE_MIME_MAP[uExt];
+							}
+							uIconHtml = '<img src="data:' + uMime + ';base64,' + lib.library_image_base64 + '">';
+						} else {
+							uIconHtml = '<i class="fas fa-book" style="color:var(--medium);"></i>';
+						}
+						results.push({
+							type: 'user', id: lib._id,
+							name: lib.library_name || 'Unknown',
+							version: lib.version || '',
+							author: lib.author || '',
+							organization: lib.organization || '',
+							description: lib.description || '',
+							tags: lib.tags || [],
+							installedDate: lib.installed_date || '',
+							publisherCert: lib.publisher_cert || null,
+							iconHtml: uIconHtml,
+							iconClass: lib.library_image_base64 ? '' : '',
+							isSystem: false
+						});
+					}
 				} else {
 					var sLib = sysLibMap[result.id];
-					if (sLib) results.push({
-						type: 'system', id: sLib._id,
-						name: sLib.display_name || sLib.canonical_name || 'Unknown',
-						version: '',
-						author: sLib.author || 'Hamilton',
-						organization: '',
-						description: '',
-						tags: [],
-						installedDate: '',
-						imageBase64: '',
-						imageMime: '',
-						imageFile: '',
-						publisherCert: null,
-						isSystem: true
-					});
+					if (sLib) {
+						// Resolve icon HTML for system libraries (reads bitmap from disk)
+						var sIconHtml = resolveSystemLibIcon(sLib, 48);
+						results.push({
+							type: 'system', id: sLib._id,
+							name: sLib.display_name || sLib.canonical_name || 'Unknown',
+							version: '',
+							author: sLib.author || 'Hamilton',
+							organization: '',
+							description: '',
+							tags: [],
+							installedDate: '',
+							publisherCert: null,
+							iconHtml: sIconHtml,
+							iconClass: 'system-icon',
+							isSystem: true
+						});
+					}
 				}
 			});
 
@@ -3457,23 +3473,6 @@
 
 			var html = '';
 			results.forEach(function(r) {
-				// Icon: library image or fallback
-				var iconClass = r.isSystem ? 'system-icon' : '';
-				var iconInner;
-				if (r.imageBase64) {
-					var mime = r.imageMime || 'image/bmp';
-					if (!r.imageMime && r.imageFile) {
-						var ext = (r.imageFile || '').split('.').pop().toLowerCase();
-						if (IMAGE_MIME_MAP[ext]) mime = IMAGE_MIME_MAP[ext];
-					}
-					iconInner = '<img src="data:' + mime + ';base64,' + r.imageBase64 + '">';
-					iconClass = ''; // image fills the rounded rect
-				} else if (r.isSystem) {
-					iconInner = '<i class="fas fa-lock" style="color:#adb5bd;"></i>';
-				} else {
-					iconInner = '<i class="fas fa-book" style="color:var(--medium);"></i>';
-				}
-
 				// Header line: name + version + type badge
 				var versionHtml = r.version ? '<span class="search-modal-result-version">v' + escapeHtml(r.version) + '</span>' : '';
 				var typeBadge = r.isSystem
@@ -3517,7 +3516,7 @@
 				metaHtml += '</div>';
 
 				html += '<div class="search-modal-result" data-lib-id="' + escapeHtml(r.id) + '">' +
-					'<div class="search-modal-result-icon ' + iconClass + '">' + iconInner + '</div>' +
+					'<div class="search-modal-result-icon ' + (r.iconClass || '') + '">' + r.iconHtml + '</div>' +
 					'<div class="search-modal-result-body">' +
 						'<div class="search-modal-result-header">' +
 							'<span class="search-modal-result-name">' + escapeHtml(r.name) + '</span>' +
