@@ -39,6 +39,7 @@
 		const crypto = require('crypto');
 		const shared = require('../lib/shared');
 		const SearchIndex = require('../lib/search-index');
+		const updater = require('../lib/updater');
 
 		/** Shared MIME type lookup for image file extensions (from shared.js) */
 		var IMAGE_MIME_MAP = shared.IMAGE_MIME_MAP;
@@ -1980,6 +1981,13 @@
 					// Mark init complete, dismiss splash if animation also done
 					_splashInitDone = true;
 					dismissSplashIfReady();
+
+					// Auto-check for updates after startup (2s delay to not block UI)
+					setTimeout(function () {
+						try { _autoUpdateCheck(); } catch (e) {
+							console.log('Auto-update check error: ' + e);
+						}
+					}, 2000);
 				}, 150);
 			}
 
@@ -2265,10 +2273,15 @@
 		});
 
 		// ====================================================================
-		// Update Check - Simulated update flow (frontend only)
+		// Software Update - GitHub Releases auto-update
 		// ====================================================================
 
 		/** Get the current app version string */
+		// ---- Update system state ----
+		var _cachedUpdateInfo = null;  // Cached result from last update check
+		var _updateInProgress = false; // Prevent concurrent update operations
+		var _isInstalledApp = updater.isInstalledApp(); // Check once at startup
+
 		function _getAppVersion() {
 			try {
 				if (typeof nw !== 'undefined' && nw.App && nw.App.manifest && nw.App.manifest.version) {
@@ -2285,8 +2298,92 @@
 			$('.update-state-' + stateName).removeClass('d-none');
 		}
 
+		/**
+		 * Perform a real update check against GitHub releases.
+		 * @param {boolean} silent - If true, don't show the modal (for auto-check on startup)
+		 * @returns {Promise} Resolves with the update check result
+		 */
+		function _performUpdateCheck(silent) {
+			var currentVer = _getAppVersion();
+			return updater.checkForUpdate(currentVer).then(function (result) {
+				_cachedUpdateInfo = result;
+				if (result.updateAvailable && result.releaseInfo) {
+					var info = result.releaseInfo;
+					$('#update-current-version').text('v' + result.currentVersion);
+					$('#update-new-version').text('v' + result.latestVersion);
+					$('#update-release-notes').html(updater.markdownToHtml(info.body));
+					$('#update-release-notes-body').html(updater.markdownToHtml(info.body));
+					$('.update-footer-info').text(updater.formatRelativeTime(info.publishedAt));
+					if (info.installerAsset) {
+						$('#update-install-btn').removeClass('d-none');
+					} else {
+						$('#update-install-btn').addClass('d-none');
+						$('.update-footer-info').text('No installer found in this release. Visit GitHub to download manually.');
+					}
+					_showUpdateAvailableIndicators(result.latestVersion);
+					if (!silent) {
+						_showUpdateState('available');
+					}
+				} else if (!result.isInstalled) {
+					if (!silent) {
+						$('.update-error-msg').text('Updates are only available for installed versions of Library Manager. Portable and development versions must be updated manually.');
+						_showUpdateState('error');
+					}
+				} else {
+					if (!silent) {
+						$('.update-uptodate-ver').text('v' + currentVer);
+						_showUpdateState('uptodate');
+					}
+					_hideUpdateAvailableIndicators();
+				}
+				return result;
+			}).catch(function (err) {
+				console.error('Update check failed:', err);
+				if (!silent) {
+					$('.update-error-msg').text('Could not reach the update server. Please check your internet connection and try again.');
+					_showUpdateState('error');
+				}
+				return null;
+			});
+		}
+
+		/**
+		 * Auto-update check on startup. Only runs if:
+		 * 1. App is installed (not portable)
+		 * 2. chk_autoUpdate setting is enabled
+		 */
+		function _autoUpdateCheck() {
+			if (!_isInstalledApp.installed) {
+				console.log('Auto-update skipped: app is not installed (portable/dev mode)');
+				// Hide update UI elements for non-installed versions
+				$('#btn-settings-update-check').prop('disabled', true).attr('title', 'Updates are only available for installed versions');
+				$('#chk_autoUpdate').prop('disabled', true);
+				$('.settings-update-status').text('Not available (portable version)');
+				$('.settings-update-no-update').removeClass('d-none');
+				return;
+			}
+
+			try {
+				var autoCheck = getSettingValue('chk_autoUpdate');
+				if (autoCheck === false) {
+					console.log('Auto-update skipped: disabled in settings');
+					return;
+				}
+			} catch (_) {}
+
+			console.log('Auto-update: checking for updates...');
+			_performUpdateCheck(true).then(function (result) {
+				if (result && result.updateAvailable) {
+					console.log('Auto-update: update available - v' + result.latestVersion);
+				} else if (result) {
+					console.log('Auto-update: app is up to date (v' + result.currentVersion + ')');
+				}
+			});
+		}
+
 		// Click the update button in settings
 		$(document).on("click", "#btn-settings-update-check", function () {
+			if (!_isInstalledApp.installed) return;
 			// Open update modal on top of settings
 			$('#update-install-btn').addClass('d-none');
 			$('#update-close-btn').text('Close');
@@ -2294,46 +2391,51 @@
 			_showUpdateState('checking');
 			$('#updateModal').modal('show');
 
-			// Simulate checking for updates (1.5 second delay)
-			setTimeout(function () {
-				var currentVer = _getAppVersion();
-				$('#update-current-version').text('v' + currentVer);
-				$('#update-new-version').text('v' + currentVer);
-				$('#update-release-notes').html(
-					'<ul style="margin:0; padding-left:18px;">' +
-					'<li>Performance improvements and bug fixes</li>' +
-					'<li>Updated security patches</li>' +
-					'<li>Minor UI refinements</li>' +
-					'</ul>'
-				);
-				$('.update-footer-info').text('Released just now');
-				$('#update-install-btn').removeClass('d-none');
-				_showUpdateAvailableIndicators(currentVer);
-				_showUpdateState('available');
-			}, 1500);
+			// Perform real update check
+			_performUpdateCheck(false);
 		});
 
 		// Click "View Update" button in settings (when update is already known)
 		$(document).on("click", "#btn-settings-update-view", function () {
-			var currentVer = _getAppVersion();
-			$('#update-current-version').text('v' + currentVer);
-			$('#update-new-version').text('v' + currentVer);
-			$('#update-release-notes').html(
-				'<ul style="margin:0; padding-left:18px;">' +
-				'<li>Performance improvements and bug fixes</li>' +
-				'<li>Updated security patches</li>' +
-				'<li>Minor UI refinements</li>' +
-				'</ul>'
-			);
-			$('.update-footer-info').text('Released just now');
-			$('#update-install-btn').removeClass('d-none');
-			$('#update-close-btn').text('Close');
-			_showUpdateState('available');
-			$('#updateModal').modal('show');
+			if (_cachedUpdateInfo && _cachedUpdateInfo.releaseInfo) {
+				var info = _cachedUpdateInfo.releaseInfo;
+				$('#update-current-version').text('v' + _cachedUpdateInfo.currentVersion);
+				$('#update-new-version').text('v' + _cachedUpdateInfo.latestVersion);
+				$('#update-release-notes').html(updater.markdownToHtml(info.body));
+				$('.update-footer-info').text(updater.formatRelativeTime(info.publishedAt));
+				if (info.installerAsset) {
+					$('#update-install-btn').removeClass('d-none');
+				} else {
+					$('#update-install-btn').addClass('d-none');
+				}
+				$('#update-close-btn').text('Close');
+				_showUpdateState('available');
+				$('#updateModal').modal('show');
+			} else {
+				// No cached data, do a fresh check
+				$('#update-install-btn').addClass('d-none');
+				$('#update-close-btn').text('Close');
+				$('.update-footer-info').text('');
+				_showUpdateState('checking');
+				$('#updateModal').modal('show');
+				_performUpdateCheck(false);
+			}
 		});
 
-		// Click "Update Now" button - show full-screen update splash
+		// Click "Update Now" button - download and launch installer
 		$(document).on("click", "#update-install-btn", function () {
+			if (_updateInProgress) return;
+			if (!_cachedUpdateInfo || !_cachedUpdateInfo.releaseInfo || !_cachedUpdateInfo.releaseInfo.installerAsset) {
+				$('.update-error-msg').text('No installer available for this release.');
+				_showUpdateState('error');
+				return;
+			}
+			_updateInProgress = true;
+
+			var asset = _cachedUpdateInfo.releaseInfo.installerAsset;
+			var downloadDir = updater.getUpdateDownloadDir();
+			var destPath = path.join(downloadDir, asset.name);
+
 			// Close the update modal and settings modal
 			$('#updateModal').modal('hide');
 			$('#settingsModal').modal('hide');
@@ -2344,50 +2446,41 @@
 			$('#update-splash-bar').css('width', '0%');
 			$('#update-splash-pct').text('0%');
 
-			// Phase 1: Download (4 seconds total)
-			var pct = 0;
-			var dlDuration = 4000;
-			var dlInterval = 100;
-			var dlStep = 100 / (dlDuration / dlInterval);
-			var dlTimer = setInterval(function () {
-				pct += dlStep + (Math.random() * dlStep * 0.3 - dlStep * 0.15);
-				if (pct > 100) pct = 100;
+			// Clean up any previous downloads
+			updater.cleanupDownloads();
+
+			// Download the installer with real progress
+			updater.downloadUpdate(asset.downloadUrl, destPath, function (downloaded, total) {
+				var pct = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : 0;
 				$('#update-splash-bar').css('width', pct + '%');
-				$('#update-splash-pct').text(Math.round(pct) + '%');
-				if (pct >= 100) {
-					clearInterval(dlTimer);
-					// Phase 2: Installing (5 seconds)
-					$('#update-splash-status').text('Installing update...');
-					$('#update-splash-pct').text('');
-					$('#update-splash-bar').css('width', '0%');
-					var iPct = 0;
-					var iDuration = 5000;
-					var iInterval = 120;
-					var iStep = 100 / (iDuration / iInterval);
-					var iTimer = setInterval(function () {
-						iPct += iStep + (Math.random() * iStep * 0.4 - iStep * 0.2);
-						if (iPct > 100) iPct = 100;
-						$('#update-splash-bar').css('width', iPct + '%');
-						if (iPct >= 100) {
-							clearInterval(iTimer);
-							_hideUpdateAvailableIndicators();
-							// Fade out splash, show release notes
-							setTimeout(function () {
-								$('#update-splash').addClass('d-none');
-								var currentVer = _getAppVersion();
-								// Check if user wants to see release notes
-								var showNotes = true;
-								try { showNotes = getSettingValue('chk_showReleaseNotes') !== false; } catch(_) {}
-								if (showNotes) {
-									$('#update-release-version').text('v' + currentVer + ' has been installed successfully.');
-									$('#chk_showReleaseNotes_overlay').prop('checked', false);
-									$('#update-release-overlay').removeClass('d-none');
-								}
-							}, 400);
-						}
-					}, iInterval);
-				}
-			}, dlInterval);
+				$('#update-splash-pct').text(pct + '%');
+			}).then(function (installerPath) {
+				// Download complete - launch installer
+				$('#update-splash-status').text('Launching installer...');
+				$('#update-splash-bar').css('width', '100%');
+				$('#update-splash-pct').text('The application will close and restart automatically.');
+
+				// Brief delay to show the status message, then launch
+				setTimeout(function () {
+					try {
+						updater.launchInstaller(installerPath, win);
+					} catch (err) {
+						console.error('Failed to launch installer:', err);
+						$('#update-splash').addClass('d-none');
+						_updateInProgress = false;
+						$('.update-error-msg').text('Failed to launch the installer: ' + err.message);
+						_showUpdateState('error');
+						$('#updateModal').modal('show');
+					}
+				}, 1000);
+			}).catch(function (err) {
+				console.error('Update download failed:', err);
+				$('#update-splash').addClass('d-none');
+				_updateInProgress = false;
+				$('.update-error-msg').text('Download failed: ' + err.message + '. Please check your internet connection and try again.');
+				_showUpdateState('error');
+				$('#updateModal').modal('show');
+			});
 		});
 
 		// Dismiss release notes overlay

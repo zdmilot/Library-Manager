@@ -251,7 +251,7 @@
 							<div class="dropdown btn-overflow-menu">
 								<button class="btn btn-sm btn-overflow-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 									<i class="fas fa-ellipsis-v"></i>
-									<span class="update-badge" id="update-badge">1</span>
+									<span class="update-badge d-none" id="update-badge">1</span>
 								</button>
 								<div class="dropdown-menu dropdown-menu-right">
 									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
@@ -264,7 +264,7 @@
 									<a class="dropdown-item overflow-check-audit" href="#"><i class="fas fa-clipboard-check mr-2"></i>Check Audit File</a>
 									<div class="dropdown-divider"></div>
 									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive mr-2"></i>Export Archive</a>
-									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog mr-2"></i>Settings<span class="settings-update-dot"></span></a>
+									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog mr-2"></i>Settings<span class="settings-update-dot d-none"></span></a>
 									<a class="dropdown-item overflow-help" href="#"><i class="fas fa-question-circle mr-2"></i>Help</a>
 								</div>
 							</div>
@@ -1635,13 +1635,13 @@
 									<span><strong>VENUS:</strong> <span class="settings-sw-venus"></span></span>
 								</div>
 							</div>
-							<div class="settings-update-no-update d-none">
+							<div class="settings-update-no-update">
 								<div class="d-flex align-items-center">
 									<button class="btn btn-sm btn-outlined" type="button" id="btn-settings-update-check"><i class="fas fa-arrows-rotate mr-1"></i>Check for Updates</button>
 									<span class="text-muted text-sm ml-3 settings-update-status"></span>
 								</div>
 							</div>
-							<div class="settings-update-available">
+							<div class="settings-update-available d-none">
 								<div class="d-flex align-items-center">
 									<span class="settings-update-dot-inline"></span>
 									<span class="settings-update-available-text">An update is available</span>
