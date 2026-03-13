@@ -2287,39 +2287,14 @@
 
 		// Click the update button in settings
 		$(document).on("click", "#btn-settings-update-check", function () {
-			// Close settings modal first, then open update modal
-			$('#settingsModal').modal('hide');
-			setTimeout(function () {
-				// Reset modal state
-				$('#update-install-btn').addClass('d-none');
-				$('#update-close-btn').text('Close');
-				$('.update-footer-info').text('');
-				_showUpdateState('checking');
-				$('#updateModal').modal('show');
+			// Open update modal on top of settings
+			$('#update-install-btn').addClass('d-none');
+			$('#update-close-btn').text('Close');
+			$('.update-footer-info').text('');
+			_showUpdateState('checking');
+			$('#updateModal').modal('show');
 
-				// Simulate checking for updates (1.5 second delay)
-				setTimeout(function () {
-					var currentVer = _getAppVersion();
-					$('#update-current-version').text('v' + currentVer);
-					$('#update-new-version').text('v' + currentVer);
-					$('#update-release-notes').html(
-						'<ul style="margin:0; padding-left:18px;">' +
-						'<li>Performance improvements and bug fixes</li>' +
-						'<li>Updated security patches</li>' +
-						'<li>Minor UI refinements</li>' +
-						'</ul>'
-					);
-					$('.update-footer-info').text('Released just now');
-					$('#update-install-btn').removeClass('d-none');
-					_showUpdateAvailableIndicators(currentVer);
-					_showUpdateState('available');
-				}, 1500);
-			}, 300);
-		});
-
-		// Click "View Update" button in settings (when update is already known)
-		$(document).on("click", "#btn-settings-update-view", function () {
-			$('#settingsModal').modal('hide');
+			// Simulate checking for updates (1.5 second delay)
 			setTimeout(function () {
 				var currentVer = _getAppVersion();
 				$('#update-current-version').text('v' + currentVer);
@@ -2333,10 +2308,28 @@
 				);
 				$('.update-footer-info').text('Released just now');
 				$('#update-install-btn').removeClass('d-none');
-				$('#update-close-btn').text('Close');
+				_showUpdateAvailableIndicators(currentVer);
 				_showUpdateState('available');
-				$('#updateModal').modal('show');
-			}, 300);
+			}, 1500);
+		});
+
+		// Click "View Update" button in settings (when update is already known)
+		$(document).on("click", "#btn-settings-update-view", function () {
+			var currentVer = _getAppVersion();
+			$('#update-current-version').text('v' + currentVer);
+			$('#update-new-version').text('v' + currentVer);
+			$('#update-release-notes').html(
+				'<ul style="margin:0; padding-left:18px;">' +
+				'<li>Performance improvements and bug fixes</li>' +
+				'<li>Updated security patches</li>' +
+				'<li>Minor UI refinements</li>' +
+				'</ul>'
+			);
+			$('.update-footer-info').text('Released just now');
+			$('#update-install-btn').removeClass('d-none');
+			$('#update-close-btn').text('Close');
+			_showUpdateState('available');
+			$('#updateModal').modal('show');
 		});
 
 		// Click "Update Now" button
