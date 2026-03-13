@@ -13371,9 +13371,26 @@
 			impBuildLibraryCards();
 		});
 
+		// ---- Sort text-dropdown: toggle menu ----
+		$(document).on("click", "#imp-sort-label", function(e) {
+			e.stopPropagation();
+			$("#imp-sort-menu").toggleClass("show");
+		});
+		// Close sort menu when clicking outside
+		$(document).on("click", function(e) {
+			if (!$(e.target).closest("#imp-sort-dropdown").length) {
+				$("#imp-sort-menu").removeClass("show");
+			}
+		});
 		// ---- Sort order dropdown for library cards ----
-		$(document).on("change", "#imp-sort-select", function() {
-			_currentSortOrder = $(this).val();
+		$(document).on("click", ".imp-sort-option", function() {
+			var sortVal = $(this).attr("data-sort");
+			var sortLabel = $(this).text();
+			$("#imp-sort-label").html(sortLabel + ' <i class="fas fa-caret-down ml-1"></i>');
+			$(".imp-sort-option").removeClass("active");
+			$(this).addClass("active");
+			$("#imp-sort-menu").removeClass("show");
+			_currentSortOrder = sortVal;
 			var activeGroup = $(".navbar-custom .nav-item.active, .navbar-custom .dropdown-navitem.active").attr("data-group-id");
 			if (activeGroup === 'gRecent') {
 				impBuildLibraryCards(null, true);

@@ -544,12 +544,15 @@
 							<span class="badge badge-warning imp-issues-badge-pill" id="imp-issues-badge-warnings" style="display:none;"><i class="fas fa-exclamation-triangle mr-1"></i><span class="imp-issues-warn-count"></span> Warning(s)</span>
 						</div>
 						<div class="ml-auto d-flex align-items-center">
-							<select class="custom-select custom-select-sm imp-sort-select mr-3" id="imp-sort-select" title="Sort libraries">
-								<option value="az">Name (A-Z)</option>
-								<option value="za">Name (Z-A)</option>
-								<option value="newest">Date Added (Newest)</option>
-								<option value="oldest">Date Added (Oldest)</option>
-							</select>
+							<div class="imp-sort-dropdown mr-3" id="imp-sort-dropdown">
+								<span class="imp-sort-label" id="imp-sort-label" title="Sort libraries">Name (A-Z) <i class="fas fa-caret-down ml-1"></i></span>
+								<div class="imp-sort-menu" id="imp-sort-menu">
+									<div class="imp-sort-option active" data-sort="az">Name (A-Z)</div>
+									<div class="imp-sort-option" data-sort="za">Name (Z-A)</div>
+									<div class="imp-sort-option" data-sort="newest">Date Added (Newest)</div>
+									<div class="imp-sort-option" data-sort="oldest">Date Added (Oldest)</div>
+								</div>
+							</div>
 							<button class="btn solid-button" id="imp-browse"><i class="fas fa-file-import mr-2"></i>Import</button>
 							<input type="file" class="d-none" id="imp-input-file" accept=".hxlibpkg,.hxlibarch" multiple>
 						</div>
