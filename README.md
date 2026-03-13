@@ -178,7 +178,7 @@ The application defines six built-in groups that are **hardcoded** in both `main
 
 | ID | Name | Icon | Side | Purpose |
 |----|------|------|------|---------|
-| `gAll` | All | `fa-home` | left | Shows all installed (non-deleted) libraries |
+| `gAll` | Installed | `fa-home` | left | Shows all installed (non-deleted) libraries |
 | `gRecent` | Recent | `fa-history` | left | Recently imported libraries |
 | `gOEM` | OEM | `fa-check-circle` (solid) | left | Protected OEM-authored libraries |
 | `gFolders` | Import | `fa-download` | right | Import workflow tab |

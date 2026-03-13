@@ -94,7 +94,7 @@ const INSTALLER_STORE_DIR = path.join(LOCAL_DATA_DIR, shared.INSTALLER_STORE_DIR
 // Default Groups (hardcoded - never stored in external JSON)
 // ---------------------------------------------------------------------------
 const DEFAULT_GROUPS = {
-    gAll:      { _id: 'gAll',      name: 'All',      'icon-class': 'fa-home',         'default': true, navbar: 'left',  favorite: true  },
+    gAll:      { _id: 'gAll',      name: 'Installed', 'icon-class': 'fa-home',         'default': true, navbar: 'left',  favorite: true  },
     gRecent:   { _id: 'gRecent',   name: 'Recent',   'icon-class': 'fa-history',      'default': true, navbar: 'left',  favorite: true  },
     gStarred:  { _id: 'gStarred',  name: 'Starred',  'icon-class': 'fa-star',         'default': true, navbar: 'left',  favorite: true, 'protected': true },
     gFolders:  { _id: 'gFolders',  name: 'Import',   'icon-class': 'fa-download',     'default': true, navbar: 'right', favorite: false },

@@ -705,7 +705,7 @@
 		// ---- Default Groups (hardcoded - never stored in external JSON) ----
 		var DEFAULT_GROUPS = {
 			"gStarred":  { "_id": "gStarred",  "name": "Starred",  "icon-class": "fa-star",         "default": true, "navbar": "left",  "favorite": true, "protected": true },
-			"gAll":      { "_id": "gAll",      "name": "All",      "icon-class": "fa-home",         "default": true, "navbar": "left",  "favorite": true  },
+			"gAll":      { "_id": "gAll",      "name": "Installed", "icon-class": "fa-home",         "default": true, "navbar": "left",  "favorite": true  },
 			"gRecent":   { "_id": "gRecent",   "name": "Recent",   "icon-class": "fa-history",      "default": true, "navbar": "left",  "favorite": true  },
 			"gFolders":  { "_id": "gFolders",  "name": "Import",   "icon-class": "fa-download",     "default": true, "navbar": "right", "favorite": false },
 			"gEditors":  { "_id": "gEditors",  "name": "Export",   "icon-class": "fa-upload",       "default": true, "navbar": "right", "favorite": true  },
@@ -2106,7 +2106,7 @@
 				}
 			}
 
-			//startup tab is always "All" - no longer saving last opened tab
+			//startup tab is always "Installed" - no longer saving last opened tab
 			
 			
         });
@@ -5513,7 +5513,7 @@
 				settings = defaults;
 			}
 
-			//Always start on the "All" screen
+			//Always start on the "Installed" screen
 			navigateHome();
 
 			//setting - Recent
@@ -9817,11 +9817,11 @@
 				});
 			} else {
 				libs = db_installed_libs.installed_libs.find();
-				// Filter out deleted libraries from "All" view
+				// Filter out deleted libraries from "Installed" view
 				libs = libs.filter(function(l) { return !l.deleted; });
 			}
 
-			// Determine which system libraries to show in "All" mode
+			// Determine which system libraries to show in "Installed" mode
 			var visibleSysLibs = [];
 			if (!groupId && !recentMode && systemLibraries.length > 0) {
 				var hideSystemLibs = getSettingValue('chk_hideSystemLibraries');
@@ -9977,7 +9977,7 @@
 				$container.append(str);
 			});
 
-			// In "All" mode, render system library cards after user libraries
+			// In "Installed" mode, render system library cards after user libraries
 			if (hasSystemCards) {
 				// Separator between user and system libraries
 				if (libs && libs.length > 0) {
