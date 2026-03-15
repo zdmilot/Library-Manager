@@ -18828,7 +18828,7 @@
 				'      <div class="store-card-version">v' + version + '</div></div>' +
 				'  </div>' +
 				'  <div class="store-card-author">' + author + '</div>' +
-				(org ? '  <div class="store-card-org">' + org + '</div>' : '') +
+				'  <div class="store-card-org">' + (org || '&nbsp;') + '</div>' +
 				'  <div class="store-card-desc">' + desc + '</div>' +
 				'  <div class="store-card-tags">' + tagsHtml + '</div>' +
 				'  <div class="store-card-footer">' + footerHtml + '</div>' +

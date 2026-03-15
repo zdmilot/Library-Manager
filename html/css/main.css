@@ -5831,7 +5831,7 @@ body.dark-mode .store-card:hover {
 	-webkit-line-clamp: 3;
 	-webkit-box-orient: vertical;
 	line-height: 1.5;
-	max-height: 4.5em;
+	min-height: 4.5em;
 }
 body.dark-mode .store-card-desc {
 	color: #99aabb;
@@ -5847,6 +5847,8 @@ body.dark-mode .store-card-org {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 4px;
+	min-height: 26px;
+	align-content: flex-end;
 }
 .store-card-tag {
 	font-size: 10px;
@@ -5861,7 +5863,8 @@ body.dark-mode .store-card-tag {
 }
 
 .store-card-footer {
-	margin-top: 10px;
+	margin-top: auto;
+	padding-top: 10px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
