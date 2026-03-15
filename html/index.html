@@ -239,7 +239,7 @@
 							<button class="btn btn-sm btn-navbar-import" type="button" id="imp-browse" title="Import Library">
 								<i class="fas fa-file-import"></i>
 							</button>
-							<input type="file" class="d-none" id="imp-input-file" accept=".hxlibpkg,.hxlibarch" multiple>
+							<input type="file" class="d-none" id="imp-input-file" accept=".hxlibpkg,.hxlibarch,.pkg,.hampackage" multiple>
 
 							<button class="btn btn-sm btn-theme-toggle" type="button" title="Auto (System)" data-theme="auto">
 								<i class="fas fa-adjust"></i>
@@ -252,7 +252,6 @@
 								</button>
 								<div class="dropdown-menu dropdown-menu-right">
 									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
-									<a class="dropdown-item overflow-import-hampkg" href="#"><i class="fas fa-file-import mr-2"></i>Import HamPkg</a>
 									<a class="dropdown-item overflow-repair" href="#"><i class="fas fa-tools mr-2"></i>Verify &amp; Repair</a>
 									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group mr-2"></i>Library Groups</a>
 									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list mr-2"></i>History</a>
@@ -2076,6 +2075,41 @@
 		</div>
 	</div>
 	<!---- Modal Demo Method Location Prompt end --->
+
+	<!---- Modal Unified Import start --->
+	<div class="modal" tabindex="-1" role="dialog" id="unifiedImportModal">
+		<div class="modal-dialog modal-xl modal-dialog-centered" role="document" style="max-width:900px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<div class="d-flex align-items-center">
+						<div class="detail-modal-icon mr-3">
+							<i class="fas fa-file-import fa-2x" style="color:var(--medium);"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Import</h5>
+							<small class="text-muted">Import library packages, archives, or Hamilton VENUS packages</small>
+						</div>
+					</div>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body hampkg-modal-body">
+					<div class="unified-import-drop-zone" id="unified-import-drop-zone">
+						<div class="hampkg-drop-icon">
+							<i class="fas fa-file-import fa-3x" style="color:var(--medium);"></i>
+						</div>
+						<p class="mb-1"><strong>Drop files here</strong> or click to browse</p>
+						<p class="text-muted text-sm mb-0">Library packages (.hxlibpkg), archives (.hxlibarch), or Hamilton VENUS packages (.pkg, .hamPackage)</p>
+					</div>
+				</div>
+				<div class="modal-footer detail-modal-footer">
+					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Unified Import end --->
 
 	<!---- Modal Import Preview start --->
 	<div class="modal" tabindex="-1" role="dialog" id="importPreviewModal">

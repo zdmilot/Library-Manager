@@ -5462,7 +5462,8 @@ body.dark-mode .update-download-progress {
 }
 
 /* Drop zone */
-.hampkg-drop-zone {
+.hampkg-drop-zone,
+.unified-import-drop-zone {
 	border: 2px dashed #ccc;
 	border-radius: 12px;
 	padding: 48px 24px;
@@ -5472,7 +5473,9 @@ body.dark-mode .update-download-progress {
 	background: var(--body-background, #f8f9fa);
 }
 .hampkg-drop-zone:hover,
-.hampkg-drop-zone.drag-over {
+.hampkg-drop-zone.drag-over,
+.unified-import-drop-zone:hover,
+.unified-import-drop-zone.drag-over {
 	border-color: var(--medium, #3498db);
 	background: rgba(52,152,219,0.05);
 }
@@ -5643,12 +5646,15 @@ body.dark-mode .update-download-progress {
 
 /* ── Import HamPkg Dark Mode ──────────────────────────────────────────────── */
 
-body.dark-mode .hampkg-drop-zone {
+body.dark-mode .hampkg-drop-zone,
+body.dark-mode .unified-import-drop-zone {
 	border-color: #2a3a5c;
 	background: #0f0f23;
 }
 body.dark-mode .hampkg-drop-zone:hover,
-body.dark-mode .hampkg-drop-zone.drag-over {
+body.dark-mode .hampkg-drop-zone.drag-over,
+body.dark-mode .unified-import-drop-zone:hover,
+body.dark-mode .unified-import-drop-zone.drag-over {
 	border-color: #3498db;
 	background: rgba(52,152,219,0.08);
 }

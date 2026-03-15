@@ -13743,9 +13743,35 @@
 			fitImporterHeight();
 		});
 
-		// ---- Browse for .hxlibpkg or .hxlibarch file ----
+		// ---- Browse for importable files ----
 		$(document).on("click", "#imp-browse", function() {
+			$("#unifiedImportModal").modal("show");
+		});
+
+		// ---- Unified import drop zone ----
+		$(document).on("click", "#unified-import-drop-zone", function() {
 			$("#imp-input-file").trigger("click");
+		});
+		$(document).on("dragover", "#unified-import-drop-zone", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			$(this).addClass("drag-over");
+		});
+		$(document).on("dragleave", "#unified-import-drop-zone", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			$(this).removeClass("drag-over");
+		});
+		$(document).on("drop", "#unified-import-drop-zone", function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			$(this).removeClass("drag-over");
+			var files = e.originalEvent.dataTransfer.files;
+			if (!files || files.length === 0) return;
+			var filePaths = [];
+			for (var i = 0; i < files.length; i++) filePaths.push(files[i].path);
+			$("#unifiedImportModal").modal("hide");
+			_unifiedImportRoute(filePaths);
 		});
 
 		$(document).on("change", "#imp-input-file", function() {
@@ -13761,27 +13787,42 @@
 			}
 			$(this).val('');
 			if (filePaths.length === 0) return;
+			$("#unifiedImportModal").modal("hide");
+			_unifiedImportRoute(filePaths);
+		});
 
-			// Separate archives from packages
+		function _unifiedImportRoute(filePaths) {
+			// Separate by file type
 			var archives = [];
 			var packages = [];
+			var hamPkgs = [];
 			filePaths.forEach(function(fp) {
 				var ext = path.extname(fp).toLowerCase();
 				if (ext === ".hxlibarch") {
 					archives.push(fp);
+				} else if (ext === ".pkg" || ext === ".hampackage") {
+					hamPkgs.push(fp);
 				} else {
 					packages.push(fp);
 				}
 			});
 
+			// Handle Ham packages first (only supports single file)
+			if (hamPkgs.length > 0 && packages.length === 0 && archives.length === 0) {
+				hampkgReset();
+				$("#importHamPkgModal").modal("show");
+				setTimeout(function() { hampkgLoadFile(hamPkgs[0]); }, 300);
+				return;
+			}
+
 			// If only one package and no archives, use the existing single-file preview flow
-			if (packages.length === 1 && archives.length === 0) {
+			if (packages.length === 1 && archives.length === 0 && hamPkgs.length === 0) {
 				impLoadAndInstall(packages[0]);
 				return;
 			}
 
 			// If only archives and no packages, import archives sequentially
-			if (packages.length === 0 && archives.length > 0) {
+			if (packages.length === 0 && archives.length > 0 && hamPkgs.length === 0) {
 				(async function() {
 					for (var ai = 0; ai < archives.length; ai++) {
 						await impArchImportArchive(archives[ai]);
@@ -13790,11 +13831,19 @@
 				return;
 			}
 
-			// Defer heavy work to let file dialog close immediately
-			setTimeout(function() {
-				impBatchImportPackages(packages, archives);
-			}, 50);
-		});
+			// Mixed or multiple - batch import packages/archives (hamPkgs handled separately if mixed)
+			if (hamPkgs.length > 0) {
+				// Import the first hamPkg, then batch the rest
+				hampkgReset();
+				$("#importHamPkgModal").modal("show");
+				setTimeout(function() { hampkgLoadFile(hamPkgs[0]); }, 300);
+			}
+			if (packages.length > 0 || archives.length > 0) {
+				setTimeout(function() {
+					impBatchImportPackages(packages, archives);
+				}, 50);
+			}
+		}
 
 		// ---- Batch import multiple .hxlibpkg files (with single UAC for COM) ----
 
@@ -18780,15 +18829,29 @@
 			return html;
 		}
 
-		// ---- Card click → show detail ----
+		// ---- Card click → download & show import preview ----
 		$(document).on("click", ".store-card", function (e) {
-			var pkgFile = $(this).attr("data-pkg-file");
+			var $card = $(this);
+			var pkgFile = $card.attr("data-pkg-file");
+			if (!pkgFile) return;
+
+			// Find catalog entry
 			var pkg = null;
 			for (var i = 0; i < _storeCatalog.length; i++) {
 				if (_storeCatalog[i].package_file === pkgFile) { pkg = _storeCatalog[i]; break; }
 			}
 			if (!pkg) return;
-			storeShowDetail(pkg);
+
+			// Check if same version is already installed
+			var installed = null;
+			try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
+			if (installed && installed.version === pkg.version) {
+				alert('"' + pkg.library_name + '" v' + pkg.version + ' is already installed.');
+				return;
+			}
+
+			// Download and show the full import preview
+			storeDownloadAndPreview(pkgFile, $card);
 		});
 
 		function storeShowDetail(pkg) {
@@ -18868,17 +18931,22 @@
 			e.stopPropagation();
 			var pkgFile = $(this).attr("data-pkg-file");
 			if (!pkgFile) return;
-			storeDownloadAndInstall(pkgFile, $(this));
+			var $card = $(".store-card[data-pkg-file='" + pkgFile.replace(/'/g, "\\'") + "']");
+			$("#storeDetailModal").modal("hide");
+			storeDownloadAndPreview(pkgFile, $card);
 		});
 
-		function storeDownloadAndInstall(pkgFile, $btn) {
+		function storeDownloadAndPreview(pkgFile, $card) {
 			if (_isImporting) {
 				alert("An import is already in progress. Please wait for it to complete.");
 				return;
 			}
 
-			$btn.addClass("downloading").prop("disabled", true);
-			$btn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Downloading\u2026');
+			// Show downloading state on the card
+			$card.addClass("store-card-downloading");
+			var $footer = $card.find(".store-card-footer");
+			var origFooterHtml = $footer.html();
+			$footer.html('<span class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Downloading\u2026</span>');
 
 			var downloadUrl = STORE_PKG_BASE + encodeURIComponent(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
@@ -18888,23 +18956,20 @@
 			var https = require('https');
 			storeDownloadFile(https, downloadUrl, tmpPath, function (err) {
 				if (err) {
-					$btn.removeClass("downloading").prop("disabled", false);
-					$btn.html('<i class="fas fa-download mr-1"></i>Download and Install');
+					$card.removeClass("store-card-downloading");
+					$footer.html(origFooterHtml);
 					alert("Download failed: " + err.message);
 					return;
 				}
 
-				// Close the detail modal (if open) but keep the store open behind the import preview
-				$("#storeDetailModal").modal("hide");
-
 				// Hand off to the normal import flow (shows over the store)
 				impLoadAndInstall(tmpPath);
-				// Re-enable button after import finishes (the flag resets automatically)
+				// Re-enable card after import finishes
 				var checkFlag = setInterval(function () {
 					if (!_isImporting) {
 						clearInterval(checkFlag);
-						$btn.removeClass("downloading").prop("disabled", false);
-						$btn.html('<i class="fas fa-download mr-1"></i>Download and Install');
+						$card.removeClass("store-card-downloading");
+						$footer.html(origFooterHtml);
 						// Refresh catalog installed status on next open
 						_storeCatalog = null;
 					}
