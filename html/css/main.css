@@ -473,6 +473,10 @@ body {
 			#deleteModal + .modal-backdrop { z-index: 1055; }
 			#authorPasswordModal { z-index: 1060; }
 			#authorPasswordModal + .modal-backdrop { z-index: 1055; }
+			#importPreviewModal { z-index: 1060; }
+			#importPreviewModal + .modal-backdrop { z-index: 1055; }
+			#importSuccessModal { z-index: 1070; }
+			#importSuccessModal + .modal-backdrop { z-index: 1065; }
 
 			.editModal-icon:hover, .editModal-image:hover{
 				opacity: 0.5;

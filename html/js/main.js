@@ -18895,24 +18895,21 @@
 					return;
 				}
 
-				// Close store modals so the import preview can show
+				// Close the detail modal (if open) but keep the store open behind the import preview
 				$("#storeDetailModal").modal("hide");
-				$("#storeModal").modal("hide");
 
-				// Hand off to the normal import flow
-				setTimeout(function () {
-					impLoadAndInstall(tmpPath);
-					// Re-enable button after import finishes (the flag resets automatically)
-					var checkFlag = setInterval(function () {
-						if (!_isImporting) {
-							clearInterval(checkFlag);
-							$btn.removeClass("downloading").prop("disabled", false);
-							$btn.html('<i class="fas fa-download mr-1"></i>Download and Install');
-							// Refresh catalog installed status on next open
-							_storeCatalog = null;
-						}
-					}, 500);
-				}, 300);
+				// Hand off to the normal import flow (shows over the store)
+				impLoadAndInstall(tmpPath);
+				// Re-enable button after import finishes (the flag resets automatically)
+				var checkFlag = setInterval(function () {
+					if (!_isImporting) {
+						clearInterval(checkFlag);
+						$btn.removeClass("downloading").prop("disabled", false);
+						$btn.html('<i class="fas fa-download mr-1"></i>Download and Install');
+						// Refresh catalog installed status on next open
+						_storeCatalog = null;
+					}
+				}, 500);
 			});
 		}
 
