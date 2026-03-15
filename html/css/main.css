@@ -477,6 +477,8 @@ body {
 			#importPreviewModal + .modal-backdrop { z-index: 1055; }
 			#importSuccessModal { z-index: 1070; }
 			#importSuccessModal + .modal-backdrop { z-index: 1065; }
+			#storeDepsModal { z-index: 1060; }
+			#storeDepsModal + .modal-backdrop { z-index: 1055; }
 
 			.editModal-icon:hover, .editModal-image:hover{
 				opacity: 0.5;
@@ -5908,6 +5910,68 @@ body.dark-mode .store-toolbar .form-control {
 }
 body.dark-mode .store-footer-info {
 	color: #6a7a8a !important;
+}
+
+/* ── Dependency tree in store deps modal ─────────────────────────── */
+.store-deps-item {
+	display: flex;
+	align-items: center;
+	padding: 8px 10px;
+	margin-bottom: 4px;
+	border-radius: 6px;
+	background: rgba(var(--medium-rgb), 0.04);
+	border: 1px solid rgba(var(--medium-rgb), 0.08);
+}
+.store-deps-item.store-deps-primary {
+	background: rgba(var(--accent-rgb, 0, 123, 255), 0.06);
+	border-color: rgba(var(--accent-rgb, 0, 123, 255), 0.18);
+}
+.store-deps-item.store-deps-installed {
+	opacity: 0.55;
+}
+.store-deps-item .store-deps-icon {
+	margin-right: 10px;
+	font-size: 1.1rem;
+	width: 20px;
+	text-align: center;
+}
+.store-deps-item .store-deps-info {
+	flex: 1;
+	min-width: 0;
+}
+.store-deps-item .store-deps-name {
+	font-weight: 600;
+	font-size: 0.9rem;
+	color: var(--medium2);
+}
+.store-deps-item .store-deps-ver {
+	font-size: 0.75rem;
+	color: var(--medium);
+	margin-left: 6px;
+}
+.store-deps-item .store-deps-status {
+	font-size: 0.72rem;
+	font-weight: 500;
+	white-space: nowrap;
+}
+.store-deps-item .store-deps-status.text-success {
+	color: #28a745 !important;
+}
+.store-deps-sub {
+	margin-left: 24px;
+	border-left: 2px solid rgba(var(--medium-rgb), 0.12);
+	padding-left: 12px;
+}
+body.dark-mode .store-deps-item {
+	background: rgba(255, 255, 255, 0.03);
+	border-color: rgba(255, 255, 255, 0.06);
+}
+body.dark-mode .store-deps-sub {
+	border-left-color: rgba(255, 255, 255, 0.08);
+}
+.store-card-downloading {
+	pointer-events: none;
+	opacity: 0.7;
 }
 
 

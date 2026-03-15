@@ -4402,10 +4402,7 @@
 			}
 		});
 
-		//Settings > Display - Show GitHub repository links
-		$(document).on("click", "#chk_showGitHubLinks", function(e){
-			saveSetting($(this).attr("id"), $(this).prop("checked"));
-		});
+
 
 		//Settings > Unsigned Libraries checkbox
 		$(document).on("click", "#chk_includeUnsignedLibs", function(e){
@@ -6029,8 +6026,7 @@
 			//setting - Display: hide system libraries
 			$("#chk_hideSystemLibraries").prop("checked", !!settings["chk_hideSystemLibraries"]);
 
-			//setting - Display: show GitHub repository links (default on)
-			$("#chk_showGitHubLinks").prop("checked", settings["chk_showGitHubLinks"] !== false);
+
 
 			//setting - Sort order (persisted)
 			var savedSort = settings["sortOrder"] || "az";
@@ -10766,7 +10762,7 @@
 			}
 
 			// GitHub URL (respect display setting)
-			if (lib.github_url && getSettingValue("chk_showGitHubLinks") !== false) {
+			if (lib.github_url) {
 				var ghValidation = shared.validateGitHubRepoUrl(lib.github_url);
 				if (ghValidation.valid) {
 					$("#libDetailModal .lib-detail-github-link").attr("href", lib.github_url).text(lib.github_url);
@@ -14676,7 +14672,7 @@
 				}
 
 				// GitHub URL (respect display setting, validate to prevent javascript: XSS)
-				if (manifest.github_url && getSettingValue("chk_showGitHubLinks") !== false) {
+				if (manifest.github_url) {
 					var ghCheck = shared.validateGitHubRepoUrl(manifest.github_url);
 					if (ghCheck.valid) {
 						$modal.find(".imp-preview-github-link").attr("href", manifest.github_url).text(manifest.github_url);
@@ -14701,13 +14697,7 @@
 					$modal.find(".imp-preview-tags-section").addClass("d-none");
 				}
 
-				// Library image in body
-				if (manifest.library_image_base64) {
-					$modal.find(".imp-preview-image").attr("src", "data:" + imgMime + ";base64," + manifest.library_image_base64);
-					$modal.find(".imp-preview-image-section").removeClass("d-none");
-				} else {
-					$modal.find(".imp-preview-image-section").addClass("d-none");
-				}
+
 
 				// Library files list
 				var comDlls = manifest.com_register_dlls || [];
@@ -18835,7 +18825,7 @@
 			return html;
 		}
 
-		// ---- Card click → download & show import preview ----
+		// ---- Card click → show detail ----
 		$(document).on("click", ".store-card", function (e) {
 			var $card = $(this);
 			var pkgFile = $card.attr("data-pkg-file");
@@ -18848,16 +18838,7 @@
 			}
 			if (!pkg) return;
 
-			// Check if same version is already installed
-			var installed = null;
-			try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
-			if (installed && installed.version === pkg.version) {
-				alert('"' + pkg.library_name + '" v' + pkg.version + ' is already installed.');
-				return;
-			}
-
-			// Download and show the full import preview
-			storeDownloadAndPreview(pkgFile, $card);
+			storeShowDetail(pkg);
 		});
 
 		function storeShowDetail(pkg) {
@@ -18899,6 +18880,15 @@
 				$m.find(".store-detail-github").addClass("d-none");
 			}
 
+			// Store package file link
+			if (pkg.package_file) {
+				var pkgFileUrl = STORE_REPO_URL + '/blob/main/packages/' + encodeURIComponent(pkg.package_file);
+				$m.find(".store-detail-pkg-file-link").attr("href", pkgFileUrl).text(pkg.package_file);
+				$m.find(".store-detail-pkg-link").removeClass("d-none");
+			} else {
+				$m.find(".store-detail-pkg-link").addClass("d-none");
+			}
+
 			// Icon
 			if (pkg.library_image_base64 && pkg.library_image_mime) {
 				$m.find(".store-detail-icon").attr("src", "data:" + pkg.library_image_mime + ";base64," + pkg.library_image_base64).show();
@@ -18931,16 +18921,289 @@
 			if (href && typeof nw !== 'undefined') nw.Shell.openExternal(href);
 		});
 
+		// ---- Store package file link in detail modal ----
+		$(document).on("click", ".store-detail-pkg-file-link", function (e) {
+			e.preventDefault();
+			var href = $(this).attr("href");
+			if (href && typeof nw !== 'undefined') nw.Shell.openExternal(href);
+		});
+
 		// ---- Install from Store (download .hxlibpkg then hand to importer) ----
 		$(document).on("click", ".store-detail-install-btn", function (e) {
 			e.preventDefault();
 			e.stopPropagation();
 			var pkgFile = $(this).attr("data-pkg-file");
 			if (!pkgFile) return;
-			var $card = $(".store-card[data-pkg-file='" + pkgFile.replace(/'/g, "\\'") + "']");
-			$("#storeDetailModal").modal("hide");
-			storeDownloadAndPreview(pkgFile, $card);
+
+			// Find catalog entry for this package
+			var pkg = null;
+			for (var i = 0; i < _storeCatalog.length; i++) {
+				if (_storeCatalog[i].package_file === pkgFile) { pkg = _storeCatalog[i]; break; }
+			}
+			if (!pkg) return;
+
+			// Resolve dependencies recursively
+			var depsNeeded = storeResolveDependencies(pkg.library_name);
+			if (depsNeeded.length > 0) {
+				// Show dependency confirmation modal with the full tree
+				storeShowDepsModal(pkg, depsNeeded);
+			} else {
+				// No dependencies needed — go straight to download & preview
+				$("#storeDetailModal").modal("hide");
+				var $card = $(".store-card[data-pkg-file='" + pkgFile.replace(/'/g, "\\'") + "']");
+				storeDownloadAndPreview(pkgFile, $card);
+			}
 		});
+
+		// ---- Dependency resolution ----
+
+		/**
+		 * Recursively resolve all dependencies for a library from the store catalog.
+		 * Returns an array of catalog entries that need to be installed (not already installed).
+		 * Handles circular dependencies by tracking visited libraries.
+		 * @param {string} libraryName - The library to resolve dependencies for
+		 * @returns {Array} Array of catalog entries that need installation
+		 */
+		function storeResolveDependencies(libraryName) {
+			if (!_storeCatalog) return [];
+			var needed = [];
+			var visited = {};
+			_storeCollectDeps(libraryName, visited, needed);
+			return needed;
+		}
+
+		function _storeCollectDeps(libraryName, visited, needed) {
+			if (visited[libraryName.toLowerCase()]) return;
+			visited[libraryName.toLowerCase()] = true;
+
+			// Find this library in the catalog
+			var pkg = null;
+			for (var i = 0; i < _storeCatalog.length; i++) {
+				if (_storeCatalog[i].library_name && _storeCatalog[i].library_name.toLowerCase() === libraryName.toLowerCase()) {
+					pkg = _storeCatalog[i];
+					break;
+				}
+			}
+			if (!pkg) return; // not in catalog, can't resolve
+
+			var deps = pkg.dependencies || [];
+			for (var d = 0; d < deps.length; d++) {
+				var depName = deps[d];
+				if (visited[depName.toLowerCase()]) continue;
+
+				// Recurse into the dependency's dependencies first (depth-first)
+				_storeCollectDeps(depName, visited, needed);
+
+				// Check if this dependency is already installed
+				var installed = null;
+				try { installed = db_installed_libs.installed_libs.findOne({"library_name": depName}); } catch (_) {}
+
+				// Find the dependency in the catalog
+				var depPkg = null;
+				for (var j = 0; j < _storeCatalog.length; j++) {
+					if (_storeCatalog[j].library_name && _storeCatalog[j].library_name.toLowerCase() === depName.toLowerCase()) {
+						depPkg = _storeCatalog[j];
+						break;
+					}
+				}
+
+				if (depPkg) {
+					// Mark whether the dep is already installed (for display)
+					depPkg._depInstalled = !!(installed && !installed.deleted);
+					depPkg._depInstalledVer = installed ? installed.version : null;
+					if (!installed || installed.deleted) {
+						needed.push(depPkg);
+					}
+				}
+			}
+		}
+
+		/**
+		 * Build the dependency tree HTML for display in the deps modal.
+		 * Shows the primary package and its full recursive dependency tree.
+		 */
+		function storeBuildDepsTree(pkg) {
+			if (!_storeCatalog) return '';
+			var html = '';
+			var visited = {};
+			html += _storeBuildDepNode(pkg, visited, true);
+			return html;
+		}
+
+		function _storeBuildDepNode(pkg, visited, isPrimary) {
+			if (!pkg || !pkg.library_name) return '';
+			var nameKey = pkg.library_name.toLowerCase();
+			if (visited[nameKey]) return '';
+			visited[nameKey] = true;
+
+			var installed = null;
+			try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
+			var isInstalled = !!(installed && !installed.deleted);
+
+			var itemClass = 'store-deps-item';
+			if (isPrimary) itemClass += ' store-deps-primary';
+			if (isInstalled && !isPrimary) itemClass += ' store-deps-installed';
+
+			var iconHtml, statusHtml;
+			if (isPrimary) {
+				iconHtml = '<i class="fas fa-box-open" style="color:var(--accent, #007bff);"></i>';
+				statusHtml = '<span class="store-deps-status" style="color:var(--accent, #007bff);">Selected</span>';
+			} else if (isInstalled) {
+				iconHtml = '<i class="fas fa-check-circle text-success"></i>';
+				statusHtml = '<span class="store-deps-status text-success"><i class="fas fa-check mr-1"></i>Installed v' + escapeHtml(installed.version || '') + '</span>';
+			} else {
+				iconHtml = '<i class="fas fa-download" style="color:var(--medium);"></i>';
+				statusHtml = '<span class="store-deps-status text-warning"><i class="fas fa-exclamation-circle mr-1"></i>Needs install</span>';
+			}
+
+			var notInCatalog = false;
+			// Check if the dependency is in the catalog (for deps that aren't found)
+			var deps = pkg.dependencies || [];
+
+			var html = '<div class="' + itemClass + '">'
+				+ '<div class="store-deps-icon">' + iconHtml + '</div>'
+				+ '<div class="store-deps-info">'
+				+ '<span class="store-deps-name">' + escapeHtml(pkg.library_name) + '</span>'
+				+ '<span class="store-deps-ver">v' + escapeHtml(pkg.version || '?') + '</span>'
+				+ '</div>'
+				+ '<div>' + statusHtml + '</div>'
+				+ '</div>';
+
+			// Render child dependencies
+			if (deps.length > 0) {
+				html += '<div class="store-deps-sub">';
+				for (var i = 0; i < deps.length; i++) {
+					var depName = deps[i];
+					var depPkg = null;
+					for (var j = 0; j < _storeCatalog.length; j++) {
+						if (_storeCatalog[j].library_name && _storeCatalog[j].library_name.toLowerCase() === depName.toLowerCase()) {
+							depPkg = _storeCatalog[j]; break;
+						}
+					}
+					if (depPkg) {
+						html += _storeBuildDepNode(depPkg, visited, false);
+					} else {
+						// Dependency not found in catalog
+						var depInstalled = null;
+						try { depInstalled = db_installed_libs.installed_libs.findOne({"library_name": depName}); } catch (_) {}
+						var depIsInstalled = !!(depInstalled && !depInstalled.deleted);
+						html += '<div class="store-deps-item' + (depIsInstalled ? ' store-deps-installed' : '') + '">'
+							+ '<div class="store-deps-icon">' + (depIsInstalled ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-question-circle text-muted"></i>') + '</div>'
+							+ '<div class="store-deps-info">'
+							+ '<span class="store-deps-name">' + escapeHtml(depName) + '</span>'
+							+ '</div>'
+							+ '<div>' + (depIsInstalled
+								? '<span class="store-deps-status text-success"><i class="fas fa-check mr-1"></i>Installed</span>'
+								: '<span class="store-deps-status text-muted">Not in store</span>')
+							+ '</div></div>';
+					}
+				}
+				html += '</div>';
+			}
+
+			return html;
+		}
+
+		/**
+		 * Show the dependency confirmation modal.
+		 * @param {Object} pkg - The primary catalog entry the user wants to install
+		 * @param {Array} depsNeeded - Array of catalog entries that need to be installed
+		 */
+		function storeShowDepsModal(pkg, depsNeeded) {
+			var $m = $("#storeDepsModal");
+			var totalCount = depsNeeded.length + 1; // deps + the primary package
+
+			$m.find(".store-deps-intro").html(
+				'<strong>' + escapeHtml(pkg.library_name) + '</strong> requires ' +
+				depsNeeded.length + ' additional librar' + (depsNeeded.length === 1 ? 'y' : 'ies') +
+				' to be installed. The following packages will be downloaded and installed:'
+			);
+
+			// Build full tree visualization
+			$m.find(".store-deps-tree").html(storeBuildDepsTree(pkg));
+
+			// Store the install queue (deps first, then main package)
+			var installQueue = depsNeeded.map(function (d) { return d.package_file; });
+			installQueue.push(pkg.package_file);
+			$m.data("store-deps-queue", installQueue);
+			$m.data("store-deps-primary-file", pkg.package_file);
+
+			$m.find(".store-deps-confirm-btn")
+				.html('<i class="fas fa-download mr-1"></i>Download All and Install (' + totalCount + ')')
+				.prop("disabled", false);
+
+			$m.modal("show");
+		}
+
+		// ---- Confirm dependency install ----
+		$(document).on("click", ".store-deps-confirm-btn", function () {
+			var $m = $("#storeDepsModal");
+			var queue = $m.data("store-deps-queue");
+			if (!queue || queue.length === 0) return;
+
+			$m.modal("hide");
+			$("#storeDetailModal").modal("hide");
+
+			// Download and install each package in order (deps first, main last)
+			storeInstallQueue(queue.slice(), 0);
+		});
+
+		/**
+		 * Sequentially download and install a queue of packages from the store.
+		 * Each package goes through the full impLoadAndInstall flow.
+		 * @param {Array} queue - Array of package_file strings to install in order
+		 * @param {number} idx - Current index in the queue
+		 */
+		function storeInstallQueue(queue, idx) {
+			if (idx >= queue.length) {
+				// All done — refresh catalog
+				_storeCatalog = null;
+				return;
+			}
+
+			var pkgFile = queue[idx];
+			var $card = $(".store-card[data-pkg-file='" + pkgFile.replace(/'/g, "\\'") + "']");
+
+			// Show downloading state on card if visible
+			if ($card.length) {
+				$card.addClass("store-card-downloading");
+				$card.find(".store-card-footer").html('<span class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Downloading\u2026</span>');
+			}
+
+			var downloadUrl = STORE_PKG_BASE + encodeURIComponent(pkgFile);
+			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
+			try { if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true }); } catch (_) {}
+			var tmpPath = path.join(tmpDir, pkgFile);
+
+			var https = require('https');
+			storeDownloadFile(https, downloadUrl, tmpPath, function (err) {
+				if (err) {
+					if ($card.length) {
+						$card.removeClass("store-card-downloading");
+					}
+					alert("Download failed for " + pkgFile + ": " + err.message + "\n\nRemaining packages were not installed.");
+					_storeCatalog = null;
+					return;
+				}
+
+				// Hand off to import flow
+				_storeImportActive = true;
+				impLoadAndInstall(tmpPath);
+
+				// Wait for this import to finish, then proceed to next
+				var checkFlag = setInterval(function () {
+					if (!_isImporting) {
+						clearInterval(checkFlag);
+						if ($card.length) {
+							$card.removeClass("store-card-downloading");
+						}
+						_storeImportActive = false;
+						// Proceed to next package in queue
+						storeInstallQueue(queue, idx + 1);
+					}
+				}, 500);
+			});
+		}
 
 		function storeDownloadAndPreview(pkgFile, $card) {
 			if (_isImporting) {

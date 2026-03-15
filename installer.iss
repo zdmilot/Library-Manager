@@ -412,8 +412,7 @@ begin
     '"starred_libs":[],' +
     '"chk_requireActionComment":true,' +
     '"chk_requireActionSignature":false,' +
-    '"themeMode":"auto",' +
-    '"chk_showGitHubLinks":false' +
+    '"themeMode":"auto"' +
     '}]';
 
   // Ensure the parent directory exists (needed for the %LOCALAPPDATA% path)

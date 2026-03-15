@@ -1688,11 +1688,6 @@
 								<label class="custom-control-label" for="chk_hideSystemLibraries">Hide system libraries on the front page</label>
 							</div>
 							<small class="text-muted ml-4">System libraries with warnings or errors will still be shown.</small>
-							<div class="custom-control custom-checkbox mt-3">
-								<input type="checkbox" class="custom-control-input" id="chk_showGitHubLinks" checked>
-								<label class="custom-control-label" for="chk_showGitHubLinks">Show GitHub repository links in library details</label>
-							</div>
-							<small class="text-muted ml-4 d-block">External links to source repositories.</small>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
 							<h6>Data Location</h6>
@@ -2175,13 +2170,7 @@
 						<h6 class="detail-section-label">Tags</h6>
 						<div class="imp-preview-tags"></div>
 					</div>
-					<!-- Library Image -->
-					<div class="detail-section imp-preview-image-section d-none">
-						<h6 class="detail-section-label">Library Image</h6>
-						<div class="text-center py-2">
-							<img class="imp-preview-image" src="" style="max-width:200px; max-height:150px;">
-						</div>
-					</div>
+
 					<!-- Library Files -->
 					<div class="detail-section">
 						<h6 class="detail-section-label">Library Files</h6>
@@ -2783,6 +2772,10 @@
 						<i class="fab fa-github mr-1"></i>
 						<a href="#" class="store-detail-github-link" target="_blank" style="color:var(--medium);"></a>
 					</div>
+					<div class="store-detail-pkg-link mb-3 d-none">
+						<i class="fas fa-box-open mr-1" style="color:var(--medium)"></i>
+						<a href="#" class="store-detail-pkg-file-link" target="_blank" style="color:var(--medium);"></a>
+					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer">
 					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
@@ -2794,6 +2787,31 @@
 		</div>
 	</div>
 	<!---- Modal Store end --->
+
+	<!---- Modal Store Dependencies start --->
+	<div class="modal" tabindex="-1" role="dialog" id="storeDepsModal">
+		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document" style="max-width:560px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<h5 class="modal-title mb-0"><i class="fas fa-project-diagram mr-2"></i>Required Dependencies</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body" style="max-height:55vh; overflow-y:auto;">
+					<p class="text-muted mb-3 store-deps-intro"></p>
+					<div class="store-deps-tree"></div>
+				</div>
+				<div class="modal-footer detail-modal-footer">
+					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn solid-button store-deps-confirm-btn">
+						<i class="fas fa-download mr-1"></i>Download All and Install
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Store Dependencies end --->
 
 	<!---- Modal Event History start --->
 	<div class="modal" tabindex="-1" role="dialog" id="eventHistoryModal">
