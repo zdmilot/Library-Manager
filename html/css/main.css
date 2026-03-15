@@ -5891,9 +5891,44 @@ body.dark-mode .store-card-tag {
 	color: #28a745;
 	font-weight: 500;
 }
+.store-card.store-card-is-installed {
+	border-color: #28a745;
+	border-left: 3px solid #28a745;
+}
+.store-card.store-card-has-update {
+	border-color: #dc3545;
+	border-left: 3px solid #dc3545;
+}
+.store-card.store-card-has-update .store-card-version {
+	color: #dc3545;
+	font-weight: 600;
+}
+body.dark-mode .store-card.store-card-is-installed {
+	border-color: #28a745;
+}
+body.dark-mode .store-card.store-card-has-update {
+	border-color: #dc3545;
+}
+.store-card-update-badge {
+	background: #dc3545;
+	color: #fff;
+	font-size: 9px;
+	font-weight: 700;
+	padding: 1px 6px;
+	border-radius: 3px;
+	margin-left: 6px;
+	vertical-align: middle;
+}
 .store-card-install-btn {
 	font-size: 12px;
 	padding: 2px 14px;
+}
+.store-card-install-btn.store-card-btn-installed {
+	background: #28a745 !important;
+	border-color: #28a745 !important;
+	color: #fff !important;
+	cursor: default;
+	pointer-events: none;
 }
 
 /* ── Detail overlay ──────────────────────────────────────────────── */
@@ -5992,6 +6027,69 @@ body.dark-mode .store-deps-sub {
 .store-card-downloading {
 	pointer-events: none;
 	opacity: 0.7;
+}
+
+/* ── Store navbar update badge ───────────────────────────────────── */
+.store-update-badge {
+	position: absolute;
+	top: -2px;
+	right: -4px;
+	background: #dc3545;
+	color: #fff;
+	font-size: 9px;
+	font-weight: 700;
+	min-width: 15px;
+	height: 15px;
+	line-height: 15px;
+	text-align: center;
+	border-radius: 3px;
+	padding: 0 3px;
+	pointer-events: none;
+}
+
+/* ── Breaking Changes Modal ──────────────────────────────────────── */
+.breaking-changes-list {
+	max-height: 300px;
+	overflow-y: auto;
+	margin-bottom: 12px;
+}
+.breaking-change-item {
+	padding: 8px 12px;
+	margin-bottom: 4px;
+	border-radius: 6px;
+	background: rgba(220, 53, 69, 0.06);
+	border: 1px solid rgba(220, 53, 69, 0.15);
+	font-size: 0.85rem;
+}
+.breaking-change-item .breaking-change-type {
+	font-weight: 600;
+	color: #dc3545;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	margin-bottom: 2px;
+}
+.breaking-change-item .breaking-change-detail {
+	color: var(--medium2);
+	font-family: Consolas, monospace;
+	font-size: 0.8rem;
+	word-break: break-all;
+}
+.breaking-change-item .breaking-change-old {
+	text-decoration: line-through;
+	color: #dc3545;
+	opacity: 0.7;
+}
+.breaking-change-item .breaking-change-new {
+	color: #28a745;
+}
+body.dark-mode .breaking-change-item {
+	background: rgba(220, 53, 69, 0.10);
+	border-color: rgba(220, 53, 69, 0.25);
+}
+.breaking-accept-input {
+	text-transform: uppercase;
+	font-weight: 600;
+	letter-spacing: 1px;
 }
 
 /* ── Store Card Rating Stars ──────────────────────────────────────── */

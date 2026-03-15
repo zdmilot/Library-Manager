@@ -18787,7 +18787,204 @@
 
 			// Fetch and display star ratings on cards
 			storeFetchAndDisplayCardRatings();
+
+			// Update the store navbar badge with count of updatable libraries
+			storeUpdateNavBadge();
 		}
+
+		/**
+		 * Count libraries that have updates available in the store catalog
+		 * and show/hide the red badge on the store navbar icon.
+		 */
+		function storeUpdateNavBadge() {
+			var count = _storeCountUpdatesAvailable();
+			var $badge = $('#store-update-badge');
+			if (count > 0) {
+				$badge.text(count).removeClass('d-none');
+			} else {
+				$badge.addClass('d-none');
+			}
+		}
+
+		function _storeCountUpdatesAvailable() {
+			if (!_storeCatalog) return 0;
+			var count = 0;
+			for (var i = 0; i < _storeCatalog.length; i++) {
+				var pkg = _storeCatalog[i];
+				var installed = null;
+				try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
+				if (installed && !installed.deleted && installed.version && installed.version !== pkg.version) {
+					count++;
+				}
+			}
+			return count;
+		}
+
+		/**
+		 * Compare the public HSL function signatures between the currently installed
+		 * library and the incoming package ZIP. Detects removed functions and
+		 * changed signatures (parameter count/types/return type changes).
+		 *
+		 * @param {string} libName - library name
+		 * @param {Object} zipObj - AdmZip instance of the new package
+		 * @param {Object} manifest - parsed manifest.json from the new package
+		 * @returns {Array} array of breaking change descriptors, empty if none
+		 */
+		function storeDetectBreakingChanges(libName, zipObj, manifest) {
+			var changes = [];
+			var installed = null;
+			try { installed = db_installed_libs.installed_libs.findOne({"library_name": libName}); } catch (_) {}
+			if (!installed || installed.deleted) return changes; // fresh install, no breaking changes
+
+			var oldLibPath = installed.lib_install_path || '';
+			var oldLibFiles = installed.library_files || [];
+
+			// Parse old (installed) public functions
+			var oldFunctions = {};
+			try {
+				var oldPublic = shared.extractPublicFunctions ? shared.extractPublicFunctions(oldLibFiles, oldLibPath) : [];
+				for (var i = 0; i < oldPublic.length; i++) {
+					oldFunctions[oldPublic[i].qualifiedName] = oldPublic[i];
+				}
+			} catch (_) { return changes; } // can't read old files, skip check
+
+			// Parse new (package) public functions from the ZIP
+			var newLibFiles = manifest.library_files || [];
+			var newFunctions = {};
+			for (var n = 0; n < newLibFiles.length; n++) {
+				var fname = newLibFiles[n];
+				var ext = path.extname(fname).toLowerCase();
+				if (ext !== '.hsl') continue;
+				var entry = zipObj.getEntry('lib/' + fname);
+				if (!entry) continue;
+				try {
+					var text = zipObj.readAsText(entry);
+					var fns = shared.parseHslFunctions(text, fname);
+					for (var fi = 0; fi < fns.length; fi++) {
+						if (!fns[fi].isPrivate) {
+							newFunctions[fns[fi].qualifiedName] = fns[fi];
+						}
+					}
+				} catch (_) {}
+			}
+
+			// Compare: check for removed functions and changed signatures
+			for (var qName in oldFunctions) {
+				if (!oldFunctions.hasOwnProperty(qName)) continue;
+				var oldFn = oldFunctions[qName];
+
+				if (!newFunctions.hasOwnProperty(qName)) {
+					// Function was removed
+					changes.push({
+						type: 'removed',
+						name: qName,
+						oldSignature: _storeFormatSignature(oldFn),
+						newSignature: null
+					});
+					continue;
+				}
+
+				var newFn = newFunctions[qName];
+
+				// Check parameter count change
+				var oldParams = oldFn.params || [];
+				var newParams = newFn.params || [];
+				var oldRequired = oldParams.filter(function(p) { return !p.hasDefault; });
+				var newRequired = newParams.filter(function(p) { return !p.hasDefault; });
+
+				var sigChanged = false;
+
+				// Required parameter count changed
+				if (oldRequired.length !== newRequired.length) sigChanged = true;
+
+				// Parameter types changed
+				if (!sigChanged) {
+					for (var pi = 0; pi < Math.min(oldParams.length, newParams.length); pi++) {
+						if (oldParams[pi].type !== newParams[pi].type) { sigChanged = true; break; }
+						if (oldParams[pi].name !== newParams[pi].name) { sigChanged = true; break; }
+						if (oldParams[pi].passByRef !== newParams[pi].passByRef) { sigChanged = true; break; }
+					}
+				}
+
+				// Return type changed
+				if (!sigChanged && oldFn.returnType !== newFn.returnType) sigChanged = true;
+
+				// Parameters removed (not just added at end with defaults)
+				if (!sigChanged && oldParams.length > newParams.length) sigChanged = true;
+
+				if (sigChanged) {
+					changes.push({
+						type: 'changed',
+						name: qName,
+						oldSignature: _storeFormatSignature(oldFn),
+						newSignature: _storeFormatSignature(newFn)
+					});
+				}
+			}
+
+			return changes;
+		}
+
+		function _storeFormatSignature(fn) {
+			var params = (fn.params || []).map(function(p) {
+				var s = '';
+				if (p.passByRef) s += '& ';
+				s += p.type || 'variable';
+				s += ' ' + (p.name || '?');
+				if (p.hasDefault) s += ' = ' + (p.defaultValue !== undefined ? p.defaultValue : '...');
+				return s;
+			});
+			return fn.qualifiedName + '(' + params.join(', ') + ') ' + (fn.returnType || 'void');
+		}
+
+		/**
+		 * Show the breaking changes acceptance modal.
+		 * @param {Array} breakingChanges - array from storeDetectBreakingChanges
+		 * @param {Function} onAccept - called if user types "I ACCEPT" and clicks the button
+		 */
+		function storeShowBreakingChangesModal(breakingChanges, onAccept) {
+			var $m = $('#storeBreakingModal');
+			var $list = $m.find('.breaking-changes-list');
+			$list.empty();
+
+			for (var i = 0; i < breakingChanges.length; i++) {
+				var bc = breakingChanges[i];
+				var html = '<div class="breaking-change-item">';
+				if (bc.type === 'removed') {
+					html += '<div class="breaking-change-type"><i class="fas fa-minus-circle mr-1"></i>Function Removed</div>';
+					html += '<div class="breaking-change-detail breaking-change-old">' + escapeHtml(bc.oldSignature) + '</div>';
+				} else {
+					html += '<div class="breaking-change-type"><i class="fas fa-exchange-alt mr-1"></i>Signature Changed</div>';
+					html += '<div class="breaking-change-detail breaking-change-old">' + escapeHtml(bc.oldSignature) + '</div>';
+					html += '<div class="breaking-change-detail breaking-change-new">' + escapeHtml(bc.newSignature) + '</div>';
+				}
+				html += '</div>';
+				$list.append(html);
+			}
+
+			// Reset acceptance
+			$m.find('.breaking-accept-input').val('');
+			$m.find('.store-breaking-accept-btn').prop('disabled', true);
+
+			// Store the callback
+			$m.data('breaking-accept-cb', onAccept);
+
+			$m.modal('show');
+		}
+
+		// ---- Breaking changes modal: enable button only when "I ACCEPT" typed ----
+		$(document).on('input', '.breaking-accept-input', function () {
+			var val = $(this).val().trim().toUpperCase();
+			$('#storeBreakingModal .store-breaking-accept-btn').prop('disabled', val !== 'I ACCEPT');
+		});
+
+		// ---- Breaking changes modal: confirm button ----
+		$(document).on('click', '.store-breaking-accept-btn', function () {
+			var $m = $('#storeBreakingModal');
+			var cb = $m.data('breaking-accept-cb');
+			$m.modal('hide');
+			if (typeof cb === 'function') cb();
+		}); 
 
 		function storeBuildCard(pkg) {
 			var name     = escapeHtml(pkg.library_name);
@@ -18807,6 +19004,8 @@
 			// Check if installed
 			var installed = null;
 			try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
+			var isInstalled = !!(installed && !installed.deleted);
+			var hasUpdate = isInstalled && installed.version && installed.version !== pkg.version;
 
 			var tagsHtml = '';
 			var maxTags = 4;
@@ -18818,13 +19017,16 @@
 			}
 
 			var footerHtml = '';
-			if (installed) {
+			if (isInstalled) {
 				var installedVer = installed.version || '';
-				footerHtml = '<span class="store-card-installed"><i class="fas fa-check-circle mr-1"></i>Installed v' + escapeHtml(installedVer) + '</span>';
-				// Show update button if versions differ
-				if (installedVer !== pkg.version) {
-					footerHtml += '<button class="btn btn-sm solid-button store-card-install-btn" data-pkg-file="' +
-						escapeHtml(pkg.package_file) + '"><i class="fas fa-arrow-up mr-1"></i>Update</button>';
+				if (hasUpdate) {
+					// Update available
+					footerHtml = '<span class="store-card-installed"><i class="fas fa-check-circle mr-1"></i>v' + escapeHtml(installedVer) + '</span>';
+					footerHtml += '<span class="store-card-update-badge"><i class="fas fa-arrow-up mr-1"></i>v' + escapeHtml(pkg.version) + ' available</span>';
+				} else {
+					// Same version installed — green "Installed" button
+					footerHtml = '<button class="btn btn-sm solid-button store-card-install-btn store-card-btn-installed" disabled>' +
+						'<i class="fas fa-check-circle mr-1"></i>Installed v' + escapeHtml(installedVer) + '</button>';
 				}
 			} else {
 				footerHtml = '<button class="btn btn-sm solid-button store-card-install-btn" data-pkg-file="' +
@@ -18833,7 +19035,11 @@
 
 			var org = pkg.organization ? escapeHtml(pkg.organization) : '';
 
-			var html = '<div class="store-card" data-pkg-file="' + escapeHtml(pkg.package_file) + '">' +
+			var cardClasses = 'store-card';
+			if (isInstalled && !hasUpdate) cardClasses += ' store-card-is-installed';
+			if (hasUpdate) cardClasses += ' store-card-has-update';
+
+			var html = '<div class="' + cardClasses + '" data-pkg-file="' + escapeHtml(pkg.package_file) + '">' +
 				'  <div class="store-card-header">' + imgHtml +
 				'    <div><div class="store-card-title">' + name + '</div>' +
 				'      <div class="store-card-version">v' + version + '</div></div>' +
@@ -19415,22 +19621,46 @@
 					return;
 				}
 
-				// Hand off to import flow
-				_storeImportActive = true;
-				impLoadAndInstall(tmpPath);
-
-				// Wait for this import to finish, then proceed to next
-				var checkFlag = setInterval(function () {
-					if (!_isImporting) {
-						clearInterval(checkFlag);
-						if ($card.length) {
-							$card.removeClass("store-card-downloading");
-						}
-						_storeImportActive = false;
-						// Proceed to next package in queue
-						storeInstallQueue(queue, idx + 1);
+				// --- Breaking change check (updates only) ---
+				var breakingChanges = [];
+				try {
+					var zipBuf = fs.readFileSync(tmpPath);
+					var zipObj = new AdmZip(zipBuf);
+					var manifestEntry = zipObj.getEntry('manifest.json');
+					if (manifestEntry) {
+						var manifest = JSON.parse(zipObj.readAsText(manifestEntry));
+						var libName = manifest.library_name || '';
+						breakingChanges = storeDetectBreakingChanges(libName, zipObj, manifest);
 					}
-				}, 500);
+				} catch (_) {}
+
+				var proceedWithQueueInstall = function () {
+					_storeImportActive = true;
+					impLoadAndInstall(tmpPath);
+					var checkFlag = setInterval(function () {
+						if (!_isImporting) {
+							clearInterval(checkFlag);
+							if ($card.length) {
+								$card.removeClass("store-card-downloading");
+							}
+							_storeImportActive = false;
+							storeInstallQueue(queue, idx + 1);
+						}
+					}, 500);
+				};
+
+				if (breakingChanges.length > 0) {
+					if ($card.length) $card.removeClass("store-card-downloading");
+					storeShowBreakingChangesModal(breakingChanges, function () {
+						if ($card.length) {
+							$card.addClass("store-card-downloading");
+							$card.find(".store-card-footer").html('<span class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Installing\u2026</span>');
+						}
+						proceedWithQueueInstall();
+					});
+				} else {
+					proceedWithQueueInstall();
+				}
 			});
 		}
 
@@ -19460,19 +19690,51 @@
 					return;
 				}
 
-				// Hand off to the normal import flow (shows over the store)
-				_storeImportActive = true;
-				impLoadAndInstall(tmpPath);
-				// Re-enable card after import finishes
-				var checkFlag = setInterval(function () {
-					if (!_isImporting) {
-						clearInterval(checkFlag);
-						$card.removeClass("store-card-downloading");
-						$footer.html(origFooterHtml);
-						// Refresh catalog installed status on next open
-						_storeCatalog = null;
+				// --- Breaking change check (updates only) ---
+				var breakingChanges = [];
+				try {
+					var zipBuf = fs.readFileSync(tmpPath);
+					var zipObj = new AdmZip(zipBuf);
+					var manifestEntry = zipObj.getEntry('manifest.json');
+					if (manifestEntry) {
+						var manifest = JSON.parse(zipObj.readAsText(manifestEntry));
+						var libName = manifest.library_name || '';
+						breakingChanges = storeDetectBreakingChanges(libName, zipObj, manifest);
 					}
-				}, 500);
+				} catch (_) {}
+
+				if (breakingChanges.length > 0) {
+					// Show breaking changes modal — wait for user acceptance
+					$card.removeClass("store-card-downloading");
+					$footer.html(origFooterHtml);
+					storeShowBreakingChangesModal(breakingChanges, function () {
+						// User accepted — proceed with install
+						$card.addClass("store-card-downloading");
+						$footer.html('<span class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Installing\u2026</span>');
+						_storeImportActive = true;
+						impLoadAndInstall(tmpPath);
+						var checkFlag = setInterval(function () {
+							if (!_isImporting) {
+								clearInterval(checkFlag);
+								$card.removeClass("store-card-downloading");
+								$footer.html(origFooterHtml);
+								_storeCatalog = null;
+							}
+						}, 500);
+					});
+				} else {
+					// No breaking changes (or fresh install) — proceed immediately
+					_storeImportActive = true;
+					impLoadAndInstall(tmpPath);
+					var checkFlag = setInterval(function () {
+						if (!_isImporting) {
+							clearInterval(checkFlag);
+							$card.removeClass("store-card-downloading");
+							$footer.html(origFooterHtml);
+							_storeCatalog = null;
+						}
+					}, 500);
+				}
 			});
 		}
 
