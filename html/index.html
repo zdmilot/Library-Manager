@@ -2741,43 +2741,110 @@
 
 	<!-- Store Package Detail overlay (nested inside storeModal conceptually) -->
 	<div class="modal" tabindex="-1" role="dialog" id="storeDetailModal" data-backdrop="false">
-		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:620px;">
+		<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="mr-3 store-detail-icon-wrap">
-							<img class="store-detail-icon" src="" alt="" style="width:48px; height:48px; object-fit:contain;">
+						<div class="store-detail-icon-wrap mr-3">
+							<i class="fas fa-book fa-3x" style="color:var(--medium)"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0 store-detail-name"></h5>
-							<span class="text-muted text-sm store-detail-version"></span>
+							<div class="d-flex align-items-center mt-1">
+								<select class="store-detail-version-select custom-select custom-select-sm" style="width:auto; min-width:100px;"></select>
+							</div>
 						</div>
 					</div>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 					</button>
 				</div>
-				<div class="modal-body detail-modal-body" style="max-height:55vh; overflow-y:auto;">
-					<div class="store-detail-meta mb-3">
-						<div class="d-flex flex-wrap text-sm">
-							<span class="mr-4"><strong>Author:</strong> <span class="store-detail-author"></span></span>
-							<span class="store-detail-org-wrap mr-4"><strong>Organization:</strong> <span class="store-detail-org"></span></span>
-							<span class="mr-4"><strong>VENUS:</strong> <span class="store-detail-venus"></span></span>
-							<span class="mr-4"><strong>Created:</strong> <span class="store-detail-date"></span></span>
+				<div class="modal-body detail-modal-body" style="max-height:60vh; overflow-y:auto;">
+					<!-- Author / Organization row -->
+					<div class="row mb-2">
+						<div class="col-md-6">
+							<div class="detail-section">
+								<h6 class="detail-section-label">Author</h6>
+								<p class="store-detail-author text-muted"></p>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="detail-section">
+								<h6 class="detail-section-label">Organization</h6>
+								<p class="store-detail-org text-muted"></p>
+							</div>
 						</div>
 					</div>
-					<div class="store-detail-description mb-3"></div>
-					<div class="store-detail-tags mb-3"></div>
-					<div class="store-detail-github mb-3 d-none">
-						<i class="fab fa-github mr-1"></i>
-						<a href="#" class="store-detail-github-link" target="_blank" style="color:var(--medium);"></a>
+					<!-- Description -->
+					<div class="detail-section store-detail-desc-section">
+						<h6 class="detail-section-label">Description</h6>
+						<p class="store-detail-description text-muted"></p>
 					</div>
-					<div class="store-detail-pkg-link mb-3 d-none">
-						<i class="fas fa-box-open mr-1" style="color:var(--medium)"></i>
-						<a href="#" class="store-detail-pkg-file-link" target="_blank" style="color:var(--medium);"></a>
+					<!-- GitHub URL -->
+					<div class="detail-section store-detail-github d-none">
+						<h6 class="detail-section-label">GitHub</h6>
+						<p class="text-muted"><a href="#" target="_blank" class="store-detail-github-link"></a></p>
+					</div>
+					<!-- Package File URL -->
+					<div class="detail-section store-detail-pkg-link d-none">
+						<h6 class="detail-section-label">Package File</h6>
+						<p class="text-muted"><a href="#" target="_blank" class="store-detail-pkg-file-link"></a></p>
+					</div>
+					<!-- VENUS Compatibility / Created Date -->
+					<div class="row mb-2">
+						<div class="col-md-6">
+							<div class="detail-section">
+								<h6 class="detail-section-label">VENUS Compatibility</h6>
+								<p class="store-detail-venus text-muted"></p>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="detail-section">
+								<h6 class="detail-section-label">Created Date</h6>
+								<p class="store-detail-date text-muted"></p>
+							</div>
+						</div>
+					</div>
+					<!-- Tags -->
+					<div class="detail-section store-detail-tags-section">
+						<h6 class="detail-section-label">Tags</h6>
+						<div class="store-detail-tags"></div>
+					</div>
+					<!-- Library Files -->
+					<div class="detail-section">
+						<h6 class="detail-section-label">Library Files</h6>
+						<div class="pkg-file-list store-detail-lib-files"></div>
+					</div>
+					<!-- Demo Method Files -->
+					<div class="detail-section">
+						<h6 class="detail-section-label">Demo Method Files</h6>
+						<div class="pkg-file-list store-detail-demo-files"></div>
+					</div>
+					<!-- Help Files -->
+					<div class="detail-section store-detail-help-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>
+						<div class="pkg-file-list store-detail-help-files"></div>
+					</div>
+					<!-- Bin Files -->
+					<div class="detail-section store-detail-bin-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-cogs mr-1" style="color:var(--medium)"></i>Bin Files</h6>
+						<div class="pkg-file-list store-detail-bin-files"></div>
+					</div>
+					<!-- Install Paths -->
+					<div class="detail-section">
+						<h6 class="detail-section-label">Install Paths</h6>
+						<p class="store-detail-lib-path text-muted text-sm" style="font-family:Consolas,monospace; background:var(--body-background); padding:6px 10px; border-radius:6px;"></p>
+						<p class="store-detail-demo-path text-muted text-sm" style="font-family:Consolas,monospace; background:var(--body-background); padding:6px 10px; border-radius:6px;"></p>
+					</div>
+					<!-- Overwrite warning -->
+					<div class="store-detail-overwrite-warning d-none mt-2">
+						<div class="alert alert-warning mb-0 py-2 px-3" style="font-size:0.85rem;">
+							<i class="fas fa-exclamation-triangle mr-1"></i>
+							<span class="store-detail-overwrite-text"></span>
+						</div>
 					</div>
 				</div>
-				<div class="modal-footer detail-modal-footer">
+				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
 					<button type="button" class="btn solid-button store-detail-install-btn">
 						<i class="fas fa-download mr-1"></i>Download and Install

@@ -5825,13 +5825,13 @@ body.dark-mode .store-card:hover {
 .store-card-desc {
 	font-size: 12px;
 	color: #555;
-	flex: 1;
+	flex: 0 0 auto;
 	overflow: hidden;
 	display: -webkit-box;
 	-webkit-line-clamp: 3;
 	-webkit-box-orient: vertical;
 	line-height: 1.5;
-	min-height: 4.5em;
+	height: 4.5em;
 }
 body.dark-mode .store-card-desc {
 	color: #99aabb;

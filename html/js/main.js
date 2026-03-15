@@ -18590,7 +18590,14 @@
 			var libName = '';
 			if (_storeCatalog) {
 				for (var i = 0; i < _storeCatalog.length; i++) {
-					if (_storeCatalog[i].package_file === pkgFile) { libName = _storeCatalog[i].library_name; break; }
+					var cat = _storeCatalog[i];
+					if (cat.package_file === pkgFile) { libName = cat.library_name; break; }
+					// Check within versions array for non-latest package files
+					var vers = cat.versions || [];
+					for (var v = 0; v < vers.length; v++) {
+						if (vers[v].package_file === pkgFile) { libName = cat.library_name; break; }
+					}
+					if (libName) break;
 				}
 			}
 			if (libName) return STORE_PKG_BASE + encodeURIComponent(libName) + '/' + encodeURIComponent(pkgFile);
@@ -18853,78 +18860,232 @@
 			storeShowDetail(pkg);
 		});
 
-		function storeShowDetail(pkg) {
-			var $m = $("#storeDetailModal");
-			$m.find(".store-detail-name").text(pkg.library_name);
-			$m.find(".store-detail-version").text('v' + pkg.version);
-			$m.find(".store-detail-author").text(pkg.author || 'Unknown');
-
-			if (pkg.organization) {
-				$m.find(".store-detail-org-wrap").show();
-				$m.find(".store-detail-org").text(pkg.organization);
-			} else {
-				$m.find(".store-detail-org-wrap").hide();
-			}
-
-			$m.find(".store-detail-venus").text(pkg.venus_compatibility || 'N/A');
+		/**
+		 * Populate the store detail modal for a given version's data.
+		 * Called by storeShowDetail and the version-select change handler.
+		 */
+		function _storePopulateDetailVersion($m, ver, libName, pkgImage64, pkgImageMime) {
+			// Metadata
+			$m.find(".store-detail-author").text(ver.author || "\u2014");
+			$m.find(".store-detail-org").text(ver.organization || "\u2014");
+			$m.find(".store-detail-venus").text(ver.venus_compatibility || "\u2014");
 
 			var dateStr = '';
-			if (pkg.created_date) {
-				try { dateStr = new Date(pkg.created_date).toLocaleDateString(); } catch (_) { dateStr = pkg.created_date; }
+			if (ver.created_date) {
+				try { dateStr = new Date(ver.created_date).toLocaleString(); } catch (_) { dateStr = ver.created_date; }
 			}
-			$m.find(".store-detail-date").text(dateStr || 'N/A');
+			$m.find(".store-detail-date").text(dateStr || "\u2014");
 
-			$m.find(".store-detail-description").text(pkg.description || '');
-
-			// Tags
-			var tagsHtml = '';
-			var tags = pkg.tags || [];
-			for (var t = 0; t < tags.length; t++) {
-				tagsHtml += '<span class="badge badge-secondary mr-1 mb-1">' + escapeHtml(tags[t]) + '</span>';
+			// Description
+			if (ver.description) {
+				$m.find(".store-detail-description").text(ver.description);
+				$m.find(".store-detail-desc-section").removeClass("d-none");
+			} else {
+				$m.find(".store-detail-desc-section").addClass("d-none");
 			}
-			$m.find(".store-detail-tags").html(tagsHtml);
 
 			// GitHub link
-			if (pkg.github_url) {
+			if (ver.github_url) {
+				$m.find(".store-detail-github-link").attr("href", ver.github_url).text(ver.github_url);
 				$m.find(".store-detail-github").removeClass("d-none");
-				$m.find(".store-detail-github-link").attr("href", pkg.github_url).text(pkg.github_url);
 			} else {
 				$m.find(".store-detail-github").addClass("d-none");
 			}
 
-			// Store package file link
-			if (pkg.package_file && pkg.library_name) {
-				var pkgFileUrl = STORE_REPO_URL + '/blob/main/packages/' + encodeURIComponent(pkg.library_name) + '/' + encodeURIComponent(pkg.package_file);
-				$m.find(".store-detail-pkg-file-link").attr("href", pkgFileUrl).text(pkg.package_file);
+			// Package file URL
+			var pkgFile = ver.package_file || '';
+			if (pkgFile && libName) {
+				var pkgFileUrl = STORE_REPO_URL + '/blob/main/packages/' + encodeURIComponent(libName) + '/' + encodeURIComponent(pkgFile);
+				$m.find(".store-detail-pkg-file-link").attr("href", pkgFileUrl).text(pkgFile);
 				$m.find(".store-detail-pkg-link").removeClass("d-none");
 			} else {
 				$m.find(".store-detail-pkg-link").addClass("d-none");
 			}
 
-			// Icon
-			if (pkg.library_image_base64 && pkg.library_image_mime) {
-				$m.find(".store-detail-icon").attr("src", "data:" + pkg.library_image_mime + ";base64," + pkg.library_image_base64).show();
+			// Tags
+			var tags = ver.tags || [];
+			var $tagsContainer = $m.find(".store-detail-tags");
+			$tagsContainer.empty();
+			if (tags.length > 0) {
+				for (var t = 0; t < tags.length; t++) {
+					$tagsContainer.append('<span class="badge badge-light mr-1 mb-1" style="font-size:0.8rem;">' + escapeHtml(tags[t]) + '</span>');
+				}
+				$m.find(".store-detail-tags-section").removeClass("d-none");
 			} else {
-				$m.find(".store-detail-icon").hide();
+				$m.find(".store-detail-tags-section").addClass("d-none");
 			}
 
-			// Install button state
+			// Determine install paths
+			var libFolder = db_links.links.findOne({"_id":"lib-folder"});
+			var metFolder = db_links.links.findOne({"_id":"met-folder"});
+			var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+			var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
+
+			var installToRoot = !!ver.install_to_library_root;
+			var customSubdir = ver.custom_install_subdir || '';
+			var libDestDir;
+			if (installToRoot) {
+				libDestDir = libBasePath;
+			} else if (customSubdir) {
+				libDestDir = path.join(libBasePath, customSubdir);
+			} else {
+				libDestDir = path.join(libBasePath, libName);
+			}
+			var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
+
+			// Library files
+			var comDlls = ver.com_register_dlls || [];
+			var libFiles = ver.library_files || [];
+			var $libFilesList = $m.find(".store-detail-lib-files");
+			$libFilesList.empty();
+			if (libFiles.length === 0) {
+				$libFilesList.html('<div class="text-muted text-center py-2 pkg-empty-msg"><i class="fas fa-inbox mr-1"></i>None</div>');
+			} else {
+				for (var i = 0; i < libFiles.length; i++) {
+					var f = libFiles[i];
+					var isCom = comDlls.indexOf(f) !== -1;
+					var comBadge = isCom ? '<span class="badge badge-info ml-2" title="This DLL will be registered as a COM object using RegAsm.exe /codebase."><i class="fas fa-cog mr-1"></i>COM</span>' : '';
+					var destFile = path.join(libDestDir, f);
+					$libFilesList.append(
+						'<div class="pkg-file-item" style="flex-wrap:wrap;"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + escapeHtml(f) + '</span>' + comBadge
+						+ '<div class="hampkg-file-dirs"><span class="hampkg-file-to" title="' + escapeHtml(destFile) + '"><i class="fas fa-sign-in-alt mr-1"></i>' + escapeHtml(destFile) + '</span></div>'
+						+ '</div>'
+					);
+				}
+			}
+
+			// Demo method files
+			var demoFiles = ver.demo_method_files || [];
+			var $demoFilesList = $m.find(".store-detail-demo-files");
+			$demoFilesList.empty();
+			if (demoFiles.length === 0) {
+				$demoFilesList.html('<div class="text-muted text-center py-2 pkg-empty-msg"><i class="fas fa-inbox mr-1"></i>None</div>');
+			} else {
+				for (var d = 0; d < demoFiles.length; d++) {
+					var df = demoFiles[d];
+					var demoDestFile = path.join(demoDestDir, df);
+					$demoFilesList.append(
+						'<div class="pkg-file-item" style="flex-wrap:wrap;"><i class="far fa-file pkg-file-icon"></i><span class="pkg-file-name">' + escapeHtml(df) + '</span>'
+						+ '<div class="hampkg-file-dirs"><span class="hampkg-file-to" title="' + escapeHtml(demoDestFile) + '"><i class="fas fa-sign-in-alt mr-1"></i>' + escapeHtml(demoDestFile) + '</span></div>'
+						+ '</div>'
+					);
+				}
+			}
+
+			// Help files
+			var helpFiles = ver.help_files || [];
+			var $helpFilesList = $m.find(".store-detail-help-files");
+			$helpFilesList.empty();
+			if (helpFiles.length > 0) {
+				for (var h = 0; h < helpFiles.length; h++) {
+					var hf = helpFiles[h];
+					var helpDestFile = path.join(libDestDir, hf);
+					$helpFilesList.append(
+						'<div class="pkg-file-item" style="flex-wrap:wrap;"><i class="fas fa-question-circle pkg-file-icon" style="color:var(--medium);"></i><span class="pkg-file-name">' + escapeHtml(hf) + '</span>'
+						+ '<div class="hampkg-file-dirs"><span class="hampkg-file-to" title="' + escapeHtml(helpDestFile) + '"><i class="fas fa-sign-in-alt mr-1"></i>' + escapeHtml(helpDestFile) + '</span></div>'
+						+ '</div>'
+					);
+				}
+				$m.find(".store-detail-help-section").removeClass("d-none");
+			} else {
+				$m.find(".store-detail-help-section").addClass("d-none");
+			}
+
+			// Bin files
+			var binFolderLink = db_links.links.findOne({"_id":"bin-folder"});
+			var binBasePath = binFolderLink ? binFolderLink.path : 'C:\\Program Files (x86)\\HAMILTON\\Bin';
+			var binFiles = ver.bin_files || [];
+			var $binFilesList = $m.find(".store-detail-bin-files");
+			$binFilesList.empty();
+			if (binFiles.length > 0) {
+				for (var b = 0; b < binFiles.length; b++) {
+					var bf = binFiles[b];
+					var binDestFile = path.join(binBasePath, bf);
+					$binFilesList.append(
+						'<div class="pkg-file-item" style="flex-wrap:wrap;"><i class="fas fa-cogs pkg-file-icon" style="color:var(--medium);"></i><span class="pkg-file-name">' + escapeHtml(bf) + '</span>'
+						+ '<div class="hampkg-file-dirs"><span class="hampkg-file-to" title="' + escapeHtml(binDestFile) + '"><i class="fas fa-sign-in-alt mr-1"></i>' + escapeHtml(binDestFile) + '</span></div>'
+						+ '</div>'
+					);
+				}
+				$m.find(".store-detail-bin-section").removeClass("d-none");
+			} else {
+				$m.find(".store-detail-bin-section").addClass("d-none");
+			}
+
+			// Install paths
+			$m.find(".store-detail-lib-path").text("Library \u2192 " + libDestDir);
+			$m.find(".store-detail-demo-path").text("Demo Methods \u2192 " + demoDestDir);
+
+			// Overwrite warning & install button state
 			var $installBtn = $m.find(".store-detail-install-btn");
 			$installBtn.removeClass("downloading").prop("disabled", false);
-			$installBtn.attr("data-pkg-file", pkg.package_file);
+			$installBtn.attr("data-pkg-file", pkgFile);
 
 			var installed = null;
-			try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
-			if (installed && installed.version === pkg.version) {
-				$installBtn.html('<i class="fas fa-check-circle mr-1"></i>Already Installed').prop("disabled", true);
-			} else if (installed) {
-				$installBtn.html('<i class="fas fa-arrow-up mr-1"></i>Update to v' + escapeHtml(pkg.version));
+			try { installed = db_installed_libs.installed_libs.findOne({"library_name": libName}); } catch (_) {}
+			if (installed && !installed.deleted) {
+				var existingVer = installed.version || '?';
+				var incomingVer = ver.version || '?';
+				var isSameVersion = (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer);
+				$m.find(".store-detail-overwrite-warning").removeClass("d-none");
+				if (isSameVersion) {
+					$m.find(".store-detail-overwrite-warning .alert").removeClass("alert-warning alert-info").addClass("alert-warning");
+					$m.find(".store-detail-overwrite-text").text('Library "' + libName + '" v' + existingVer + ' is already installed. You cannot install the same version again.');
+					$installBtn.html('<i class="fas fa-ban mr-1"></i>Already Installed').prop("disabled", true);
+				} else {
+					$m.find(".store-detail-overwrite-warning .alert").removeClass("alert-info").addClass("alert-warning");
+					$m.find(".store-detail-overwrite-text").text('A library named "' + libName + '" is already installed (v' + existingVer + '). Installing will replace it with v' + incomingVer + '.');
+					$installBtn.html('<i class="fas fa-arrow-up mr-1"></i>Update to v' + escapeHtml(ver.version));
+				}
 			} else {
+				$m.find(".store-detail-overwrite-warning").addClass("d-none");
 				$installBtn.html('<i class="fas fa-download mr-1"></i>Download and Install');
 			}
+		}
+
+		function storeShowDetail(pkg) {
+			var $m = $("#storeDetailModal");
+
+			// Store the catalog entry on the modal for version switching
+			$m.data("store-pkg", pkg);
+
+			// Header: name + icon
+			$m.find(".store-detail-name").text(pkg.library_name);
+			var $iconWrap = $m.find(".store-detail-icon-wrap");
+			$iconWrap.empty();
+			if (pkg.library_image_base64 && pkg.library_image_mime) {
+				$iconWrap.html('<img src="data:' + pkg.library_image_mime + ';base64,' + pkg.library_image_base64 + '" style="max-width:56px; max-height:56px; border-radius:6px;">');
+			} else {
+				$iconWrap.html('<i class="fas fa-book fa-3x" style="color:var(--medium)"></i>');
+			}
+
+			// Version dropdown
+			var versions = pkg.versions || [{ version: pkg.version, package_file: pkg.package_file }];
+			var $verSelect = $m.find(".store-detail-version-select");
+			$verSelect.empty();
+			for (var v = 0; v < versions.length; v++) {
+				var verLabel = 'v' + versions[v].version;
+				if (v === 0) verLabel += ' (latest)';
+				$verSelect.append('<option value="' + v + '">' + escapeHtml(verLabel) + '</option>');
+			}
+			$verSelect.val('0');
+
+			// Populate with latest version data
+			var latestVer = versions[0] || pkg;
+			_storePopulateDetailVersion($m, latestVer, pkg.library_name, pkg.library_image_base64, pkg.library_image_mime);
 
 			$m.modal("show");
 		}
+
+		// ---- Version selector change in store detail ----
+		$(document).on("change", ".store-detail-version-select", function () {
+			var $m = $("#storeDetailModal");
+			var pkg = $m.data("store-pkg");
+			if (!pkg || !pkg.versions) return;
+			var idx = parseInt($(this).val(), 10) || 0;
+			var ver = pkg.versions[idx] || pkg.versions[0] || pkg;
+			_storePopulateDetailVersion($m, ver, pkg.library_name, pkg.library_image_base64, pkg.library_image_mime);
+		});
 
 		// ---- GitHub link in detail modal ----
 		$(document).on("click", ".store-detail-github-link", function (e) {
@@ -18947,11 +19108,9 @@
 			var pkgFile = $(this).attr("data-pkg-file");
 			if (!pkgFile) return;
 
-			// Find catalog entry for this package
-			var pkg = null;
-			for (var i = 0; i < _storeCatalog.length; i++) {
-				if (_storeCatalog[i].package_file === pkgFile) { pkg = _storeCatalog[i]; break; }
-			}
+			// Use the catalog entry stored on the modal (works for any selected version)
+			var $m = $("#storeDetailModal");
+			var pkg = $m.data("store-pkg");
 			if (!pkg) return;
 
 			// Resolve dependencies recursively
@@ -18962,7 +19121,7 @@
 			} else {
 				// No dependencies needed — go straight to download & preview
 				$("#storeDetailModal").modal("hide");
-				var $card = $(".store-card[data-pkg-file='" + pkgFile.replace(/'/g, "\\'") + "']");
+				var $card = $(".store-card[data-pkg-file='" + pkg.package_file.replace(/'/g, "\\'") + "']");
 				storeDownloadAndPreview(pkgFile, $card);
 			}
 		});
