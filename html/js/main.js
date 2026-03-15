@@ -19613,6 +19613,7 @@
 		$(document).on('click', '.store-write-review-btn', function () {
 			var $form = $('#storeDetailModal .store-review-form');
 			$form.removeClass('d-none');
+			$form.find('.store-review-name').val('');
 			$form.find('.store-review-text').val('');
 			$form.find('.store-review-star-input').attr('data-rating', '0');
 			$form.find('.store-review-star-btn').removeClass('active fas').addClass('far');
@@ -19664,8 +19665,21 @@
 					$(this).removeClass('active fas').addClass('far');
 				}
 			});
-			$('#storeDetailModal .store-review-submit-btn').prop('disabled', val < 1);
+			_storeUpdateSubmitEnabled();
 		});
+
+		// ---- Name input change ----
+		$(document).on('input', '.store-review-name', function () {
+			_storeUpdateSubmitEnabled();
+		});
+
+		/** Enable submit only when both name and rating are provided. */
+		function _storeUpdateSubmitEnabled() {
+			var $m = $('#storeDetailModal');
+			var rating = parseInt($m.find('.store-review-star-input').attr('data-rating'), 10) || 0;
+			var name = ($m.find('.store-review-name').val() || '').trim();
+			$m.find('.store-review-submit-btn').prop('disabled', rating < 1 || name.length === 0);
+		}
 
 		// ---- Submit review ----
 		$(document).on('click', '.store-review-submit-btn', function () {
@@ -19680,9 +19694,11 @@
 			if (rating < 1 || rating > 5) return;
 
 			var comment = $m.find('.store-review-text').val().trim();
-			var username = '';
-			try { username = getWindowsUsername(); } catch (_) {}
-			if (!username) username = 'Anonymous';
+			var username = ($m.find('.store-review-name').val() || '').trim();
+			if (!username) {
+				$m.find('.store-review-error').removeClass('d-none').text('Please enter your display name.');
+				return;
+			}
 
 			// Gather system details for the review payload
 			var installedLib = null;
