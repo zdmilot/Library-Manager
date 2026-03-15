@@ -18585,6 +18585,18 @@
 		var _storeSort      = 'name-asc';
 		var _storeSearchTerm = '';
 
+		/** Build the raw.githubusercontent download URL for a store package. */
+		function storePackageDownloadUrl(pkgFile) {
+			var libName = '';
+			if (_storeCatalog) {
+				for (var i = 0; i < _storeCatalog.length; i++) {
+					if (_storeCatalog[i].package_file === pkgFile) { libName = _storeCatalog[i].library_name; break; }
+				}
+			}
+			if (libName) return STORE_PKG_BASE + encodeURIComponent(libName) + '/' + encodeURIComponent(pkgFile);
+			return STORE_PKG_BASE + encodeURIComponent(pkgFile);
+		}
+
 		// ---- Open Store ----
 		$(document).on("click", "#btn-open-store", function () {
 			$("#storeModal").modal("show");
@@ -18881,8 +18893,8 @@
 			}
 
 			// Store package file link
-			if (pkg.package_file) {
-				var pkgFileUrl = STORE_REPO_URL + '/blob/main/packages/' + encodeURIComponent(pkg.package_file);
+			if (pkg.package_file && pkg.library_name) {
+				var pkgFileUrl = STORE_REPO_URL + '/blob/main/packages/' + encodeURIComponent(pkg.library_name) + '/' + encodeURIComponent(pkg.package_file);
 				$m.find(".store-detail-pkg-file-link").attr("href", pkgFileUrl).text(pkg.package_file);
 				$m.find(".store-detail-pkg-link").removeClass("d-none");
 			} else {
@@ -19168,7 +19180,7 @@
 				$card.find(".store-card-footer").html('<span class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Downloading\u2026</span>');
 			}
 
-			var downloadUrl = STORE_PKG_BASE + encodeURIComponent(pkgFile);
+			var downloadUrl = storePackageDownloadUrl(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
 			try { if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true }); } catch (_) {}
 			var tmpPath = path.join(tmpDir, pkgFile);
@@ -19215,7 +19227,7 @@
 			var origFooterHtml = $footer.html();
 			$footer.html('<span class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Downloading\u2026</span>');
 
-			var downloadUrl = STORE_PKG_BASE + encodeURIComponent(pkgFile);
+			var downloadUrl = storePackageDownloadUrl(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
 			try { if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true }); } catch (_) {}
 			var tmpPath = path.join(tmpDir, pkgFile);
