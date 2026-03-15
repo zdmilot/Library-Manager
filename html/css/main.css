@@ -5735,7 +5735,7 @@ body.dark-mode .store-toolbar {
 
 /* ── Grid cards ──────────────────────────────────────────────────── */
 .store-card {
-	background: var(--method-background);
+	background: #f8f9fb;
 	border: 1px solid #dee2e6;
 	border-radius: 8px;
 	padding: 16px;
@@ -5764,14 +5764,14 @@ body.dark-mode .store-card:hover {
 	object-fit: contain;
 	border-radius: 6px;
 	flex-shrink: 0;
-	margin-right: 6px;
+	margin-right: 12px;
 }
 .store-card-icon-placeholder {
 	width: 48px;
 	height: 48px;
 	border-radius: 6px;
 	flex-shrink: 0;
-	margin-right: 6px;
+	margin-right: 12px;
 	background: rgba(var(--medium-rgb), 0.10);
 	display: flex;
 	align-items: center;
@@ -5818,6 +5818,7 @@ body.dark-mode .store-card:hover {
 	-webkit-line-clamp: 3;
 	-webkit-box-orient: vertical;
 	line-height: 1.5;
+	max-height: 4.5em;
 }
 body.dark-mode .store-card-desc {
 	color: #99aabb;
