@@ -18896,7 +18896,7 @@
 			var pkgFile = ver.package_file || '';
 			if (pkgFile && libName) {
 				var pkgFileUrl = STORE_REPO_URL + '/blob/main/packages/' + encodeURIComponent(libName) + '/' + encodeURIComponent(pkgFile);
-				$m.find(".store-detail-pkg-file-link").attr("href", pkgFileUrl).text(pkgFile);
+				$m.find(".store-detail-pkg-file-link").attr("href", pkgFileUrl).text(pkgFileUrl);
 				$m.find(".store-detail-pkg-link").removeClass("d-none");
 			} else {
 				$m.find(".store-detail-pkg-link").addClass("d-none");
@@ -19060,7 +19060,7 @@
 			}
 
 			// Version dropdown
-			var versions = pkg.versions || [{ version: pkg.version, package_file: pkg.package_file }];
+			var versions = pkg.versions || [pkg];
 			var $verSelect = $m.find(".store-detail-version-select");
 			$verSelect.empty();
 			for (var v = 0; v < versions.length; v++) {
@@ -19070,8 +19070,16 @@
 			}
 			$verSelect.val('0');
 
-			// Populate with latest version data
+			// Populate with latest version data (merge top-level catalog fields as fallback)
 			var latestVer = versions[0] || pkg;
+			if (!latestVer.library_files && pkg.library_files) {
+				// Catalog may have file data only at the top level
+				['library_files','demo_method_files','help_files','bin_files','labware_files','com_register_dlls',
+				 'install_to_library_root','custom_install_subdir','dependencies','author','organization',
+				 'description','tags','venus_compatibility','github_url','created_date'].forEach(function(k) {
+					if (latestVer[k] === undefined && pkg[k] !== undefined) latestVer[k] = pkg[k];
+				});
+			}
 			_storePopulateDetailVersion($m, latestVer, pkg.library_name, pkg.library_image_base64, pkg.library_image_mime);
 
 			$m.modal("show");
@@ -19081,9 +19089,10 @@
 		$(document).on("change", ".store-detail-version-select", function () {
 			var $m = $("#storeDetailModal");
 			var pkg = $m.data("store-pkg");
-			if (!pkg || !pkg.versions) return;
+			if (!pkg) return;
+			var versions = pkg.versions || [pkg];
 			var idx = parseInt($(this).val(), 10) || 0;
-			var ver = pkg.versions[idx] || pkg.versions[0] || pkg;
+			var ver = versions[idx] || versions[0] || pkg;
 			_storePopulateDetailVersion($m, ver, pkg.library_name, pkg.library_image_base64, pkg.library_image_mime);
 		});
 
