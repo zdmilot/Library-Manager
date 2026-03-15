@@ -18782,7 +18782,6 @@
 
 		// ---- Card click → show detail ----
 		$(document).on("click", ".store-card", function (e) {
-			if ($(e.target).closest(".store-card-install-btn").length) return; // don't open detail when clicking Install
 			var pkgFile = $(this).attr("data-pkg-file");
 			var pkg = null;
 			for (var i = 0; i < _storeCatalog.length; i++) {
@@ -18864,7 +18863,7 @@
 		});
 
 		// ---- Install from Store (download .hxlibpkg then hand to importer) ----
-		$(document).on("click", ".store-card-install-btn, .store-detail-install-btn", function (e) {
+		$(document).on("click", ".store-detail-install-btn", function (e) {
 			e.preventDefault();
 			e.stopPropagation();
 			var pkgFile = $(this).attr("data-pkg-file");
