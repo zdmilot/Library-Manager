@@ -18833,8 +18833,7 @@
 
 			var org = pkg.organization ? escapeHtml(pkg.organization) : '';
 
-			var html = '<div class="col-xl-3 col-lg-4 col-md-6">' +
-				'<div class="store-card" data-pkg-file="' + escapeHtml(pkg.package_file) + '">' +
+			var html = '<div class="store-card" data-pkg-file="' + escapeHtml(pkg.package_file) + '">' +
 				'  <div class="store-card-header">' + imgHtml +
 				'    <div><div class="store-card-title">' + name + '</div>' +
 				'      <div class="store-card-version">v' + version + '</div></div>' +
@@ -18845,7 +18844,7 @@
 				'  <div class="store-card-rating" data-lib="' + name + '"><span class="store-card-rating-stars"></span><span class="store-card-rating-count"></span></div>' +
 				'  <div class="store-card-tags">' + tagsHtml + '</div>' +
 				'  <div class="store-card-footer">' + footerHtml + '</div>' +
-				'</div></div>';
+				'</div>';
 
 			return html;
 		}
@@ -19016,6 +19015,49 @@
 				$m.find(".store-detail-bin-section").removeClass("d-none");
 			} else {
 				$m.find(".store-detail-bin-section").addClass("d-none");
+			}
+
+			// Dependencies
+			var deps = ver.dependencies || [];
+			var $depSection = $m.find('.store-detail-deps-section');
+			var $depList = $m.find('.store-detail-deps-list');
+			$depList.empty();
+			if (deps.length > 0) {
+				for (var di = 0; di < deps.length; di++) {
+					var depName = deps[di];
+					var depInstalled = null;
+					try { depInstalled = db_installed_libs.installed_libs.findOne({"library_name": depName}); } catch (_) {}
+					var depIsInstalled = !!(depInstalled && !depInstalled.deleted);
+					var depInCatalog = false;
+					if (_storeCatalog) {
+						for (var ci = 0; ci < _storeCatalog.length; ci++) {
+							if (_storeCatalog[ci].library_name && _storeCatalog[ci].library_name.toLowerCase() === depName.toLowerCase()) {
+								depInCatalog = true; break;
+							}
+						}
+					}
+					var depIcon, depStatus;
+					if (depIsInstalled) {
+						depIcon = '<i class="fas fa-check-circle text-success"></i>';
+						depStatus = '<span class="text-success" style="font-size:0.8rem;"><i class="fas fa-check mr-1"></i>Installed' + (depInstalled.version ? ' v' + escapeHtml(depInstalled.version) : '') + '</span>';
+					} else if (depInCatalog) {
+						depIcon = '<i class="fas fa-download" style="color:var(--medium);"></i>';
+						depStatus = '<span class="text-warning" style="font-size:0.8rem;"><i class="fas fa-exclamation-circle mr-1"></i>Not installed &mdash; available in store</span>';
+					} else {
+						depIcon = '<i class="fas fa-question-circle text-muted"></i>';
+						depStatus = '<span class="text-muted" style="font-size:0.8rem;">Not installed &mdash; not in store</span>';
+					}
+					$depList.append(
+						'<div class="store-detail-dep-item d-flex align-items-center" style="gap:8px; padding:4px 0;">'
+						+ depIcon
+						+ '<span class="store-detail-dep-name" style="font-weight:500;">' + escapeHtml(depName) + '</span>'
+						+ '<span class="ml-auto">' + depStatus + '</span>'
+						+ '</div>'
+					);
+				}
+				$depSection.removeClass('d-none');
+			} else {
+				$depSection.addClass('d-none');
 			}
 
 			// Install paths

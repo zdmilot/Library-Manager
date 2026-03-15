@@ -5738,11 +5738,11 @@ body.dark-mode .store-modal-body {
 .store-toolbar {
 	border-bottom: 1px solid #dce4ed;
 	background: #eef3f8;
-	gap: 18px;
-	padding: 14px 24px;
+	gap: 24px;
+	padding: 16px 28px;
 }
 .store-toolbar-right {
-	gap: 16px !important;
+	gap: 20px !important;
 }
 body.dark-mode .store-toolbar {
 	border-bottom-color: #2a3a4a;
@@ -5753,16 +5753,14 @@ body.dark-mode .store-toolbar {
 .store-grid-container {
 	max-height: 65vh;
 	overflow-y: auto;
-	padding: 20px 24px !important;
+	padding: 24px 28px !important;
 }
-.store-grid.row {
-	margin-left: -10px !important;
-	margin-right: -10px !important;
-}
-.store-grid.row > [class*="col-"] {
-	padding-left: 10px !important;
-	padding-right: 10px !important;
-	margin-bottom: 20px !important;
+#store-grid {
+	display: grid !important;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 24px;
+	margin: 0 !important;
+	padding: 0 !important;
 }
 
 /* ── Grid cards ──────────────────────────────────────────────────── */
