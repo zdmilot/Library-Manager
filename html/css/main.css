@@ -1456,6 +1456,32 @@ body.dark-mode .batch-dup-header {
 	font-size: 0.95rem;
 }
 
+/* Fix toggle switch alignment inside packaging section card headers */
+.exporter-card .card-header .custom-control.custom-switch {
+	display: inline-flex;
+	align-items: center;
+	min-height: auto;
+	padding-left: 0;
+}
+
+.exporter-card .card-header .custom-control.custom-switch .custom-control-label {
+	width: 1.75rem;
+	height: 1rem;
+	padding: 0;
+}
+
+.exporter-card .card-header .custom-control.custom-switch .custom-control-label::before {
+	position: relative;
+	left: 0;
+	top: 0;
+	display: block;
+}
+
+.exporter-card .card-header .custom-control.custom-switch .custom-control-label::after {
+	top: 2px;
+	left: 2px;
+}
+
 .exporter-card .card-body {
 	background-color: var(--method-background);
 }
