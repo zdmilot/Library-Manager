@@ -6788,7 +6788,7 @@
 			var folderPath = $(this).val();
 			if (folderPath) {
 				try {
-					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
+					var allFiles = getFilesRecursive(folderPath, folderPath);
 					var newDlls = [];
 					var medFiles = [];
 					var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
@@ -7765,7 +7765,7 @@
 					var sub = pkg_installSubdir === '' ? '' : pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
 					return '...\\Hamilton\\Library\\' + (sub ? sub + '\\' : '');
 				}
-				return '...\\Hamilton\\Library\\';
+				return '...\\Hamilton\\Library\\' + libName + '\\';
 			} else if (treeId === 'pkg-demo-list') {
 				return '...\\Hamilton\\Methods\\Library Demo Methods\\' + libName + '\\';
 			} else if (treeId === 'pkg-labware-tree') {
@@ -16883,7 +16883,7 @@
 					var sub = ulib_installSubdir === '' ? '' : ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
 					return '...\\Hamilton\\Library\\' + (sub ? sub + '\\' : '');
 				}
-				return '...\\Hamilton\\Library\\';
+				return '...\\Hamilton\\Library\\' + libName + '\\';
 			} else if (treeId === 'ulib-demo-list') {
 				return '...\\Hamilton\\Methods\\Library Demo Methods\\' + libName + '\\';
 			}
@@ -17525,7 +17525,7 @@
 			var folderPath = $(this).val();
 			if (folderPath) {
 				try {
-					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
+					var allFiles = getFilesRecursive(folderPath, folderPath);
 					var newDlls = [];
 					allFiles.forEach(function(fileInfo) {
 						var filePath = fileInfo.absolutePath;
