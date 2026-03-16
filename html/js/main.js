@@ -8828,6 +8828,17 @@
 				return;
 			}
 
+			// Final safety check: block restricted file extensions at build time
+			if (!isOemKeywordsEnabled()) {
+				var allPkgFiles = pkg_libraryFiles.concat(pkg_demoMethodFiles).concat(pkg_labwareFiles);
+				var restrictedFound = allPkgFiles.filter(function(f) { return shared.isRestrictedFileExtension(f); });
+				if (restrictedFound.length > 0) {
+					var names = restrictedFound.map(function(f) { return path.basename(f); }).join('\n');
+					alert("Cannot build package: the following files have restricted file extensions that are not permitted in library packages:\n\n" + names);
+					return;
+				}
+			}
+
 			// Verify all files still exist
 			for (var i = 0; i < pkg_libraryFiles.length; i++) {
 				if (!fs.existsSync(pkg_libraryFiles[i])) {
