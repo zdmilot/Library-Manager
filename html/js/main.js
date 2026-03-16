@@ -9751,6 +9751,147 @@
 			return result;
 		}
 
+		/**
+		 * Extract required dependencies from a ZIP package (before extraction to disk).
+		 * Reads HSL files directly from the ZIP, extracts #include directives,
+		 * and resolves each to a known library. Used to warn the user about
+		 * missing dependencies before installation.
+		 *
+		 * @param {Object} zipObj      - AdmZip instance of the package
+		 * @param {Array<string>} libFiles - library_files from manifest
+		 * @returns {Array<Object>} array of { include, libraryName, type, fileExists }
+		 */
+		function extractDependenciesFromZip(zipObj, libFiles) {
+			var libFolderRec = db_links.links.findOne({"_id":"lib-folder"});
+			var sysLibDir = (libFolderRec && libFolderRec.path) ? libFolderRec.path : 'C:\\Program Files (x86)\\HAMILTON\\Library';
+
+			// Build set of this package's own filenames for self-reference filtering
+			var ownFiles = {};
+			(libFiles || []).forEach(function(f) {
+				ownFiles[f.toLowerCase()] = true;
+				ownFiles[path.basename(f).toLowerCase()] = true;
+			});
+
+			// Collect #include directives from HSL files in the ZIP
+			var allIncludes = [];
+			(libFiles || []).forEach(function(fname) {
+				var ext = path.extname(fname).toLowerCase();
+				if (ext !== '.hsl' && ext !== '.hs_' && ext !== '.hsi') return;
+				var entry = zipObj.getEntry('lib/' + fname);
+				if (!entry) return;
+				try {
+					var text = zipObj.readAsText(entry);
+					var includes = extractHslIncludes(text);
+					includes.forEach(function(inc) {
+						allIncludes.push({ include: inc, sourceFile: fname });
+					});
+				} catch (_) {}
+			});
+
+			// Deduplicate by normalized include path
+			var seen = {};
+			var uniqueIncludes = [];
+			allIncludes.forEach(function(item) {
+				var normalized = item.include.replace(/\\/g, '/').toLowerCase();
+				if (!seen[normalized]) {
+					seen[normalized] = true;
+					uniqueIncludes.push(item);
+				}
+			});
+
+			// Resolve each include
+			var dependencies = [];
+			uniqueIncludes.forEach(function(item) {
+				var rawTarget = item.include;
+				var normalizedTarget = rawTarget.replace(/\\/g, '/');
+				var targetFileName = normalizedTarget.split('/').pop().toLowerCase();
+
+				// Skip self-references
+				if (ownFiles[targetFileName]) return;
+				var relLower = rawTarget.replace(/\\/g, '/').toLowerCase();
+				var isSelf = false;
+				for (var key in ownFiles) {
+					if (relLower.indexOf(key) !== -1 && key.indexOf('.') !== -1) {
+						isSelf = true;
+						break;
+					}
+				}
+				if (isSelf) return;
+
+				// Try to resolve the file on disk
+				var resolvedPath = null;
+				var isAbsolute = /^[A-Za-z]:[\\/]/.test(rawTarget);
+				if (isAbsolute) {
+					var candidate = path.normalize(rawTarget);
+					if (fs.existsSync(candidate)) resolvedPath = candidate;
+				} else {
+					var candidate = path.join(sysLibDir, rawTarget);
+					if (fs.existsSync(candidate)) resolvedPath = candidate;
+				}
+
+				// Determine which library this dependency belongs to
+				var libraryName = null;
+				var depType = 'unknown';
+
+				// Check user-installed libraries
+				var installedLibs = db_installed_libs.installed_libs.find() || [];
+				for (var i = 0; i < installedLibs.length; i++) {
+					var uLib = installedLibs[i];
+					if (uLib.deleted) continue;
+					var uLibFiles = uLib.library_files || [];
+					for (var j = 0; j < uLibFiles.length; j++) {
+						if (path.basename(uLibFiles[j]).toLowerCase() === targetFileName) {
+							libraryName = uLib.library_name;
+							depType = 'user';
+							break;
+						}
+					}
+					if (libraryName) break;
+				}
+
+				// Check system libraries
+				if (!libraryName) {
+					try {
+						var sysLibs = getAllSystemLibraries();
+						for (var si = 0; si < sysLibs.length; si++) {
+							var sLib = sysLibs[si];
+							var discoveredFiles = sLib.discovered_files || [];
+							for (var di = 0; di < discoveredFiles.length; di++) {
+								var sFileName = path.basename(discoveredFiles[di]).toLowerCase();
+								if (sFileName === targetFileName) {
+									libraryName = sLib.display_name || sLib.canonical_name;
+									depType = 'system';
+									break;
+								}
+							}
+							if (libraryName) break;
+						}
+					} catch (_) {}
+				}
+
+				dependencies.push({
+					include: rawTarget,
+					resolvedFile: resolvedPath,
+					libraryName: libraryName || targetFileName,
+					type: depType,
+					fileExists: !!resolvedPath
+				});
+			});
+
+			// Deduplicate by library name
+			var depByLib = {};
+			var result = [];
+			dependencies.forEach(function(dep) {
+				var key = (dep.libraryName || dep.include).toLowerCase();
+				if (!depByLib[key]) {
+					depByLib[key] = dep;
+					result.push(dep);
+				}
+			});
+
+			return result;
+		}
+
 		// ---- Library integrity hashing (delegated to shared module) ----
 		var computeFileHash        = shared.computeFileHash;
 		var parseHslMetadataFooter = shared.parseHslMetadataFooter;
@@ -14830,6 +14971,59 @@
 				// Install paths (determined by manifest)
 				$modal.find(".imp-preview-lib-path").text("Library \u2192 " + libDestDir);
 				$modal.find(".imp-preview-demo-path").text("Demo Methods \u2192 " + demoDestDir);
+
+				// ---- Pre-install dependency check (from ZIP content) ----
+				var zipDeps = [];
+				try {
+					zipDeps = extractDependenciesFromZip(zip, libFiles);
+				} catch (depErr) {
+					console.warn('Dependency pre-check failed:', depErr.message);
+				}
+				var depStatus = checkDependencyStatus(zipDeps);
+				var $depsSection = $modal.find(".imp-preview-deps-section");
+				var $depsList = $modal.find(".imp-preview-deps-list");
+				var $depsWarning = $modal.find(".imp-preview-deps-warning");
+				$depsList.empty();
+				if (zipDeps.length > 0) {
+					$depsSection.removeClass("d-none");
+					var missingCount = depStatus.missing.length;
+					zipDeps.forEach(function(dep) {
+						var iconHtml, statusHtml;
+						if (dep.type === 'system') {
+							iconHtml = '<i class="fas fa-lock text-muted"></i>';
+							statusHtml = '<span class="text-muted"><small>System</small></span>';
+						} else if (dep.type === 'user' && dep.fileExists) {
+							iconHtml = '<i class="fas fa-check-circle text-success"></i>';
+							statusHtml = '<span class="text-success"><small>Installed</small></span>';
+						} else {
+							iconHtml = '<i class="fas fa-exclamation-circle text-danger"></i>';
+							statusHtml = '<span class="badge badge-danger">Missing</span>';
+						}
+						$depsList.append(
+							'<div class="d-flex align-items-center py-1 px-2 mb-1" style="background:rgba(var(--medium-rgb),0.04); border-radius:4px; border:1px solid rgba(var(--medium-rgb),0.08);">'
+							+ '<span class="mr-2" style="width:20px; text-align:center;">' + iconHtml + '</span>'
+							+ '<span class="flex-fill" style="min-width:0;">'
+							+ '<strong>' + escapeHtml(dep.libraryName) + '</strong>'
+							+ '<br><small class="text-muted">' + escapeHtml(dep.include) + '</small>'
+							+ '</span>'
+							+ '<span class="ml-2">' + statusHtml + '</span>'
+							+ '</div>'
+						);
+					});
+					if (missingCount > 0) {
+						$depsWarning.removeClass("d-none");
+						$depsWarning.find(".imp-preview-deps-warning-text").html(
+							'This library requires <strong>' + missingCount + ' missing dependenc' + (missingCount === 1 ? 'y' : 'ies')
+							+ '</strong> that ' + (missingCount === 1 ? 'is' : 'are') + ' not currently installed. '
+							+ 'The library may not function correctly without ' + (missingCount === 1 ? 'it' : 'them') + '.'
+						);
+					} else {
+						$depsWarning.addClass("d-none");
+					}
+				} else {
+					$depsSection.addClass("d-none");
+					$depsWarning.addClass("d-none");
+				}
 
 				// Check for existing library
 				var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
