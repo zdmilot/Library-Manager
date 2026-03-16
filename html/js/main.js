@@ -6744,6 +6744,8 @@
 				if (pkg_libraryFiles.indexOf(filePath) === -1) {
 					pkg_libraryFiles.push(filePath);
 					var baseName = path.basename(filePath);
+					// Individual files are placed directly at the Library root level.
+					// Users can organize them into subfolders via drag & drop after adding.
 					pkg_fileRelPaths[filePath] = baseName;
 					if (baseName.toLowerCase().endsWith('.dll')) {
 						newDlls.push(baseName);
@@ -17384,7 +17386,7 @@
 			(uLib.library_files || []).forEach(function(f) {
 				var absPath = path.join(libDir, f);
 				var rel = f.replace(/\\/g, '/');
-				ulib_fileRelPaths[absPath] = libSubdir ? libSubdir + '/' + rel : rel;
+				ulib_fileRelPaths[absPath] = [libSubdir, rel].filter(Boolean).join('/');
 			});
 			// Restore saved relative paths for additional files
 			var savedRelPaths = uLib.additional_file_rel_paths || {};
