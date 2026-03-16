@@ -8495,7 +8495,6 @@
 			$(".pkg-installer-detail").hide();
 			$(".pkg-installer-empty-msg").show();
 			$(".pkg-installer-filename").text('');
-			$("#pkg-installer-description").val('');
 			pkg_installSubdir = null;
 			pkgUpdateLibFileList();
 			pkgUpdateDemoFileList();
@@ -9029,10 +9028,6 @@
 				// Installer executable
 				if (pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
 					manifest.installer_executable = path.basename(pkg_installerFilePath);
-					var installerInfoDesc = $("#pkg-installer-description").val();
-					if (installerInfoDesc && installerInfoDesc.trim()) {
-						manifest.installer_info = { description: installerInfoDesc.trim() };
-					}
 				}
 
 				// Sanitize all file paths in manifest to ensure only safe relative paths
