@@ -1023,6 +1023,14 @@ function cmdImportLib(args) {
         die('Invalid package: unsafe file paths detected.\n' + pathValidation.errors.join('\n'));
     }
 
+    // ---- Validate restricted file extensions ----
+    const extValidation = shared.validateManifestFileExtensions(manifest);
+    if (!extValidation.valid) {
+        die('Invalid package: contains restricted file types that could pose a security risk.\n' +
+            extValidation.errors.join('\n') +
+            '\n\nExecutable, script, registry, and shortcut files are not permitted in library packages.');
+    }
+
     // ---- Author/organization validation ----
     const importAuthor = (manifest.author || '').trim();
     const importOrg = (manifest.organization || '').trim();
@@ -1192,6 +1200,12 @@ function cmdImportArchive(args) {
             const archPathValidation = shared.validateManifestPaths(manifest);
             if (!archPathValidation.valid) {
                 throw new Error('Unsafe file paths in package "' + libName + '": ' + archPathValidation.errors.join('; '));
+            }
+
+            // ---- Validate restricted file extensions ----
+            const archExtValidation = shared.validateManifestFileExtensions(manifest);
+            if (!archExtValidation.valid) {
+                throw new Error('Package "' + libName + '" contains restricted file types: ' + archExtValidation.errors.join('; '));
             }
 
             // Verify inner package signature
@@ -1860,6 +1874,15 @@ function cmdCreatePackage(args) {
     }
     for (const fp of resolvedLabwareFiles) {
         if (!fs.existsSync(fp)) die(`Labware file not found: ${fp}`);
+    }
+
+    // ---- Validate restricted file extensions ----
+    const allCreateFiles = resolvedLibFiles.concat(resolvedDemoFiles).concat(resolvedLabwareFiles);
+    const restrictedCreateFiles = allCreateFiles.filter(f => shared.isRestrictedFileExtension(f));
+    if (restrictedCreateFiles.length > 0) {
+        die('Restricted file types cannot be included in library packages:\n' +
+            restrictedCreateFiles.map(f => '  ' + path.basename(f)).join('\n') +
+            '\n\nExecutable, script, registry, and shortcut files are not permitted.');
     }
 
     // ---- Auto-detect library name ----

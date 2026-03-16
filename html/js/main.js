@@ -11318,6 +11318,35 @@
 				});
 			}
 
+			// Release Notes
+			var libHasReleaseNotes = !!lib.release_notes;
+			var libHasReleaseNotesPdf = !!lib.release_notes_pdf_base64;
+			if (libHasReleaseNotes || libHasReleaseNotesPdf) {
+				if (libHasReleaseNotes) {
+					$("#libDetailModal .lib-detail-release-notes").text(lib.release_notes);
+				} else {
+					$("#libDetailModal .lib-detail-release-notes").text('');
+				}
+				if (libHasReleaseNotesPdf) {
+					$("#libDetailModal .lib-detail-release-notes-pdf-link").off("click").on("click", function(e) {
+						e.preventDefault();
+						var tmpDir = path.join(os.tmpdir(), 'LibraryManager_pdf_' + Date.now());
+						fs.mkdirSync(tmpDir, {recursive: true});
+						var pdfName = lib.release_notes_pdf || 'release_notes.pdf';
+						var tmpPdf = path.join(tmpDir, pdfName);
+						fs.writeFileSync(tmpPdf, Buffer.from(lib.release_notes_pdf_base64, 'base64'));
+						nw.Shell.openItem(tmpPdf);
+					});
+					$("#libDetailModal .lib-detail-release-notes-pdf-wrap").removeClass("d-none");
+				} else {
+					$("#libDetailModal .lib-detail-release-notes-pdf-wrap").addClass("d-none");
+				}
+				$("#libDetailModal .lib-detail-release-notes-section").removeClass("d-none");
+			} else {
+				$("#libDetailModal .lib-detail-release-notes-section").addClass("d-none");
+				$("#libDetailModal .lib-detail-release-notes-pdf-wrap").addClass("d-none");
+			}
+
 			// Help files list
 			var $helpFiles = $("#libDetailModal .lib-detail-help-files");
 			$helpFiles.empty();
@@ -12006,6 +12035,10 @@
 			}
 
 			// Help files section for system libraries
+			// System libraries don't have release notes
+			$("#libDetailModal .lib-detail-release-notes-section").addClass("d-none");
+			$("#libDetailModal .lib-detail-release-notes-pdf-wrap").addClass("d-none");
+
 			var $helpFiles = $("#libDetailModal .lib-detail-help-files");
 			$helpFiles.empty();
 			if (sysHelpFiles.length > 0) {

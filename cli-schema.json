@@ -90,7 +90,7 @@
 
     "library_files": {
       "type": "array",
-      "description": "Paths to the library payload files (.hsl, .hs_, .hsi, .smt, .stp, .dll, .bmp, and any other distributed files). At least one file is required. Paths are resolved relative to the spec file directory.",
+      "description": "Paths to the library payload files (.hsl, .hs_, .hsi, .smt, .stp, .dll, .bmp, and any other distributed files). At least one file is required. Paths are resolved relative to the spec file directory. Executable, script, registry, and shortcut file types (.exe, .bat, .cmd, .ps1, .vbs, .reg, .lnk, .msi, etc.) are restricted and will be rejected.",
       "minItems": 1,
       "items": {
         "type": "string",
@@ -103,7 +103,7 @@
 
     "demo_method_files": {
       "type": "array",
-      "description": "Paths to demo / example method files (.hsl, .lay, .med, etc.) that illustrate how to use the library. Installed separately under the Methods directory. Optional.",
+      "description": "Paths to demo / example method files (.hsl, .lay, .med, etc.) that illustrate how to use the library. Installed separately under the Methods directory. Optional. Executable, script, registry, and shortcut file types are restricted and will be rejected.",
       "items": {
         "type": "string",
         "minLength": 1
@@ -114,7 +114,7 @@
     },
     "labware_files": {
       "type": "array",
-      "description": "Paths to labware definition files (.rck, .ctr, .tml, .dck, .lay) that ship with the library. Each entry is a relative path with an optional subdirectory under the Labware root. File paths must be purely relative — no drive letters, no '//' or '\\\\', and must begin with one of the three allowed roots (Library, Methods, Labware) or be bare filenames. Installed under the Hamilton Labware directory. Optional.",
+      "description": "Paths to labware definition files (.rck, .ctr, .tml, .dck, .lay) that ship with the library. Each entry is a relative path with an optional subdirectory under the Labware root. File paths must be purely relative — no drive letters, no '//' or '\\\\', and must begin with one of the three allowed roots (Library, Methods, Labware) or be bare filenames. Installed under the Hamilton Labware directory. Optional. Executable, script, registry, and shortcut file types are restricted and will be rejected.",
       "items": {
         "type": "string",
         "minLength": 1

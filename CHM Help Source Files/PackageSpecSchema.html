@@ -37,7 +37,7 @@
   <td><code>library_files</code></td>
   <td>string[]</td>
   <td>minItems: 1</td>
-  <td>Paths to library payload files (<code>.hsl</code>, <code>.hs_</code>, <code>.hsi</code>, <code>.smt</code>, <code>.stp</code>, <code>.dll</code>, <code>.bmp</code>, etc.). At least one file is required.</td>
+  <td>Paths to library payload files (<code>.hsl</code>, <code>.hs_</code>, <code>.hsi</code>, <code>.smt</code>, <code>.stp</code>, <code>.dll</code>, <code>.bmp</code>, etc.). At least one file is required. <b>Note:</b> Executable, script, registry, and shortcut file types (<code>.exe</code>, <code>.bat</code>, <code>.cmd</code>, <code>.ps1</code>, <code>.vbs</code>, <code>.reg</code>, <code>.lnk</code>, <code>.msi</code>, etc.) are <b>restricted</b> and will be rejected. See <a href="#restricted-file-types">Restricted File Types</a>.</td>
 </tr>
 <tr>
   <td><code>venus_compatibility</code></td>
@@ -111,7 +111,7 @@
   <td><code>labware_files</code></td>
   <td>string[]</td>
   <td>-</td>
-  <td>Paths to labware definition files (<code>.rck</code>, <code>.ctr</code>, <code>.tml</code>, <code>.dck</code>, <code>.lay</code>) that ship with the library. Installed under the Hamilton Labware directory.</td>
+  <td>Paths to labware definition files (<code>.rck</code>, <code>.ctr</code>, <code>.tml</code>, <code>.dck</code>, <code>.lay</code>) that ship with the library. Installed under the Hamilton Labware directory. Executable, script, registry, and shortcut file types are restricted.</td>
 </tr>
 <tr>
   <td><code>install_to_library_root</code></td>
@@ -222,6 +222,35 @@
 <tr><td><code>.svg</code></td><td>image/svg+xml</td></tr>
 </tbody>
 </table>
+
+<h2 id="restricted-file-types">Restricted File Types</h2>
+<div class="warning">
+<p><b>Security Restriction:</b> The following file extensions are <b>restricted</b> and cannot be included in <code>library_files</code>, <code>demo_method_files</code>, or <code>labware_files</code>. These restrictions protect system security and package integrity by preventing potentially harmful files from being distributed through library packages.</p>
+</div>
+
+<h4>Executables &amp; Installers</h4>
+<p><code>.exe</code>, <code>.msi</code>, <code>.msp</code>, <code>.scr</code>, <code>.com</code>, <code>.pif</code>, <code>.appx</code>, <code>.msix</code></p>
+
+<h4>Script Files</h4>
+<p><code>.bat</code>, <code>.cmd</code>, <code>.ps1</code>, <code>.psm1</code>, <code>.psd1</code>, <code>.vbs</code>, <code>.vbe</code>, <code>.js</code>, <code>.jse</code>, <code>.ws</code>, <code>.wsf</code>, <code>.wsc</code>, <code>.wsh</code>, <code>.py</code>, <code>.pyw</code>, <code>.sh</code></p>
+
+<h4>Registry Files</h4>
+<p><code>.reg</code></p>
+
+<h4>Shortcuts &amp; Links</h4>
+<p><code>.lnk</code>, <code>.url</code>, <code>.website</code></p>
+
+<h4>System &amp; Driver Files</h4>
+<p><code>.sys</code>, <code>.drv</code>, <code>.cpl</code>, <code>.inf</code>, <code>.ocx</code></p>
+
+<h4>Other Restricted Types</h4>
+<p><code>.msc</code>, <code>.mst</code>, <code>.hta</code>, <code>.cab</code>, <code>.sfx</code></p>
+
+<p>If a package is created or imported containing any of these file types, the operation will be rejected with a descriptive error message listing the offending files. This validation applies to both the GUI and CLI workflows.</p>
+
+<div class="note">
+<p><b>Note:</b> <code>.dll</code> files are <b>not</b> restricted &mdash; they are required for libraries that include COM components. DLL files listed in <code>com_register_dlls</code> are registered using the 32-bit <code>RegAsm.exe</code> during import. See <a href="ImportingLibraries.html">COM DLL Registration</a> for details.</p>
+</div>
 
 <h2>Related</h2>
 <ul>

@@ -29,7 +29,7 @@
       <li><b>Tags</b> (optional) - Searchable keywords. <b>Note:</b> Over 60 tag keywords are <b>reserved</b> (case-insensitive) and cannot be used, including <code>System</code>, <code>Hamilton</code>, <code>OEM</code>, and laboratory automation company names. If entered, they are automatically removed and an error message is displayed. See <a href="PackageSpecSchema.html">Package Spec JSON Schema</a> for the complete reserved list.</li>
     </ul>
   </li>
-  <li><b>Add Library Files:</b> Add individual files or entire folders. Supported types include <code>.hsl</code>, <code>.hs_</code>, <code>.hsi</code>, <code>.smt</code>, <code>.stp</code>, <code>.sub</code>, <code>.dll</code>, <code>.bmp</code>, <code>.chm</code>, and others.</li>
+  <li><b>Add Library Files:</b> Add individual files or entire folders. Supported types include <code>.hsl</code>, <code>.hs_</code>, <code>.hsi</code>, <code>.smt</code>, <code>.stp</code>, <code>.sub</code>, <code>.dll</code>, <code>.bmp</code>, <code>.chm</code>, and others. <b>Note:</b> Executable, script, registry, and shortcut file types (<code>.exe</code>, <code>.bat</code>, <code>.cmd</code>, <code>.ps1</code>, <code>.vbs</code>, <code>.reg</code>, <code>.lnk</code>, <code>.msi</code>, etc.) are <b>restricted</b> and cannot be added to library packages. These restrictions ensure the security and integrity of distributed libraries.</li>
   <li><b>Add Demo Method Files</b> (optional): Add example methods that illustrate how to use the library. These are installed to a separate demo methods directory.</li>
   <li><b>Library Name Detection:</b> The library name is <b>auto-detected</b> from your payload files using this priority order:
     <ol>
@@ -124,6 +124,7 @@
   <li><code>venus_compatibility</code> is required (CLI only)</li>
   <li><code>description</code> is required (CLI only)</li>
   <li><code>library_files</code> contains at least one entry</li>
+  <li><b>Restricted file types:</b> Files with executable, script, registry, or shortcut extensions (<code>.exe</code>, <code>.bat</code>, <code>.cmd</code>, <code>.ps1</code>, <code>.vbs</code>, <code>.reg</code>, <code>.lnk</code>, <code>.msi</code>, <code>.scr</code>, <code>.hta</code>, <code>.pif</code>, etc.) are rejected from <code>library_files</code>, <code>demo_method_files</code>, and <code>labware_files</code> to protect system security and package integrity</li>
   <li>All referenced files exist on disk at the resolved paths</li>
   <li>All referenced help files exist on disk</li>
   <li>COM DLL basenames match entries in <code>library_files</code></li>
