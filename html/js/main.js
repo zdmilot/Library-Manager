@@ -9253,15 +9253,19 @@
 				 * Strip the install directory prefix from a relative path.
 				 * This ensures filenames are immutable and directory structure is preserved
 				 * exactly as the user specified, without duplicating the install subdirectory.
+				 * E.g. if prefix is "MyLib" and relPath is "MyLib/subdir/file.hsl",
+				 * this returns "subdir/file.hsl".
 				 */
 				function pkgStripInstallPrefix(relPath) {
 					if (!_pkgStripPrefix) return relPath;
 					var normalized = relPath.replace(/\\/g, '/');
-					var prefix = _pkgStripPrefix + '/';
-					// Case-insensitive check
-					if (normalized.toLowerCase().indexOf(prefix.toLowerCase()) === 0) {
+					var prefix = _pkgStripPrefix.toLowerCase() + '/';
+					if (normalized.toLowerCase().startsWith(prefix)) {
 						var stripped = normalized.substring(prefix.length);
-						return stripped || path.basename(relPath);
+						// If stripping leaves nothing (path was just the prefix dir),
+						// fall back to the bare filename to avoid empty paths
+						if (!stripped) return path.basename(relPath);
+						return stripped;
 					}
 					return relPath;
 				}
