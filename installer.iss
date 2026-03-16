@@ -47,6 +47,8 @@ ChangesAssociations=yes
 ; Detect running instances via Windows Restart Manager (upgrade safety)
 CloseApplications=yes
 CloseApplicationsFilter=*.exe
+; Reopen the app automatically after the installer completes
+RestartApplications=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
