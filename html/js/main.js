@@ -9785,7 +9785,7 @@
 					includes.forEach(function(inc) {
 						allIncludes.push({ include: inc, sourceFile: fname });
 					});
-				} catch (_) {}
+				} catch (e) { console.warn('Dependency pre-check: could not read "' + fname + '" from ZIP:', e.message); }
 			});
 
 			// Deduplicate by normalized include path
@@ -9866,7 +9866,7 @@
 							}
 							if (libraryName) break;
 						}
-					} catch (_) {}
+					} catch (e) { console.warn('Dependency pre-check: could not query system libraries:', e.message); }
 				}
 
 				dependencies.push({
