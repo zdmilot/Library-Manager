@@ -12,6 +12,10 @@
 <h2>Overview</h2>
 <p>Importing is the primary way to install new VENUS libraries. Library Manager supports importing a single library package (<code>.hxlibpkg</code>) or a multi-library archive (<code>.hxlibarch</code>). Both file types use the <a href="BinaryContainerFormat.html">binary container format</a> - they are not plain ZIP files and cannot be opened by standard archive tools. Both the GUI and the CLI provide full import capabilities.</p>
 
+<div class="note">
+<p><b>File Type Restrictions:</b> During import, Library Manager validates that the package does not contain restricted file types (executables, scripts, registry files, shortcuts, etc.) in its <code>library_files</code>, <code>demo_method_files</code>, or <code>labware_files</code>. Packages containing restricted file types will be rejected to protect system security and integrity. See <a href="PackageSpecSchema.html#restricted-file-types">Restricted File Types</a> for the complete list of restricted extensions.</p>
+</div>
+
 <h2>Single Package Import (<code>.hxlibpkg</code>)</h2>
 
 <h3>GUI Workflow</h3>

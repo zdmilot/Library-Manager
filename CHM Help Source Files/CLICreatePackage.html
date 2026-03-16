@@ -95,6 +95,7 @@ node cli.js create-package --spec MyLib.spec.json --output MyLib.hxlibpkg --sign
   <li><code>venus_compatibility</code> is required</li>
   <li><code>description</code> is required</li>
   <li><code>library_files</code> must contain at least one entry</li>
+  <li>Executable, script, registry, and shortcut file types (<code>.exe</code>, <code>.bat</code>, <code>.cmd</code>, <code>.ps1</code>, <code>.vbs</code>, <code>.reg</code>, <code>.lnk</code>, <code>.msi</code>, etc.) are restricted in <code>library_files</code>, <code>demo_method_files</code>, and <code>labware_files</code>. See <a href="PackageSpecSchema.html#restricted-file-types">Restricted File Types</a> for the complete list.</li>
   <li>All referenced library files must exist on disk</li>
   <li>All referenced help files must exist on disk</li>
   <li>Certain reserved author and organization names cannot be used</li>
