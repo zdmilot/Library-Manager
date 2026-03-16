@@ -2,7 +2,7 @@
   "name": "LibraryManager",
   "main": "html/index.html",
   "description": "Library Manager",
-  "version": "3.0.5",
+  "version": "3.0.6",
   "license": "Apache-2.0",
   "author": "Zachary Milot",
   "keywords": [
