@@ -8456,6 +8456,7 @@
 			$("#pkg-venus-compat").val('');
 			$("#pkg-description").val('');
 			$("#pkg-github-url").val('');
+			$("#pkg-release-notes").val('');
 			$("#pkg-changelog").val('');
 			$(".pkg-changelog-card").addClass("d-none");
 			$("#pkg-tags").val('');
@@ -8997,6 +8998,8 @@
 						venusVersion: _cachedVENUSVersion || ''
 					})]
 				};
+				var releaseNotes = $("#pkg-release-notes").val().trim();
+				if (releaseNotes) manifest.release_notes = releaseNotes;
 				if (githubUrl) manifest.github_url = githubUrl;
 				if (pkg_installSubdir === '') manifest.install_to_library_root = true;
 				var customSubdir = (pkg_installSubdir && pkg_installSubdir !== '') ? pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '') : '';
@@ -9101,6 +9104,7 @@
 						(organization ? 'Organization: ' + organization + '\r\n' : '') +
 						'Description: ' + description + '\r\n' +
 						'VENUS Compatibility: ' + venusCompat + '\r\n' +
+						(releaseNotes ? 'Release Notes: ' + releaseNotes + '\r\n' : '') +
 						(githubUrl ? 'GitHub: ' + githubUrl + '\r\n' : '') +
 						(tags.length > 0 ? 'Tags: ' + tags.join(', ') + '\r\n' : '') +
 						'Created: ' + manifest.created_date + '\r\n' +
@@ -9123,6 +9127,7 @@
 						github_url:      githubUrl || '',
 						tags:            tags.length > 0 ? tags.join(', ') : '',
 						changelog:       changelog || '',
+						release_notes:   releaseNotes || '',
 						output_file:     savePath,
 						library_files:   pkg_libraryFiles.length,
 						library_file_names: pkg_libraryFiles.map(function(f) { return path.basename(f); }).join(', '),
@@ -14814,6 +14819,14 @@
 					$modal.find(".imp-preview-desc-section").addClass("d-none");
 				}
 
+				// Release Notes
+				if (manifest.release_notes) {
+					$modal.find(".imp-preview-release-notes").text(manifest.release_notes);
+					$modal.find(".imp-preview-release-notes-section").removeClass("d-none");
+				} else {
+					$modal.find(".imp-preview-release-notes-section").addClass("d-none");
+				}
+
 				// GitHub URL (respect display setting, validate to prevent javascript: XSS)
 				if (manifest.github_url) {
 					var ghCheck = shared.validateGitHubRepoUrl(manifest.github_url);
@@ -15608,6 +15621,16 @@
 						lines.push("Install To Root:  " + (lib.install_to_library_root ? "Yes" : "No"));
 						if (lib.custom_install_subdir) {
 							lines.push("Custom Subdir:    " + lib.custom_install_subdir);
+						}
+
+						// Release Notes
+						if (lib.release_notes) {
+							lines.push("Release Notes:");
+							lib.release_notes.split(/\r?\n/).forEach(function(rl) {
+								lines.push("  " + rl);
+							});
+						} else {
+							lines.push("Release Notes:    N/A");
 						}
 
 						// Changelog
@@ -19286,8 +19309,7 @@
 						'<i class="fas fa-check-circle mr-1"></i>Installed v' + escapeHtml(installedVer) + '</button>';
 				}
 			} else {
-				footerHtml = '<button class="btn btn-sm solid-button store-card-install-btn" data-pkg-file="' +
-					escapeHtml(pkg.package_file) + '"><i class="fas fa-download mr-1"></i>Download and Install</button>';
+				footerHtml = '<button class="btn btn-sm solid-button store-card-info-btn"><i class="fas fa-info-circle mr-1"></i>More Info</button>';
 			}
 
 			var org = pkg.organization ? escapeHtml(pkg.organization) : '';
@@ -19319,32 +19341,8 @@
 			return html;
 		}
 
-		// ---- Card "Download and Install" button click → direct download ----
-		$(document).on("click", ".store-card-install-btn", function (e) {
-			e.preventDefault();
-			e.stopPropagation(); // prevent card click from opening detail modal
-			var $btn = $(this);
-			if ($btn.prop("disabled")) return;
-
-			var pkgFile = $btn.attr("data-pkg-file");
-			if (!pkgFile) return;
-
-			// Find catalog entry
-			var pkg = null;
-			for (var i = 0; i < _storeCatalog.length; i++) {
-				if (_storeCatalog[i].package_file === pkgFile) { pkg = _storeCatalog[i]; break; }
-			}
-			if (!pkg) return;
-
-			// Resolve dependencies
-			var depsNeeded = storeResolveDependencies(pkg.library_name);
-			if (depsNeeded.length > 0) {
-				storeShowDepsModal(pkg, depsNeeded);
-			} else {
-				var $card = $btn.closest(".store-card");
-				storeDownloadAndPreview(pkgFile, $card);
-			}
-		});
+		// ---- Card "More Info" button click → open detail modal (same as card click) ----
+		// (The store-card-info-btn does NOT stop propagation, so the card click handler below opens the detail modal.)
 
 		// ---- Card "Ignore Update" button click ----
 		$(document).on("click", ".store-card-ignore-btn", function (e) {
@@ -19371,8 +19369,6 @@
 
 		// ---- Card click → show detail ----
 		$(document).on("click", ".store-card", function (e) {
-			// If the install button was clicked, the handler above already handled it
-			if ($(e.target).closest(".store-card-install-btn").length) return;
 			if ($(e.target).closest(".store-card-ignore-btn, .store-card-unignore-btn").length) return;
 
 			var $card = $(this);
@@ -19411,6 +19407,14 @@
 				$m.find(".store-detail-desc-section").removeClass("d-none");
 			} else {
 				$m.find(".store-detail-desc-section").addClass("d-none");
+			}
+
+			// Release Notes
+			if (ver.release_notes) {
+				$m.find(".store-detail-release-notes").text(ver.release_notes);
+				$m.find(".store-detail-release-notes-section").removeClass("d-none");
+			} else {
+				$m.find(".store-detail-release-notes-section").addClass("d-none");
 			}
 
 			// GitHub link
@@ -19739,8 +19743,7 @@
 			} else {
 				// No dependencies needed — go straight to download & preview
 				$("#storeDetailModal").modal("hide");
-				var $card = $(".store-card[data-pkg-file='" + pkg.package_file.replace(/'/g, "\\'") + "']");
-				storeDownloadAndPreview(pkgFile, $card);
+				storeDownloadAndPreview(pkgFile);
 			}
 		});
 
@@ -19943,19 +19946,12 @@
 		 */
 		function storeInstallQueue(queue, idx) {
 			if (idx >= queue.length) {
-				// All done — refresh catalog
-				_storeCatalog = null;
+				// All done — refresh grid to show installed state
+				storeRenderGrid();
 				return;
 			}
 
 			var pkgFile = queue[idx];
-			var $card = $(".store-card[data-pkg-file='" + pkgFile.replace(/'/g, "\\'") + "']");
-
-			// Show downloading state on card if visible
-			if ($card.length) {
-				$card.addClass("store-card-downloading");
-				$card.find(".store-card-footer").html('<span class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Downloading\u2026</span>');
-			}
 
 			var downloadUrl = storePackageDownloadUrl(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
@@ -19965,11 +19961,8 @@
 			var https = require('https');
 			storeDownloadFile(https, downloadUrl, tmpPath, function (err) {
 				if (err) {
-					if ($card.length) {
-						$card.removeClass("store-card-downloading");
-					}
 					alert("Download failed for " + pkgFile + ": " + err.message + "\n\nRemaining packages were not installed.");
-					_storeCatalog = null;
+					storeRenderGrid();
 					return;
 				}
 
@@ -19992,22 +19985,15 @@
 					var checkFlag = setInterval(function () {
 						if (!_isImporting) {
 							clearInterval(checkFlag);
-							if ($card.length) {
-								$card.removeClass("store-card-downloading");
-							}
 							_storeImportActive = false;
+							storeRenderGrid();
 							storeInstallQueue(queue, idx + 1);
 						}
 					}, 500);
 				};
 
 				if (breakingChanges.length > 0) {
-					if ($card.length) $card.removeClass("store-card-downloading");
 					storeShowBreakingChangesModal(breakingChanges, function () {
-						if ($card.length) {
-							$card.addClass("store-card-downloading");
-							$card.find(".store-card-footer").html('<span class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Installing\u2026</span>');
-						}
 						proceedWithQueueInstall();
 					});
 				} else {
@@ -20016,17 +20002,16 @@
 			});
 		}
 
-		function storeDownloadAndPreview(pkgFile, $card) {
+		function storeDownloadAndPreview(pkgFile) {
 			if (_isImporting) {
 				alert("An import is already in progress. Please wait for it to complete.");
 				return;
 			}
 
-			// Show downloading state on the card
-			$card.addClass("store-card-downloading");
-			var $footer = $card.find(".store-card-footer");
-			var origFooterHtml = $footer.html();
-			$footer.html('<span class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Downloading\u2026</span>');
+			// Show downloading state on the detail modal install button (if still open)
+			var $detailBtn = $("#storeDetailModal .store-detail-install-btn");
+			var origBtnHtml = $detailBtn.html();
+			$detailBtn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Downloading\u2026').prop("disabled", true);
 
 			var downloadUrl = storePackageDownloadUrl(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
@@ -20036,8 +20021,7 @@
 			var https = require('https');
 			storeDownloadFile(https, downloadUrl, tmpPath, function (err) {
 				if (err) {
-					$card.removeClass("store-card-downloading");
-					$footer.html(origFooterHtml);
+					$detailBtn.html(origBtnHtml).prop("disabled", false);
 					alert("Download failed: " + err.message);
 					return;
 				}
@@ -20057,20 +20041,14 @@
 
 				if (breakingChanges.length > 0) {
 					// Show breaking changes modal — wait for user acceptance
-					$card.removeClass("store-card-downloading");
-					$footer.html(origFooterHtml);
 					storeShowBreakingChangesModal(breakingChanges, function () {
 						// User accepted — proceed with install
-						$card.addClass("store-card-downloading");
-						$footer.html('<span class="text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Installing\u2026</span>');
 						_storeImportActive = true;
 						impLoadAndInstall(tmpPath);
 						var checkFlag = setInterval(function () {
 							if (!_isImporting) {
 								clearInterval(checkFlag);
-								$card.removeClass("store-card-downloading");
-								$footer.html(origFooterHtml);
-								_storeCatalog = null;
+								storeRenderGrid();
 							}
 						}, 500);
 					});
@@ -20081,9 +20059,7 @@
 					var checkFlag = setInterval(function () {
 						if (!_isImporting) {
 							clearInterval(checkFlag);
-							$card.removeClass("store-card-downloading");
-							$footer.html(origFooterHtml);
-							_storeCatalog = null;
+							storeRenderGrid();
 						}
 					}, 500);
 				}

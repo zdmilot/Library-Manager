@@ -1959,9 +1959,14 @@ function cmdCreatePackage(args) {
         manifest.default_help_file = spec.default_help_file;
     }
 
+    // Add release notes if specified in spec
+    if (spec.release_notes) {
+        manifest.release_notes = spec.release_notes;
+    }
+
     // Preserve any extra user-supplied spec fields for forward compatibility
     const knownSpecKeys = ['library_name','author','organization','version','venus_compatibility',
-        'description','github_url','tags','library_image','library_files','demo_method_files',
+        'description','release_notes','github_url','tags','library_image','library_files','demo_method_files',
         'help_files','default_help_file','com_register_dlls','install_to_library_root',
         'labware_files','bin_files','installer_executable','installer_info',
         '$schema','_comment_paths','_comment','_comment_installer'];

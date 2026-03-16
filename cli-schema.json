@@ -49,6 +49,12 @@
       "examples": ["Provides high-level pipetting helpers for the ML600 syringe pump."]
     },
 
+    "release_notes": {
+      "type": "string",
+      "description": "Free-text release notes describing what is included, new, changed, or fixed in this version. Stored in the package manifest and displayed during import preview. Optional.",
+      "examples": ["Initial release with pipetting helpers and error recovery routines.", "- Added 96-well plate support\n- Fixed volume tracking for small volumes\n- Improved error messages"]
+    },
+
     "github_url": {
       "type": "string",
       "format": "uri",

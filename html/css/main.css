@@ -5923,6 +5923,10 @@ body.dark-mode .store-card.store-card-has-update {
 	font-size: 12px;
 	padding: 2px 14px;
 }
+.store-card-info-btn {
+	font-size: 12px;
+	padding: 2px 14px;
+}
 .store-card-install-btn.store-card-btn-installed {
 	background: #28a745 !important;
 	border-color: #28a745 !important;
