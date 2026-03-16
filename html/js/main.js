@@ -14836,7 +14836,7 @@
 				if (existing && !existing.deleted) {
 					var existingVer = existing.version || '?';
 					var incomingVer = manifest.version || '?';
-					var isSameVersion = (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer);
+					var isSameVersion = (existingVer !== '?' && incomingVer !== '?' && shared.compareVersions(existingVer, incomingVer) === 0);
 					$modal.find(".imp-preview-overwrite-warning").removeClass("d-none");
 					if (isSameVersion) {
 						$modal.find(".imp-preview-overwrite-warning .alert").removeClass("alert-warning alert-info").addClass("alert-warning");
@@ -18356,7 +18356,7 @@
 				var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
 				if (existing) {
 					var existingVer = existing.version || '?';
-					var isSameVersion = (existingVer !== '?' && version && existingVer === version);
+					var isSameVersion = (existingVer !== '?' && version && shared.compareVersions(existingVer, version) === 0);
 					var overwriteMsg;
 					if (isSameVersion) {
 						overwriteMsg = 'A library named "' + libName + '" with the same version (v' + existingVer + ') is already installed.\n\nDo you want to replace it?';
@@ -18896,7 +18896,10 @@
 				for (var i = 0; i < oldPublic.length; i++) {
 					oldFunctions[oldPublic[i].qualifiedName] = oldPublic[i];
 				}
-			} catch (_) { return changes; } // can't read old files, skip check
+			} catch (e) {
+				console.warn('Breaking change detection: could not read installed library files:', e.message);
+				return changes;
+			} // can't read old files, skip check
 
 			// Parse new (package) public functions from the ZIP
 			var newLibFiles = manifest.library_files || [];
@@ -18915,7 +18918,9 @@
 							newFunctions[fns[fi].qualifiedName] = fns[fi];
 						}
 					}
-				} catch (_) {}
+				} catch (e) {
+					console.warn('Breaking change detection: could not parse HSL file "' + fname + '":', e.message);
+				}
 			}
 
 			// Compare: check for removed functions and changed signatures
@@ -19399,7 +19404,7 @@
 			if (installed && !installed.deleted) {
 				var existingVer = installed.version || '?';
 				var incomingVer = ver.version || '?';
-				var isSameVersion = (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer);
+				var isSameVersion = (existingVer !== '?' && incomingVer !== '?' && shared.compareVersions(existingVer, incomingVer) === 0);
 				$m.find(".store-detail-overwrite-warning").removeClass("d-none");
 				if (isSameVersion) {
 					$m.find(".store-detail-overwrite-warning .alert").removeClass("alert-warning alert-info").addClass("alert-warning");
