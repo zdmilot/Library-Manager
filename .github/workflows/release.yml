@@ -3,8 +3,8 @@ name: Build and Release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version number (e.g. 3.1.0)'
+      version_increment:
+        description: 'Version increment to add to current version (e.g. 0.0.1 for patch, 0.1.0 for minor, 1.0.0 for major)'
         required: true
         type: string
       release_notes:
@@ -23,10 +23,58 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Compute new version
+        id: versioning
+        shell: pwsh
+        run: |
+          $increment = "${{ inputs.version_increment }}"
+          $versionPattern = '^\d+\.\d+\.\d+$'
+
+          # Validate increment format
+          if ($increment -notmatch $versionPattern) {
+            Write-Error "Invalid increment format '$increment'. Must be MAJOR.MINOR.PATCH (e.g. 0.0.1)."
+            exit 1
+          }
+
+          # Validate that exactly one component of the increment is non-zero
+          $inc = $increment -split '\.' | ForEach-Object { [int]$_ }
+          $nonZero = ($inc | Where-Object { $_ -ne 0 }).Count
+          if ($nonZero -ne 1) {
+            Write-Error "Exactly one component of the increment must be non-zero (e.g. 0.0.1, 0.1.0, or 1.0.0). Got: '$increment'."
+            exit 1
+          }
+
+          # Read current version from package.json
+          $pkgJson = Get-Content "package.json" -Raw | ConvertFrom-Json
+          $currentVersion = $pkgJson.version
+
+          if ($currentVersion -notmatch $versionPattern) {
+            Write-Error "Unexpected version format in package.json: '$currentVersion'."
+            exit 1
+          }
+
+          # Parse current version components
+          $cur = $currentVersion -split '\.' | ForEach-Object { [int]$_ }
+
+          # Apply semver semantics: higher-component bumps reset lower components to 0
+          if ($inc[0] -gt 0) {
+            $newVersion = "$($cur[0] + $inc[0]).0.0"
+          } elseif ($inc[1] -gt 0) {
+            $newVersion = "$($cur[0]).$($cur[1] + $inc[1]).0"
+          } else {
+            $newVersion = "$($cur[0]).$($cur[1]).$($cur[2] + $inc[2])"
+          }
+
+          Write-Host "Current version : $currentVersion"
+          Write-Host "Increment       : $increment"
+          Write-Host "New version     : $newVersion"
+
+          echo "version=$newVersion" >> $env:GITHUB_OUTPUT
+
       - name: Update version in installer.iss
         shell: pwsh
         run: |
-          $version = "${{ inputs.version }}"
+          $version = "${{ steps.versioning.outputs.version }}"
           $file = "installer.iss"
           $content = Get-Content $file -Raw
 
@@ -41,7 +89,7 @@ jobs:
       - name: Update version in package.json
         shell: pwsh
         run: |
-          $version = "${{ inputs.version }}"
+          $version = "${{ steps.versioning.outputs.version }}"
           $file = "package.json"
           $content = Get-Content $file -Raw
           $content = $content -replace '("version"\s*:\s*")[^"]*(")', "`${1}${version}`${2}"
@@ -56,7 +104,7 @@ jobs:
       - name: Compile installer
         shell: pwsh
         run: |
-          $version = "${{ inputs.version }}"
+          $version = "${{ steps.versioning.outputs.version }}"
           $outputDir = "${{ github.workspace }}\artifacts"
           New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
           iscc "/O$outputDir" installer.iss
@@ -64,7 +112,7 @@ jobs:
       - name: Verify installer output
         shell: pwsh
         run: |
-          $expected = "artifacts\LibraryManager_v${{ inputs.version }}_Setup.exe"
+          $expected = "artifacts\LibraryManager_v${{ steps.versioning.outputs.version }}_Setup.exe"
           if (-not (Test-Path $expected)) {
             Write-Error "Installer not found at $expected"
             Get-ChildItem artifacts -ErrorAction SilentlyContinue
@@ -75,9 +123,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ inputs.version }}
-          name: v${{ inputs.version }}
+          tag_name: v${{ steps.versioning.outputs.version }}
+          name: v${{ steps.versioning.outputs.version }}
           body: ${{ inputs.release_notes }}
           files: |
-            artifacts/LibraryManager_v${{ inputs.version }}_Setup.exe
+            artifacts/LibraryManager_v${{ steps.versioning.outputs.version }}_Setup.exe
             tools/hxlibpkg-extract/hxlibpkg-extract.exe
