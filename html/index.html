@@ -237,14 +237,7 @@
 								<span class="store-update-badge d-none" id="store-update-badge"></span>
 							</button>
 
-							<button class="btn btn-sm btn-navbar-import" type="button" id="imp-browse" title="Import Library">
-								<i class="fas fa-file-import"></i>
-							</button>
 							<input type="file" class="d-none" id="imp-input-file" accept=".hxlibpkg,.hxlibarch,.pkg,.hampackage" multiple>
-
-							<button class="btn btn-sm btn-theme-toggle" type="button" title="Auto (System)" data-theme="auto">
-								<i class="fas fa-adjust"></i>
-							</button>
 
 							<div class="dropdown btn-overflow-menu">
 								<button class="btn btn-sm btn-overflow-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -252,6 +245,9 @@
 									<span class="update-badge d-none" id="update-badge">1</span>
 								</button>
 								<div class="dropdown-menu dropdown-menu-right">
+									<a class="dropdown-item overflow-import" href="#" id="imp-browse"><i class="fas fa-file-import mr-2"></i>Import</a>
+									<a class="dropdown-item overflow-theme-toggle btn-theme-toggle" href="#" data-theme="auto"><i class="fas fa-adjust mr-2"></i>Auto (System)</a>
+									<div class="dropdown-divider"></div>
 									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
 									<a class="dropdown-item overflow-repair" href="#"><i class="fas fa-tools mr-2"></i>Verify &amp; Repair</a>
 									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group mr-2"></i>Library Groups</a>
