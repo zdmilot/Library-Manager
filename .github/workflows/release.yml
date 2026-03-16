@@ -1,0 +1,83 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 3.1.0)'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release notes for this version'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update version in installer.iss
+        shell: pwsh
+        run: |
+          $version = "${{ inputs.version }}"
+          $file = "installer.iss"
+          $content = Get-Content $file -Raw
+
+          # Update the #define MyAppVersion line
+          $content = $content -replace '(?m)^(#define MyAppVersion\s+")[^"]*(")', "`${1}${version}`${2}"
+
+          # Update the comment header version line
+          $content = $content -replace '(?m)^(;\s*Version:\s*)[\d.]+', "`${1}${version}"
+
+          Set-Content $file $content -NoNewline
+
+      - name: Update version in package.json
+        shell: pwsh
+        run: |
+          $version = "${{ inputs.version }}"
+          $file = "package.json"
+          $content = Get-Content $file -Raw
+          $content = $content -replace '("version"\s*:\s*")[^"]*(")', "`${1}${version}`${2}"
+          Set-Content $file $content -NoNewline
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $version = "${{ inputs.version }}"
+          $outputDir = "${{ github.workspace }}\artifacts"
+          New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+          iscc "/O$outputDir" installer.iss
+
+      - name: Verify installer output
+        shell: pwsh
+        run: |
+          $expected = "artifacts\LibraryManager_v${{ inputs.version }}_Setup.exe"
+          if (-not (Test-Path $expected)) {
+            Write-Error "Installer not found at $expected"
+            Get-ChildItem artifacts -ErrorAction SilentlyContinue
+            exit 1
+          }
+          Write-Host "Installer built: $expected"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          body: ${{ inputs.release_notes }}
+          files: |
+            artifacts/LibraryManager_v${{ inputs.version }}_Setup.exe
+            tools/hxlibpkg-extract/hxlibpkg-extract.exe
