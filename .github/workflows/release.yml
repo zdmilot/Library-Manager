@@ -71,6 +71,22 @@ jobs:
 
           echo "version=$newVersion" >> $env:GITHUB_OUTPUT
 
+      - name: Check release does not already exist
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v${{ steps.versioning.outputs.version }}"
+          # Check for an existing GitHub release with this tag. If one exists,
+          # action-gh-release would attempt to update it (delete + re-upload
+          # assets), which fails for immutable releases.
+          gh release view $tag --repo ${{ github.repository }} 2>&1 | Out-Null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Error "A GitHub release for tag '$tag' already exists. Increment the version to create a new release."
+            exit 1
+          }
+          Write-Host "No existing release found for tag '$tag', proceeding with release creation."
+
       - name: Update version in installer.iss
         shell: pwsh
         run: |
