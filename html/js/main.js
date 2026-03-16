@@ -1891,6 +1891,8 @@
 				var zipEntries = zip.getEntries();
 				zipEntries.forEach(function(entry) {
 					if (entry.isDirectory || entry.entryName === 'manifest.json' || entry.entryName === 'signature.json') return;
+					// Defense-in-depth: skip files with restricted extensions during extraction
+					if (shared.isRestrictedFileExtension(entry.entryName)) return;
 					if (entry.entryName.indexOf('library/') === 0) {
 						var fname = entry.entryName.substring('library/'.length);
 						if (fname) {
@@ -11709,6 +11711,9 @@
 				var zipEntries = zip.getEntries();
 				zipEntries.forEach(function(entry) {
 					if (entry.entryName === "manifest.json" || entry.entryName === "signature.json") return;
+					// Defense-in-depth: skip files with restricted extensions during extraction
+					// unless OEM mode is fully authorized
+					if (!isOemKeywordsEnabled() && shared.isRestrictedFileExtension(entry.entryName)) return;
 					if (entry.entryName.indexOf("library/") === 0) {
 						var fname = entry.entryName.substring("library/".length);
 						if (fname) {
@@ -13385,6 +13390,9 @@
 						var zipEntries = innerZip.getEntries();
 						zipEntries.forEach(function(entry) {
 							if (entry.entryName === "manifest.json" || entry.entryName === "signature.json") return;
+							// Defense-in-depth: skip files with restricted extensions during extraction
+							// unless OEM mode is fully authorized
+							if (!isOemKeywordsEnabled() && shared.isRestrictedFileExtension(entry.entryName)) return;
 							if (entry.entryName.indexOf("library/") === 0) {
 								var fname = entry.entryName.substring("library/".length);
 								if (fname) {
@@ -14677,6 +14685,9 @@
 						var zipEntries = zip.getEntries();
 						zipEntries.forEach(function(entry) {
 							if (entry.entryName === "manifest.json" || entry.entryName === "signature.json") return;
+							// Defense-in-depth: skip files with restricted extensions during extraction
+							// unless OEM mode is fully authorized
+							if (!isOemKeywordsEnabled() && shared.isRestrictedFileExtension(entry.entryName)) return;
 							if (entry.entryName.indexOf("library/") === 0) {
 								var fname = entry.entryName.substring("library/".length);
 								if (fname) {
@@ -15556,6 +15567,9 @@
 				var zipEntries = zip.getEntries();
 				zipEntries.forEach(function(entry) {
 					if (entry.entryName === "manifest.json" || entry.entryName === "signature.json") return;
+					// Defense-in-depth: skip files with restricted extensions during extraction
+					// unless OEM mode is fully authorized
+					if (!isOemKeywordsEnabled() && shared.isRestrictedFileExtension(entry.entryName)) return;
 
 					if (entry.entryName.indexOf("library/") === 0) {
 						var fname = entry.entryName.substring("library/".length);
