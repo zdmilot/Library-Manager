@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"Release\\\\|Changelog\\\\|Version\" /c/Users/admin/Desktop/Library-Manager/*.md)",
+      "Bash(ls -lh /c/Users/admin/Desktop/Library-Manager/*.exe)"
+    ]
+  }
+}
