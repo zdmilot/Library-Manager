@@ -7221,7 +7221,6 @@
 				$("#pkg-library-name").val(libName);
 				pkgUpdatePathPlaceholders(libName);
 				ftUpdateLibNameFolders();
-				pkgToggleChangelogVisibility(libName);
 			}
 		}
 
@@ -7312,7 +7311,6 @@
 				pkgUpdatePathPlaceholders(pkg_autoDetectedName);
 				ftUpdateLibNameFolders();
 				pkgCheckVersionDuplicate();
-				pkgToggleChangelogVisibility(pkg_autoDetectedName);
 			}
 		});
 
@@ -7332,31 +7330,7 @@
 			pkgShowNameAutocomplete(val);
 			// Re-check version duplicate when name changes
 			pkgCheckVersionDuplicate();
-			// Show/hide changelog based on whether this is an existing library
-			pkgToggleChangelogVisibility(val);
 		});
-
-		// ---- Show/hide changelog card when library name matches an existing library ----
-		function pkgToggleChangelogVisibility(libName) {
-			if (!libName) {
-				$(".pkg-changelog-card").addClass("d-none");
-				return;
-			}
-			var index = pkgBuildLibraryIndex();
-			var lowerName = libName.toLowerCase();
-			var found = false;
-			for (var i = 0; i < index.length; i++) {
-				if (index[i].name.toLowerCase() === lowerName) {
-					found = true;
-					break;
-				}
-			}
-			if (found) {
-				$(".pkg-changelog-card").removeClass("d-none");
-			} else {
-				$(".pkg-changelog-card").addClass("d-none");
-			}
-		}
 
 		// ---- Library name autocomplete from installed + system libraries ----
 		var pkg_autocompleteActive = false;
@@ -7456,7 +7430,6 @@
 			// Load metadata and files from the latest version of this library
 			pkgPopulateFromExistingLibrary(selectedName, selectedType);
 			pkgCheckVersionDuplicate();
-			pkgToggleChangelogVisibility(selectedName);
 		});
 
 		// Close autocomplete when clicking outside
@@ -8724,8 +8697,6 @@
 			$("#pkg-description").val('');
 			$("#pkg-github-url").val('');
 			$("#pkg-release-notes").val('');
-			$("#pkg-changelog").val('');
-			$(".pkg-changelog-card").addClass("d-none");
 			$("#pkg-tags").val('');
 			$("#pkg-library-name").val('').prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
 			$("#pkg-toggle-name-edit").html('<i class="fas fa-pencil-alt"></i>').attr("title", "Override auto-detected name");
@@ -9287,8 +9258,6 @@
 				if (pkg_installSubdir === '') manifest.install_to_library_root = true;
 				var customSubdir = (pkg_installSubdir && pkg_installSubdir !== '') ? pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '') : '';
 				if (customSubdir && !manifest.install_to_library_root) manifest.custom_install_subdir = customSubdir;
-				var changelog = $("#pkg-changelog").val().trim();
-				if (changelog) manifest.changelog = changelog;
 
 				// Default help file (for multi-CHM libraries)
 				if (pkg_defaultHelpFile) manifest.default_help_file = pkg_defaultHelpFile;
@@ -9409,7 +9378,6 @@
 						venus_compatibility: venusCompat || '',
 						github_url:      githubUrl || '',
 						tags:            tags.length > 0 ? tags.join(', ') : '',
-						changelog:       changelog || '',
 						release_notes:   releaseNotes || '',
 						output_file:     savePath,
 						library_files:   pkg_libraryFiles.length,
@@ -15989,16 +15957,6 @@
 							});
 						} else {
 							lines.push("Release Notes:    N/A");
-						}
-
-						// Changelog
-						if (lib.changelog) {
-							lines.push("Changelog:");
-							lib.changelog.split(/\r?\n/).forEach(function(cl) {
-								lines.push("  " + cl);
-							});
-						} else {
-							lines.push("Changelog:        N/A");
 						}
 
 						// COM DLLs
