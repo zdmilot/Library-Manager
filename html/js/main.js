@@ -8746,6 +8746,21 @@
 			$("#pkg-removeIcon").hide();
 			$("#pkg-release-pdf-name").text("No PDF selected");
 			$("#pkg-removeReleasePdf").hide();
+			// Reset section toggles to OFF and hide their bodies
+			$(".pkg-section-toggle").prop("checked", false);
+			$("#pkg-demo-body, #pkg-labware-body, #pkg-bin-body, #pkg-installer-body").hide();
+		});
+
+		// ---- Section toggle handlers (optional sections default to OFF) ----
+		$(document).on("change", ".pkg-section-toggle", function() {
+			var sectionId = $(this).attr("data-section");
+			if (sectionId) {
+				if ($(this).is(":checked")) {
+					$("#" + sectionId).slideDown(150);
+				} else {
+					$("#" + sectionId).slideUp(150);
+				}
+			}
 		});
 
 		// ---- Create Package button ----
@@ -9220,6 +9235,37 @@
 
 				// Build manifest JSON (matches C# HxLibPkgManifest.ToJson() format)
 				// Manifest stores the RAW library image - no overlay
+
+				// Compute the install directory prefix to strip from relative paths.
+				// This prevents double-nesting during import: the import already creates
+				// the library-name subdirectory, so ZIP paths must NOT include it.
+				var _pkgStripPrefix = '';
+				if (pkg_installSubdir === null) {
+					// Default: library name is the install subdirectory
+					_pkgStripPrefix = libName;
+				} else if (pkg_installSubdir !== '') {
+					// Custom install subdirectory
+					_pkgStripPrefix = pkg_installSubdir.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+				}
+				// else pkg_installSubdir === '' means root install - no prefix to strip
+
+				/**
+				 * Strip the install directory prefix from a relative path.
+				 * This ensures filenames are immutable and directory structure is preserved
+				 * exactly as the user specified, without duplicating the install subdirectory.
+				 */
+				function pkgStripInstallPrefix(relPath) {
+					if (!_pkgStripPrefix) return relPath;
+					var normalized = relPath.replace(/\\/g, '/');
+					var prefix = _pkgStripPrefix + '/';
+					// Case-insensitive check
+					if (normalized.toLowerCase().indexOf(prefix.toLowerCase()) === 0) {
+						var stripped = normalized.substring(prefix.length);
+						return stripped || path.basename(relPath);
+					}
+					return relPath;
+				}
+
 				var manifest = {
 					format_version: shared.FORMAT_VERSION,
 					library_name: libName,
@@ -9233,8 +9279,10 @@
 					library_image: libImageFilename,
 					library_image_base64: libImageBase64,
 					library_image_mime: libImageMime,
-					library_files: pkg_libraryFiles.map(function(f) { return pkg_fileRelPaths[f] || path.basename(f); }),
-					demo_method_files: pkg_demoMethodFiles.map(function(f) { return pkg_fileRelPaths[f] || path.basename(f); }),
+					library_files: pkg_libraryFiles.map(function(f) { return pkgStripInstallPrefix(pkg_fileRelPaths[f] || path.basename(f)); }),
+					demo_method_files: ($("#pkg-toggle-demo").is(":checked") && pkg_demoMethodFiles.length > 0)
+						? pkg_demoMethodFiles.map(function(f) { return pkgStripInstallPrefix(pkg_fileRelPaths[f] || path.basename(f)); })
+						: [],
 					com_register_dlls: pkg_comRegisterDlls.slice(),
 					app_version: shared.getAppVersion(),
 					windows_version: shared.getWindowsVersion(),
@@ -9262,8 +9310,8 @@
 				// Default help file (for multi-CHM libraries)
 				if (pkg_defaultHelpFile) manifest.default_help_file = pkg_defaultHelpFile;
 
-				// Labware files
-				if (pkg_labwareFiles.length > 0) {
+				// Labware files - only include if section toggle is ON and has files
+				if ($("#pkg-toggle-labware").is(":checked") && pkg_labwareFiles.length > 0) {
 					manifest.labware_files = pkg_labwareFiles.map(function(f) {
 						var subdir = pkg_labwareSubdirs[f] || '';
 						var baseName = pkg_fileRelPaths[f] || path.basename(f);
@@ -9271,8 +9319,8 @@
 					});
 				}
 
-				// Bin files
-				if (pkg_binFiles.length > 0) {
+				// Bin files - only include if section toggle is ON and has files
+				if ($("#pkg-toggle-bin").is(":checked") && pkg_binFiles.length > 0) {
 					manifest.bin_files = pkg_binFiles.map(function(f) {
 						var subdir = pkg_binSubdirs[f] || '';
 						var baseName = pkg_fileRelPaths[f] || path.basename(f);
@@ -9280,8 +9328,8 @@
 					});
 				}
 
-				// Installer executable
-				if (pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
+				// Installer executable - only include if section toggle is ON
+				if ($("#pkg-toggle-installer").is(":checked") && pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
 					manifest.installer_executable = path.basename(pkg_installerFilePath);
 				}
 
@@ -9304,8 +9352,9 @@
 				zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2), "utf8"));
 
 				// Add library files under library/ directory (preserving subfolder structure)
+				// Filenames are immutable - only the install directory prefix is stripped
 				pkg_libraryFiles.forEach(function(fpath) {
-					var relPath = pkg_fileRelPaths[fpath] || path.basename(fpath);
+					var relPath = pkgStripInstallPrefix(pkg_fileRelPaths[fpath] || path.basename(fpath));
 					zip.addLocalFile(fpath, zipSubdir('library', relPath));
 				});
 
@@ -9317,27 +9366,41 @@
 				}
 
 				// Add demo method files under demo_methods/ directory (preserving subfolder structure)
-				pkg_demoMethodFiles.forEach(function(fpath) {
-					var relPath = pkg_fileRelPaths[fpath] || path.basename(fpath);
-					zip.addLocalFile(fpath, zipSubdir('demo_methods', relPath));
-				});
+				// Only include if the demo section toggle is ON and there are actual files
+				var demoSectionEnabled = $("#pkg-toggle-demo").is(":checked");
+				if (demoSectionEnabled && pkg_demoMethodFiles.length > 0) {
+					pkg_demoMethodFiles.forEach(function(fpath) {
+						var relPath = pkgStripInstallPrefix(pkg_fileRelPaths[fpath] || path.basename(fpath));
+						zip.addLocalFile(fpath, zipSubdir('demo_methods', relPath));
+					});
+				}
 
 				// Add labware files under labware/ directory (preserving subdirectory assignments)
-				pkg_labwareFiles.forEach(function(fpath) {
-					var subdir = pkg_labwareSubdirs[fpath] || '';
-					var zipDir = subdir ? 'labware/' + subdir.replace(/\\/g, '/') : 'labware';
-					zip.addLocalFile(fpath, zipDir);
-				});
+				// Only include if the labware section toggle is ON and there are actual files
+				var labwareSectionEnabled = $("#pkg-toggle-labware").is(":checked");
+				if (labwareSectionEnabled && pkg_labwareFiles.length > 0) {
+					pkg_labwareFiles.forEach(function(fpath) {
+						var subdir = pkg_labwareSubdirs[fpath] || '';
+						var zipDir = subdir ? 'labware/' + subdir.replace(/\\/g, '/') : 'labware';
+						zip.addLocalFile(fpath, zipDir);
+					});
+				}
 
 				// Add bin files under bin/ directory (preserving subdirectory assignments)
-				pkg_binFiles.forEach(function(fpath) {
-					var subdir = pkg_binSubdirs[fpath] || '';
-					var zipDir = subdir ? 'bin/' + subdir.replace(/\\/g, '/') : 'bin';
-					zip.addLocalFile(fpath, zipDir);
-				});
+				// Only include if the bin section toggle is ON and there are actual files
+				var binSectionEnabled = $("#pkg-toggle-bin").is(":checked");
+				if (binSectionEnabled && pkg_binFiles.length > 0) {
+					pkg_binFiles.forEach(function(fpath) {
+						var subdir = pkg_binSubdirs[fpath] || '';
+						var zipDir = subdir ? 'bin/' + subdir.replace(/\\/g, '/') : 'bin';
+						zip.addLocalFile(fpath, zipDir);
+					});
+				}
 
 				// Add installer executable under installer/ directory
-				if (pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
+				// Only include if the installer section toggle is ON
+				var installerSectionEnabled = $("#pkg-toggle-installer").is(":checked");
+				if (installerSectionEnabled && pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
 					zip.addLocalFile(pkg_installerFilePath, 'installer');
 				}
 
@@ -11666,6 +11729,28 @@
 					}
 				}
 
+				// Compute install prefix to strip from ZIP entries (prevents double-nesting)
+				var rbInstallToRoot = !!manifest.install_to_library_root;
+				var rbStripPrefix = '';
+				if (!rbInstallToRoot && (rLibName || rollbackCustomSubdir)) {
+					rbStripPrefix = (rollbackCustomSubdir || rLibName).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+				}
+				function rbStripImportPrefix(fname) {
+					if (!rbStripPrefix) return fname;
+					var normalized = fname.replace(/\\/g, '/');
+					var prefix = rbStripPrefix + '/';
+					if (normalized.toLowerCase().indexOf(prefix.toLowerCase()) === 0) {
+						var stripped = normalized.substring(prefix.length);
+						return stripped || path.basename(fname);
+					}
+					return fname;
+				}
+
+				// Strip prefix from file lists for correct DB records
+				libFiles = libFiles.map(rbStripImportPrefix);
+				helpFiles = helpFiles.map(rbStripImportPrefix);
+				demoFiles = demoFiles.map(rbStripImportPrefix);
+
 				// Create destination directories
 				if ((libFiles.length > 0 || helpFiles.length > 0) && !fs.existsSync(libDestDir)) {
 					fs.mkdirSync(libDestDir, { recursive: true });
@@ -11683,7 +11768,7 @@
 					// unless OEM mode is fully authorized
 					if (!isOemKeywordsEnabled() && shared.isRestrictedFileExtension(entry.entryName)) return;
 					if (entry.entryName.indexOf("library/") === 0) {
-						var fname = entry.entryName.substring("library/".length);
+						var fname = rbStripImportPrefix(entry.entryName.substring("library/".length));
 						if (fname) {
 							var safePath = safeZipExtractPath(libDestDir, fname);
 							if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
@@ -11693,7 +11778,7 @@
 							extractedCount++;
 						}
 					} else if (entry.entryName.indexOf("demo_methods/") === 0) {
-						var fname = entry.entryName.substring("demo_methods/".length);
+						var fname = rbStripImportPrefix(entry.entryName.substring("demo_methods/".length));
 						if (fname) {
 							var safePath = safeZipExtractPath(demoDestDir, fname);
 							if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
@@ -11703,7 +11788,7 @@
 							extractedCount++;
 						}
 					} else if (entry.entryName.indexOf("help_files/") === 0) {
-						var fname = entry.entryName.substring("help_files/".length);
+						var fname = rbStripImportPrefix(entry.entryName.substring("help_files/".length));
 						if (fname) {
 							var safePath = safeZipExtractPath(libDestDir, fname);
 							if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
@@ -13346,6 +13431,28 @@
 						var labwareFiles = manifest.labware_files || [];
 						var extractedCount = 0;
 
+						// Compute install prefix to strip from ZIP entries (prevents double-nesting)
+						var archInstallToRoot = !!manifest.install_to_library_root;
+						var archStripPrefix = '';
+						if (!archInstallToRoot && (libName || archCustomSubdir)) {
+							archStripPrefix = (archCustomSubdir || libName).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+						}
+						function archStripImportPrefix(fname) {
+							if (!archStripPrefix) return fname;
+							var normalized = fname.replace(/\\/g, '/');
+							var prefix = archStripPrefix + '/';
+							if (normalized.toLowerCase().indexOf(prefix.toLowerCase()) === 0) {
+								var stripped = normalized.substring(prefix.length);
+								return stripped || path.basename(fname);
+							}
+							return fname;
+						}
+
+						// Strip prefix from file lists for correct DB records
+						libFiles = libFiles.map(archStripImportPrefix);
+						helpFiles = helpFiles.map(archStripImportPrefix);
+						demoFiles = demoFiles.map(archStripImportPrefix);
+
 						// Create destination directories
 						if ((libFiles.length > 0 || helpFiles.length > 0) && !fs.existsSync(libDestDir)) {
 							fs.mkdirSync(libDestDir, { recursive: true });
@@ -13362,7 +13469,7 @@
 							// unless OEM mode is fully authorized
 							if (!isOemKeywordsEnabled() && shared.isRestrictedFileExtension(entry.entryName)) return;
 							if (entry.entryName.indexOf("library/") === 0) {
-								var fname = entry.entryName.substring("library/".length);
+								var fname = archStripImportPrefix(entry.entryName.substring("library/".length));
 								if (fname) {
 									var outPath = safeZipExtractPath(libDestDir, fname);
 									if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
@@ -13372,7 +13479,7 @@
 									extractedCount++;
 								}
 							} else if (entry.entryName.indexOf("demo_methods/") === 0) {
-								var fname = entry.entryName.substring("demo_methods/".length);
+								var fname = archStripImportPrefix(entry.entryName.substring("demo_methods/".length));
 								if (fname) {
 									var outPath = safeZipExtractPath(demoDestDir, fname);
 									if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
@@ -13382,7 +13489,7 @@
 									extractedCount++;
 								}
 							} else if (entry.entryName.indexOf("help_files/") === 0) {
-								var fname = entry.entryName.substring("help_files/".length);
+								var fname = archStripImportPrefix(entry.entryName.substring("help_files/".length));
 								if (fname) {
 									var outPath = safeZipExtractPath(libDestDir, fname);
 									if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
@@ -14636,6 +14743,28 @@
 						} else {
 							libDestDir = path.join(libBasePath, libName);
 						}
+
+						// Compute install prefix to strip from ZIP entries (prevents double-nesting)
+						var guiStripPrefix = '';
+						if (!installToRoot && (libName || customSubdir)) {
+							guiStripPrefix = (customSubdir || libName).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+						}
+						function guiStripImportPrefix(fname) {
+							if (!guiStripPrefix) return fname;
+							var normalized = fname.replace(/\\/g, '/');
+							var prefix = guiStripPrefix + '/';
+							if (normalized.toLowerCase().indexOf(prefix.toLowerCase()) === 0) {
+								var stripped = normalized.substring(prefix.length);
+								return stripped || path.basename(fname);
+							}
+							return fname;
+						}
+
+						// Strip prefix from manifest file lists for correct DB records
+						libFiles = libFiles.map(guiStripImportPrefix);
+						helpFiles = helpFiles.map(guiStripImportPrefix);
+						demoFiles = demoFiles.map(guiStripImportPrefix);
+
 						var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
 						var labwareFiles = manifest.labware_files || [];
 						var binFiles = manifest.bin_files || [];
@@ -14657,7 +14786,7 @@
 							// unless OEM mode is fully authorized
 							if (!isOemKeywordsEnabled() && shared.isRestrictedFileExtension(entry.entryName)) return;
 							if (entry.entryName.indexOf("library/") === 0) {
-								var fname = entry.entryName.substring("library/".length);
+								var fname = guiStripImportPrefix(entry.entryName.substring("library/".length));
 								if (fname) {
 									var outPath = safeZipExtractPath(libDestDir, fname);
 									if (!outPath) return;
@@ -14667,7 +14796,7 @@
 									extractedCount++;
 								}
 							} else if (entry.entryName.indexOf("demo_methods/") === 0) {
-								var fname = entry.entryName.substring("demo_methods/".length);
+								var fname = guiStripImportPrefix(entry.entryName.substring("demo_methods/".length));
 								if (fname) {
 									var outPath = safeZipExtractPath(demoDestDir, fname);
 									if (!outPath) return;
@@ -14677,7 +14806,7 @@
 									extractedCount++;
 								}
 							} else if (entry.entryName.indexOf("help_files/") === 0) {
-								var fname = entry.entryName.substring("help_files/".length);
+								var fname = guiStripImportPrefix(entry.entryName.substring("help_files/".length));
 								if (fname) {
 									var outPath = safeZipExtractPath(libDestDir, fname);
 									if (!outPath) return;
@@ -15519,6 +15648,29 @@
 			try {
 				var extractedCount = 0;
 
+				// Compute install prefix to strip from ZIP entries (prevents double-nesting)
+				var impInstallToRoot = !!manifest.install_to_library_root;
+				var impCustomSubdir = manifest.custom_install_subdir || '';
+				var impStripPrefix = '';
+				if (!impInstallToRoot && (libName || impCustomSubdir)) {
+					impStripPrefix = (impCustomSubdir || libName).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+				}
+				function impStripImportPrefix(fname) {
+					if (!impStripPrefix) return fname;
+					var normalized = fname.replace(/\\/g, '/');
+					var prefix = impStripPrefix + '/';
+					if (normalized.toLowerCase().indexOf(prefix.toLowerCase()) === 0) {
+						var stripped = normalized.substring(prefix.length);
+						return stripped || path.basename(fname);
+					}
+					return fname;
+				}
+
+				// Strip prefix from file lists for correct DB records
+				libFiles = libFiles.map(impStripImportPrefix);
+				helpFiles = helpFiles.map(impStripImportPrefix);
+				demoFiles = demoFiles.map(impStripImportPrefix);
+
 				// Create destination directories
 				if (libFiles.length > 0 || helpFiles.length > 0) {
 					if (!fs.existsSync(libDestDir)) {
@@ -15540,10 +15692,10 @@
 					if (!isOemKeywordsEnabled() && shared.isRestrictedFileExtension(entry.entryName)) return;
 
 					if (entry.entryName.indexOf("library/") === 0) {
-						var fname = entry.entryName.substring("library/".length);
+						var fname = impStripImportPrefix(entry.entryName.substring("library/".length));
 						if (fname) {
 							// Skip COM DLLs already extracted
-							if (comDlls.indexOf(fname) !== -1) {
+							if (comDlls.indexOf(fname) !== -1 || comDlls.indexOf(path.basename(fname)) !== -1) {
 								extractedCount++;
 								return;
 							}
@@ -15555,7 +15707,7 @@
 							extractedCount++;
 						}
 					} else if (entry.entryName.indexOf("demo_methods/") === 0) {
-						var fname = entry.entryName.substring("demo_methods/".length);
+						var fname = impStripImportPrefix(entry.entryName.substring("demo_methods/".length));
 						if (fname) {
 							var outPath = safeZipExtractPath(demoDestDir, fname);
 							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
@@ -15566,7 +15718,7 @@
 						}
 					} else if (entry.entryName.indexOf("help_files/") === 0) {
 						// Legacy/explicit help_files folder - extract to library directory
-						var fname = entry.entryName.substring("help_files/".length);
+						var fname = impStripImportPrefix(entry.entryName.substring("help_files/".length));
 						if (fname) {
 							var outPath = safeZipExtractPath(libDestDir, fname);
 							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }

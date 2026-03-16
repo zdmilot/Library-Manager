@@ -572,6 +572,35 @@ function autoAddToGroup(db, savedLibId, authorName) {
  * @returns {{ extractedCount: number, libName: string }}
  */
 function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, skipGroup, labwareDestDir, binDestDir) {
+    // Determine install subdirectory prefix to strip from ZIP entries.
+    // When the library is NOT installed to root, libDestDir already includes the
+    // library name or custom subdir.  Packages may embed the same prefix inside
+    // ZIP paths (e.g. library/LibName/file.hsl).  If not stripped, files end up
+    // double-nested (Library/LibName/LibName/file.hsl).  This strips the prefix
+    // for backward compatibility with packages that embedded it.
+    const libName = manifest.library_name || '';
+    const customSubdir = manifest.custom_install_subdir || '';
+    const cliInstallToRoot = !!manifest.install_to_library_root;
+    let cliStripPrefix = '';
+    if (!cliInstallToRoot && (libName || customSubdir)) {
+        cliStripPrefix = (customSubdir || libName).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+    }
+
+    /**
+     * Strip the install directory prefix from a ZIP-relative path if present.
+     * Ensures filenames are immutable and files land in the correct directory.
+     */
+    function stripCliPrefix(fname) {
+        if (!cliStripPrefix) return fname;
+        var normalized = fname.replace(/\\/g, '/');
+        var prefix = cliStripPrefix + '/';
+        if (normalized.toLowerCase().indexOf(prefix.toLowerCase()) === 0) {
+            var stripped = normalized.substring(prefix.length);
+            return stripped || path.basename(fname);
+        }
+        return fname;
+    }
+
     const libFiles  = manifest.library_files     || [];
     const demoFiles = manifest.demo_method_files || [];
     const comDlls   = manifest.com_register_dlls || [];
@@ -591,11 +620,16 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         }
     });
 
+    // Strip install prefix from manifest file lists for correct DB records
+    const cleanFilteredLibFiles = filteredLibFiles.map(stripCliPrefix);
+    const cleanHelpFiles = helpFiles.map(stripCliPrefix);
+    const cleanDemoFiles = demoFiles.map(stripCliPrefix);
+
     // Ensure destination directories exist
-    if ((filteredLibFiles.length > 0 || helpFiles.length > 0) && !fs.existsSync(libDestDir)) {
+    if ((cleanFilteredLibFiles.length > 0 || cleanHelpFiles.length > 0) && !fs.existsSync(libDestDir)) {
         fs.mkdirSync(libDestDir, { recursive: true });
     }
-    if (demoFiles.length > 0 && !fs.existsSync(demoDestDir)) {
+    if (cleanDemoFiles.length > 0 && !fs.existsSync(demoDestDir)) {
         fs.mkdirSync(demoDestDir, { recursive: true });
     }
     if (labwareFiles.length > 0 && labwareDestDir && !fs.existsSync(labwareDestDir)) {
@@ -611,7 +645,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         if (entry.isDirectory || entry.entryName === 'manifest.json' || entry.entryName === 'signature.json') return;
 
         if (entry.entryName.startsWith('library/')) {
-            const fname = entry.entryName.substring('library/'.length);
+            const fname = stripCliPrefix(entry.entryName.substring('library/'.length));
             if (fname) {
                 const safePath = safeZipExtractPath(libDestDir, fname);
                 if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
@@ -621,7 +655,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
                 extractedCount++;
             }
         } else if (entry.entryName.startsWith('demo_methods/')) {
-            const fname = entry.entryName.substring('demo_methods/'.length);
+            const fname = stripCliPrefix(entry.entryName.substring('demo_methods/'.length));
             if (fname) {
                 const safePath = safeZipExtractPath(demoDestDir, fname);
                 if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
@@ -632,7 +666,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
             }
         } else if (entry.entryName.startsWith('help_files/')) {
             // Legacy/explicit help_files folder - extract to library directory
-            const fname = entry.entryName.substring('help_files/'.length);
+            const fname = stripCliPrefix(entry.entryName.substring('help_files/'.length));
             if (fname) {
                 const safePath = safeZipExtractPath(libDestDir, fname);
                 if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
@@ -696,13 +730,13 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         db.installed_libs.remove({ _id: existing._id });
     }
 
-    const fileHashes = computeLibraryHashes(filteredLibFiles, libDestDir, comDlls);
+    const fileHashes = computeLibraryHashes(cleanFilteredLibFiles, libDestDir, comDlls);
 
     // Parse public functions from .hsl files for indexing & display
-    const publicFunctions = extractPublicFunctions(filteredLibFiles, libDestDir);
+    const publicFunctions = extractPublicFunctions(cleanFilteredLibFiles, libDestDir);
 
     // Extract required dependencies from #include directives
-    const requiredDependencies = extractRequiredDependencies(filteredLibFiles, libDestDir);
+    const requiredDependencies = extractRequiredDependencies(cleanFilteredLibFiles, libDestDir);
 
     const dbRecord = {
         library_name:        manifest.library_name        || '',
@@ -717,9 +751,9 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         library_image:       manifest.library_image        || null,
         library_image_base64:manifest.library_image_base64 || null,
         library_image_mime:  manifest.library_image_mime   || null,
-        library_files:       filteredLibFiles,
-        demo_method_files:   demoFiles,
-        help_files:          helpFiles,
+        library_files:       cleanFilteredLibFiles,
+        demo_method_files:   cleanDemoFiles,
+        help_files:          cleanHelpFiles,
         com_register_dlls:   comDlls,
         labware_files:       labwareFiles,
         com_warning:         false,

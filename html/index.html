@@ -407,11 +407,16 @@
 							</div>
 
 							<!-- Demo Method Files Section -->
-							<div class="card mb-3 exporter-card">
-								<div class="card-header">
+							<div class="card mb-3 exporter-card" id="pkg-demo-section">
+								<div class="card-header d-flex align-items-center">
+									<label class="custom-control custom-switch mb-0 mr-2" title="Enable or disable the Demo Method Files section">
+										<input type="checkbox" class="custom-control-input pkg-section-toggle" id="pkg-toggle-demo" data-section="pkg-demo-body">
+										<span class="custom-control-label"></span>
+									</label>
 									<i class="fas fa-flask mr-2 color-medium"></i>Demo Method Files
+									<span class="text-muted ml-2 text-sm font-weight-normal">(optional)</span>
 								</div>
-								<div class="card-body">
+								<div class="card-body" id="pkg-demo-body" style="display:none;">
 									<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 										<button class="btn btn-sm btn-outlined" id="pkg-addDemoFiles">Add Files...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-addDemoFolder">Add Folder...</button>
@@ -426,11 +431,16 @@
 							</div>
 
 							<!-- Labware Files Section -->
-							<div class="card mb-3 exporter-card">
-								<div class="card-header">
+							<div class="card mb-3 exporter-card" id="pkg-labware-section">
+								<div class="card-header d-flex align-items-center">
+									<label class="custom-control custom-switch mb-0 mr-2" title="Enable or disable the Labware Files section">
+										<input type="checkbox" class="custom-control-input pkg-section-toggle" id="pkg-toggle-labware" data-section="pkg-labware-body">
+										<span class="custom-control-label"></span>
+									</label>
 									<i class="fas fa-th mr-2 color-medium"></i>Labware Files
+									<span class="text-muted ml-2 text-sm font-weight-normal">(optional)</span>
 								</div>
-								<div class="card-body">
+								<div class="card-body" id="pkg-labware-body" style="display:none;">
 									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>Add labware definitions (<b>.rck</b>, <b>.ctr</b>, <b>.tml</b>, <b>.dck</b>, <b>.lay</b>) that ship with this library. Use the tree to organize files into subdirectories.</p>
 									<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 										<button class="btn btn-sm btn-outlined" id="pkg-addLabwareFiles">Add Files...</button>
@@ -447,11 +457,15 @@
 
 							<!-- Bin Files Section (optional, developer-only) -->
 							<div class="card mb-3 exporter-card" id="pkg-bin-files-section" style="display:none;">
-								<div class="card-header">
+								<div class="card-header d-flex align-items-center">
+									<label class="custom-control custom-switch mb-0 mr-2" title="Enable or disable the Bin Files section">
+										<input type="checkbox" class="custom-control-input pkg-section-toggle" id="pkg-toggle-bin" data-section="pkg-bin-body">
+										<span class="custom-control-label"></span>
+									</label>
 									<i class="fas fa-cogs mr-2 color-medium"></i>Bin Files
 									<span class="text-muted ml-2 text-sm font-weight-normal">(optional)</span>
 								</div>
-								<div class="card-body">
+								<div class="card-body" id="pkg-bin-body" style="display:none;">
 									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>Add files to be installed under <b>Hamilton\Bin</b>. Use the tree to organize files into the root, a custom subdirectory, or the library-named directory.</p>
 									<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 										<button class="btn btn-sm btn-outlined" id="pkg-addBinFiles">Add Files...</button>
@@ -468,11 +482,15 @@
 
 							<!-- Installer Executable Section (optional, developer-only) -->
 							<div class="card mb-3 exporter-card" id="pkg-installer-exe-section" style="display:none;">
-								<div class="card-header">
+								<div class="card-header d-flex align-items-center">
+									<label class="custom-control custom-switch mb-0 mr-2" title="Enable or disable the Installer Executable section">
+										<input type="checkbox" class="custom-control-input pkg-section-toggle" id="pkg-toggle-installer" data-section="pkg-installer-body">
+										<span class="custom-control-label"></span>
+									</label>
 									<i class="fas fa-download mr-2 color-medium"></i>Installer Executable
 									<span class="text-muted ml-2 text-sm font-weight-normal">(optional)</span>
 								</div>
-								<div class="card-body">
+								<div class="card-body" id="pkg-installer-body" style="display:none;">
 									<p class="text-muted text-sm mb-2">Embed a standalone .exe installer in the package. Recipients can extract and run it independently.</p>
 									<div class="mb-2">
 										<button class="btn btn-sm btn-outlined" id="pkg-pickInstallerExe">Choose .exe...</button>
