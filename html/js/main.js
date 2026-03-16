@@ -4485,8 +4485,11 @@
 		function applyThemeMode(mode) {
 			var $btn = $(".btn-theme-toggle");
 			$btn.attr("data-theme", mode)
-			    .attr("title", THEME_TITLES[mode])
-			    .find("i").attr("class", "fas " + THEME_ICONS[mode]);
+			    .attr("title", THEME_TITLES[mode]);
+			$btn.find("i").attr("class", "fas " + THEME_ICONS[mode] + " mr-2");
+			// Update overflow menu item text
+			$btn.contents().filter(function() { return this.nodeType === Node.TEXT_NODE; }).remove();
+			$btn.append(THEME_TITLES[mode]);
 			if (mode === "auto") {
 				applySystemTheme();
 			} else {
@@ -13741,7 +13744,10 @@
 		});
 
 		// ---- Browse for importable files ----
-		$(document).on("click", "#imp-browse", function() {
+		$(document).on("click", "#imp-browse", function(e) {
+			e.preventDefault();
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
 			$("#unifiedImportModal").modal("show");
 		});
 
