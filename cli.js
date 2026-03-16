@@ -1996,10 +1996,18 @@ function cmdCreatePackage(args) {
         manifest.release_notes_pdf_base64 = fs.readFileSync(pdfPath).toString('base64');
     }
 
+    // Add install path configuration if specified in spec
+    if (spec.install_to_library_root) {
+        manifest.install_to_library_root = true;
+    }
+    if (spec.custom_install_subdir) {
+        manifest.custom_install_subdir = spec.custom_install_subdir;
+    }
+
     // Preserve any extra user-supplied spec fields for forward compatibility
     const knownSpecKeys = ['library_name','author','organization','version','venus_compatibility',
         'description','release_notes','release_notes_pdf','github_url','tags','library_image','library_files','demo_method_files',
-        'help_files','default_help_file','com_register_dlls','install_to_library_root',
+        'help_files','default_help_file','com_register_dlls','install_to_library_root','custom_install_subdir',
         'labware_files','bin_files','installer_executable','installer_info',
         '$schema','_comment_paths','_comment','_comment_installer'];
     Object.keys(spec).forEach(function(k) {
