@@ -15207,6 +15207,9 @@
 				$modal.modal("hide");
 				impBuildLibraryCards();
 
+				// Clear any ignored store update for this library (it was just installed/updated)
+				clearStoreUpdateIgnored(libName);
+
 				// Cache the package for repair & version rollback
 				var cachedPath = '';
 				try {
@@ -18596,6 +18599,14 @@
 
 		function isStoreUpdateIgnored(libName, catalogVersion) {
 			var ignored = getIgnoredStoreUpdates();
+			if (!ignored[libName]) return false;
+			// Auto-clear stale ignores: if the catalog version is newer than the ignored version,
+			// the user should see the new update notification.
+			if (shared.compareVersions(catalogVersion, ignored[libName]) > 0) {
+				delete ignored[libName];
+				saveSetting('store_ignored_updates', ignored);
+				return false;
+			}
 			return ignored[libName] === catalogVersion;
 		}
 
@@ -18686,6 +18697,12 @@
 			$(".store-sort-option").removeClass("active");
 			$(this).addClass("active");
 			_storeSort = $(this).attr("data-sort");
+			storeRenderGrid();
+		});
+
+		// ---- Show Ignored toggle ----
+		$(document).on("change", "#store-show-ignored", function () {
+			_storeShowIgnored = $(this).is(":checked");
 			storeRenderGrid();
 		});
 
@@ -18844,7 +18861,7 @@
 				var pkg = _storeCatalog[i];
 				var installed = null;
 				try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
-				if (installed && !installed.deleted && installed.version && installed.version !== pkg.version) {
+				if (installed && !installed.deleted && installed.version && shared.compareVersions(pkg.version, installed.version) > 0) {
 					if (!isStoreUpdateIgnored(pkg.library_name, pkg.version)) {
 						count++;
 					}
@@ -19038,7 +19055,7 @@
 			var installed = null;
 			try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
 			var isInstalled = !!(installed && !installed.deleted);
-			var hasUpdate = isInstalled && installed.version && installed.version !== pkg.version;
+			var hasUpdate = isInstalled && installed.version && shared.compareVersions(pkg.version, installed.version) > 0;
 
 			var tagsHtml = '';
 			var maxTags = 4;
