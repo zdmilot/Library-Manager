@@ -15003,17 +15003,6 @@
 					return;
 				}
 
-				// Validate restricted file extensions
-				if (!isOemKeywordsEnabled()) {
-					var extValidation = shared.validateManifestFileExtensions(manifest);
-					if (!extValidation.valid) {
-						alert("Invalid package: contains restricted file types that could pose a security risk.\n\n" + extValidation.errors.join("\n") +
-							"\n\nExecutable, script, registry, and shortcut files are not permitted in library packages.");
-						_isImporting = false;
-						return;
-					}
-				}
-
 				var libFiles = manifest.library_files || [];
 				var demoFiles = manifest.demo_method_files || [];
 
