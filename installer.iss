@@ -482,10 +482,8 @@ begin
   Result := False;
   UninstallMode := 1;
 
-  Form := CreateCustomForm();
+  Form := CreateCustomForm(ScaleX(510), ScaleY(400), False, True);
   try
-    Form.ClientWidth := ScaleX(510);
-    Form.ClientHeight := ScaleY(400);
     Form.Caption := 'Uninstall - Select Removal Mode';
     Form.Position := poScreenCenter;
 
