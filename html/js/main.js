@@ -2710,10 +2710,12 @@
 				$("#settings-oem-keywords-section").show();
 				$("#pkg-installer-exe-section").show();
 				$("#pkg-bin-files-section").show();
+				$("#pkg-release-notes-pdf-section").show();
 			} else {
 				$("#settings-oem-keywords-section").hide();
 				$("#pkg-installer-exe-section").hide();
 				$("#pkg-bin-files-section").hide();
+				$("#pkg-release-notes-pdf-section").hide();
 			}
 			// Ensure About, Report a Bug, Licenses stay at the bottom in that order
 			var $container = $(".settings-settings");
@@ -6430,6 +6432,7 @@
 		var pkg_comRegisterDlls = [];  // DLL filenames selected for COM registration via RegAsm
 		var pkg_installerFilePath = null;  // optional .exe installer to embed in the package
 		var pkg_defaultHelpFile = null;  // basename of CHM file selected as default help for multi-CHM libraries
+		var pkg_releaseNotesPdfPath = null;  // optional release notes PDF (OEM developer only)
 		var _pkgLastClickedRow = {};  // per-tree last clicked .ft-file-row element for shift-select
 
 		/**
@@ -6593,6 +6596,43 @@
 			}
 		});
 
+		// ---- Release Notes PDF picker (OEM developer only) ----
+		$(document).on("click", "#pkg-pickReleasePdf", function() {
+			$("#pkg-input-release-pdf").trigger("click");
+		});
+
+		$(document).on("change", "#pkg-input-release-pdf", function() {
+			var fileInput = this;
+			if (!fileInput.files || fileInput.files.length === 0) return;
+			var filePath = fileInput.files[0].path;
+			$(this).val('');
+			if (!filePath) return;
+
+			if (path.extname(filePath).toLowerCase() !== '.pdf') {
+				alert("Only PDF files are allowed for release notes.");
+				return;
+			}
+			if (!fs.existsSync(filePath)) {
+				alert("File not found: " + filePath);
+				return;
+			}
+			var stats = fs.statSync(filePath);
+			if (stats.size > 10 * 1024 * 1024) {
+				alert("PDF file is too large (max 10 MB).");
+				return;
+			}
+
+			pkg_releaseNotesPdfPath = filePath;
+			$("#pkg-release-pdf-name").text(path.basename(filePath));
+			$("#pkg-removeReleasePdf").show();
+		});
+
+		$(document).on("click", "#pkg-removeReleasePdf", function() {
+			pkg_releaseNotesPdfPath = null;
+			$("#pkg-release-pdf-name").text("No PDF selected");
+			$("#pkg-removeReleasePdf").hide();
+		});
+
 		// ---- File-type mismatch warning helper ----
 		/**
 		 * Show a warning modal when the user adds an unexpected file type.
@@ -6649,15 +6689,57 @@
 			$modal.modal('show');
 		}
 
+		/**
+		 * Filter an array of file paths, rejecting any with restricted extensions
+		 * unless the OEM session is fully authorized. Shows a warning listing the
+		 * rejected files and returns only the allowed paths.
+		 *
+		 * @param {string[]} filePaths - Absolute file paths to check
+		 * @param {string}   sectionLabel - Human-readable section name for the warning
+		 * @returns {string[]} File paths that passed the check
+		 */
+		function filterRestrictedFiles(filePaths, sectionLabel) {
+			if (isOemKeywordsEnabled()) return filePaths; // OEM bypass
+			var allowed = [];
+			var blocked = [];
+			for (var i = 0; i < filePaths.length; i++) {
+				if (shared.isRestrictedFileExtension(filePaths[i])) {
+					blocked.push(path.basename(filePaths[i]));
+				} else {
+					allowed.push(filePaths[i]);
+				}
+			}
+			if (blocked.length > 0) {
+				var fileList = blocked.map(function(f) { return '<b>' + escapeHtml(f) + '</b>'; }).join(', ');
+				pkgShowFileTypeWarning(
+					'<i class="fas fa-shield-alt text-danger mr-1"></i><b>Restricted file ' +
+					(blocked.length === 1 ? 'type' : 'types') + ' blocked</b><br><br>' +
+					'The following ' + (blocked.length === 1 ? 'file was' : 'files were') +
+					' not added to <b>' + sectionLabel + '</b> because ' +
+					(blocked.length === 1 ? 'it has a' : 'they have') +
+					' restricted file ' + (blocked.length === 1 ? 'extension' : 'extensions') +
+					' that could pose a security risk:<br><br>' + fileList +
+					'<br><br>Executable, script, registry, and shortcut files are not permitted in library packages.',
+					null, null
+				);
+			}
+			return allowed;
+		}
+
 		// ---- Library file inputs ----
 		$(document).on("change", "#pkg-input-libfiles", function() {
 			var fileInput = this;
 			var newDlls = [];
 			var medFiles = [];
 			var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
+			var candidatePaths = [];
 			for (var i = 0; i < fileInput.files.length; i++) {
-				var filePath = fileInput.files[i].path;
-				if (filePath && pkg_libraryFiles.indexOf(filePath) === -1) {
+				if (fileInput.files[i].path) candidatePaths.push(fileInput.files[i].path);
+			}
+			candidatePaths = filterRestrictedFiles(candidatePaths, 'Library Files');
+			for (var i = 0; i < candidatePaths.length; i++) {
+				var filePath = candidatePaths[i];
+				if (pkg_libraryFiles.indexOf(filePath) === -1) {
 					pkg_libraryFiles.push(filePath);
 					var baseName = path.basename(filePath);
 					pkg_fileRelPaths[filePath] = libName + '/' + baseName;
@@ -6706,6 +6788,30 @@
 					var newDlls = [];
 					var medFiles = [];
 					var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
+					// Filter restricted file extensions from folder scan
+					if (!isOemKeywordsEnabled()) {
+						var blockedNames = [];
+						allFiles = allFiles.filter(function(fileInfo) {
+							if (shared.isRestrictedFileExtension(fileInfo.absolutePath)) {
+								blockedNames.push(path.basename(fileInfo.absolutePath));
+								return false;
+							}
+							return true;
+						});
+						if (blockedNames.length > 0) {
+							var fileList = blockedNames.map(function(f) { return '<b>' + escapeHtml(f) + '</b>'; }).join(', ');
+							pkgShowFileTypeWarning(
+								'<i class="fas fa-shield-alt text-danger mr-1"></i><b>Restricted file ' +
+								(blockedNames.length === 1 ? 'type' : 'types') + ' blocked</b><br><br>' +
+								(blockedNames.length === 1 ? 'A file was' : blockedNames.length + ' files were') +
+								' excluded from the folder because ' +
+								(blockedNames.length === 1 ? 'it has a' : 'they have') +
+								' restricted file ' + (blockedNames.length === 1 ? 'extension' : 'extensions') +
+								':<br><br>' + fileList,
+								null, null
+							);
+						}
+					}
 					allFiles.forEach(function(fileInfo) {
 						var filePath = fileInfo.absolutePath;
 						var file = path.basename(filePath);
@@ -6758,9 +6864,14 @@
 			var fileInput = this;
 			var dllFiles = [];
 			var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
+			var candidatePaths = [];
 			for (var i = 0; i < fileInput.files.length; i++) {
-				var filePath = fileInput.files[i].path;
-				if (filePath && pkg_demoMethodFiles.indexOf(filePath) === -1) {
+				if (fileInput.files[i].path) candidatePaths.push(fileInput.files[i].path);
+			}
+			candidatePaths = filterRestrictedFiles(candidatePaths, 'Demo Method Files');
+			for (var i = 0; i < candidatePaths.length; i++) {
+				var filePath = candidatePaths[i];
+				if (pkg_demoMethodFiles.indexOf(filePath) === -1) {
 					pkg_demoMethodFiles.push(filePath);
 					pkg_fileRelPaths[filePath] = libName + '/' + path.basename(filePath);
 					if (path.basename(filePath).toLowerCase().endsWith('.dll')) {
@@ -6800,6 +6911,30 @@
 					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
 					var dllFiles = [];
 					var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
+					// Filter restricted file extensions from folder scan
+					if (!isOemKeywordsEnabled()) {
+						var blockedNames = [];
+						allFiles = allFiles.filter(function(fileInfo) {
+							if (shared.isRestrictedFileExtension(fileInfo.absolutePath)) {
+								blockedNames.push(path.basename(fileInfo.absolutePath));
+								return false;
+							}
+							return true;
+						});
+						if (blockedNames.length > 0) {
+							var fileList = blockedNames.map(function(f) { return '<b>' + escapeHtml(f) + '</b>'; }).join(', ');
+							pkgShowFileTypeWarning(
+								'<i class="fas fa-shield-alt text-danger mr-1"></i><b>Restricted file ' +
+								(blockedNames.length === 1 ? 'type' : 'types') + ' blocked</b><br><br>' +
+								(blockedNames.length === 1 ? 'A file was' : blockedNames.length + ' files were') +
+								' excluded from the folder because ' +
+								(blockedNames.length === 1 ? 'it has a' : 'they have') +
+								' restricted file ' + (blockedNames.length === 1 ? 'extension' : 'extensions') +
+								':<br><br>' + fileList,
+								null, null
+							);
+						}
+					}
 					allFiles.forEach(function(fileInfo) {
 						var filePath = fileInfo.absolutePath;
 						if (pkg_demoMethodFiles.indexOf(filePath) === -1) {
@@ -6842,9 +6977,14 @@
 		// ---- Labware file inputs ----
 		$(document).on("change", "#pkg-input-labwarefiles", function() {
 			var fileInput = this;
+			var candidatePaths = [];
 			for (var i = 0; i < fileInput.files.length; i++) {
-				var filePath = fileInput.files[i].path;
-				if (filePath && pkg_labwareFiles.indexOf(filePath) === -1) {
+				if (fileInput.files[i].path) candidatePaths.push(fileInput.files[i].path);
+			}
+			candidatePaths = filterRestrictedFiles(candidatePaths, 'Labware Files');
+			for (var i = 0; i < candidatePaths.length; i++) {
+				var filePath = candidatePaths[i];
+				if (pkg_labwareFiles.indexOf(filePath) === -1) {
 					pkg_labwareFiles.push(filePath);
 					// Auto-detect subdirectory from the file's parent folder name
 					var parentDir = path.basename(path.dirname(filePath));
@@ -6862,6 +7002,30 @@
 			if (folderPath) {
 				try {
 					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
+					// Filter restricted file extensions from folder scan
+					if (!isOemKeywordsEnabled()) {
+						var blockedNames = [];
+						allFiles = allFiles.filter(function(fileInfo) {
+							if (shared.isRestrictedFileExtension(fileInfo.absolutePath)) {
+								blockedNames.push(path.basename(fileInfo.absolutePath));
+								return false;
+							}
+							return true;
+						});
+						if (blockedNames.length > 0) {
+							var fileList = blockedNames.map(function(f) { return '<b>' + escapeHtml(f) + '</b>'; }).join(', ');
+							pkgShowFileTypeWarning(
+								'<i class="fas fa-shield-alt text-danger mr-1"></i><b>Restricted file ' +
+								(blockedNames.length === 1 ? 'type' : 'types') + ' blocked</b><br><br>' +
+								(blockedNames.length === 1 ? 'A file was' : blockedNames.length + ' files were') +
+								' excluded from the folder because ' +
+								(blockedNames.length === 1 ? 'it has a' : 'they have') +
+								' restricted file ' + (blockedNames.length === 1 ? 'extension' : 'extensions') +
+								':<br><br>' + fileList,
+								null, null
+							);
+						}
+					}
 					allFiles.forEach(function(fileInfo) {
 						var filePath = fileInfo.absolutePath;
 						if (pkg_labwareFiles.indexOf(filePath) === -1) {
@@ -8582,6 +8746,7 @@
 			pkg_comRegisterDlls = [];
 			pkg_installerFilePath = null;
 			pkg_defaultHelpFile = null;
+			pkg_releaseNotesPdfPath = null;
 			pkg_labwareFiles = [];
 			pkg_labwareSubdirs = {};
 			pkg_labwareEmptyFolders = [];
@@ -8606,6 +8771,8 @@
 			$("#pkg-icon-preview").html('<i class="fas fa-image fa-2x" style="color:#ccc;"></i>').removeClass('has-image');
 			$("#pkg-icon-name").text("No image selected");
 			$("#pkg-removeIcon").hide();
+			$("#pkg-release-pdf-name").text("No PDF selected");
+			$("#pkg-removeReleasePdf").hide();
 		});
 
 		// ---- Create Package button ----
@@ -8993,14 +9160,8 @@
 				var githubUrl = $("#pkg-github-url").val().trim();
 				var tagsRaw = $("#pkg-tags").val().trim();
 
-				// Parse and sanitize tags (lowercase, spaces allowed)
-				var tags = [];
-				if (tagsRaw) {
-					tagsRaw.split(",").forEach(function(t) {
-						var s = shared.sanitizeTag(t);
-						if (s) tags.push(s);
-					});
-				}
+				// Parse and sanitize tags (lowercase, deduplicates)
+				var tags = tagsRaw ? shared.sanitizeTags(tagsRaw.split(",")) : [];
 
 				// Filter reserved tags (system, OEM, and restricted company names are not allowed)
 				var tagCheck = shared.filterReservedTags(tags);
@@ -9102,6 +9263,13 @@
 				};
 				var releaseNotes = $("#pkg-release-notes").val().trim();
 				if (releaseNotes) manifest.release_notes = releaseNotes;
+
+				// Release Notes PDF (OEM developer only)
+				if (pkg_releaseNotesPdfPath && fs.existsSync(pkg_releaseNotesPdfPath)) {
+					manifest.release_notes_pdf = path.basename(pkg_releaseNotesPdfPath);
+					manifest.release_notes_pdf_base64 = fs.readFileSync(pkg_releaseNotesPdfPath).toString('base64');
+				}
+
 				if (githubUrl) manifest.github_url = githubUrl;
 				if (pkg_installSubdir === '') manifest.install_to_library_root = true;
 				var customSubdir = (pkg_installSubdir && pkg_installSubdir !== '') ? pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '') : '';
@@ -11620,7 +11788,7 @@
 					venus_compatibility: manifest.venus_compatibility || "",
 					description: manifest.description || "",
 					github_url: manifest.github_url || "",
-					tags: manifest.tags || [],
+					tags: shared.sanitizeTags(manifest.tags || []),
 					created_date: manifest.created_date || "",
 					app_version: manifest.app_version || "",
 					format_version: manifest.format_version || "1.0",
@@ -12198,7 +12366,7 @@
 					version: lib.version || "",
 					venus_compatibility: lib.venus_compatibility || "",
 					description: lib.description || "",
-					tags: lib.tags || [],
+					tags: shared.sanitizeTags(lib.tags || []),
 					created_date: new Date().toISOString(),
 					library_image: libImageFilename,
 					library_image_base64: libImageBase64,
@@ -12411,7 +12579,7 @@
 						version: lib.version || "",
 						venus_compatibility: lib.venus_compatibility || "",
 						description: lib.description || "",
-						tags: lib.tags || [],
+						tags: shared.sanitizeTags(lib.tags || []),
 						created_date: new Date().toISOString(),
 						library_image: lib.library_image || null,
 						library_image_base64: lib.library_image_base64 || null,
@@ -12773,7 +12941,7 @@
 						version: lib.version || "",
 						venus_compatibility: lib.venus_compatibility || "",
 						description: lib.description || "",
-						tags: lib.tags || [],
+						tags: shared.sanitizeTags(lib.tags || []),
 						created_date: new Date().toISOString(),
 						library_image: lib.library_image || null,
 						library_image_base64: lib.library_image_base64 || null,
@@ -13245,7 +13413,7 @@
 							venus_compatibility: manifest.venus_compatibility || "",
 							description: manifest.description || "",
 							github_url: manifest.github_url || "",
-							tags: manifest.tags || [],
+							tags: shared.sanitizeTags(manifest.tags || []),
 							created_date: manifest.created_date || "",
 							app_version: manifest.app_version || "",
 							format_version: manifest.format_version || "1.0",
@@ -14223,6 +14391,15 @@
 							continue;
 						}
 
+						// Validate restricted file extensions
+						if (!isOemKeywordsEnabled()) {
+							var extValidation = shared.validateManifestFileExtensions(manifest);
+							if (!extValidation.valid) {
+								parseErrors.push(libName + ": package contains restricted file types (" + extValidation.errors.join("; ") + ")");
+								continue;
+							}
+						}
+
 						// Verify signature
 						var sigResult = verifyPackageSignature(zip);
 						if (sigResult.signed && !sigResult.valid) {
@@ -14527,7 +14704,7 @@
 							venus_compatibility: manifest.venus_compatibility || "",
 							description: manifest.description || "",
 							github_url: manifest.github_url || "",
-							tags: manifest.tags || [],
+							tags: shared.sanitizeTags(manifest.tags || []),
 							created_date: manifest.created_date || "",
 							app_version: manifest.app_version || "",
 							format_version: manifest.format_version || "1.0",
@@ -14826,6 +15003,17 @@
 					return;
 				}
 
+				// Validate restricted file extensions
+				if (!isOemKeywordsEnabled()) {
+					var extValidation = shared.validateManifestFileExtensions(manifest);
+					if (!extValidation.valid) {
+						alert("Invalid package: contains restricted file types that could pose a security risk.\n\n" + extValidation.errors.join("\n") +
+							"\n\nExecutable, script, registry, and shortcut files are not permitted in library packages.");
+						_isImporting = false;
+						return;
+					}
+				}
+
 				var libFiles = manifest.library_files || [];
 				var demoFiles = manifest.demo_method_files || [];
 
@@ -14922,11 +15110,32 @@
 				}
 
 				// Release Notes
-				if (manifest.release_notes) {
-					$modal.find(".imp-preview-release-notes").text(manifest.release_notes);
+				var hasReleaseNotes = !!manifest.release_notes;
+				var hasReleaseNotesPdf = !!manifest.release_notes_pdf_base64;
+				if (hasReleaseNotes || hasReleaseNotesPdf) {
+					if (hasReleaseNotes) {
+						$modal.find(".imp-preview-release-notes").text(manifest.release_notes);
+					} else {
+						$modal.find(".imp-preview-release-notes").text('');
+					}
+					if (hasReleaseNotesPdf) {
+						$modal.find(".imp-preview-release-notes-pdf-link").off("click").on("click", function(e) {
+							e.preventDefault();
+							var tmpDir = path.join(os.tmpdir(), 'LibraryManager_pdf_' + Date.now());
+							fs.mkdirSync(tmpDir, {recursive: true});
+							var pdfName = manifest.release_notes_pdf || 'release_notes.pdf';
+							var tmpPdf = path.join(tmpDir, pdfName);
+							fs.writeFileSync(tmpPdf, Buffer.from(manifest.release_notes_pdf_base64, 'base64'));
+							nw.Shell.openItem(tmpPdf);
+						});
+						$modal.find(".imp-preview-release-notes-pdf-wrap").removeClass("d-none");
+					} else {
+						$modal.find(".imp-preview-release-notes-pdf-wrap").addClass("d-none");
+					}
 					$modal.find(".imp-preview-release-notes-section").removeClass("d-none");
 				} else {
 					$modal.find(".imp-preview-release-notes-section").addClass("d-none");
+					$modal.find(".imp-preview-release-notes-pdf-wrap").addClass("d-none");
 				}
 
 				// GitHub URL (respect display setting, validate to prevent javascript: XSS)
@@ -15423,7 +15632,7 @@
 					venus_compatibility: manifest.venus_compatibility || "",
 					description: manifest.description || "",
 					github_url: manifest.github_url || "",
-					tags: manifest.tags || [],
+					tags: shared.sanitizeTags(manifest.tags || []),
 					created_date: manifest.created_date || "",
 					app_version: manifest.app_version || "",
 					format_version: manifest.format_version || "1.0",
@@ -19512,11 +19721,32 @@
 			}
 
 			// Release Notes
-			if (ver.release_notes) {
-				$m.find(".store-detail-release-notes").text(ver.release_notes);
+			var hasStoreReleaseNotes = !!ver.release_notes;
+			var hasStoreReleaseNotesPdf = !!ver.release_notes_pdf_base64;
+			if (hasStoreReleaseNotes || hasStoreReleaseNotesPdf) {
+				if (hasStoreReleaseNotes) {
+					$m.find(".store-detail-release-notes").text(ver.release_notes);
+				} else {
+					$m.find(".store-detail-release-notes").text('');
+				}
+				if (hasStoreReleaseNotesPdf) {
+					$m.find(".store-detail-release-notes-pdf-link").off("click").on("click", function(e) {
+						e.preventDefault();
+						var tmpDir = path.join(os.tmpdir(), 'LibraryManager_pdf_' + Date.now());
+						fs.mkdirSync(tmpDir, {recursive: true});
+						var pdfName = ver.release_notes_pdf || 'release_notes.pdf';
+						var tmpPdf = path.join(tmpDir, pdfName);
+						fs.writeFileSync(tmpPdf, Buffer.from(ver.release_notes_pdf_base64, 'base64'));
+						nw.Shell.openItem(tmpPdf);
+					});
+					$m.find(".store-detail-release-notes-pdf-wrap").removeClass("d-none");
+				} else {
+					$m.find(".store-detail-release-notes-pdf-wrap").addClass("d-none");
+				}
 				$m.find(".store-detail-release-notes-section").removeClass("d-none");
 			} else {
 				$m.find(".store-detail-release-notes-section").addClass("d-none");
+				$m.find(".store-detail-release-notes-pdf-wrap").addClass("d-none");
 			}
 
 			// GitHub link

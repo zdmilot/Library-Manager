@@ -1324,7 +1324,7 @@ function cmdExportLib(args) {
         venus_compatibility: lib.venus_compatibility  || '',
         description:         lib.description          || '',
         github_url:          lib.github_url           || '',
-        tags:                lib.tags                 || [],
+        tags:                shared.sanitizeTags(lib.tags || []),
         created_date:        new Date().toISOString(),
         library_image:       lib.library_image        || null,
         library_image_base64:lib.library_image_base64 || null,
@@ -1495,7 +1495,7 @@ function cmdExportArchive(args) {
                 venus_compatibility: lib.venus_compatibility  || '',
                 description:         lib.description          || '',
                 github_url:          lib.github_url           || '',
-                tags:                lib.tags                 || [],
+                tags:                shared.sanitizeTags(lib.tags || []),
                 created_date:        new Date().toISOString(),
                 library_image:       lib.library_image        || null,
                 library_image_base64:lib.library_image_base64 || null,
@@ -1964,9 +1964,18 @@ function cmdCreatePackage(args) {
         manifest.release_notes = spec.release_notes;
     }
 
+    // Add release notes PDF if specified in spec (OEM/developer use)
+    if (spec.release_notes_pdf) {
+        var pdfPath = path.resolve(specDir, spec.release_notes_pdf);
+        if (!fs.existsSync(pdfPath)) die('Release notes PDF not found: ' + pdfPath);
+        if (path.extname(pdfPath).toLowerCase() !== '.pdf') die('Release notes PDF must be a .pdf file.');
+        manifest.release_notes_pdf = path.basename(pdfPath);
+        manifest.release_notes_pdf_base64 = fs.readFileSync(pdfPath).toString('base64');
+    }
+
     // Preserve any extra user-supplied spec fields for forward compatibility
     const knownSpecKeys = ['library_name','author','organization','version','venus_compatibility',
-        'description','release_notes','github_url','tags','library_image','library_files','demo_method_files',
+        'description','release_notes','release_notes_pdf','github_url','tags','library_image','library_files','demo_method_files',
         'help_files','default_help_file','com_register_dlls','install_to_library_root',
         'labware_files','bin_files','installer_executable','installer_info',
         '$schema','_comment_paths','_comment','_comment_installer'];

@@ -339,6 +339,18 @@
 											<textarea class="form-control form-control-sm" id="pkg-release-notes" rows="3" placeholder="e.g. Initial release with pipetting helpers and error recovery routines (optional)"></textarea>
 										</div>
 									</div>
+									<!-- Release Notes PDF (OEM developer only) -->
+									<div class="form-group row mb-2" id="pkg-release-notes-pdf-section" style="display:none;">
+										<label class="col-sm-4 col-form-label col-form-label-sm">Release Notes PDF</label>
+										<div class="col-sm-8">
+											<div class="d-flex align-items-center">
+												<button class="btn btn-sm btn-outlined" id="pkg-pickReleasePdf">Choose PDF...</button>
+												<button class="btn btn-sm btn-outlined ml-1" id="pkg-removeReleasePdf" style="display:none;">Remove</button>
+												<input type="file" class="d-none" id="pkg-input-release-pdf" accept=".pdf">
+											</div>
+											<div class="text-muted text-sm mt-1" id="pkg-release-pdf-name">No PDF selected</div>
+										</div>
+									</div>
 									<div class="form-group row mb-2">
 										<label class="col-sm-4 col-form-label col-form-label-sm">GitHub Repository</label>
 										<div class="col-sm-8">
@@ -2144,11 +2156,6 @@
 						<h6 class="detail-section-label">Description</h6>
 						<p class="imp-preview-description text-muted"></p>
 					</div>
-					<!-- Release Notes -->
-					<div class="detail-section imp-preview-release-notes-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-file-alt mr-1" style="color:var(--medium)"></i>Release Notes</h6>
-						<p class="imp-preview-release-notes text-muted" style="white-space:pre-line;"></p>
-					</div>
 					<!-- GitHub URL -->
 					<div class="detail-section imp-preview-github-section d-none">
 						<h6 class="detail-section-label">GitHub</h6>
@@ -2184,6 +2191,14 @@
 					<div class="detail-section">
 						<h6 class="detail-section-label">Demo Method Files</h6>
 						<div class="pkg-file-list imp-preview-demo-files"></div>
+					</div>
+					<!-- Release Notes -->
+					<div class="detail-section imp-preview-release-notes-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-file-alt mr-1" style="color:var(--medium)"></i>Release Notes</h6>
+						<div class="imp-preview-release-notes-pdf-wrap d-none mb-2">
+							<a href="#" class="btn btn-sm btn-outlined imp-preview-release-notes-pdf-link"><i class="fas fa-file-pdf mr-1" style="color:#d9534f;"></i>View Release Notes PDF</a>
+						</div>
+						<p class="imp-preview-release-notes text-muted" style="white-space:pre-line;"></p>
 					</div>
 					<!-- Help Files -->
 					<div class="detail-section imp-preview-help-section d-none">
@@ -2799,11 +2814,6 @@
 						<h6 class="detail-section-label">Description</h6>
 						<p class="store-detail-description text-muted"></p>
 					</div>
-					<!-- Release Notes -->
-					<div class="detail-section store-detail-release-notes-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-file-alt mr-1" style="color:var(--medium)"></i>Release Notes</h6>
-						<p class="store-detail-release-notes text-muted" style="white-space:pre-line;"></p>
-					</div>
 					<!-- GitHub URL -->
 					<div class="detail-section store-detail-github d-none">
 						<h6 class="detail-section-label">GitHub</h6>
@@ -2843,6 +2853,14 @@
 					<div class="detail-section">
 						<h6 class="detail-section-label">Demo Method Files</h6>
 						<div class="pkg-file-list store-detail-demo-files"></div>
+					</div>
+					<!-- Release Notes -->
+					<div class="detail-section store-detail-release-notes-section d-none">
+						<h6 class="detail-section-label"><i class="fas fa-file-alt mr-1" style="color:var(--medium)"></i>Release Notes</h6>
+						<div class="store-detail-release-notes-pdf-wrap d-none mb-2">
+							<a href="#" class="btn btn-sm btn-outlined store-detail-release-notes-pdf-link"><i class="fas fa-file-pdf mr-1" style="color:#d9534f;"></i>View Release Notes PDF</a>
+						</div>
+						<p class="store-detail-release-notes text-muted" style="white-space:pre-line;"></p>
 					</div>
 					<!-- Help Files -->
 					<div class="detail-section store-detail-help-section d-none">

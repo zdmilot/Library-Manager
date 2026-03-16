@@ -55,6 +55,12 @@
       "examples": ["Initial release with pipetting helpers and error recovery routines.", "- Added 96-well plate support\n- Fixed volume tracking for small volumes\n- Improved error messages"]
     },
 
+    "release_notes_pdf": {
+      "type": "string",
+      "description": "Relative path to a .pdf file containing release notes for this version. The PDF is embedded in the package as base64 and displayed in the import preview. Optional; restricted to OEM/developer use.",
+      "examples": ["ReleaseNotes_v2.0.pdf"]
+    },
+
     "github_url": {
       "type": "string",
       "format": "uri",
