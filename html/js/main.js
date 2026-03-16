@@ -8746,6 +8746,21 @@
 			$("#pkg-removeIcon").hide();
 			$("#pkg-release-pdf-name").text("No PDF selected");
 			$("#pkg-removeReleasePdf").hide();
+			// Reset section toggles to OFF and hide their bodies
+			$(".pkg-section-toggle").prop("checked", false);
+			$("#pkg-demo-body, #pkg-labware-body, #pkg-bin-body, #pkg-installer-body").hide();
+		});
+
+		// ---- Section toggle handlers (optional sections default to OFF) ----
+		$(document).on("change", ".pkg-section-toggle", function() {
+			var sectionId = $(this).attr("data-section");
+			if (sectionId) {
+				if ($(this).is(":checked")) {
+					$("#" + sectionId).slideDown(150);
+				} else {
+					$("#" + sectionId).slideUp(150);
+				}
+			}
 		});
 
 		// ---- Create Package button ----
@@ -9220,6 +9235,41 @@
 
 				// Build manifest JSON (matches C# HxLibPkgManifest.ToJson() format)
 				// Manifest stores the RAW library image - no overlay
+
+				// Compute the install directory prefix to strip from relative paths.
+				// This prevents double-nesting during import: the import already creates
+				// the library-name subdirectory, so ZIP paths must NOT include it.
+				var _pkgStripPrefix = '';
+				if (pkg_installSubdir === null) {
+					// Default: library name is the install subdirectory
+					_pkgStripPrefix = libName;
+				} else if (pkg_installSubdir !== '') {
+					// Custom install subdirectory
+					_pkgStripPrefix = pkg_installSubdir.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+				}
+				// else pkg_installSubdir === '' means root install - no prefix to strip
+
+				/**
+				 * Strip the install directory prefix from a relative path.
+				 * This ensures filenames are immutable and directory structure is preserved
+				 * exactly as the user specified, without duplicating the install subdirectory.
+				 * E.g. if prefix is "MyLib" and relPath is "MyLib/subdir/file.hsl",
+				 * this returns "subdir/file.hsl".
+				 */
+				function pkgStripInstallPrefix(relPath) {
+					if (!_pkgStripPrefix) return relPath;
+					var normalized = relPath.replace(/\\/g, '/');
+					var prefix = _pkgStripPrefix.toLowerCase() + '/';
+					if (normalized.toLowerCase().startsWith(prefix)) {
+						var stripped = normalized.substring(prefix.length);
+						// If stripping leaves nothing (path was just the prefix dir),
+						// fall back to the bare filename to avoid empty paths
+						if (!stripped) return path.basename(relPath);
+						return stripped;
+					}
+					return relPath;
+				}
+
 				var manifest = {
 					format_version: shared.FORMAT_VERSION,
 					library_name: libName,
@@ -9233,8 +9283,10 @@
 					library_image: libImageFilename,
 					library_image_base64: libImageBase64,
 					library_image_mime: libImageMime,
-					library_files: pkg_libraryFiles.map(function(f) { return pkg_fileRelPaths[f] || path.basename(f); }),
-					demo_method_files: pkg_demoMethodFiles.map(function(f) { return pkg_fileRelPaths[f] || path.basename(f); }),
+					library_files: pkg_libraryFiles.map(function(f) { return pkgStripInstallPrefix(pkg_fileRelPaths[f] || path.basename(f)); }),
+					demo_method_files: ($("#pkg-toggle-demo").is(":checked") && pkg_demoMethodFiles.length > 0)
+						? pkg_demoMethodFiles.map(function(f) { return pkgStripInstallPrefix(pkg_fileRelPaths[f] || path.basename(f)); })
+						: [],
 					com_register_dlls: pkg_comRegisterDlls.slice(),
 					app_version: shared.getAppVersion(),
 					windows_version: shared.getWindowsVersion(),
@@ -9262,8 +9314,8 @@
 				// Default help file (for multi-CHM libraries)
 				if (pkg_defaultHelpFile) manifest.default_help_file = pkg_defaultHelpFile;
 
-				// Labware files
-				if (pkg_labwareFiles.length > 0) {
+				// Labware files - only include if section toggle is ON and has files
+				if ($("#pkg-toggle-labware").is(":checked") && pkg_labwareFiles.length > 0) {
 					manifest.labware_files = pkg_labwareFiles.map(function(f) {
 						var subdir = pkg_labwareSubdirs[f] || '';
 						var baseName = pkg_fileRelPaths[f] || path.basename(f);
@@ -9271,8 +9323,8 @@
 					});
 				}
 
-				// Bin files
-				if (pkg_binFiles.length > 0) {
+				// Bin files - only include if section toggle is ON and has files
+				if ($("#pkg-toggle-bin").is(":checked") && pkg_binFiles.length > 0) {
 					manifest.bin_files = pkg_binFiles.map(function(f) {
 						var subdir = pkg_binSubdirs[f] || '';
 						var baseName = pkg_fileRelPaths[f] || path.basename(f);
@@ -9280,8 +9332,8 @@
 					});
 				}
 
-				// Installer executable
-				if (pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
+				// Installer executable - only include if section toggle is ON
+				if ($("#pkg-toggle-installer").is(":checked") && pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
 					manifest.installer_executable = path.basename(pkg_installerFilePath);
 				}
 
@@ -9304,8 +9356,9 @@
 				zip.addFile("manifest.json", Buffer.from(JSON.stringify(manifest, null, 2), "utf8"));
 
 				// Add library files under library/ directory (preserving subfolder structure)
+				// Filenames are immutable - only the install directory prefix is stripped
 				pkg_libraryFiles.forEach(function(fpath) {
-					var relPath = pkg_fileRelPaths[fpath] || path.basename(fpath);
+					var relPath = pkgStripInstallPrefix(pkg_fileRelPaths[fpath] || path.basename(fpath));
 					zip.addLocalFile(fpath, zipSubdir('library', relPath));
 				});
 
@@ -9317,27 +9370,41 @@
 				}
 
 				// Add demo method files under demo_methods/ directory (preserving subfolder structure)
-				pkg_demoMethodFiles.forEach(function(fpath) {
-					var relPath = pkg_fileRelPaths[fpath] || path.basename(fpath);
-					zip.addLocalFile(fpath, zipSubdir('demo_methods', relPath));
-				});
+				// Only include if the demo section toggle is ON and there are actual files
+				var demoSectionEnabled = $("#pkg-toggle-demo").is(":checked");
+				if (demoSectionEnabled && pkg_demoMethodFiles.length > 0) {
+					pkg_demoMethodFiles.forEach(function(fpath) {
+						var relPath = pkgStripInstallPrefix(pkg_fileRelPaths[fpath] || path.basename(fpath));
+						zip.addLocalFile(fpath, zipSubdir('demo_methods', relPath));
+					});
+				}
 
 				// Add labware files under labware/ directory (preserving subdirectory assignments)
-				pkg_labwareFiles.forEach(function(fpath) {
-					var subdir = pkg_labwareSubdirs[fpath] || '';
-					var zipDir = subdir ? 'labware/' + subdir.replace(/\\/g, '/') : 'labware';
-					zip.addLocalFile(fpath, zipDir);
-				});
+				// Only include if the labware section toggle is ON and there are actual files
+				var labwareSectionEnabled = $("#pkg-toggle-labware").is(":checked");
+				if (labwareSectionEnabled && pkg_labwareFiles.length > 0) {
+					pkg_labwareFiles.forEach(function(fpath) {
+						var subdir = pkg_labwareSubdirs[fpath] || '';
+						var zipDir = subdir ? 'labware/' + subdir.replace(/\\/g, '/') : 'labware';
+						zip.addLocalFile(fpath, zipDir);
+					});
+				}
 
 				// Add bin files under bin/ directory (preserving subdirectory assignments)
-				pkg_binFiles.forEach(function(fpath) {
-					var subdir = pkg_binSubdirs[fpath] || '';
-					var zipDir = subdir ? 'bin/' + subdir.replace(/\\/g, '/') : 'bin';
-					zip.addLocalFile(fpath, zipDir);
-				});
+				// Only include if the bin section toggle is ON and there are actual files
+				var binSectionEnabled = $("#pkg-toggle-bin").is(":checked");
+				if (binSectionEnabled && pkg_binFiles.length > 0) {
+					pkg_binFiles.forEach(function(fpath) {
+						var subdir = pkg_binSubdirs[fpath] || '';
+						var zipDir = subdir ? 'bin/' + subdir.replace(/\\/g, '/') : 'bin';
+						zip.addLocalFile(fpath, zipDir);
+					});
+				}
 
 				// Add installer executable under installer/ directory
-				if (pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
+				// Only include if the installer section toggle is ON
+				var installerSectionEnabled = $("#pkg-toggle-installer").is(":checked");
+				if (installerSectionEnabled && pkg_installerFilePath && fs.existsSync(pkg_installerFilePath)) {
 					zip.addLocalFile(pkg_installerFilePath, 'installer');
 				}
 
@@ -13444,7 +13511,7 @@
 							library_image_base64: manifest.library_image_base64 || null,
 							library_image_mime: manifest.library_image_mime || null,
 							library_files: libFiles,
-							demo_method_files: manifest.demo_method_files || [],
+							demo_method_files: demoFiles,
 							help_files: helpFiles,
 							com_register_dlls: comDlls,
 							com_warning: comDlls.length > 0,  // mark as warning; cleared below if registration succeeds
@@ -14636,6 +14703,7 @@
 						} else {
 							libDestDir = path.join(libBasePath, libName);
 						}
+
 						var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
 						var labwareFiles = manifest.labware_files || [];
 						var binFiles = manifest.bin_files || [];
@@ -14738,7 +14806,7 @@
 							library_image_base64: manifest.library_image_base64 || null,
 							library_image_mime: manifest.library_image_mime || null,
 							library_files: libFiles,
-							demo_method_files: manifest.demo_method_files || [],
+							demo_method_files: demoFiles,
 							help_files: helpFiles,
 							com_register_dlls: comDlls,
 							com_warning: comDlls.length > 0,
@@ -15658,7 +15726,7 @@
 					library_image_base64: manifest.library_image_base64 || null,
 					library_image_mime: manifest.library_image_mime || null,
 					library_files: libFiles,
-					demo_method_files: manifest.demo_method_files || [],
+					demo_method_files: demoFiles,
 					help_files: helpFiles,
 					com_register_dlls: comDlls,
 					com_warning: comWarning,
