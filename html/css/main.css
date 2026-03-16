@@ -1538,14 +1538,6 @@ body.dark-mode .batch-dup-header {
 	box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.25);
 }
 
-/* Changelog card emphasis */
-.pkg-changelog-card .card-header {
-	border-left: 3px solid var(--medium);
-}
-.pkg-changelog-card textarea {
-	font-size: 0.85rem;
-	line-height: 1.5;
-}
 
 .pkg-file-list {
 	border: 1px solid #dee2e6;
@@ -4605,9 +4597,6 @@ body.dark-mode #pkg-version.version-duplicate {
 body.dark-mode .solid-button.pkg-create-disabled {
 	background-color: #4a4a4a !important;
 	color: #888 !important;
-}
-body.dark-mode .pkg-changelog-card .card-header {
-	border-left-color: var(--medium);
 }
 
 /* File-type warning modal */
