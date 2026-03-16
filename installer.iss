@@ -482,7 +482,7 @@ begin
   Result := False;
   UninstallMode := 1;
 
-  Form := CreateCustomForm();
+  Form := CreateCustomForm(nil);
   try
     Form.ClientWidth := ScaleX(510);
     Form.ClientHeight := ScaleY(400);
