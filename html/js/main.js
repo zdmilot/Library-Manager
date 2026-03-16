@@ -19483,6 +19483,25 @@
 			if (href && typeof nw !== 'undefined') nw.Shell.openExternal(href);
 		});
 
+		// ---- Detail modal "Ignore Update" button click ----
+		$(document).on("click", ".store-detail-ignore-btn", function (e) {
+			e.preventDefault();
+			var $btn = $(this);
+			var libName = $btn.attr("data-lib-name");
+			var version = $btn.attr("data-version");
+			if (!libName || !version) return;
+			if ($btn.data("ignored")) {
+				clearStoreUpdateIgnored(libName);
+				$btn.html('<i class="fas fa-bell-slash mr-1"></i>Ignore Update');
+				$btn.data("ignored", false);
+			} else {
+				setStoreUpdateIgnored(libName, version);
+				$btn.html('<i class="fas fa-bell mr-1"></i>Unignore Update');
+				$btn.data("ignored", true);
+			}
+			storeRenderGrid();
+		});
+
 		// ---- Install from Store (download .hxlibpkg then hand to importer) ----
 		$(document).on("click", ".store-detail-install-btn", function (e) {
 			e.preventDefault();

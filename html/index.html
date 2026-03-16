@@ -2694,6 +2694,10 @@
 							</div>
 						</div>
 						<div class="store-toolbar-right ml-auto d-flex align-items-center">
+							<div class="custom-control custom-checkbox store-show-ignored-wrap d-none mr-2" title="Show libraries with ignored updates">
+								<input type="checkbox" class="custom-control-input" id="store-show-ignored">
+								<label class="custom-control-label" for="store-show-ignored" style="font-size:0.8rem; white-space:nowrap;">Show Ignored</label>
+							</div>
 							<div class="dropdown store-sort-dropdown">
 								<button class="btn btn-sm btn-outlined store-sort-btn" type="button" data-toggle="dropdown">
 									<i class="fas fa-sort-amount-down mr-1"></i>Sort
@@ -2897,9 +2901,14 @@
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn solid-button store-detail-install-btn">
-						<i class="fas fa-download mr-1"></i>Download and Install
-					</button>
+					<div class="d-flex align-items-center" style="gap:8px;">
+						<button type="button" class="btn btn-outlined store-detail-ignore-btn d-none">
+							<i class="fas fa-bell-slash mr-1"></i>Ignore Update
+						</button>
+						<button type="button" class="btn solid-button store-detail-install-btn">
+							<i class="fas fa-download mr-1"></i>Download and Install
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
