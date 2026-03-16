@@ -18585,6 +18585,37 @@
 		var _storeImportActive = false; // true when import preview was triggered from the store
 		var _storeSort      = 'name-asc';
 		var _storeSearchTerm = '';
+		var _storeShowIgnored = false; // when true, show ignored updates in grid
+
+		// ---- Ignored store updates persistence ----
+		// Stored as { "LibraryName": "ignored_version", ... }
+		// If a newer version appears in the catalog, the ignore is cleared automatically.
+		function getIgnoredStoreUpdates() {
+			return getSettingValue('store_ignored_updates') || {};
+		}
+
+		function isStoreUpdateIgnored(libName, catalogVersion) {
+			var ignored = getIgnoredStoreUpdates();
+			return ignored[libName] === catalogVersion;
+		}
+
+		function setStoreUpdateIgnored(libName, catalogVersion) {
+			var ignored = getIgnoredStoreUpdates();
+			ignored[libName] = catalogVersion;
+			saveSetting('store_ignored_updates', ignored);
+		}
+
+		function clearStoreUpdateIgnored(libName) {
+			var ignored = getIgnoredStoreUpdates();
+			if (ignored.hasOwnProperty(libName)) {
+				delete ignored[libName];
+				saveSetting('store_ignored_updates', ignored);
+			}
+		}
+
+		function clearAllIgnoredStoreUpdates() {
+			saveSetting('store_ignored_updates', {});
+		}
 
 		/** Build the raw.githubusercontent download URL for a store package. */
 		function storePackageDownloadUrl(pkgFile) {
@@ -18814,7 +18845,9 @@
 				var installed = null;
 				try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
 				if (installed && !installed.deleted && installed.version && installed.version !== pkg.version) {
-					count++;
+					if (!isStoreUpdateIgnored(pkg.library_name, pkg.version)) {
+						count++;
+					}
 				}
 			}
 			return count;
@@ -19020,9 +19053,16 @@
 			if (isInstalled) {
 				var installedVer = installed.version || '';
 				if (hasUpdate) {
+					var updateIgnored = isStoreUpdateIgnored(pkg.library_name, pkg.version);
 					// Update available
 					footerHtml = '<span class="store-card-installed"><i class="fas fa-check-circle mr-1"></i>v' + escapeHtml(installedVer) + '</span>';
-					footerHtml += '<span class="store-card-update-badge"><i class="fas fa-arrow-up mr-1"></i>v' + escapeHtml(pkg.version) + ' available</span>';
+					if (updateIgnored) {
+						footerHtml += '<span class="store-card-ignored-badge"><i class="fas fa-bell-slash mr-1"></i>Update Ignored</span>';
+						footerHtml += '<button class="btn btn-sm btn-link store-card-unignore-btn p-0 ml-2" data-lib-name="' + escapeHtml(pkg.library_name) + '" title="Stop ignoring this update"><i class="fas fa-undo mr-1"></i>Unignore</button>';
+					} else {
+						footerHtml += '<span class="store-card-update-badge"><i class="fas fa-arrow-up mr-1"></i>v' + escapeHtml(pkg.version) + ' available</span>';
+						footerHtml += '<button class="btn btn-sm btn-link store-card-ignore-btn p-0 ml-2" data-lib-name="' + escapeHtml(pkg.library_name) + '" data-version="' + escapeHtml(pkg.version) + '" title="Ignore this update"><i class="fas fa-bell-slash mr-1"></i>Ignore</button>';
+					}
 				} else {
 					// Same version installed — green "Installed" button
 					footerHtml = '<button class="btn btn-sm solid-button store-card-install-btn store-card-btn-installed" disabled>' +
@@ -19037,7 +19077,14 @@
 
 			var cardClasses = 'store-card';
 			if (isInstalled && !hasUpdate) cardClasses += ' store-card-is-installed';
-			if (hasUpdate) cardClasses += ' store-card-has-update';
+			if (hasUpdate) {
+				var isIgnored = isStoreUpdateIgnored(pkg.library_name, pkg.version);
+				if (isIgnored) {
+					cardClasses += ' store-card-update-ignored';
+				} else {
+					cardClasses += ' store-card-has-update';
+				}
+			}
 
 			var html = '<div class="' + cardClasses + '" data-pkg-file="' + escapeHtml(pkg.package_file) + '">' +
 				'  <div class="store-card-header">' + imgHtml +
@@ -19082,10 +19129,34 @@
 			}
 		});
 
+		// ---- Card "Ignore Update" button click ----
+		$(document).on("click", ".store-card-ignore-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var libName = $(this).attr("data-lib-name");
+			var version = $(this).attr("data-version");
+			if (libName && version) {
+				setStoreUpdateIgnored(libName, version);
+				storeRenderGrid();
+			}
+		});
+
+		// ---- Card "Unignore Update" button click ----
+		$(document).on("click", ".store-card-unignore-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var libName = $(this).attr("data-lib-name");
+			if (libName) {
+				clearStoreUpdateIgnored(libName);
+				storeRenderGrid();
+			}
+		});
+
 		// ---- Card click → show detail ----
 		$(document).on("click", ".store-card", function (e) {
 			// If the install button was clicked, the handler above already handled it
 			if ($(e.target).closest(".store-card-install-btn").length) return;
+			if ($(e.target).closest(".store-card-ignore-btn, .store-card-unignore-btn").length) return;
 
 			var $card = $(this);
 			var pkgFile = $card.attr("data-pkg-file");
@@ -19307,6 +19378,7 @@
 
 			var installed = null;
 			try { installed = db_installed_libs.installed_libs.findOne({"library_name": libName}); } catch (_) {}
+			var $ignoreBtn = $m.find(".store-detail-ignore-btn");
 			if (installed && !installed.deleted) {
 				var existingVer = installed.version || '?';
 				var incomingVer = ver.version || '?';
@@ -19316,14 +19388,28 @@
 					$m.find(".store-detail-overwrite-warning .alert").removeClass("alert-warning alert-info").addClass("alert-warning");
 					$m.find(".store-detail-overwrite-text").text('Library "' + libName + '" v' + existingVer + ' is already installed. You cannot install the same version again.');
 					$installBtn.html('<i class="fas fa-ban mr-1"></i>Already Installed').prop("disabled", true);
+					$ignoreBtn.addClass("d-none");
 				} else {
 					$m.find(".store-detail-overwrite-warning .alert").removeClass("alert-info").addClass("alert-warning");
 					$m.find(".store-detail-overwrite-text").text('A library named "' + libName + '" is already installed (v' + existingVer + '). Installing will replace it with v' + incomingVer + '.');
 					$installBtn.html('<i class="fas fa-arrow-up mr-1"></i>Update to v' + escapeHtml(ver.version));
+					// Show ignore/unignore button for available update
+					var updateIgnored = isStoreUpdateIgnored(libName, ver.version);
+					$ignoreBtn.removeClass("d-none")
+						.attr("data-lib-name", libName)
+						.attr("data-version", ver.version);
+					if (updateIgnored) {
+						$ignoreBtn.html('<i class="fas fa-bell mr-1"></i>Unignore Update').removeClass("btn-outlined").addClass("btn-outlined");
+						$ignoreBtn.data("ignored", true);
+					} else {
+						$ignoreBtn.html('<i class="fas fa-bell-slash mr-1"></i>Ignore Update').removeClass("btn-outlined").addClass("btn-outlined");
+						$ignoreBtn.data("ignored", false);
+					}
 				}
 			} else {
 				$m.find(".store-detail-overwrite-warning").addClass("d-none");
 				$installBtn.html('<i class="fas fa-download mr-1"></i>Download and Install');
+				$ignoreBtn.addClass("d-none");
 			}
 		}
 
