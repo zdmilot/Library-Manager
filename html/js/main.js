@@ -19055,8 +19055,38 @@
 			return html;
 		}
 
+		// ---- Card "Download and Install" button click → direct download ----
+		$(document).on("click", ".store-card-install-btn", function (e) {
+			e.preventDefault();
+			e.stopPropagation(); // prevent card click from opening detail modal
+			var $btn = $(this);
+			if ($btn.prop("disabled")) return;
+
+			var pkgFile = $btn.attr("data-pkg-file");
+			if (!pkgFile) return;
+
+			// Find catalog entry
+			var pkg = null;
+			for (var i = 0; i < _storeCatalog.length; i++) {
+				if (_storeCatalog[i].package_file === pkgFile) { pkg = _storeCatalog[i]; break; }
+			}
+			if (!pkg) return;
+
+			// Resolve dependencies
+			var depsNeeded = storeResolveDependencies(pkg.library_name);
+			if (depsNeeded.length > 0) {
+				storeShowDepsModal(pkg, depsNeeded);
+			} else {
+				var $card = $btn.closest(".store-card");
+				storeDownloadAndPreview(pkgFile, $card);
+			}
+		});
+
 		// ---- Card click → show detail ----
 		$(document).on("click", ".store-card", function (e) {
+			// If the install button was clicked, the handler above already handled it
+			if ($(e.target).closest(".store-card-install-btn").length) return;
+
 			var $card = $(this);
 			var pkgFile = $card.attr("data-pkg-file");
 			if (!pkgFile) return;
