@@ -6744,7 +6744,7 @@
 				if (pkg_libraryFiles.indexOf(filePath) === -1) {
 					pkg_libraryFiles.push(filePath);
 					var baseName = path.basename(filePath);
-					pkg_fileRelPaths[filePath] = libName + '/' + baseName;
+					pkg_fileRelPaths[filePath] = baseName;
 					if (baseName.toLowerCase().endsWith('.dll')) {
 						newDlls.push(baseName);
 					}
@@ -6819,7 +6819,7 @@
 						var file = path.basename(filePath);
 						if (pkg_libraryFiles.indexOf(filePath) === -1) {
 							pkg_libraryFiles.push(filePath);
-							pkg_fileRelPaths[filePath] = libName + '/' + fileInfo.relativePath;
+							pkg_fileRelPaths[filePath] = fileInfo.relativePath.replace(/\\/g, '/');
 							if (file.toLowerCase().endsWith('.dll')) {
 								newDlls.push(file);
 							}
@@ -7763,7 +7763,7 @@
 					var sub = pkg_installSubdir === '' ? '' : pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
 					return '...\\Hamilton\\Library\\' + (sub ? sub + '\\' : '');
 				}
-				return '...\\Hamilton\\Library\\' + libName + '\\';
+				return '...\\Hamilton\\Library\\';
 			} else if (treeId === 'pkg-demo-list') {
 				return '...\\Hamilton\\Methods\\Library Demo Methods\\' + libName + '\\';
 			} else if (treeId === 'pkg-labware-tree') {
@@ -7784,13 +7784,13 @@
 			$('.ft-libname-node').attr('data-folder', newName);
 
 			// When the library-name folder changes, update stored relative paths
-			// so the tree stays consistent on the next rebuild
+			// for demo files (demo tree still uses libName as its top-level folder)
 			if (oldName !== newName) {
 				_lastLibFolderName = newName;
 
-				// Rename first path component in pkg_fileRelPaths (library + demo files)
-				var allFiles = pkg_libraryFiles.concat(pkg_demoMethodFiles);
-				allFiles.forEach(function(f) {
+				// Rename first path component in pkg_fileRelPaths for demo files only
+				// (library files use paths relative to the Library root and must not be renamed)
+				pkg_demoMethodFiles.forEach(function(f) {
 					var rel = pkg_fileRelPaths[f];
 					if (!rel) return;
 					var norm = rel.replace(/\\/g, '/');
@@ -7801,7 +7801,8 @@
 					}
 				});
 
-				// Rename first component in empty-folder arrays
+				// Rename first component in demo empty-folder array only
+				// (library empty folders are relative to Library root and must not be renamed)
 				function renameEF(arr) {
 					for (var i = 0; i < arr.length; i++) {
 						var n = arr[i].replace(/\\/g, '/');
@@ -7812,7 +7813,6 @@
 						}
 					}
 				}
-				renameEF(pkg_libEmptyFolders);
 				renameEF(pkg_demoEmptyFolders);
 			}
 		}
@@ -7822,19 +7822,12 @@
 			$list.empty();
 			delete _pkgLastClickedRow['pkg-lib-list'];
 			if (pkg_libraryFiles.length === 0 && pkg_libEmptyFolders.length === 0) {
-				var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
 				var emptyTree = { children: {}, files: [] };
-				if (!pkg_libNameFolderDeleted) emptyTree.children[libName] = { children: {}, files: [] };
-				var rootPath = pkg_installSubdir !== null ? ftGetInstallPath('pkg-lib-list') : '...\\Hamilton\\Library\\';
-				$list.html(ftBuildHtml(emptyTree, 'Library', 0, function() { return ''; }, rootPath));
-				if (!pkg_libNameFolderDeleted) $list.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
+				$list.html(ftBuildHtml(emptyTree, 'Library', 0, function() { return ''; }, ftGetInstallPath('pkg-lib-list')));
 			} else {
 				var tree = ftBuildTree(pkg_libraryFiles, function(f) {
 					return pkg_fileRelPaths[f] || path.basename(f);
 				});
-				// Ensure library-name subfolder always exists in tree (unless user explicitly deleted it)
-				var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
-				if (!pkg_libNameFolderDeleted && !tree.children[libName]) tree.children[libName] = { children: {}, files: [] };
 				// Ensure user-created empty folders exist in the tree
 				pkg_libEmptyFolders.forEach(function(folderPath) {
 					var parts = folderPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '').split('/');
@@ -7886,7 +7879,6 @@
 						'</div>';
 				};
 				$list.html(ftBuildHtml(tree, 'Library', pkg_libraryFiles.length, fileRowFn, ftGetInstallPath('pkg-lib-list')));
-				$list.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row[data-folder="' + libName.replace(/"/g, '\\"') + '"]').addClass('ft-libname-node');
 			}
 			$("#pkg-lib-count").text(pkg_libraryFiles.length + " file" + (pkg_libraryFiles.length !== 1 ? "s" : ""));
 			pkgDetectLibraryName();
@@ -16889,7 +16881,7 @@
 					var sub = ulib_installSubdir === '' ? '' : ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
 					return '...\\Hamilton\\Library\\' + (sub ? sub + '\\' : '');
 				}
-				return '...\\Hamilton\\Library\\' + libName + '\\';
+				return '...\\Hamilton\\Library\\';
 			} else if (treeId === 'ulib-demo-list') {
 				return '...\\Hamilton\\Methods\\Library Demo Methods\\' + libName + '\\';
 			}
@@ -16905,19 +16897,12 @@
 			$list.empty();
 			delete _pkgLastClickedRow['ulib-file-list'];
 			if (ulib_allLibFiles.length === 0 && ulib_libEmptyFolders.length === 0) {
-				var libName = $("#ulib-name").val().trim() || '<libraryname>';
 				var emptyTree = { children: {}, files: [] };
-				if (!ulib_libNameFolderDeleted) emptyTree.children[libName] = { children: {}, files: [] };
-				var rootPath = ulib_installSubdir !== null ? ulibGetInstallPath('ulib-file-list') : '...\\Hamilton\\Library\\';
-				$list.html(ftBuildHtml(emptyTree, 'Library', 0, function() { return ''; }, rootPath));
-				if (!ulib_libNameFolderDeleted) $list.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
+				$list.html(ftBuildHtml(emptyTree, 'Library', 0, function() { return ''; }, ulibGetInstallPath('ulib-file-list')));
 			} else {
 				var tree = ftBuildTree(ulib_allLibFiles, function(f) {
 					return ulib_fileRelPaths[f] || path.basename(f);
 				});
-				// Ensure library-name subfolder always exists in tree (unless user explicitly deleted it)
-				var libName = $("#ulib-name").val().trim() || '<libraryname>';
-				if (!ulib_libNameFolderDeleted && !tree.children[libName]) tree.children[libName] = { children: {}, files: [] };
 				// Ensure user-created empty folders exist in the tree
 				ulib_libEmptyFolders.forEach(function(folderPath) {
 					var parts = folderPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '').split('/');
@@ -16949,7 +16934,6 @@
 						'</div>';
 				};
 				$list.html(ftBuildHtml(tree, 'Library', ulib_allLibFiles.length, fileRowFn, ulibGetInstallPath('ulib-file-list')));
-				$list.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row[data-folder="' + libName.replace(/"/g, '\\"') + '"]').addClass('ft-libname-node');
 			}
 			$("#ulib-lib-count").text(ulib_allLibFiles.length + " file" + (ulib_allLibFiles.length !== 1 ? "s" : ""));
 		}
@@ -17392,13 +17376,15 @@
 			ulib_fileRelPaths = {};
 			ulib_libNameFolderDeleted = false;
 			ulib_demoLibNameFolderDeleted = false;
-			// Discovered files: relative paths are the library_files entries themselves
+			// Compute the install subdirectory prefix for discovered files
+			// so they appear under the correct folder relative to the Library root
+			var libSubdir = uLib.install_to_library_root ? '' :
+				((uLib.custom_install_subdir || uLib.library_name || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, ''));
+			// Discovered files: store as paths relative to Library root (prefixed with install subdir)
 			(uLib.library_files || []).forEach(function(f) {
 				var absPath = path.join(libDir, f);
 				var rel = f.replace(/\\/g, '/');
-				if (rel !== path.basename(rel)) {
-					ulib_fileRelPaths[absPath] = rel;
-				}
+				ulib_fileRelPaths[absPath] = libSubdir ? libSubdir + '/' + rel : rel;
 			});
 			// Restore saved relative paths for additional files
 			var savedRelPaths = uLib.additional_file_rel_paths || {};
@@ -17539,13 +17525,12 @@
 				try {
 					var allFiles = getFilesRecursive(folderPath, path.dirname(folderPath));
 					var newDlls = [];
-					var libName = $("#ulib-name").val().trim() || '<libraryname>';
 					allFiles.forEach(function(fileInfo) {
 						var filePath = fileInfo.absolutePath;
 						var file = path.basename(filePath);
 						if (ulib_allLibFiles.indexOf(filePath) === -1) {
 							ulib_allLibFiles.push(filePath);
-							ulib_fileRelPaths[filePath] = libName + '/' + fileInfo.relativePath;
+							ulib_fileRelPaths[filePath] = fileInfo.relativePath.replace(/\\/g, '/');
 							if (file.toLowerCase().endsWith('.dll')) {
 								newDlls.push(file);
 							}
