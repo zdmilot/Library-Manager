@@ -6359,6 +6359,7 @@
 		var pkg_demoEmptyFolders = [];     // empty folders for demo tree
 		var pkg_libNameFolderDeleted = false;   // user explicitly deleted library-name folder in lib tree
 		var pkg_demoLibNameFolderDeleted = false; // user explicitly deleted library-name folder in demo tree
+		var _lastLibFolderName = '<libraryname>';  // tracks the current library-name folder used in pkg_fileRelPaths
 		var pkg_iconFilePath = null;   // custom icon/image path chosen by user
 		var pkg_iconAutoDetected = false;     // true if current preview is from auto-detected BMP
 		var pkg_iconAutoDetectedPath = null;  // file path of the auto-detected BMP
@@ -7080,6 +7081,7 @@
 				$("#pkg-name-autocomplete").addClass("d-none").empty();
 				pkg_autocompleteActive = false;
 				pkgUpdatePathPlaceholders(pkg_autoDetectedName);
+				ftUpdateLibNameFolders();
 				pkgCheckVersionDuplicate();
 				pkgToggleChangelogVisibility(pkg_autoDetectedName);
 			}
@@ -7570,11 +7572,47 @@
 			return '';
 		}
 
-		/** Update the library-name subfolder label in all trees. */
+		/** Update the library-name subfolder label in all trees and sync relative paths. */
 		function ftUpdateLibNameFolders() {
-			var libName = $("#pkg-library-name").val().trim() || '<libraryname>';
-			$('.ft-libname-node .ft-label').text(libName);
-			$('.ft-libname-node').attr('data-folder', libName);
+			var newName = $("#pkg-library-name").val().trim() || '<libraryname>';
+			var oldName = _lastLibFolderName;
+
+			// Update DOM labels
+			$('.ft-libname-node .ft-label').text(newName);
+			$('.ft-libname-node').attr('data-folder', newName);
+
+			// When the library-name folder changes, update stored relative paths
+			// so the tree stays consistent on the next rebuild
+			if (oldName !== newName) {
+				_lastLibFolderName = newName;
+
+				// Rename first path component in pkg_fileRelPaths (library + demo files)
+				var allFiles = pkg_libraryFiles.concat(pkg_demoMethodFiles);
+				allFiles.forEach(function(f) {
+					var rel = pkg_fileRelPaths[f];
+					if (!rel) return;
+					var norm = rel.replace(/\\/g, '/');
+					var idx = norm.indexOf('/');
+					if (idx === -1) return;
+					if (norm.substring(0, idx) === oldName) {
+						pkg_fileRelPaths[f] = newName + norm.substring(idx);
+					}
+				});
+
+				// Rename first component in empty-folder arrays
+				function renameEF(arr) {
+					for (var i = 0; i < arr.length; i++) {
+						var n = arr[i].replace(/\\/g, '/');
+						var s = n.indexOf('/');
+						var first = s !== -1 ? n.substring(0, s) : n;
+						if (first === oldName) {
+							arr[i] = s !== -1 ? newName + n.substring(s) : newName;
+						}
+					}
+				}
+				renameEF(pkg_libEmptyFolders);
+				renameEF(pkg_demoEmptyFolders);
+			}
 		}
 
 		function pkgUpdateLibFileList() {
@@ -8492,6 +8530,7 @@
 			pkg_libNameFolderDeleted = false;
 			pkg_demoLibNameFolderDeleted = false;
 			pkg_binLibNameFolderDeleted = false;
+			_lastLibFolderName = '<libraryname>';
 			_pkgLastClickedRow = {};
 			$(".pkg-installer-detail").hide();
 			$(".pkg-installer-empty-msg").show();
