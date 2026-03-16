@@ -1,7 +1,7 @@
 ﻿#!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Library Manager CLI  v3.0.1
+ * Library Manager CLI  v3.0.2
  * Command-line interface for managing Hamilton VENUS libraries.
  *
  * Copyright (c) 2026 Zachary Milot
