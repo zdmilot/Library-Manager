@@ -768,6 +768,11 @@ Source: "assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs
 ; Application icons
 Source: "icons\*"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs
 
+; Portable package extraction tool
+Source: "tools\hxlibpkg-extract\hxlibpkg-extract.exe"; DestDir: "{app}\tools\hxlibpkg-extract"; Flags: ignoreversion
+Source: "tools\hxlibpkg-extract\hxlibpkg-extract.js"; DestDir: "{app}\tools\hxlibpkg-extract"; Flags: ignoreversion
+Source: "tools\hxlibpkg-extract\README.md"; DestDir: "{app}\tools\hxlibpkg-extract"; Flags: ignoreversion
+
 ; Database template files (initial state)
 ; onlyifdoesntexist — never overwrite existing data on upgrade.
 ; uninsneveruninstall — three-tier uninstaller controls removal.
@@ -816,6 +821,21 @@ Name: "{app}\local"; Permissions: users-modify
 Name: "{app}\local\packages"; Permissions: users-modify
 Name: "{app}\local\exports"; Permissions: users-modify
 Name: "{app}\local\installers"; Permissions: users-modify
+
+; Application code directories with write access for the Users group.
+; Enables the lightweight (UAC-free) updater to patch cosmetic updates
+; (HTML, JS, CSS, images) without requiring administrator privileges.
+Name: "{app}"; Permissions: users-modify
+Name: "{app}\html"; Permissions: users-modify
+Name: "{app}\html\css"; Permissions: users-modify
+Name: "{app}\html\js"; Permissions: users-modify
+Name: "{app}\html\img"; Permissions: users-modify
+Name: "{app}\html\webfonts"; Permissions: users-modify
+Name: "{app}\lib"; Permissions: users-modify
+Name: "{app}\assets"; Permissions: users-modify
+Name: "{app}\icons"; Permissions: users-modify
+Name: "{app}\tools"; Permissions: users-modify
+Name: "{app}\tools\hxlibpkg-extract"; Permissions: users-modify
 
 [Registry]
 ; --------------------------------------------------------------------------

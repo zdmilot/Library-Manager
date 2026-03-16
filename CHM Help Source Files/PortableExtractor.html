@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Portable Package Extractor</title>
+    <link rel="stylesheet" type="text/css" href="help.css">
+</head>
+<body>
+<div class="header">Portable Package Extractor</div>
+<div class="main">
+<div class="breadcrumb"><a href="Overview.html">Library Manager</a> &raquo; Portable Package Extractor</div>
+
+<h2>Overview</h2>
+<p>Library Manager ships a <b>portable extraction tool</b> (<code>hxlibpkg-extract.exe</code>) that can unpack <code>.hxlibpkg</code> and <code>.hxlibarch</code> files <b>without requiring the full Library Manager application</b>. This is useful in environments where the main application cannot be installed, for automated workflows, or when a user simply needs to inspect or retrieve files from a library package.</p>
+
+<p>The tool is a standalone Windows executable with <b>no external dependencies</b> &mdash; it runs on any Windows 10 or later machine using only the built-in .NET Framework 4.x.</p>
+
+<div class="note">
+<p><b>Note:</b> The portable extractor only <i>extracts</i> package contents to a local directory. It does <b>not</b> install libraries into the VENUS environment, register COM objects, or modify the Library Manager database. For full library installation, use the Library Manager GUI or CLI.</p>
+</div>
+
+<h2>Location</h2>
+<p>When Library Manager is installed, the extractor tool is located at:</p>
+<div class="code"><pre>C:\Program Files (x86)\Library Manager\tools\hxlibpkg-extract\hxlibpkg-extract.exe</pre></div>
+
+<p>The tool can also be copied to any other location and run independently. It has no dependencies beyond the Windows .NET Framework.</p>
+
+<p>A Node.js version (<code>hxlibpkg-extract.js</code>) is also included in the same directory for cross-platform use or integration into Node.js-based workflows.</p>
+
+<h2>Usage</h2>
+<div class="code"><pre>hxlibpkg-extract.exe &lt;package&gt; [options]</pre></div>
+
+<h3>Options</h3>
+<table>
+<thead><tr><th>Flag</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>--out &lt;dir&gt;</code></td><td>Specify output directory. Default: <code>.\&lt;library_name&gt;\</code></td></tr>
+<tr><td><code>--list</code></td><td>List package contents without extracting</td></tr>
+<tr><td><code>--manifest</code></td><td>Print the manifest.json and exit</td></tr>
+<tr><td><code>--help</code></td><td>Show help message</td></tr>
+</tbody>
+</table>
+
+<h2>Examples</h2>
+
+<h3>Extract a Package</h3>
+<p>Extract a single library package to a directory named after the library:</p>
+<div class="code"><pre>hxlibpkg-extract.exe MyLibrary.hxlibpkg</pre></div>
+<p>This creates a <code>MyLibrary\</code> directory in the current folder containing all extracted files.</p>
+
+<h3>Extract to a Specific Directory</h3>
+<div class="code"><pre>hxlibpkg-extract.exe MyLibrary.hxlibpkg --out C:\Users\me\Desktop\output</pre></div>
+
+<h3>List Package Contents</h3>
+<p>View what&rsquo;s inside a package without extracting:</p>
+<div class="code"><pre>hxlibpkg-extract.exe MyLibrary.hxlibpkg --list</pre></div>
+<p>Example output:</p>
+<div class="code"><pre>Package: MyLibrary v1.0.0
+8 entries:
+  library/MyLibrary.hsl  (19742 bytes)
+  library/MyLibrary.bmp  (3128 bytes)
+  library/MyLibrary.ico  (9062 bytes)
+  demo_methods/MyDemo.med  (5540 bytes)
+  help_files/MyLibrary.chm  (46430 bytes)
+  manifest.json  (5361 bytes)</pre></div>
+
+<h3>View Package Manifest</h3>
+<p>Print the JSON manifest (metadata) of a package:</p>
+<div class="code"><pre>hxlibpkg-extract.exe MyLibrary.hxlibpkg --manifest</pre></div>
+
+<h3>Extract a Multi-Library Archive</h3>
+<p>Archives (<code>.hxlibarch</code>) contain multiple packages. Each package is extracted into its own subdirectory:</p>
+<div class="code"><pre>hxlibpkg-extract.exe MyArchive.hxlibarch --out C:\output</pre></div>
+<p>This produces:</p>
+<div class="code"><pre>C:\output\
+  LibraryA\
+    manifest.json
+    library\
+    demo_methods\
+  LibraryB\
+    manifest.json
+    library\
+    ...</pre></div>
+
+<h2>Output Structure</h2>
+<p>Extracted packages follow a standardized directory layout:</p>
+<table>
+<thead><tr><th>Directory</th><th>Contents</th></tr></thead>
+<tbody>
+<tr><td><code>manifest.json</code></td><td>Package metadata (library name, version, author, etc.)</td></tr>
+<tr><td><code>library\</code></td><td>Library files: <code>.hsl</code>, <code>.dll</code>, <code>.bmp</code>, <code>.ico</code>, etc.</td></tr>
+<tr><td><code>demo_methods\</code></td><td>Demo method files (<code>.med</code>, etc.)</td></tr>
+<tr><td><code>help\</code></td><td>Help files (<code>.chm</code>, etc.)</td></tr>
+<tr><td><code>installer\</code></td><td>Embedded installer executables (if present)</td></tr>
+<tr><td><code>icon\</code></td><td>Package icon image</td></tr>
+<tr><td><code>bin\</code></td><td>Binary files for Hamilton\Bin (if present)</td></tr>
+</tbody>
+</table>
+
+<h2>Integrity Verification</h2>
+<p>The extractor performs full HMAC-SHA256 integrity verification before extracting any data. If a package has been corrupted or tampered with, extraction is refused entirely with a clear error message:</p>
+<div class="code"><pre>Error: Package integrity check failed: the file has been corrupted or tampered with.</pre></div>
+<p>This is the same fail-closed integrity verification used by the full Library Manager application. See <a href="BinaryContainerFormat.html">Binary Container Format</a> for details.</p>
+
+<h2>Security</h2>
+<ul>
+  <li><b>HMAC-SHA256 integrity:</b> Every package is verified before extraction. Tampered or corrupted files are rejected.</li>
+  <li><b>Path traversal protection:</b> The extractor refuses to write files outside the target directory, preventing malicious packages from overwriting system files.</li>
+  <li><b>Timing-safe comparison:</b> HMAC comparison uses constant-time comparison to prevent timing attacks.</li>
+</ul>
+
+<h2>Differences from Full Library Manager</h2>
+<p>The portable extractor is a <b>subset</b> of the full Library Manager. It intentionally does <b>not</b>:</p>
+<ul>
+  <li>Install libraries into the VENUS library directory</li>
+  <li>Register COM DLLs</li>
+  <li>Run embedded installers</li>
+  <li>Modify the Library Manager database</li>
+  <li>Verify Ed25519 code signatures (use the full app or CLI <a href="CLIVerifyPackage.html"><code>verify-package</code></a> command)</li>
+  <li>Require administrator privileges</li>
+</ul>
+
+<h2>When to Use the Portable Extractor</h2>
+<ul>
+  <li>You need to inspect the contents of a <code>.hxlibpkg</code> file without installing it</li>
+  <li>Library Manager cannot be installed on the target machine</li>
+  <li>You need to extract library files for use in an automated build or CI/CD pipeline</li>
+  <li>You want to retrieve specific files (e.g., HSL source, demo methods) from a package</li>
+  <li>A colleague shared a package file and you need the library files without the full app</li>
+</ul>
+
+<h2>Building from Source</h2>
+<p>The extractor source code (<code>HxlibpkgExtract.cs</code>) is included in the <code>tools\hxlibpkg-extract\</code> directory. To rebuild:</p>
+<div class="code"><pre>cd tools\hxlibpkg-extract
+build.bat</pre></div>
+<p>Or manually:</p>
+<div class="code"><pre>C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe /out:hxlibpkg-extract.exe /target:exe /optimize+ /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll HxlibpkgExtract.cs</pre></div>
+
+<h2>Exit Codes</h2>
+<table>
+<thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>0</code></td><td>Success (or <code>--help</code> was used)</td></tr>
+<tr><td><code>1</code></td><td>Error &mdash; see stderr for details</td></tr>
+</tbody>
+</table>
+
+</div>
+</body>
+</html>

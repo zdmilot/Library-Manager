@@ -2393,7 +2393,7 @@
 					$('#update-release-notes').html(updater.markdownToHtml(info.body));
 					$('#update-release-notes-body').html(updater.markdownToHtml(info.body));
 					$('.update-footer-info').text(updater.formatRelativeTime(info.publishedAt));
-					if (info.installerAsset) {
+					if (info.installerAsset || info.patchAsset) {
 						$('#update-install-btn').removeClass('d-none');
 					} else {
 						$('#update-install-btn').addClass('d-none');
@@ -2501,19 +2501,18 @@
 			}
 		});
 
-		// Click "Update Now" button - download and launch installer
+		// Click "Update Now" button - download and launch installer (or apply lightweight patch)
 		$(document).on("click", "#update-install-btn", function () {
 			if (_updateInProgress) return;
-			if (!_cachedUpdateInfo || !_cachedUpdateInfo.releaseInfo || !_cachedUpdateInfo.releaseInfo.installerAsset) {
-				$('.update-error-msg').text('No installer available for this release.');
+			if (!_cachedUpdateInfo || !_cachedUpdateInfo.releaseInfo) {
+				$('.update-error-msg').text('No update information available.');
 				_showUpdateState('error');
 				return;
 			}
 			_updateInProgress = true;
 
-			var asset = _cachedUpdateInfo.releaseInfo.installerAsset;
+			var releaseInfo = _cachedUpdateInfo.releaseInfo;
 			var downloadDir = updater.getUpdateDownloadDir();
-			var destPath = path.join(downloadDir, asset.name);
 
 			// Close the update modal and settings modal
 			$('#updateModal').modal('hide');
@@ -2521,15 +2520,79 @@
 
 			// Show full-screen update splash
 			$('#update-splash').removeClass('d-none');
-			$('#update-splash-status').text('Downloading update...');
+			$('#update-splash-status').text('Checking update type...');
 			$('#update-splash-bar').css('width', '0%');
 			$('#update-splash-pct').text('0%');
 
 			// Clean up any previous downloads
 			updater.cleanupDownloads();
 
+			// Check if a lightweight (UAC-free) update is possible
+			updater.canApplyLightweightUpdate(releaseInfo).then(function (patchInfo) {
+				if (patchInfo.canPatchLightweight && patchInfo.patchAsset) {
+					// ---- Lightweight update path (no UAC) ----
+					var patchAsset = patchInfo.patchAsset;
+					var patchDest = path.join(downloadDir, patchAsset.name);
+
+					$('#update-splash-status').text('Downloading update (no admin required)...');
+
+					return updater.downloadUpdate(patchAsset.downloadUrl, patchDest, function (downloaded, total) {
+						var pct = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : 0;
+						$('#update-splash-bar').css('width', pct + '%');
+						$('#update-splash-pct').text(pct + '%');
+					}).then(function (zipPath) {
+						$('#update-splash-status').text('Applying update...');
+						$('#update-splash-bar').css('width', '100%');
+
+						var installPath = _isInstalledApp.installPath || path.dirname(process.execPath);
+						var result = updater.applyLightweightPatch(zipPath, installPath);
+
+						if (result.success) {
+							$('#update-splash-status').text('Update applied! Restarting...');
+							$('#update-splash-pct').text(result.filesUpdated + ' files updated.');
+							setTimeout(function () {
+								updater.restartApp(win);
+							}, 1000);
+						} else {
+							// Lightweight patch failed - fall back to full installer
+							console.warn('Lightweight patch failed: ' + result.error + '. Falling back to full installer.');
+							_applyFullInstallerUpdate(releaseInfo, downloadDir);
+						}
+					});
+				} else {
+					// ---- Full installer update path (UAC required) ----
+					return _applyFullInstallerUpdate(releaseInfo, downloadDir);
+				}
+			}).catch(function (err) {
+				console.error('Update failed:', err);
+				$('#update-splash').addClass('d-none');
+				_updateInProgress = false;
+				$('.update-error-msg').text('Update failed: ' + err.message + '. Please try again.');
+				_showUpdateState('error');
+				$('#updateModal').modal('show');
+			});
+		});
+
+		/** Full installer update path - downloads .exe and launches with UAC */
+		function _applyFullInstallerUpdate(releaseInfo, downloadDir) {
+			if (!releaseInfo.installerAsset) {
+				$('#update-splash').addClass('d-none');
+				_updateInProgress = false;
+				$('.update-error-msg').text('No installer available for this release.');
+				_showUpdateState('error');
+				$('#updateModal').modal('show');
+				return Promise.resolve();
+			}
+
+			var asset = releaseInfo.installerAsset;
+			var destPath = path.join(downloadDir, asset.name);
+
+			$('#update-splash-status').text('Downloading update...');
+			$('#update-splash-bar').css('width', '0%');
+			$('#update-splash-pct').text('0%');
+
 			// Download the installer with real progress
-			updater.downloadUpdate(asset.downloadUrl, destPath, function (downloaded, total) {
+			return updater.downloadUpdate(asset.downloadUrl, destPath, function (downloaded, total) {
 				var pct = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : 0;
 				$('#update-splash-bar').css('width', pct + '%');
 				$('#update-splash-pct').text(pct + '%');
@@ -2560,7 +2623,7 @@
 				_showUpdateState('error');
 				$('#updateModal').modal('show');
 			});
-		});
+		}
 
 		// Dismiss release notes overlay
 		$(document).on("click", "#btn-update-release-dismiss", function () {

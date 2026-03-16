@@ -442,6 +442,18 @@
 		<param name="Local" value="VersionRollback.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="portable extractor">
+		<param name="Local" value="PortableExtractor.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="package extraction">
+		<param name="Local" value="PortableExtractor.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="hxlibpkg-extract">
+		<param name="Local" value="PortableExtractor.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="public functions">
 		<param name="Local" value="DataModel.html">
 		</OBJECT>
