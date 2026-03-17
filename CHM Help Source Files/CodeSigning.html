@@ -133,7 +133,6 @@
   <li>The <b>publisher certificate</b> is stored in the library&rsquo;s database record</li>
   <li>A <span style="color:#5cb85c;">&#10004; Signed</span> badge appears on the library card</li>
   <li>The publisher name and key ID are displayed in the Library Detail Modal &rarr; Code Signing Certificate section</li>
-  <li>If the publisher name matches a recognized vendor, a verified badge is displayed</li>
 </ul>
 
 <!-- ================================================================== -->
@@ -141,17 +140,6 @@
 <!-- ================================================================== -->
 
 <p>Library Manager automatically maintains a registry of publisher names encountered during imports. Use <a href="CLIListPublishers.html">CLI: list-publishers</a> to view all registered publishers, or view publisher information in the Library Detail Modal.</p>
-
-<!-- ================================================================== -->
-<h2>Publisher Verification</h2>
-<!-- ================================================================== -->
-
-<p>Packages that claim a recognized vendor name as the author or organization are subject to additional verification to ensure authenticity:</p>
-<ul>
-  <li>The package <b>must</b> be code-signed</li>
-  <li>The publisher certificate&rsquo;s holder name must match the claimed vendor identity</li>
-</ul>
-<p>This prevents unauthorized parties from publishing packages under established vendor brand names.</p>
 
 <!-- ================================================================== -->
 <h2>Security Considerations</h2>

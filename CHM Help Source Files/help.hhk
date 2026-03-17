@@ -282,14 +282,6 @@
 		<param name="Local" value="Overview.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="OEM group">
-		<param name="Local" value="LibraryGrouping.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="OEM verified badge">
-		<param name="Local" value="IntegrityVerification.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="publisher certificate">
 		<param name="Local" value="CodeSigning.html">
 		</OBJECT>

@@ -21,7 +21,6 @@
 <tr><td>All</td><td>Shows all installed (non-deleted) libraries</td></tr>
 <tr><td>Recent</td><td>Recently imported libraries</td></tr>
 <tr><td>Starred</td><td>User-favorited libraries (protected, non-deletable)</td></tr>
-<tr><td>OEM</td><td>Protected OEM-authored libraries</td></tr>
 <tr><td>Import</td><td>Import workflow tab</td></tr>
 <tr><td>Export</td><td>Export workflow tab</td></tr>
 <tr><td>History</td><td>Action history</td></tr>
@@ -30,22 +29,16 @@
 
 <p>User-created groups are stored in <code>groups.json</code> with <code>"default": false</code> and auto-generated <code>_id</code> values.</p>
 
-<h2>OEM Default Group</h2>
-<p>The <b>OEM</b> group is a special protected group that ships with the application. It contains libraries authored by recognized OEM vendors (such as Hamilton and other equipment manufacturers) and is distinguished from regular custom groups in several important ways:</p>
 
 <h3>Protection</h3>
 <ul>
-  <li><b>Non-deletable and non-renamable</b> - The OEM group cannot be deleted or renamed through the settings panel.</li>
   <li><b>Always visible</b> - It appears in the left-side navigation between the System libraries group and user-created groups. It cannot be hidden.</li>
   <li><b>Solid checkmark icon</b> - Uses a solid checkmark icon to visually distinguish it from user-created groups.</li>
-  <li><b>OEM Verified badge</b> <img src="images/blue-check.png" alt="Blue verified checkmark" style="height:14px; vertical-align:middle;"> - Individual OEM library cards display a blue verified checkmark next to the author name. Hovering the badge shows certificate details (publisher, key ID, fingerprint, algorithm, and issued date). Verified OEM libraries also include a <b>Code Signing Certificate</b> section in their detail modal. See <a href="IntegrityVerification.html">Integrity Verification</a> for full documentation.</li>
 </ul>
 
 <h3>Reserved Author Names</h3>
-<p>Certain author and organization names associated with OEM vendors are <b>reserved</b> and cannot be used when creating packages. This prevents unauthorized attribution of packages to established vendors. If a reserved name is entered, the application will display an error.</p>
 
 <h3>Empty State</h3>
-<p>When no OEM-authored packages are installed, the OEM tab displays a dedicated placeholder message: <i>"No OEM packages installed yet. Import an OEM-authored library package to see it here."</i></p>
 
 <h2>Managing Groups</h2>
 
@@ -73,7 +66,6 @@
 <p>Groups can be shown or hidden in the navigation using the favorite/show-hide toggle. Hidden groups and their assigned libraries still exist but are not displayed as navigation tabs.</p>
 
 <h2>Data Persistence</h2>
-<p>Default groups (All, Recent, Starred, OEM, Import, Export, History) are <b>not</b> stored in <code>groups.json</code>. They are defined within the application and resolved in-memory. Only user-created custom groups are stored in <code>groups.json</code>.</p>
 <p>Group-to-library assignments are stored in <code>tree.json</code> within the user data directory. See <a href="DataModel.html">Data Model &amp; Persistence</a> for details.</p>
 
 <h2>Group Record Structure (User-Created Groups)</h2>
@@ -97,7 +89,6 @@
 <p>When the <a href="UnsignedLibraries.html">Unsigned Libraries</a> feature is enabled and at least one unsigned library has been discovered by scanning, a special <b>Unsigned</b> group is injected into the navigation bar. This group is distinct from both default and custom groups:</p>
 <ul>
   <li>Uses the <code>far fa-times-circle</code> icon</li>
-  <li>Appears after the OEM group in the left navigation</li>
   <li><b>Locked</b> - libraries cannot be dragged into or out of it</li>
   <li>Not stored in <code>tree.json</code> or <code>groups.json</code> - it is generated dynamically</li>
   <li>Not included in the sortable group ordering</li>

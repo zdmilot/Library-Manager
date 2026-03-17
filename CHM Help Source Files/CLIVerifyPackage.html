@@ -77,7 +77,6 @@ node cli.js verify-package --file "\\server\share\packages\LibraryA.hxlibpkg"</p
       "key_id": "a7e3f9d1c6b24e92",
       "fingerprint": "a7e3f9d1c6b24e92b516a30de768f42c..."
     },
-    "oem_verified": false,
     "errors": [],
     "warnings": []
   }
@@ -90,7 +89,6 @@ node cli.js verify-package --file "\\server\share\packages\LibraryA.hxlibpkg"</p
 <tr><td><code>valid</code></td><td>boolean</td><td><code>true</code> if all hashes and the HMAC matched</td></tr>
 <tr><td><code>code_signed</code></td><td>boolean</td><td><code>true</code> if the package has an Ed25519 digital signature (v2.0 format)</td></tr>
 <tr><td><code>publisher_cert</code></td><td>object|null</td><td>Publisher certificate details (publisher name, organization, key_id, fingerprint) or <code>null</code> if not code-signed</td></tr>
-<tr><td><code>oem_verified</code></td><td>boolean</td><td><code>true</code> if the publisher is a recognized vendor</td></tr>
 <tr><td><code>errors</code></td><td>string[]</td><td>Error messages (e.g., hash mismatches, read failures)</td></tr>
 <tr><td><code>warnings</code></td><td>string[]</td><td>Non-fatal warnings</td></tr>
 </tbody>
@@ -102,7 +100,6 @@ node cli.js verify-package --file "\\server\share\packages\LibraryA.hxlibpkg"</p
   Publisher  : Jane Smith (Acme Pharma)
   Key ID     : a7e3f9d1c6b24e92
   Fingerprint: a7e3f9d1c6b24e92b516a30de768f42c...
-  OEM Verified: NO
 
 Result: ALL PACKAGES VERIFIED (code signed)</pre></div>
 <p>Unsigned packages display as:</p>
