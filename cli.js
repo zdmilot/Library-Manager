@@ -1261,48 +1261,45 @@ function cmdImportArchive(args) {
                 console.log(`    ${libName}: signature OK`);
             }
 
-            // Advisory lock: serialize check-then-install per package (BUG-03)
-            advisoryLock.withLock(dbPath, 'db-write', function() {
-                const existing = db.installed_libs.findOne({ library_name: libName });
-                if (existing && !existing.deleted && !args['force']) {
-                    const existingVer = existing.version || '?';
-                    const incomingVer = manifest.version || '?';
-                    if (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer) {
-                        throw new Error(`"${libName}" v${existingVer} is already installed (same version; use --force to overwrite)`);
-                    } else {
-                        throw new Error(`"${libName}" is already installed (v${existingVer}). Incoming: v${incomingVer} (use --force to overwrite)`);
-                    }
-                }
-
-                const archCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
-                let libDestDir;
-                if (archCustomSubdir) {
-                    libDestDir = path.join(libBasePath, archCustomSubdir);
+            const existing = db.installed_libs.findOne({ library_name: libName });
+            if (existing && !existing.deleted && !args['force']) {
+                const existingVer = existing.version || '?';
+                const incomingVer = manifest.version || '?';
+                if (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer) {
+                    throw new Error(`"${libName}" v${existingVer} is already installed (same version; use --force to overwrite)`);
                 } else {
-                    libDestDir = libBasePath;
+                    throw new Error(`"${libName}" is already installed (v${existingVer}). Incoming: v${incomingVer} (use --force to overwrite)`);
                 }
-                const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
-                const labwareDestDir = labwareBasePath;
-                const binDestDir = binBasePath;
+            }
 
-                const result = installPackage(
-                    manifest, innerZip, libDestDir, demoDestDir,
-                    label, db, !!(args['no-group']), labwareDestDir, binDestDir
-                );
+            const archCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
+            let libDestDir;
+            if (archCustomSubdir) {
+                libDestDir = path.join(libBasePath, archCustomSubdir);
+            } else {
+                libDestDir = libBasePath;
+            }
+            const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
+            const labwareDestDir = labwareBasePath;
+            const binDestDir = binBasePath;
 
-                results.success.push(`${libName} (${result.extractedCount} files)`);
-                console.log(`  + ${libName} - ${result.extractedCount} files extracted`);
+            const result = installPackage(
+                manifest, innerZip, libDestDir, demoDestDir,
+                label, db, !!(args['no-group']), labwareDestDir, binDestDir
+            );
 
-                // Cache each package for repair & rollback
-                if (!args['no-cache']) {
-                    try {
-                        const cachedPath = cachePackage(pkgEntry.getData(), libName, manifest.version, args);
-                        console.log(`    cached -> ${cachedPath}`);
-                    } catch (ce) {
-                        process.stderr.write(`    Warning: could not cache ${libName}: ${ce.message}\n`);
-                    }
+            results.success.push(`${libName} (${result.extractedCount} files)`);
+            console.log(`  + ${libName} - ${result.extractedCount} files extracted`);
+
+            // Cache each package for repair & rollback
+            if (!args['no-cache']) {
+                try {
+                    const cachedPath = cachePackage(pkgEntry.getData(), libName, manifest.version, args);
+                    console.log(`    cached -> ${cachedPath}`);
+                } catch (ce) {
+                    process.stderr.write(`    Warning: could not cache ${libName}: ${ce.message}\n`);
                 }
-            });
+            }
         } catch (e) {
             results.failed.push(`${label}: ${e.message}`);
             process.stderr.write(`  ! ${label}: ${e.message}\n`);
