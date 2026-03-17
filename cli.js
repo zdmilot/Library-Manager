@@ -1784,15 +1784,16 @@ function cmdDeleteLib(args) {
     console.log(`\nSuccess: "${displayName}" deleted.`);
 
     // ---- Audit trail entry ----
-        try {
-            appendAuditTrailEntry(dbPath, buildAuditTrailEntry('library_deleted', {
-                library_name:    displayName,
-                version:         lib.version || '',
-                author:          lib.author || '',
-                delete_type:     args['hard'] ? 'hard' : 'soft',
-                keep_files:      !!(args['keep-files'])
-            }));
-        } catch (_) { /* non-critical */ }
+    try {
+        const userDataDir = resolveDBPath(args);
+        appendAuditTrailEntry(userDataDir, buildAuditTrailEntry('library_deleted', {
+            library_name:    displayName,
+            version:         lib.version || '',
+            author:          lib.author || '',
+            delete_type:     args['hard'] ? 'hard' : 'soft',
+            keep_files:      !!(args['keep-files'])
+        }));
+    } catch (_) { /* non-critical */ }
 
     const comDlls = lib.com_register_dlls || [];
     if (comDlls.length > 0 && !args['keep-files']) {
@@ -2555,49 +2556,47 @@ function cmdRollbackLib(args) {
         die('Cached package signature verification FAILED:\n  ' + sigResult.errors.join('\n  ') + '\nRollback aborted.');
     }
 
-    // Advisory lock: serialize rollback install to prevent concurrent modification
-    advisoryLock.withLock(dbPath, 'db-write', function() {
-        const rbCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
-        let libDestDir;
-        if (rbCustomSubdir) {
-            libDestDir = path.join(libBasePath, rbCustomSubdir);
-        } else {
-            libDestDir = libBasePath;
-        }
-        const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
-        const labwareDestDir = labwareBasePath;
-        const binDestDir = binBasePath;
+    const rbCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
+    let libDestDir;
+    if (rbCustomSubdir) {
+        libDestDir = path.join(libBasePath, rbCustomSubdir);
+    } else {
+        libDestDir = libBasePath;
+    }
+    const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
+    const labwareDestDir = labwareBasePath;
+    const binDestDir = binBasePath;
 
-        const result = installPackage(
-            manifest, zip, libDestDir, demoDestDir,
-            target.file, db, !!(args['no-group']), labwareDestDir, binDestDir
-        );
+    const result = installPackage(
+        manifest, zip, libDestDir, demoDestDir,
+        target.file, db, !!(args['no-group']), labwareDestDir, binDestDir
+    );
 
-        console.log(`\nSuccess: "${libName}" rolled back to version ${target.version} (${result.extractedCount} files)`);
-        console.log(`  Library files  -> ${libDestDir}`);
-        console.log(`  Demo methods   -> ${demoDestDir}`);
+    console.log(`\nSuccess: "${libName}" rolled back to version ${target.version} (${result.extractedCount} files)`);
+    console.log(`  Library files  -> ${libDestDir}`);
+    console.log(`  Demo methods   -> ${demoDestDir}`);
 
-        // ---- Audit trail entry ----
-        try {
-            appendAuditTrailEntry(dbPath, buildAuditTrailEntry('library_rollback', {
-                library_name:     libName,
-                version:          target.version || '',
-                author:           manifest.author || '',
-                source_file:      target.fullPath,
-                lib_install_path: libDestDir,
-                demo_install_path: demoDestDir,
-                files_extracted:  result.extractedCount
-            }));
-        } catch (_) { /* non-critical */ }
+    // ---- Audit trail entry ----
+    try {
+        const userDataDir = resolveDBPath(args);
+        appendAuditTrailEntry(userDataDir, buildAuditTrailEntry('library_rollback', {
+            library_name:     libName,
+            version:          target.version || '',
+            author:           manifest.author || '',
+            source_file:      target.fullPath,
+            lib_install_path: libDestDir,
+            demo_install_path: demoDestDir,
+            files_extracted:  result.extractedCount
+        }));
+    } catch (_) { /* non-critical */ }
 
-        const comDlls = manifest.com_register_dlls || [];
-        if (comDlls.length > 0) {
-            console.log(`\n  NOTE: COM registration required for: ${comDlls.join(', ')}`);
-            console.log(`  Use the GUI import or run the 32-bit RegAsm manually:`);
-            console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>`);
-            console.log(`  IMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.`);
-        }
-    }); // end advisoryLock.withLock
+    const comDlls = manifest.com_register_dlls || [];
+    if (comDlls.length > 0) {
+        console.log(`\n  NOTE: COM registration required for: ${comDlls.join(', ')}`);
+        console.log(`  Use the GUI import or run the 32-bit RegAsm manually:`);
+        console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>`);
+        console.log(`  IMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.`);
+    }
 }
 
 // ===========================================================================
