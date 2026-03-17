@@ -1,4 +1,4 @@
 main.css: sha384-95NC2o3pEzpM4X76Ufxk/KVWYAZQjsVbQGG1m1yMeb5jMQ0GZ7K8wHkD+s2n/QBg
 bs4-compat.css: sha384-SZO6T7DFdtw5uEvdTdii83QfW3QeuCQv/f9qWdzJz1PKvudJU2wdJJtdmUb57z/o
-main.js: sha384-FM//lsPPsCelDVv5UTI04jEavjqw7nD+uxuJWEDWX6b1/HUeZ6WCGIGUQiRWnn3n
+main.js: sha384-XPME7mjLAA7ej66A1V0g7egjM+SW4sViJv5ldZheX1POg2j6LAjsKdnRA15JRfdD
 
