@@ -396,7 +396,7 @@ function warnIfSystemPath(dirPath, label) {
     const dangerous = ['c:\\windows', 'c:\\program files\\windows', 'c:\\system'];
     for (const prefix of dangerous) {
         if (resolved.startsWith(prefix)) {
-            process.stderr.write(`  WARNING: ${label} points to a system-critical location: ${dirPath}\n`);
+            process.stderr.write(`  Warning: ${label} points to a system-critical location: ${dirPath}\n`);
             return;
         }
     }
@@ -1507,9 +1507,9 @@ function cmdExportArchive(args) {
             if (found && !found.deleted && !isSystemLibrary(found._id)) {
                 targetLibs.push(found);
             } else if (found && isSystemLibrary(found._id)) {
-                process.stderr.write(`Warning: "${n}" is a system library and cannot be exported - skipping\n`);
+                process.stderr.write(`  Warning: "${n}" is a system library and cannot be exported - skipping\n`);
             } else {
-                process.stderr.write(`Warning: library "${n}" not found or is deleted - skipping\n`);
+                process.stderr.write(`  Warning: library "${n}" not found or is deleted - skipping\n`);
             }
         });
     } else if (args['ids']) {
@@ -1518,9 +1518,9 @@ function cmdExportArchive(args) {
             if (found && !found.deleted && !isSystemLibrary(found._id)) {
                 targetLibs.push(found);
             } else if (found && isSystemLibrary(found._id)) {
-                process.stderr.write(`Warning: library ID "${id}" is a system library and cannot be exported - skipping\n`);
+                process.stderr.write(`  Warning: library ID "${id}" is a system library and cannot be exported - skipping\n`);
             } else {
-                process.stderr.write(`Warning: library ID "${id}" not found or is deleted - skipping\n`);
+                process.stderr.write(`  Warning: library ID "${id}" not found or is deleted - skipping\n`);
             }
         });
     }
@@ -3168,7 +3168,7 @@ function cmdScanMarkers(args) {
             if (hit) found.push(hit);
         });
     } catch (e) {
-        process.stderr.write('Warning: could not scan directory: ' + e.message + '\n');
+        process.stderr.write('  Warning: could not scan directory: ' + e.message + '\n');
     }
 
     if (jsonOutput) {
@@ -3347,7 +3347,7 @@ switch (command) {
         printHelp();
         break;
     default:
-        process.stderr.write(`Unknown command: "${command}"\n`);
+        process.stderr.write(`Error: Unknown command: "${command}"\n`);
         printHelp();
         process.exit(1);
 }

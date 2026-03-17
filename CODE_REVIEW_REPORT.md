@@ -239,7 +239,7 @@ EOL since 2021.
 
 | ID | File | Issue |
 |----|------|-------|
-| LOW-01 | cli.js | Inconsistent error message formatting |
+| ~~LOW-01~~ | cli.js | ~~Inconsistent error message formatting~~ — **FIXED** |
 | ~~LOW-02~~ | cli.js | ~~console.warn for unsafe ZIP entries should sanitize names~~ — **FIXED** |
 | ~~LOW-03~~ | cli.js | ~~No defensive cleanup of partial export files on error~~ — **FIXED** |
 | ~~LOW-04~~ | cli.js | ~~Magic strings hardcoded instead of shared constants~~ — **FIXED** |
