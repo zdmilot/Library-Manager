@@ -54,6 +54,8 @@ const validatePublisherCertificate = shared.validatePublisherCertificate;
 // Binary container format helpers
 const CONTAINER_MAGIC_PKG    = shared.CONTAINER_MAGIC_PKG;
 const CONTAINER_MAGIC_ARC    = shared.CONTAINER_MAGIC_ARC;
+const PKG_FILE_EXT           = shared.PKG_FILE_EXT;
+const ARC_FILE_EXT           = shared.ARC_FILE_EXT;
 const packContainer          = shared.packContainer;
 const unpackContainer        = shared.unpackContainer;
 
@@ -129,6 +131,12 @@ function loadSystemLibIds() {
         _systemLibNames = new Set();
     }
     return _systemLibIds;
+}
+
+/** Invalidate cached system library sets so they are reloaded on next access. */
+function invalidateSystemLibCache() {
+    _systemLibIds = null;
+    _systemLibNames = null;
 }
 
 function loadSystemLibNames() {
@@ -259,7 +267,8 @@ function appendAuditTrailEntry(userDataDir, entry) {
             try {
                 trail = JSON.parse(fs.readFileSync(filePath, 'utf8'));
                 if (!Array.isArray(trail)) trail = [];
-            } catch (_) {
+            } catch (parseErr) {
+                process.stderr.write('  Warning: corrupt audit trail file, starting fresh: ' + parseErr.message + '\n');
                 trail = [];
             }
         }
@@ -347,10 +356,35 @@ function ensureLocalDataDir(dirPath) {
         'links.json': '[]'
     };
     for (const [fname, content] of Object.entries(seeds)) {
+        // Validate seed JSON is parseable before writing
+        JSON.parse(content);
         const fpath = path.join(dirPath, fname);
         if (!fs.existsSync(fpath)) {
             fs.writeFileSync(fpath, content, 'utf8');
         }
+    }
+}
+
+/**
+ * Validate that a parsed manifest object has required fields and correct types.
+ * @param {object} manifest - Parsed manifest object
+ * @throws {Error} If the manifest fails basic schema validation
+ */
+function validateManifestSchema(manifest) {
+    if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+        throw new Error('Manifest must be a JSON object');
+    }
+    if (typeof manifest.library_name !== 'string' || !manifest.library_name.trim()) {
+        throw new Error('Manifest must contain a non-empty "library_name" string');
+    }
+    if (manifest.library_files !== undefined && !Array.isArray(manifest.library_files)) {
+        throw new Error('"library_files" must be an array');
+    }
+    if (manifest.demo_method_files !== undefined && !Array.isArray(manifest.demo_method_files)) {
+        throw new Error('"demo_method_files" must be an array');
+    }
+    if (manifest.tags !== undefined && !Array.isArray(manifest.tags)) {
+        throw new Error('"tags" must be an array');
     }
 }
 
@@ -754,7 +788,11 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
     const saved = db.installed_libs.save(dbRecord);
 
     if (!skipGroup) {
-        autoAddToGroup(db, saved._id, manifest.author);
+        try {
+            autoAddToGroup(db, saved._id, manifest.author);
+        } catch (groupErr) {
+            process.stderr.write('  Warning: library installed but group assignment failed: ' + groupErr.message + '\n');
+        }
     }
 
     // Write .libmgr marker file (non-system libraries only)
@@ -808,7 +846,7 @@ function buildCachedPackageName(libName, version) {
                  + String(now.getUTCHours()).padStart(2, '0')
                  + String(now.getUTCMinutes()).padStart(2, '0')
                  + String(now.getUTCSeconds()).padStart(2, '0');
-    return safe + '_v' + ver + '_' + stamp + '.hxlibpkg';
+    return safe + '_v' + ver + '_' + stamp + PKG_FILE_EXT;
 }
 
 /**
@@ -848,7 +886,7 @@ function listCachedVersions(libName, args) {
     if (!fs.existsSync(libDir)) return [];
 
     const files = fs.readdirSync(libDir)
-        .filter(function (f) { return f.toLowerCase().endsWith('.hxlibpkg'); });
+        .filter(function (f) { return f.toLowerCase().endsWith(PKG_FILE_EXT); });
 
     const entries = files.map(function (f) {
         const fullPath = path.join(libDir, f);
@@ -977,6 +1015,7 @@ function cmdImportLib(args) {
         const me = zip.getEntry('manifest.json');
         if (!me) die('Invalid package: manifest.json not found');
         manifest = JSON.parse(zip.readAsText(me));
+        validateManifestSchema(manifest);
     } catch (e) {
         die('Failed to read package: ' + e.message);
     }
@@ -1147,11 +1186,11 @@ function cmdImportArchive(args) {
     }
 
     const pkgEntries = archiveZip.getEntries().filter(
-        e => !e.isDirectory && e.entryName.toLowerCase().endsWith('.hxlibpkg')
+        e => !e.isDirectory && e.entryName.toLowerCase().endsWith(PKG_FILE_EXT)
     );
 
     if (pkgEntries.length === 0) {
-        die('No .hxlibpkg packages found in this archive.');
+        die('No ' + PKG_FILE_EXT + ' packages found in this archive.');
     }
 
     console.log(`Found ${pkgEntries.length} package(s):`);
@@ -1169,6 +1208,7 @@ function cmdImportArchive(args) {
             if (!me) throw new Error('manifest.json missing');
 
             const manifest = JSON.parse(innerZip.readAsText(me));
+            validateManifestSchema(manifest);
             const libName  = manifest.library_name || 'Unknown';
 
             // ---- Library name validation (matches GUI behaviour) ----
@@ -1413,18 +1453,31 @@ function cmdExportLib(args) {
     }
 
     ensureOutDir(args['output']);
-    fs.writeFileSync(args['output'], packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
+    const outputPath = path.resolve(args['output']);
+    try {
+        fs.writeFileSync(outputPath, packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
+    } catch (writeErr) {
+        // Clean up partial output file on failure
+        try { if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath); } catch (_) { /* best-effort cleanup */ }
+        die('Failed to write export file: ' + writeErr.message);
+    }
 
     // Write package metadata to NTFS Alternate Data Stream
     try {
-        fs.writeFileSync(args['output'] + ':package.metadata',
+        fs.writeFileSync(outputPath + ':package.metadata',
             'Library: ' + manifest.library_name + '\r\n' +
             'Version: ' + manifest.version + '\r\n' +
             'Author: ' + manifest.author + '\r\n' +
             (manifest.organization ? 'Organization: ' + manifest.organization + '\r\n' : '') +
             'Description: ' + (manifest.description || '') + '\r\n' +
             'Created: ' + manifest.created_date);
-    } catch (_) { /* ADS write not critical */ }
+    } catch (adsErr) {
+        if (process.platform !== 'win32') {
+            // NTFS ADS only supported on Windows — expected failure on other platforms
+        } else {
+            process.stderr.write('  Warning: could not write NTFS Alternate Data Stream: ' + adsErr.message + '\n');
+        }
+    }
 
     console.log(`\nSuccess: exported to ${args['output']}`);
     console.log(`  Library files    : ${libraryFiles.length}`);
@@ -2076,7 +2129,13 @@ function cmdCreatePackage(args) {
             (spec.organization ? 'Organization: ' + spec.organization + '\r\n' : '') +
             'Description: ' + (spec.description || '') + '\r\n' +
             'Created: ' + manifest.created_date);
-    } catch (_) { /* ADS write not critical */ }
+    } catch (adsErr) {
+        if (process.platform !== 'win32') {
+            // NTFS ADS only supported on Windows — expected failure on other platforms
+        } else {
+            process.stderr.write('  Warning: could not write NTFS Alternate Data Stream: ' + adsErr.message + '\n');
+        }
+    }
 
     console.log(`\nSuccess: ${args['output']}`);
     console.log(`  Library name      : ${libName}`);
@@ -2463,6 +2522,7 @@ function cmdRollbackLib(args) {
         const me = zip.getEntry('manifest.json');
         if (!me) die('Cached package is corrupt: manifest.json not found');
         manifest = JSON.parse(zip.readAsText(me));
+        validateManifestSchema(manifest);
     } catch (e) {
         die('Failed to read cached package: ' + e.message);
     }
@@ -2840,9 +2900,9 @@ function cmdVerifyPackage(args) {
             die('Failed to read archive: ' + e.message);
         }
         const pkgEntries = archiveZip.getEntries().filter(
-            e => !e.isDirectory && e.entryName.toLowerCase().endsWith('.hxlibpkg')
+            e => !e.isDirectory && e.entryName.toLowerCase().endsWith(PKG_FILE_EXT)
         );
-        if (pkgEntries.length === 0) die('No .hxlibpkg packages found in archive.');
+        if (pkgEntries.length === 0) die('No ' + PKG_FILE_EXT + ' packages found in archive.');
 
         pkgEntries.forEach(function (pkgEntry) {
             try {
