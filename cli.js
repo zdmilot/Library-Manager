@@ -1261,45 +1261,47 @@ function cmdImportArchive(args) {
                 console.log(`    ${libName}: signature OK`);
             }
 
-            const existing = db.installed_libs.findOne({ library_name: libName });
-            if (existing && !existing.deleted && !args['force']) {
-                const existingVer = existing.version || '?';
-                const incomingVer = manifest.version || '?';
-                if (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer) {
-                    throw new Error(`"${libName}" v${existingVer} is already installed (same version; use --force to overwrite)`);
+            advisoryLock.withLock(dbPath, 'db-write', function() {
+                const existing = db.installed_libs.findOne({ library_name: libName });
+                if (existing && !existing.deleted && !args['force']) {
+                    const existingVer = existing.version || '?';
+                    const incomingVer = manifest.version || '?';
+                    if (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer) {
+                        throw new Error(`"${libName}" v${existingVer} is already installed (same version; use --force to overwrite)`);
+                    } else {
+                        throw new Error(`"${libName}" is already installed (v${existingVer}). Incoming: v${incomingVer} (use --force to overwrite)`);
+                    }
+                }
+
+                const archCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
+                let libDestDir;
+                if (archCustomSubdir) {
+                    libDestDir = path.join(libBasePath, archCustomSubdir);
                 } else {
-                    throw new Error(`"${libName}" is already installed (v${existingVer}). Incoming: v${incomingVer} (use --force to overwrite)`);
+                    libDestDir = libBasePath;
                 }
-            }
+                const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
+                const labwareDestDir = labwareBasePath;
+                const binDestDir = binBasePath;
 
-            const archCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
-            let libDestDir;
-            if (archCustomSubdir) {
-                libDestDir = path.join(libBasePath, archCustomSubdir);
-            } else {
-                libDestDir = libBasePath;
-            }
-            const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
-            const labwareDestDir = labwareBasePath;
-            const binDestDir = binBasePath;
+                const result = installPackage(
+                    manifest, innerZip, libDestDir, demoDestDir,
+                    label, db, !!(args['no-group']), labwareDestDir, binDestDir
+                );
 
-            const result = installPackage(
-                manifest, innerZip, libDestDir, demoDestDir,
-                label, db, !!(args['no-group']), labwareDestDir, binDestDir
-            );
+                results.success.push(`${libName} (${result.extractedCount} files)`);
+                console.log(`  + ${libName} - ${result.extractedCount} files extracted`);
 
-            results.success.push(`${libName} (${result.extractedCount} files)`);
-            console.log(`  + ${libName} - ${result.extractedCount} files extracted`);
-
-            // Cache each package for repair & rollback
-            if (!args['no-cache']) {
-                try {
-                    const cachedPath = cachePackage(pkgEntry.getData(), libName, manifest.version, args);
-                    console.log(`    cached -> ${cachedPath}`);
-                } catch (ce) {
-                    process.stderr.write(`    Warning: could not cache ${libName}: ${ce.message}\n`);
+                // Cache each package for repair & rollback
+                if (!args['no-cache']) {
+                    try {
+                        const cachedPath = cachePackage(pkgEntry.getData(), libName, manifest.version, args);
+                        console.log(`    cached -> ${cachedPath}`);
+                    } catch (ce) {
+                        process.stderr.write(`    Warning: could not cache ${libName}: ${ce.message}\n`);
+                    }
                 }
-            }
+            });
         } catch (e) {
             results.failed.push(`${label}: ${e.message}`);
             process.stderr.write(`  ! ${label}: ${e.message}\n`);
@@ -2556,47 +2558,49 @@ function cmdRollbackLib(args) {
         die('Cached package signature verification FAILED:\n  ' + sigResult.errors.join('\n  ') + '\nRollback aborted.');
     }
 
-    const rbCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
-    let libDestDir;
-    if (rbCustomSubdir) {
-        libDestDir = path.join(libBasePath, rbCustomSubdir);
-    } else {
-        libDestDir = libBasePath;
-    }
-    const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
-    const labwareDestDir = labwareBasePath;
-    const binDestDir = binBasePath;
+    // Advisory lock: serialize rollback install to prevent concurrent modification
+    advisoryLock.withLock(dbPath, 'db-write', function() {
+        const rbCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
+        let libDestDir;
+        if (rbCustomSubdir) {
+            libDestDir = path.join(libBasePath, rbCustomSubdir);
+        } else {
+            libDestDir = libBasePath;
+        }
+        const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
+        const labwareDestDir = labwareBasePath;
+        const binDestDir = binBasePath;
 
-    const result = installPackage(
-        manifest, zip, libDestDir, demoDestDir,
-        target.file, db, !!(args['no-group']), labwareDestDir, binDestDir
-    );
+        const result = installPackage(
+            manifest, zip, libDestDir, demoDestDir,
+            target.file, db, !!(args['no-group']), labwareDestDir, binDestDir
+        );
 
-    console.log(`\nSuccess: "${libName}" rolled back to version ${target.version} (${result.extractedCount} files)`);
-    console.log(`  Library files  -> ${libDestDir}`);
-    console.log(`  Demo methods   -> ${demoDestDir}`);
+        console.log(`\nSuccess: "${libName}" rolled back to version ${target.version} (${result.extractedCount} files)`);
+        console.log(`  Library files  -> ${libDestDir}`);
+        console.log(`  Demo methods   -> ${demoDestDir}`);
 
-    // ---- Audit trail entry ----
-    try {
-        const userDataDir = resolveDBPath(args);
-        appendAuditTrailEntry(userDataDir, buildAuditTrailEntry('library_rollback', {
-            library_name:     libName,
-            version:          target.version || '',
-            author:           manifest.author || '',
-            source_file:      target.fullPath,
-            lib_install_path: libDestDir,
-            demo_install_path: demoDestDir,
-            files_extracted:  result.extractedCount
-        }));
-    } catch (_) { /* non-critical */ }
+        // ---- Audit trail entry ----
+        try {
+            appendAuditTrailEntry(dbPath, buildAuditTrailEntry('library_rollback', {
+                library_name:     libName,
+                version:          target.version || '',
+                author:           manifest.author || '',
+                source_file:      target.fullPath,
+                lib_install_path: libDestDir,
+                demo_install_path: demoDestDir,
+                files_extracted:  result.extractedCount
+            }));
+        } catch (_) { /* non-critical */ }
 
-    const comDlls = manifest.com_register_dlls || [];
-    if (comDlls.length > 0) {
-        console.log(`\n  NOTE: COM registration required for: ${comDlls.join(', ')}`);
-        console.log(`  Use the GUI import or run the 32-bit RegAsm manually:`);
-        console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>`);
-        console.log(`  IMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.`);
-    }
+        const comDlls = manifest.com_register_dlls || [];
+        if (comDlls.length > 0) {
+            console.log(`\n  NOTE: COM registration required for: ${comDlls.join(', ')}`);
+            console.log(`  Use the GUI import or run the 32-bit RegAsm manually:`);
+            console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>`);
+            console.log(`  IMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.`);
+        }
+    });
 }
 
 // ===========================================================================
