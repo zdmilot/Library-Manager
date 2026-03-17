@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Library Manager CLI  v3.0.2

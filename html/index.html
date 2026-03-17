@@ -3830,7 +3830,7 @@
 			{ src: 'js/jquery-2.1.3.min.js',       integrity: 'sha384-E7gp+UYBLS2XewcxoJbfi0UpGMHSvt9XyI9bH4YIw5GDGW8AlC+2J7bVBBlMFC6p' },
 			{ src: 'js/jquery-ui.min.js',           integrity: 'sha384-SStJQoPipVtHHnIgUfDI+jTAbSyU+HMbhwt2XRRNpLIRFg9VguopT6Y4+cdOlkqg' },
 			{ src: 'js/bootstrap.bundle.min.js',    integrity: 'sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz' },
-			{ src: 'js/main.js',                    integrity: 'sha384-GlsnpECPorrE155L7yox8DhN62TrXleXAqUaNumsJL8C1TN7LJPms67NCeioGOF/' }
+			{ src: 'js/main.js',                    integrity: 'sha384-JpOY3VbavLFQ8b/S5PHTs/tZhbH0p9HWeOndSUjiuldnZO3e3ejTGzwvZidk6im8' }
 		];
 
 		function activateCSS() {
@@ -3852,7 +3852,11 @@
 			s.src = entry.src;
 			s.integrity = entry.integrity;
 			s.crossOrigin = 'anonymous';
-			s.onload = s.onerror = function() {
+			s.onload = function() { setTimeout(loadNextScript, 0); };
+			s.onerror = function() {
+				console.error('Failed to load script: ' + entry.src + ' (SRI hash may be stale)');
+				var splashStatus = document.querySelector('.splash-status');
+				if (splashStatus) splashStatus.textContent = 'Error loading ' + entry.src;
 				setTimeout(loadNextScript, 0);
 			};
 			document.body.appendChild(s);

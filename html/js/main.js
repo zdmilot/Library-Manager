@@ -1960,10 +1960,12 @@
 						setTimeout(function(){historyCleanup()},100);
 					} catch(e) {
 						console.warn('Error in startup chain: ' + e);
-						try { createGroups(); } catch(e2) { console.warn('Error in createGroups: ' + e2); }
+						try { createGroups(); } catch(e2) {
+							console.warn('Error in createGroups: ' + e2);
+							// Last resort: try navigating home even without groups
+							try { navigateHome(); } catch(e3) { console.warn('Error navigating home: ' + e3); }
+						}
 					}
-					// Ensure we always navigate to home screen after startup
-					try { navigateHome(); } catch(e3) { console.warn('Error navigating home: ' + e3); }
 
 					// Mark init complete, dismiss splash if animation also done
 					_splashInitDone = true;
