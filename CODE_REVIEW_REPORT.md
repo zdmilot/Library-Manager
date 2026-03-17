@@ -295,7 +295,7 @@ EOL since 2021.
 1. Upgrade Bootstrap 4 → 5
 2. Upgrade Font Awesome 5 → 6
 3. Upgrade jQuery UI
-4. ~~Add SRI attributes to all loaded resources~~ — **FIXED**
+4. Add SRI attributes to all loaded resources
 
 ---
 
