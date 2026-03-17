@@ -2930,6 +2930,17 @@
 						</div>
 					</div>
 				</div>
+				<!-- Download/Install progress overlay (hidden by default) -->
+				<div class="store-detail-progress d-none">
+					<div class="text-center py-5">
+						<div class="mb-3"><i class="fas fa-cloud-download-alt fa-2x store-detail-progress-icon" style="color:var(--medium);"></i></div>
+						<div class="mb-2 store-detail-progress-label" style="font-weight:600;">Downloading package…</div>
+						<div class="progress mx-auto" style="max-width:360px; height:8px; border-radius:4px;">
+							<div class="progress-bar progress-bar-striped progress-bar-animated store-detail-progress-bar" role="progressbar" style="width:100%;"></div>
+						</div>
+						<div class="text-muted text-sm mt-2 store-detail-progress-status">Please wait…</div>
+					</div>
+				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 					<div class="d-flex align-items-center" style="gap:8px;">

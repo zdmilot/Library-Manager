@@ -15499,7 +15499,7 @@
 					$modal.find(".imp-preview-overwrite-warning").addClass("d-none");
 					$modal.find(".imp-preview-overwrite-warning .alert").removeClass("alert-info").addClass("alert-warning");
 					if (_storeImportActive) {
-						$("#imp-preview-confirm").html('<i class="fas fa-download mr-2"></i>Download and Install').prop('disabled', false);
+						$("#imp-preview-confirm").html('<i class="fas fa-file-import mr-2"></i>Install Library').prop('disabled', false);
 					} else {
 						$("#imp-preview-confirm").html('<i class="fas fa-file-import mr-2"></i>Install Library').prop('disabled', false);
 					}
@@ -15533,6 +15533,18 @@
 		$(document).on("hidden.bs.modal", "#importPreviewModal", function() {
 			_isImporting = false;
 			_storeImportActive = false;
+			_storeAutoInstall = false;
+		});
+
+		// ---- Auto-confirm install when triggered from store (skip redundant preview) ----
+		$(document).on("shown.bs.modal", "#importPreviewModal", function() {
+			if (_storeAutoInstall) {
+				_storeAutoInstall = false;
+				var $confirmBtn = $('#imp-preview-confirm');
+				if (!$confirmBtn.prop('disabled')) {
+					$confirmBtn.click();
+				}
+			}
 		});
 
 		// ---- Confirm install from preview modal ----
@@ -19231,6 +19243,7 @@
 
 		var _storeCatalog   = null; // array of catalog entries (cached)
 		var _storeImportActive = false; // true when import preview was triggered from the store
+		var _storeAutoInstall = false;  // true when store should auto-confirm the import preview
 		var _storeSort      = 'name-asc';
 		var _storeSearchTerm = '';
 		var _storeShowIgnored = false; // when true, show ignored updates in grid
@@ -20196,8 +20209,8 @@
 				// Show dependency confirmation modal with the full tree
 				storeShowDepsModal(pkg, depsNeeded);
 			} else {
-				// No dependencies needed — go straight to download & preview
-				$("#storeDetailModal").modal("hide");
+				// No dependencies needed — download & install directly
+				// Keep storeDetailModal open to show download progress
 				storeDownloadAndPreview(pkgFile);
 			}
 		});
@@ -20436,6 +20449,7 @@
 
 				var proceedWithQueueInstall = function () {
 					_storeImportActive = true;
+					_storeAutoInstall = true;
 					impLoadAndInstall(tmpPath);
 					var checkFlag = setInterval(function () {
 						if (!_isImporting) {
@@ -20463,10 +20477,18 @@
 				return;
 			}
 
-			// Show downloading state on the detail modal install button (if still open)
-			var $detailBtn = $("#storeDetailModal .store-detail-install-btn");
+			// Show download progress bar in the detail modal
+			var $m = $("#storeDetailModal");
+			var $detailBtn = $m.find(".store-detail-install-btn");
 			var origBtnHtml = $detailBtn.html();
 			$detailBtn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Downloading\u2026').prop("disabled", true);
+			$m.find(".detail-modal-body").addClass("d-none");
+			$m.find(".store-detail-progress").removeClass("d-none");
+			$m.find(".store-detail-progress-label").text("Downloading package\u2026");
+			$m.find(".store-detail-progress-icon").removeClass("fa-cog fa-check-circle text-success").addClass("fa-cloud-download-alt");
+			$m.find(".store-detail-progress-status").text("Please wait\u2026");
+			$m.find(".store-detail-progress-bar").css("width", "100%")
+				.addClass("progress-bar-striped progress-bar-animated");
 
 			var downloadUrl = storePackageDownloadUrl(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
@@ -20476,6 +20498,9 @@
 			var https = require('https');
 			storeDownloadFile(https, downloadUrl, tmpPath, function (err) {
 				if (err) {
+					// Restore the detail modal to its normal state
+					$m.find(".store-detail-progress").addClass("d-none");
+					$m.find(".detail-modal-body").removeClass("d-none");
 					$detailBtn.html(origBtnHtml).prop("disabled", false);
 					storeShowErrorModal("Download failed", err.message);
 					return;
@@ -20494,11 +20519,34 @@
 					}
 				} catch(_) { console.warn(_); }
 
+				// Update progress UI to show installing state
+				$m.find(".store-detail-progress-label").text("Installing\u2026");
+				$m.find(".store-detail-progress-icon").removeClass("fa-cloud-download-alt").addClass("fa-cog");
+				$m.find(".store-detail-progress-status").text("Setting up the library\u2026");
+
+				var proceedWithAutoInstall = function () {
+					// Hide the detail modal and auto-install
+					$m.modal("hide");
+					_storeImportActive = true;
+					_storeAutoInstall = true;
+					impLoadAndInstall(tmpPath);
+					var checkFlag = setInterval(function () {
+						if (!_isImporting) {
+							clearInterval(checkFlag);
+							storeRenderGrid();
+						}
+					}, 500);
+				};
+
 				if (breakingChanges.length > 0) {
-					// Show breaking changes modal — wait for user acceptance
+					// Hide progress, show breaking changes modal — wait for user acceptance
+					$m.find(".store-detail-progress").addClass("d-none");
+					$m.find(".detail-modal-body").removeClass("d-none");
+					$detailBtn.html(origBtnHtml).prop("disabled", false);
+					$m.modal("hide");
 					storeShowBreakingChangesModal(breakingChanges, function () {
-						// User accepted — proceed with install
 						_storeImportActive = true;
+						_storeAutoInstall = true;
 						impLoadAndInstall(tmpPath);
 						var checkFlag = setInterval(function () {
 							if (!_isImporting) {
@@ -20508,15 +20556,7 @@
 						}, 500);
 					});
 				} else {
-					// No breaking changes (or fresh install) — proceed immediately
-					_storeImportActive = true;
-					impLoadAndInstall(tmpPath);
-					var checkFlag = setInterval(function () {
-						if (!_isImporting) {
-							clearInterval(checkFlag);
-							storeRenderGrid();
-						}
-					}, 500);
+					proceedWithAutoInstall();
 				}
 			});
 		}
@@ -20817,9 +20857,12 @@
 			});
 		});
 
-		// ---- Clean up review form on modal close ----
+		// ---- Clean up review form and progress state on modal close ----
 		$('#storeDetailModal').on('hidden.bs.modal', function () {
 			$('#storeDetailModal .store-review-form').addClass('d-none');
+			// Reset progress overlay so it shows detail body on next open
+			$('#storeDetailModal .store-detail-progress').addClass('d-none');
+			$('#storeDetailModal .detail-modal-body').removeClass('d-none');
 		});
 
         //**************************************************************************************
