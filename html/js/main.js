@@ -9604,12 +9604,10 @@
 				fs.writeFileSync(scriptFile, batContent, 'utf8');
 
 				// Elevate the batch script via PowerShell Start-Process -Verb RunAs.
-				// The script path is in %TEMP% which should never contain single-quote chars.
 				var psScript = "try { $p = Start-Process -FilePath '" + scriptFile + "' -Verb RunAs -Wait -PassThru -WindowStyle Hidden; exit $p.ExitCode } catch { exit 1 }";
-				var fullCmd = 'powershell.exe -NoProfile -Command "' + psScript + '"';
 
-				var exec = require('child_process').exec;
-				exec(fullCmd, {timeout: 30000}, function(error, stdout, stderr) {
+				var execFile = require('child_process').execFile;
+				execFile('powershell.exe', ['-NoProfile', '-Command', psScript], {timeout: 30000}, function(error, stdout, stderr) {
 					// Read captured RegAsm output
 					var regasmOutput = '';
 					try { regasmOutput = fs.readFileSync(outFile, 'utf8').trim(); } catch(e) { /* file may not exist if UAC was cancelled */ }

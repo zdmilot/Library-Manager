@@ -69,7 +69,7 @@ function main() {
                 break;
             }
             case 'get-library': {
-                var result = service.getLibrary(ctx, args.nameOrId || args.name || args.id);
+                var result = service.getLibrary(ctx, args);
                 success(result);
                 break;
             }

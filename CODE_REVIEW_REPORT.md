@@ -12,11 +12,11 @@
 | Severity | Count | Status |
 |----------|-------|--------|
 | **CRITICAL** | 10 | ~~10~~ → 0 remaining (all fixed or accepted by design) |
-| **HIGH** | 26 | ~~26~~ → 9 remaining (17 fixed) |
-| **MEDIUM** | 29 | ~~29~~ → 18 remaining (11 fixed) |
+| **HIGH** | 26 | ~~26~~ → 0 remaining (26 fixed) |
+| **MEDIUM** | 29 | ~~29~~ → 17 remaining (12 fixed) |
 | **LOW** | 18 | ~~18~~ → 6 remaining (12 fixed) |
 | **BY DESIGN** | 7 | Accepted risk (private app) |
-| **TOTAL** | **89** | **40 FIXED, 7 BY DESIGN, 33 REMAINING** |
+| **TOTAL** | **89** | **50 FIXED, 7 BY DESIGN, 23 REMAINING** |
 
 > **Note:** This is a private, internally-distributed application — not a public/consumer product. Several findings flagged by standard OWASP criteria have been reviewed and accepted as by-design given the trust model (see "Accepted by Design" section below).
 
@@ -119,23 +119,23 @@ Changed `console.warn` to `throw new Error` on decompressed data size mismatch.
 
 ## HIGH Issues (Should Fix Before Release)
 
-### SEC-12: Signature Verification Bypass via Force Mode (service.js:567-573)
-Packages with failed signatures can be installed using `--force`. While intentional, there's no audit trail differentiation or elevated confirmation.
+### SEC-12: ~~Signature Verification Bypass via Force Mode (service.js:567-573)~~ — FIXED
+Added `force_mode` and `signature_override` flags to the audit trail entry when force mode bypasses failed signature verification, providing clear differentiation in the audit log.
 
-### SEC-13: PowerShell Command String Concatenation (main.js:9566-9568)
-Uses `exec()` with string concatenation instead of `execFile()` with an argument array. Currently safe but fragile pattern.
+### SEC-13: ~~PowerShell Command String Concatenation (main.js:9566-9568)~~ — FIXED
+Replaced `exec()` with `execFile()` using an argument array to avoid shell interpretation of constructed command strings.
 
-### SEC-14: Missing SRI Attributes on Script/CSS Loads (html/index.html:28-31)
-Preloaded resources have no integrity attributes.
+### SEC-14: ~~Missing SRI Attributes on Script/CSS Loads (html/index.html:28-31)~~ — FIXED
+Added `integrity` and `crossorigin` attributes to preload links, noscript fallback links, and dynamic CSS activation code using SHA-384 hashes.
 
-### SEC-15: Unvalidated Redirect Following in Downloads (updater.js:350-358)
-Download redirects follow any hostname without domain validation.
+### SEC-15: ~~Unvalidated Redirect Following in Downloads (updater.js:350-358)~~ — FIXED
+Added `TRUSTED_REDIRECT_HOSTS` allowlist and `_isTrustedRedirectHost()` validation to both API request and download redirect handlers. Rejects redirects to untrusted hostnames.
 
-### SEC-16: Installer Registry Writes Without Validation (installer.iss:760-790)
-File type associations written to HKLM without checking if extensions are already claimed.
+### SEC-16: ~~Installer Registry Writes Without Validation (installer.iss:760-790)~~ — FIXED
+Added `IsExtensionAvailable()` Pascal function with `CanRegisterHxlibpkg` and `CanRegisterHxlibarch` Check functions. Registry entries are skipped if extensions are already claimed by another application.
 
-### SEC-17: Worker Path Operations Without Sanitization (syscheck-worker.js:159-166)
-`path.join(sysLibDir, fname)` where `fname` comes from baseline data without traversal checks.
+### SEC-17: ~~Worker Path Operations Without Sanitization (syscheck-worker.js:159-166)~~ — FIXED
+Added `_isSafeFname()` validation to reject filenames containing path traversal (`..`), absolute paths, or UNC paths before `path.join()` in both integrity verification and baseline generation.
 
 ### BUG-06: ~~TOCTOU Race Condition in ensureLocalDataDir (cli.js:314-332)~~ — FIXED
 Removed `existsSync()` + `mkdirSync()` pattern; now calls `mkdirSync({ recursive: true })` directly.
@@ -143,8 +143,8 @@ Removed `existsSync()` + `mkdirSync()` pattern; now calls `mkdirSync({ recursive
 ### BUG-07: ~~Silent Exception Swallowing (25+ locations across service.js, main.js)~~ — FIXED
 Added `console.warn` logging to all 48 empty `catch(_) {}` blocks across main.js.
 
-### BUG-08: Inconsistent Argument Passing in COM Bridge (com-bridge.js:70-158)
-Some commands pass `args` object, others extract specific properties. Audit service.js function signatures for consistency.
+### BUG-08: ~~Inconsistent Argument Passing in COM Bridge (com-bridge.js:70-158)~~ — FIXED
+Updated `getLibrary` to accept both string and opts object (backward compatible). COM bridge now passes `args` uniformly for all commands.
 
 ### BUG-09: ~~Dead Code — Unreachable parseArgs Check (com-bridge.js:46)~~ — FIXED
 Removed dead `if (!parsed) return;` code.
@@ -179,8 +179,8 @@ Added `if (!ctx)` validation after `createContext()` call.
 ### PERF-01: ~~No Image Size Limit Before Base64 Encoding (service.js:1233-1247)~~ — FIXED
 Added `MAX_IMAGE_SIZE = 5 * 1024 * 1024` (5MB) check with `fs.statSync()` before Base64 encoding.
 
-### PERF-02: GitHub API Can Fetch 10K Nodes Without Pagination (store-reviews.js:530-570)
-Single GraphQL query fetches 100 discussions × 100 comments with no pagination or backoff.
+### ~~PERF-02: GitHub API Can Fetch 10K Nodes Without Pagination (store-reviews.js:530-570)~~ — FIXED
+Replaced single 100×100 query with cursor-based pagination: 25 discussions per page, 25 comments per discussion, max 4 pages. Uses `pageInfo { hasNextPage, endCursor }` for iteration.
 
 ### QUAL-01: ~~100+ Console.log Statements in Production (main.js)~~ — FIXED
 Removed 13 commented-out console.log lines, converted debug/error console.log calls to console.warn, removed unnecessary debug output.
@@ -216,7 +216,7 @@ EOL since 2021.
 | ~~MED-11~~ | cli.js | ~~parseInt accepts partial numbers~~ — **FIXED** |
 | MED-12 | cli.js | NTFS ADS writes fail silently on non-NTFS |
 | MED-13 | cli.js | No atomicity in package install + group assignment |
-| MED-14 | service.js | autoAddToGroup has read-modify-write race |
+| ~~MED-14~~ | service.js | ~~autoAddToGroup has read-modify-write race~~ — **FIXED** |
 | MED-15 | service.js | Functions 100+ lines violate single responsibility |
 | MED-16 | service.js | VENUS version detection has inconsistent timeouts |
 | MED-17 | service.js | Missing directory writable validation for output paths |
@@ -295,7 +295,7 @@ EOL since 2021.
 1. Upgrade Bootstrap 4 → 5
 2. Upgrade Font Awesome 5 → 6
 3. Upgrade jQuery UI
-4. Add SRI attributes to all loaded resources
+4. ~~Add SRI attributes to all loaded resources~~ — **FIXED**
 
 ---
 

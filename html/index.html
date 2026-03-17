@@ -24,13 +24,13 @@
 	</style>
 	<!-- Preload CSS (download only — activation is deferred to the tail of
 	     the splash animation so style recalc doesn't block the main thread) -->
-	<link rel="preload" href="css/bootstrap.min.css" as="style">
-	<link rel="preload" href="css/all.min.css" as="style">
-	<link rel="preload" href="css/main.css" as="style">
+	<link rel="preload" href="css/bootstrap.min.css" as="style" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	<link rel="preload" href="css/all.min.css" as="style" integrity="sha384-9ZfPnbegQSumzaE7mks2IYgHoayLtuto3AS6ieArECeaR8nCfliJVuLh/GaQ1gyM" crossorigin="anonymous">
+	<link rel="preload" href="css/main.css" as="style" integrity="sha384-P+6yilSKcKZ3P74m+C0X1NSCFp0+BHtuVg9c1JkGMPyR02rZyB5TbK8Z9RdMGepo" crossorigin="anonymous">
 	<noscript>
-		<link href="css/bootstrap.min.css" rel="stylesheet">
-		<link href="css/all.min.css" rel="stylesheet">
-		<link href="css/main.css" rel="stylesheet">
+		<link href="css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+		<link href="css/all.min.css" rel="stylesheet" integrity="sha384-9ZfPnbegQSumzaE7mks2IYgHoayLtuto3AS6ieArECeaR8nCfliJVuLh/GaQ1gyM" crossorigin="anonymous">
+		<link href="css/main.css" rel="stylesheet" integrity="sha384-P+6yilSKcKZ3P74m+C0X1NSCFp0+BHtuVg9c1JkGMPyR02rZyB5TbK8Z9RdMGepo" crossorigin="anonymous">
 	</noscript>
 
 </head>
@@ -3812,7 +3812,11 @@
 	     is unchanged because the splash always waits for the 2300ms timer. -->
 	<script>
 	(function() {
-		var cssFiles = ['css/bootstrap.min.css', 'css/all.min.css', 'css/main.css'];
+		var cssFiles = [
+			{ href: 'css/bootstrap.min.css', integrity: 'sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh' },
+			{ href: 'css/all.min.css',       integrity: 'sha384-9ZfPnbegQSumzaE7mks2IYgHoayLtuto3AS6ieArECeaR8nCfliJVuLh/GaQ1gyM' },
+			{ href: 'css/main.css',          integrity: 'sha384-P+6yilSKcKZ3P74m+C0X1NSCFp0+BHtuVg9c1JkGMPyR02rZyB5TbK8Z9RdMGepo' }
+		];
 		var scripts = [
 			'js/jquery-2.1.3.min.js',
 			'js/jquery-ui.min.js',
@@ -3825,7 +3829,9 @@
 			for (var c = 0; c < cssFiles.length; c++) {
 				var link = document.createElement('link');
 				link.rel = 'stylesheet';
-				link.href = cssFiles[c];
+				link.href = cssFiles[c].href;
+				link.integrity = cssFiles[c].integrity;
+				link.crossOrigin = 'anonymous';
 				document.head.appendChild(link);
 			}
 		}

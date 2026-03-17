@@ -71,6 +71,35 @@ var
   gPreviousVersion: String;
 
 // -----------------------------------------------------------------------
+// File extension claim check — only register if not already owned by
+// another application (or already owned by us).
+// -----------------------------------------------------------------------
+function IsExtensionAvailable(const Ext: String; const OurProgId: String): Boolean;
+var
+  CurrentProgId: String;
+begin
+  Result := True;
+  if RegQueryStringValue(HKEY_LOCAL_MACHINE, 'Software\Classes\' + Ext, '', CurrentProgId) then
+  begin
+    if (CurrentProgId <> '') and (CompareText(CurrentProgId, OurProgId) <> 0) then
+    begin
+      Log('Extension ' + Ext + ' already claimed by "' + CurrentProgId + '" — skipping registration');
+      Result := False;
+    end;
+  end;
+end;
+
+function CanRegisterHxlibpkg(): Boolean;
+begin
+  Result := IsExtensionAvailable('.hxlibpkg', 'HxLibPkg');
+end;
+
+function CanRegisterHxlibarch(): Boolean;
+begin
+  Result := IsExtensionAvailable('.hxlibarch', 'HxLibArch');
+end;
+
+// -----------------------------------------------------------------------
 // RegAsm existence check — skips COM registration if .NET Framework missing
 // -----------------------------------------------------------------------
 function RegAsmExists(): Boolean;
@@ -856,16 +885,16 @@ Name: "{app}\tools\hxlibpkg-extract"; Permissions: users-modify
 ; separate from the coloured icons used inside the application UI.
 ; --------------------------------------------------------------------------
 ; .hxlibpkg  ->  HxLibPkg file type
-Root: HKLM; Subkey: "Software\Classes\.hxlibpkg"; ValueType: string; ValueName: ""; ValueData: "HxLibPkg"; Flags: uninsdeletevalue
-Root: HKLM; Subkey: "Software\Classes\HxLibPkg"; ValueType: string; ValueName: ""; ValueData: "Library Package"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "Software\Classes\HxLibPkg\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\hxlib_filetype.ico,0"
-Root: HKLM; Subkey: "Software\Classes\HxLibPkg\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKLM; Subkey: "Software\Classes\.hxlibpkg"; ValueType: string; ValueName: ""; ValueData: "HxLibPkg"; Flags: uninsdeletevalue; Check: CanRegisterHxlibpkg
+Root: HKLM; Subkey: "Software\Classes\HxLibPkg"; ValueType: string; ValueName: ""; ValueData: "Library Package"; Flags: uninsdeletekey; Check: CanRegisterHxlibpkg
+Root: HKLM; Subkey: "Software\Classes\HxLibPkg\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\hxlib_filetype.ico,0"; Check: CanRegisterHxlibpkg
+Root: HKLM; Subkey: "Software\Classes\HxLibPkg\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Check: CanRegisterHxlibpkg
 
 ; .hxlibarch  ->  HxLibArch file type
-Root: HKLM; Subkey: "Software\Classes\.hxlibarch"; ValueType: string; ValueName: ""; ValueData: "HxLibArch"; Flags: uninsdeletevalue
-Root: HKLM; Subkey: "Software\Classes\HxLibArch"; ValueType: string; ValueName: ""; ValueData: "Library Archive"; Flags: uninsdeletekey
-Root: HKLM; Subkey: "Software\Classes\HxLibArch\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\hxlib_filetype.ico,0"
-Root: HKLM; Subkey: "Software\Classes\HxLibArch\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKLM; Subkey: "Software\Classes\.hxlibarch"; ValueType: string; ValueName: ""; ValueData: "HxLibArch"; Flags: uninsdeletevalue; Check: CanRegisterHxlibarch
+Root: HKLM; Subkey: "Software\Classes\HxLibArch"; ValueType: string; ValueName: ""; ValueData: "Library Archive"; Flags: uninsdeletekey; Check: CanRegisterHxlibarch
+Root: HKLM; Subkey: "Software\Classes\HxLibArch\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\hxlib_filetype.ico,0"; Check: CanRegisterHxlibarch
+Root: HKLM; Subkey: "Software\Classes\HxLibArch\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Check: CanRegisterHxlibarch
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppIcon}"

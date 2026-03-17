@@ -21,6 +21,17 @@ var shared = require('../../lib/shared');
 var parseHslMetadataFooter = shared.parseHslMetadataFooter;
 
 /**
+ * Reject filenames containing path traversal sequences or absolute paths.
+ */
+function _isSafeFname(fname) {
+	if (!fname || typeof fname !== 'string') return false;
+	var normalized = path.normalize(fname);
+	if (normalized.startsWith('..') || path.isAbsolute(normalized)) return false;
+	if (/[\/]{2}/.test(fname)) return false;
+	return true;
+}
+
+/**
  * Verify integrity of a single system library against its baseline.
  */
 function verifySystemLibraryIntegrity(sLib, baseline, sysLibDir) {
@@ -45,6 +56,10 @@ function verifySystemLibraryIntegrity(sLib, baseline, sysLibDir) {
 	var fileNames = Object.keys(storedFiles);
 
 	fileNames.forEach(function(fname) {
+		if (!_isSafeFname(fname)) {
+			result.warnings.push('Skipped unsafe filename in baseline: ' + String(fname).substring(0, 80));
+			return;
+		}
 		var fullPath = path.join(sysLibDir, fname);
 
 		if (!fs.existsSync(fullPath)) {
@@ -96,6 +111,7 @@ function generateBaseline(systemLibraries, sysLibDir) {
 			var fname = relPath.replace(/^Library[\\\/]/i, '');
 			var ext = path.extname(fname).toLowerCase();
 			if (HSL_EXTS.indexOf(ext) === -1) return;
+			if (!_isSafeFname(fname)) return;
 
 			var fullPath = path.join(sysLibDir, fname);
 			if (!fs.existsSync(fullPath)) return;
