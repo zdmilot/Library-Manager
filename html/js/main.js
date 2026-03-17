@@ -1064,30 +1064,11 @@
 			return path.join(libFolderPath, 'system_library_metadata.json');
 		}
 
-		function migrateSystemMetadataToLibraryFolder() {
-			try {
-				var oldPath = path.join(USER_DATA_DIR, 'system_library_metadata.json');
-				var newPath = getSystemLibraryMetadataPath();
-				if (oldPath === newPath) return;
-				if (!fs.existsSync(oldPath)) return;
-				if (!fs.existsSync(newPath)) {
-					fs.copyFileSync(oldPath, newPath);
-					console.log('Migrated system library metadata to library folder: ' + newPath);
-				}
-			} catch(e) {
-				console.warn('Could not migrate system library metadata: ' + e.message);
-			}
-		}
-
 		// ---- System Libraries (hardcoded Hamilton base libraries) ----
 		var systemLibraries = [];
 		try {
 			var _sysLibRaw = fs.readFileSync(path.join('db', 'system_libraries.json'), 'utf8');
 			systemLibraries = JSON.parse(_sysLibRaw);
-
-			// Move metadata from legacy USER_DATA_DIR location to the active
-			// Library folder location for portability.
-			migrateSystemMetadataToLibraryFolder();
 
 			// Merge persisted install metadata from active Library folder
 			try {
@@ -2589,7 +2570,7 @@
 			return _applyFullInstallerFallback(releaseInfo, downloadDir);
 		}
 
-		/** Legacy fallback: launch the Inno Setup .exe with /SILENT (requires UAC) */
+		/** Fallback: launch the Inno Setup .exe with /SILENT (requires UAC) */
 		function _applyFullInstallerFallback(releaseInfo, downloadDir) {
 			var asset = releaseInfo.installerAsset;
 			var destPath = path.join(downloadDir, asset.name);
@@ -4212,17 +4193,17 @@
 
 			var textQuery = ((options.textQuery || '') + '').toLowerCase().trim();
 
-			// Backward compatibility for legacy single-string callers.
+			// Parse single-string query shorthand (e.g. "#tag" or "@author")
 			if (!tagFilters.length && !authorFilters.length && !textQuery && typeof query === 'string') {
-				var legacyQuery = query.trim().toLowerCase();
-				if (legacyQuery.charAt(0) === '#' && legacyQuery.length > 1) {
-					var legacyTag = shared.sanitizeTag(legacyQuery.substring(1));
-					if (legacyTag) tagFilters.push(legacyTag);
-					else textQuery = legacyQuery;
-				} else if (legacyQuery.charAt(0) === '@' && legacyQuery.length > 1) {
-					authorFilters.push(legacyQuery.substring(1));
+				var rawQuery = query.trim().toLowerCase();
+				if (rawQuery.charAt(0) === '#' && rawQuery.length > 1) {
+					var parsedTag = shared.sanitizeTag(rawQuery.substring(1));
+					if (parsedTag) tagFilters.push(parsedTag);
+					else textQuery = rawQuery;
+				} else if (rawQuery.charAt(0) === '@' && rawQuery.length > 1) {
+					authorFilters.push(rawQuery.substring(1));
 				} else {
-					textQuery = legacyQuery;
+					textQuery = rawQuery;
 				}
 			}
 
@@ -6132,7 +6113,7 @@
 
 			//setting - Theme mode (light / dark / auto; default: auto)
 			var themeMode = settings["themeMode"] || "auto";
-			// Migrate legacy settings: if themeMode is not one of the new values, derive from old keys
+			// Normalize themeMode to valid values
 			if (themeMode !== "light" && themeMode !== "dark" && themeMode !== "auto") {
 				themeMode = "auto";
 			} else if (themeMode === "system") {
@@ -10438,7 +10419,7 @@
 
 		/**
 		 * Apply code signing to a zip when the user has enabled it.
-		 * Falls back to legacy HMAC-only signing if credentials are unavailable.
+		 * Leaves the package unsigned if credentials are unavailable.
 		 * @param {AdmZip} zip - The zip to sign
 		 * @param {boolean} useCodeSigning - Whether user toggled code signing on
 		 * @returns {{ codeSigned: boolean, publisher: string|null, keyId: string|null }}
@@ -10645,9 +10626,9 @@
 			var comDlls = lib.com_register_dlls || [];
 			var hashableExts = ['.hsl', '.hs_', '.sub'];
 
-			// If no hashes stored, mark as warning (legacy library)
+			// If no hashes stored, mark as warning
 			if (Object.keys(storedHashes).length === 0) {
-				result.warnings.push('No integrity hashes stored (imported before hashing was enabled)');
+				result.warnings.push('No integrity hashes stored for this library');
 				return result;
 			}
 
@@ -12482,11 +12463,7 @@
 				var libImageMime = lib.library_image_mime || null;
 
 				// Build manifest - include help_files for the importer
-				// Also include CHMs in library_files for backward compatibility
 				var manifestLibFiles = libraryFiles.slice();
-				helpFiles.forEach(function(hf) {
-					if (manifestLibFiles.indexOf(hf) === -1) manifestLibFiles.push(hf);
-				});
 
 				var manifest = {
 					format_version: shared.FORMAT_VERSION,
@@ -15420,7 +15397,7 @@
 						$sigStatus.html(errHtml);
 						$modal.find(".imp-preview-signature-section").removeClass("d-none");
 					} else {
-						$sigStatus.html('<div class="d-flex align-items-center text-muted"><i class="fas fa-info-circle mr-2"></i><span>Unsigned package (legacy) &mdash; no signature to verify</span></div>');
+						$sigStatus.html('<div class="d-flex align-items-center text-muted"><i class="fas fa-info-circle mr-2"></i><span>Unsigned package &mdash; no signature to verify</span></div>');
 						$modal.find(".imp-preview-signature-section").removeClass("d-none");
 					}
 				}
@@ -15685,7 +15662,7 @@
 							extractedCount++;
 						}
 					} else if (entry.entryName.indexOf("help_files/") === 0) {
-						// Legacy/explicit help_files folder - extract to library directory
+						// help_files folder - extract to library directory
 						var fname = entry.entryName.substring("help_files/".length);
 						if (fname) {
 							var outPath = safeZipExtractPath(libDestDir, fname);
