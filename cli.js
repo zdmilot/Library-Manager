@@ -1312,8 +1312,7 @@ function cmdImportArchive(args) {
 
     // ---- Audit trail entry ----
     try {
-        const userDataDir = resolveDBPath(args);
-        appendAuditTrailEntry(userDataDir, buildAuditTrailEntry('archive_imported', {
+        appendAuditTrailEntry(dbPath, buildAuditTrailEntry('archive_imported', {
             archive_file:    path.resolve(filePath),
             packages_total:  pkgEntries.length,
             succeeded:       results.success,
