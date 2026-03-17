@@ -1,6 +1,6 @@
 # Changelog
 
-<!-- 
+<!--
   Edit this file with the release notes for the next version BEFORE
   triggering the "Build and Release" workflow.
 
@@ -11,4 +11,3 @@
   After a successful release, this file is automatically reset to this
   template so it is ready for the next release cycle.
 -->
-Fioxed Bootstrap issues
