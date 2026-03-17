@@ -315,7 +315,7 @@ function buildAuditTrailEntry(eventType, details) {
 // ---------------------------------------------------------------------------
 
 /**
- * Legacy: Connect diskdb to the given directory with all collections.
+ * Connect diskdb to the given directory with all collections.
  * Returns a db object with collections: installed_libs, links, groups, settings, tree.
  */
 function connectDB(dbDir) {
@@ -655,17 +655,6 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
             const fname = entry.entryName.substring('demo_methods/'.length);
             if (fname) {
                 const safePath = safeZipExtractPath(demoDestDir, fname);
-                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName.replace(/[\x00-\x1f\x7f]/g, '?')); return; }
-                const parentDir = path.dirname(safePath);
-                if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
-                fs.writeFileSync(safePath, entry.getData());
-                extractedCount++;
-            }
-        } else if (entry.entryName.startsWith('help_files/')) {
-            // Legacy/explicit help_files folder - extract to library directory
-            const fname = entry.entryName.substring('help_files/'.length);
-            if (fname) {
-                const safePath = safeZipExtractPath(libDestDir, fname);
                 if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName.replace(/[\x00-\x1f\x7f]/g, '?')); return; }
                 const parentDir = path.dirname(safePath);
                 if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
@@ -2000,15 +1989,12 @@ function cmdCreatePackage(args) {
         if (!fs.existsSync(fp)) die(`Help file not found: ${fp}`);
     }
 
-    // Build manifest - include help_files and keep CHMs in library_files for backward compat
+    // Build manifest
     const libRelPaths = (spec.library_files || []).map(f => f.replace(/\\/g, '/'));
     const helpRelPaths = (spec.help_files || []).map(f => f.replace(/\\/g, '/'));
     const demoRelPaths = (spec.demo_method_files || []).map(f => f.replace(/\\/g, '/'));
     const labwareRelPaths = (spec.labware_files || []).map(f => f.replace(/\\/g, '/'));
     const manifestLibFiles = libRelPaths.slice();
-    helpRelPaths.forEach(hf => {
-        if (manifestLibFiles.indexOf(hf) === -1) manifestLibFiles.push(hf);
-    });
 
     const manifest = {
         format_version:      shared.FORMAT_VERSION,
@@ -2827,7 +2813,7 @@ verify-package
   Checks HMAC-SHA256 integrity AND Ed25519 publisher certificate signatures.
   Reports publisher identity and OEM verification status for code-signed packages.
   Unsigned packages are reported but not treated as errors.
-  Legacy HMAC-only (v1.0) signatures are rejected.
+    HMAC-only (v1.0) signatures are rejected.
 
   --file <path>   [required]  Path to the .hxlibpkg or .hxlibarch file
   --json                      Output results as JSON

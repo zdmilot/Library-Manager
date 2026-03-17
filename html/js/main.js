@@ -1695,11 +1695,11 @@
 					}
 				});
 
-				// Add help files (CHMs) - packed into help_files/ folder
+				// Add help files (CHMs) - packed into library/ folder
 				helpFiles.forEach(function(f) {
 					var fullPath = path.join(sysLibDir, f);
 					if (fs.existsSync(fullPath)) {
-						zip.addLocalFile(fullPath, zipSubdir('help_files', f));
+						zip.addLocalFile(fullPath, zipSubdir('library', f));
 					}
 				});
 				// Wrap in binary container and cache to package store
@@ -1821,16 +1821,6 @@
 							var parentDir = path.dirname(safePath);
 							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
 							fs.writeFileSync(safePath, entry.getData());
-							extractedCount++;
-						}
-					} else if (entry.entryName.indexOf('help_files/') === 0) {
-						var fname3 = entry.entryName.substring('help_files/'.length);
-						if (fname3) {
-							var safePath3 = safeZipExtractPath(sysLibDir, fname3);
-							if (!safePath3) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
-							var parentDir3 = path.dirname(safePath3);
-							if (!fs.existsSync(parentDir3)) fs.mkdirSync(parentDir3, { recursive: true });
-							fs.writeFileSync(safePath3, entry.getData());
 							extractedCount++;
 						}
 					}
@@ -8165,11 +8155,15 @@
 		 * Collect distinct folder paths from a tree's files + empty folders.
 		 */
 		// "New Folder" button (generic for all trees)
-		$(document).on("click", ".ft-newFolderBtn", function() {
+		$(document).on("click", ".ft-newFolderBtn", async function() {
 			var treeId = $(this).attr("data-tree");
 			var state = ftGetTreeState(treeId);
 			if (!state) return;
-			var name = prompt("Enter new folder name:", "");
+			var name = await showAppPrompt('New Folder', "Enter new folder name:", {
+				defaultValue: '',
+				iconClass: 'fa-folder-plus',
+				placeholder: 'Folder name'
+			});
 			if (name && name.trim()) {
 				name = name.trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
 				var ef = state.emptyFolders();
@@ -8737,7 +8731,7 @@
 		});
 
 		// ---- Create Package button ----
-		$(document).on("click", "#pkg-create", function() {
+		$(document).on("click", "#pkg-create", async function() {
 			// Validate required fields
 			var author = $("#pkg-author").val().trim();
 			var organization = $("#pkg-organization").val().trim();
@@ -8825,7 +8819,11 @@
 				return path.basename(f).toLowerCase().endsWith('.dll');
 			});
 			if (dllsInLibrary.length > 0 && pkg_comRegisterDlls.length === 0) {
-				if (!confirm("No DLL files are targeted to be registered as COM objects. Are you sure you want to continue?")) {
+				if (!(await showAppConfirm('COM Registration Notice', "No DLL files are targeted to be registered as COM objects. Are you sure you want to continue?", {
+					iconClass: 'fa-exclamation-triangle',
+					confirmLabel: 'Continue',
+					confirmIcon: 'fa-arrow-right'
+				}))) {
 					return;
 				}
 			}
@@ -8842,7 +8840,11 @@
 			var emptyFolders = ftCollectEmptyFolders();
 			if (emptyFolders.length > 0) {
 				var folderList = emptyFolders.map(function(ef) { return '  \u2022 ' + ef.tree + ': ' + ef.folder; }).join('\n');
-				if (!confirm('The following folders are empty and will create empty directories in the package:\n\n' + folderList + '\n\nDo you want to continue?')) {
+				if (!(await showAppConfirm('Empty Folders Detected', 'The following folders are empty and will create empty directories in the package:\n\n' + folderList + '\n\nDo you want to continue?', {
+					iconClass: 'fa-exclamation-triangle',
+					confirmLabel: 'Continue',
+					confirmIcon: 'fa-arrow-right'
+				}))) {
 					return;
 				}
 			}
@@ -10499,12 +10501,20 @@
 		});
 
 		// Generate key pair from Settings
-		$(document).on("click", ".btn-generate-keypair", function() {
+		$(document).on("click", ".btn-generate-keypair", async function() {
 			// Prompt for publisher name
-			var publisher = prompt("Enter a publisher name for the certificate:\n(e.g. your name or organization)");
+			var publisher = await showAppPrompt('Generate Key Pair', "Enter a publisher name for the certificate:\n(e.g. your name or organization)", {
+				defaultValue: '',
+				iconClass: 'fa-key',
+				placeholder: 'Publisher name'
+			});
 			if (!publisher || !publisher.trim()) return;
 			publisher = publisher.trim();
-			var organization = prompt("Enter an organization name (optional):\nLeave blank to skip.");
+			var organization = await showAppPrompt('Generate Key Pair', "Enter an organization name (optional):\nLeave blank to skip.", {
+				defaultValue: '',
+				iconClass: 'fa-building',
+				placeholder: 'Organization name (optional)'
+			});
 			organization = (organization || '').trim();
 
 			// Ask where to save
@@ -10514,7 +10524,7 @@
 			$("#settings-keypair-output-dir").data("organization", organization);
 		});
 
-		$(document).on("change", "#settings-keypair-output-dir", function() {
+		$(document).on("change", "#settings-keypair-output-dir", async function() {
 			var outputDir = $(this).val();
 			if (!outputDir) return;
 			$(this).val('');
@@ -10537,7 +10547,11 @@
 
 				// Check for overwrite
 				if (fs.existsSync(keyPath) || fs.existsSync(certPath)) {
-					if (!confirm('Files already exist in this folder:\n' + keyFileName + '\n' + certFileName + '\n\nOverwrite?')) return;
+					if (!(await showAppConfirm('Overwrite Existing Files?', 'Files already exist in this folder:\n' + keyFileName + '\n' + certFileName + '\n\nOverwrite?', {
+						iconClass: 'fa-exclamation-triangle',
+						confirmLabel: 'Overwrite',
+						confirmIcon: 'fa-save'
+					}))) return;
 				}
 
 				// Write files
@@ -11675,11 +11689,19 @@
 
 			if (!fullPath || !libName) return;
 
-			if (!confirm('Roll back "' + libName + '" to version ' + version + '?\n\nThis will replace the currently installed files with the selected version.')) {
+			if (!(await showAppConfirm('Rollback Library?', 'Roll back "' + libName + '" to version ' + version + '?\n\nThis will replace the currently installed files with the selected version.', {
+				iconClass: 'fa-history',
+				confirmLabel: 'Rollback',
+				confirmIcon: 'fa-history'
+			}))) {
 				return;
 			}
 
-			if (!confirm('Are you sure? This will overwrite all current library files for "' + libName + '".')) {
+			if (!(await showAppConfirm('Confirm Rollback', 'Are you sure? This will overwrite all current library files for "' + libName + '".', {
+				iconClass: 'fa-exclamation-triangle',
+				confirmLabel: 'Overwrite Files',
+				confirmIcon: 'fa-exclamation-triangle'
+			}))) {
 				return;
 			}
 
@@ -11791,16 +11813,6 @@
 						var fname = entry.entryName.substring("demo_methods/".length);
 						if (fname) {
 							var safePath = safeZipExtractPath(demoDestDir, fname);
-							if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
-							var parentDir = path.dirname(safePath);
-							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
-							fs.writeFileSync(safePath, entry.getData());
-							extractedCount++;
-						}
-					} else if (entry.entryName.indexOf("help_files/") === 0) {
-						var fname = entry.entryName.substring("help_files/".length);
-						if (fname) {
-							var safePath = safeZipExtractPath(libDestDir, fname);
 							if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 							var parentDir = path.dirname(safePath);
 							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
@@ -12297,14 +12309,18 @@
 		}
 
 		// ---- Repair from detail modal (works for both system and user libraries) ----
-		$(document).on("click", ".lib-detail-repair-btn", function(e) {
+		$(document).on("click", ".lib-detail-repair-btn", async function(e) {
 			e.preventDefault();
 			var sysLibName = $(this).attr("data-sys-lib-name");
 			var userLibName = $(this).attr("data-user-lib-name");
 
 			if (sysLibName) {
 				// System library repair
-				if (!confirm('Repair system library "' + sysLibName + '" from backup package?\n\nThis will restore all library files to their original state.')) return;
+				if (!(await showAppConfirm('Repair System Library?', 'Repair system library "' + sysLibName + '" from backup package?\n\nThis will restore all library files to their original state.', {
+					iconClass: 'fa-wrench',
+					confirmLabel: 'Repair',
+					confirmIcon: 'fa-wrench'
+				}))) return;
 				var result = repairSystemLibraryFromCache(sysLibName);
 				if (result.success) {
 					// Refresh the detail modal
@@ -12316,7 +12332,11 @@
 				}
 			} else if (userLibName) {
 				// User library repair
-				if (!confirm('Repair library "' + userLibName + '" from cached package?\n\nThis will restore all library files from the newest cached version.')) return;
+				if (!(await showAppConfirm('Repair Library?', 'Repair library "' + userLibName + '" from cached package?\n\nThis will restore all library files from the newest cached version.', {
+					iconClass: 'fa-wrench',
+					confirmLabel: 'Repair',
+					confirmIcon: 'fa-wrench'
+				}))) return;
 				repairLibraryFromCache(userLibName);
 				// Refresh the detail modal
 				var libId = $("#libDetailModal").attr("data-lib-id");
@@ -13250,7 +13270,11 @@
 				});
 				confirmMsg += "\nDo you want to install all " + pkgEntries.length + " libraries?";
 
-				if (!confirm(confirmMsg)) return;
+				if (!(await showAppConfirm('Import Archive Libraries?', confirmMsg, {
+					iconClass: 'fa-file-archive',
+					confirmLabel: 'Import All',
+					confirmIcon: 'fa-download'
+				}))) return;
 
 				// ---- Duplicate detection pre-scan ----
 				// Scan all packages for name/version and check against installed libraries.
@@ -13291,7 +13315,11 @@
 						}
 					});
 					dupMsg += "\nClick OK to replace " + (archDuplicates.length !== 1 ? "these libraries" : "this library") + ", or Cancel to skip " + (archDuplicates.length !== 1 ? "them" : "it") + " and install only new libraries.";
-					if (!confirm(dupMsg)) {
+					if (!(await showAppConfirm('Duplicate Libraries Found', dupMsg, {
+						iconClass: 'fa-exclamation-triangle',
+						confirmLabel: 'Replace Existing',
+						confirmIcon: 'fa-sync'
+					}))) {
 						// User chose to skip duplicates
 						archDuplicates.forEach(function(d) {
 							archSkipIndices[d.index] = true;
@@ -13334,7 +13362,11 @@
 						" that require administrator rights to register:\n\n";
 					archiveComPkgNames.forEach(function(n) { comPromptMsg += "  \u2022 " + n + "\n"; });
 					comPromptMsg += "\nYou will be prompted for administrator rights once to register all COM objects.\n\nDo you want to continue?";
-					if (!confirm(comPromptMsg)) {
+					if (!(await showAppConfirm('COM Registration Required', comPromptMsg, {
+						iconClass: 'fa-shield-alt',
+						confirmLabel: 'Continue',
+						confirmIcon: 'fa-arrow-right'
+					}))) {
 						return;
 					}
 				}
@@ -13467,16 +13499,6 @@
 								var fname = entry.entryName.substring("demo_methods/".length);
 								if (fname) {
 									var outPath = safeZipExtractPath(demoDestDir, fname);
-									if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
-									var parentDir = path.dirname(outPath);
-									if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
-									fs.writeFileSync(outPath, entry.getData());
-									extractedCount++;
-								}
-							} else if (entry.entryName.indexOf("help_files/") === 0) {
-								var fname = entry.entryName.substring("help_files/".length);
-								if (fname) {
-									var outPath = safeZipExtractPath(libDestDir, fname);
 									if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 									var parentDir = path.dirname(outPath);
 									if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
@@ -14080,12 +14102,15 @@
 
 				// If the library has a COM warning (registration never succeeded), ask the user
 				if (hasComWarning) {
-					shouldDeregister = confirm(
+					shouldDeregister = await showAppConfirm('COM Deregistration Warning',
 						"This library has a COM registration warning (registration may not have completed successfully).\n\n" +
 						"Would you like to attempt to COM deregister the following DLLs from the system?\n\n" +
 						comDlls.join(", ") + "\n\n" +
-						"Click OK to attempt deregistration, or Cancel to skip."
-					);
+						"Click OK to attempt deregistration, or Cancel to skip.", {
+							iconClass: 'fa-exclamation-triangle',
+							confirmLabel: 'Attempt Deregistration',
+							confirmIcon: 'fa-plug'
+						});
 				}
 
 				if (shouldDeregister && libPath) {
@@ -14113,7 +14138,11 @@
 								"Do you still want to proceed with deleting the library?\n" +
 								"(The COM objects may remain registered on the system)";
 
-							if (!confirm(continueMsg)) return;
+							if (!(await showAppConfirm('Continue Deletion?', continueMsg, {
+								iconClass: 'fa-exclamation-triangle',
+								confirmLabel: 'Delete Anyway',
+								confirmIcon: 'fa-trash-alt'
+							}))) return;
 						}
 					}
 				}
@@ -14768,16 +14797,6 @@
 									fs.writeFileSync(outPath, entry.getData());
 									extractedCount++;
 								}
-							} else if (entry.entryName.indexOf("help_files/") === 0) {
-								var fname = entry.entryName.substring("help_files/".length);
-								if (fname) {
-									var outPath = safeZipExtractPath(libDestDir, fname);
-									if (!outPath) return;
-									var parentDir = path.dirname(outPath);
-									if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
-									fs.writeFileSync(outPath, entry.getData());
-									extractedCount++;
-								}
 							} else if (entry.entryName.indexOf("labware/") === 0) {
 								var fname = entry.entryName.substring("labware/".length);
 								if (fname) {
@@ -15078,7 +15097,11 @@
 					var sigMsg = "WARNING: Package signature verification FAILED!\n\n";
 					sigResult.errors.forEach(function(e) { sigMsg += "  \u274C " + e + "\n"; });
 					sigMsg += "\nThis package may be corrupted or tampered with.\nDo you want to continue anyway?";
-					if (!confirm(sigMsg)) { _isImporting = false; return; }
+					if (!(await showAppConfirm('Signature Verification Failed', sigMsg, {
+						iconClass: 'fa-exclamation-triangle',
+						confirmLabel: 'Import Anyway',
+						confirmIcon: 'fa-shield-alt'
+					}))) { _isImporting = false; return; }
 				}
 
 
@@ -15585,7 +15608,11 @@
 							"Do you still want to proceed with the import?\n" +
 							"(The library card will be marked with a warning)";
 
-						if (!confirm(proceedMsg)) {
+						if (!(await showAppConfirm('COM Registration Failed', proceedMsg, {
+							iconClass: 'fa-exclamation-triangle',
+							confirmLabel: 'Continue Import',
+							confirmIcon: 'fa-arrow-right'
+						}))) {
 							// User chose not to proceed - clean up extracted COM DLLs
 							for (var di = 0; di < comDllPaths.length; di++) {
 								try { if (fs.existsSync(comDllPaths[di])) fs.unlinkSync(comDllPaths[di]); } catch(ex) { console.warn(ex); }
@@ -15647,17 +15674,6 @@
 						var fname = entry.entryName.substring("demo_methods/".length);
 						if (fname) {
 							var outPath = safeZipExtractPath(demoDestDir, fname);
-							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
-							var parentDir = path.dirname(outPath);
-							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
-							fs.writeFileSync(outPath, entry.getData());
-							extractedCount++;
-						}
-					} else if (entry.entryName.indexOf("help_files/") === 0) {
-						// help_files folder - extract to library directory
-						var fname = entry.entryName.substring("help_files/".length);
-						if (fname) {
-							var outPath = safeZipExtractPath(libDestDir, fname);
 							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 							var parentDir = path.dirname(outPath);
 							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
@@ -16617,7 +16633,11 @@
 				showAppAlert('Error', "The following COM DLL files are missing and cannot be registered:\n\n" + missing.join("\n") + "\n\nRepair the library first to restore the files.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
-			if (!confirm("Re-register " + comDlls.length + " COM DLL(s) for \"" + (lib.library_name || "Unknown") + "\"?\n\n" + comDlls.join("\n") + "\n\nThis requires administrator privileges (UAC prompt).")) return;
+			if (!(await showAppConfirm('Re-register COM DLLs?', "Re-register " + comDlls.length + " COM DLL(s) for \"" + (lib.library_name || "Unknown") + "\"?\n\n" + comDlls.join("\n") + "\n\nThis requires administrator privileges (UAC prompt).", {
+				iconClass: 'fa-shield-alt',
+				confirmLabel: 'Re-register',
+				confirmIcon: 'fa-sync'
+			}))) return;
 			var result = await comRegisterMultipleDlls(dllPaths, true);
 			if (result.allSuccess) {
 				// Update the DB record
@@ -16633,7 +16653,7 @@
 		});
 
 		// Repair all failed libraries
-		$(document).on("click", ".repair-all-btn", function() {
+		$(document).on("click", ".repair-all-btn", async function() {
 			var failedItems = $(".repair-lib-item").filter(function() {
 				return $(this).find(".fa-times-circle").length > 0;
 			});
@@ -16645,7 +16665,11 @@
 			});
 			if (names.length === 0) return;
 			var nameList = names.map(function(n) { return (n.isSystem ? '[System] ' : '') + n.name; }).join("\n");
-			if (!confirm("Repair " + names.length + " librar" + (names.length === 1 ? "y" : "ies") + " from cached/backup packages?\n\n" + nameList)) return;
+			if (!(await showAppConfirm('Repair Libraries?', "Repair " + names.length + " librar" + (names.length === 1 ? "y" : "ies") + " from cached/backup packages?\n\n" + nameList, {
+				iconClass: 'fa-wrench',
+				confirmLabel: 'Repair All',
+				confirmIcon: 'fa-wrench'
+			}))) return;
 			var repaired = 0;
 			var errors = [];
 			names.forEach(function(item) {
@@ -16763,16 +16787,6 @@
 							var parentDir2 = path.dirname(safePath2);
 							if (!fs.existsSync(parentDir2)) fs.mkdirSync(parentDir2, { recursive: true });
 							fs.writeFileSync(safePath2, entry.getData());
-							extractedCount++;
-						}
-					} else if (entry.entryName.indexOf('help_files/') === 0) {
-						var fname3 = entry.entryName.substring('help_files/'.length);
-						if (fname3) {
-							var safePath3 = safeZipExtractPath(libDestDir, fname3);
-							if (!safePath3) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
-							var parentDir3 = path.dirname(safePath3);
-							if (!fs.existsSync(parentDir3)) fs.mkdirSync(parentDir3, { recursive: true });
-							fs.writeFileSync(safePath3, entry.getData());
 							extractedCount++;
 						}
 					} else if (entry.entryName.indexOf('labware/') === 0) {
@@ -17905,10 +17919,14 @@
 		});
 
 		// ---- Remove unsigned library entry ----
-		$(document).on("click", "#ulib-remove-btn", function() {
+		$(document).on("click", "#ulib-remove-btn", async function() {
 			var ulibId = $("#unsignedLibDetailModal").attr("data-ulib-id");
 			if (!ulibId) return;
-			if (!confirm("Remove this unsigned library from the list?\nThe files on disk will not be modified.")) return;
+			if (!(await showAppConfirm('Remove Unsigned Library?', "Remove this unsigned library from the list?\nThe files on disk will not be modified.", {
+				iconClass: 'fa-trash-alt',
+				confirmLabel: 'Remove',
+				confirmIcon: 'fa-trash-alt'
+			}))) return;
 
 			db_unsigned_libs.unsigned_libs.remove({"_id": ulibId});
 			$("#unsignedLibDetailModal").modal("hide");
@@ -18984,7 +19002,11 @@
 					} else {
 						overwriteMsg = 'A library named "' + libName + '" is already installed (v' + existingVer + ').\n\nDo you want to replace it with ' + (version ? 'v' + version : 'the imported version') + '?';
 					}
-					if (!confirm(overwriteMsg)) {
+					if (!(await showAppConfirm('Replace Installed Library?', overwriteMsg, {
+						iconClass: 'fa-exclamation-triangle',
+						confirmLabel: 'Replace',
+						confirmIcon: 'fa-sync'
+					}))) {
 						$btn.prop("disabled", false);
 						return;
 					}
