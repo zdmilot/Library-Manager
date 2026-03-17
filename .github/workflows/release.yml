@@ -189,7 +189,7 @@ jobs:
             template so it is ready for the next release cycle.
           -->
           '@
-          Set-Content "RELEASE_NOTES.md" $template -NoNewline
+          Set-Content "RELEASE_NOTES.md" $template
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
