@@ -833,138 +833,9 @@
 		// Initialize local data directory
 		ensureLocalDataDir(LOCAL_DATA_DIR);
 
-		// ---- Settings DB (now in local/ directory) ----
+		// ---- Settings DB (in local/ directory) ----
 		var db_settings = db.connect(LOCAL_DATA_DIR, ['settings']);
 
-		// ---- Legacy Migration ----
-		// Migrate data from old locations to the app-local directory:
-		//   1. Old app-root db/ folder (pre-restructure)
-		//   2. Old per-user %LOCALAPPDATA% location (prior AppData-based storage)
-		//   3. Old HAMILTON\Library\LibraryManagerForVenus6 folder
-		//   4. Old HAMILTON\Library\.LibraryManagerForVenus6 hidden folder
-		//   5. Old NW.js per-user dataPath location
-		(function migrateToLocalDir() {
-			var perUserLocations = [];
-			try {
-				var profileRoot = (typeof process !== 'undefined' && process.env)
-					? (process.env.LOCALAPPDATA || process.env.APPDATA || '')
-					: '';
-				if (profileRoot) {
-					perUserLocations.push(path.join(profileRoot, 'Library Manager for Venus 6', 'local'));
-				}
-			} catch(_) { console.warn(_); }
-			try {
-				if (typeof nw !== 'undefined' && nw.App && typeof nw.App.dataPath === 'string' && nw.App.dataPath.trim()) {
-					perUserLocations.push(path.join(nw.App.dataPath, 'local'));
-				}
-			} catch(_) { console.warn(_); }
-			var oldLocations = [
-				path.join(APP_ROOT, 'db')
-			].concat(perUserLocations).concat([
-				path.join("C:\\Program Files (x86)\\HAMILTON\\Library", "LibraryManagerForVenus6"),
-				path.join("C:\\Program Files (x86)\\HAMILTON\\Library", ".LibraryManagerForVenus6")
-			]);
-			var filesToMigrate = ['installed_libs.json', 'groups.json', 'tree.json', 'links.json', 'settings.json', 'audit_trail.json', 'publisher_registry.json'];
-			oldLocations.forEach(function(oldDir) {
-				if (!fs.existsSync(oldDir) || oldDir === LOCAL_DATA_DIR) return;
-				filesToMigrate.forEach(function(fname) {
-					try {
-						var src = path.join(oldDir, fname);
-						var dst = path.join(LOCAL_DATA_DIR, fname);
-						if (!fs.existsSync(src)) return;
-						var srcData = fs.readFileSync(src, 'utf8').trim();
-						if (!srcData || srcData === '[]' || srcData === '{}') return;
-						// For settings.json, merge keys into existing record rather than overwrite
-						if (fname === 'settings.json') {
-							try {
-								var srcArr = JSON.parse(srcData);
-								var srcSettings = Array.isArray(srcArr) && srcArr.length > 0 ? srcArr[0] : null;
-								if (!srcSettings) return;
-								var dstArr = JSON.parse(fs.readFileSync(dst, 'utf8'));
-								var dstSettings = Array.isArray(dstArr) && dstArr.length > 0 ? dstArr[0] : {"_id":"0"};
-								var merged = false;
-								for (var key in srcSettings) {
-									if (key !== '_id' && !(key in dstSettings)) {
-										dstSettings[key] = srcSettings[key];
-										merged = true;
-									}
-								}
-								if (merged) {
-									fs.writeFileSync(dst, JSON.stringify([dstSettings], null, 2), 'utf8');
-									console.log('Merged settings from ' + oldDir);
-								}
-							} catch(e) { console.warn('Settings merge failed for ' + oldDir + ': ' + e.message); }
-							return;
-						}
-						// For array-based files, only migrate if destination is empty/default
-						var dstData = fs.readFileSync(dst, 'utf8').trim();
-						if (dstData === '[]' || (dstData.startsWith('[') && JSON.parse(dstData).length === 0)) {
-							var srcParsed = JSON.parse(srcData);
-							if (Array.isArray(srcParsed) && srcParsed.length > 0) {
-								fs.writeFileSync(dst, srcData, 'utf8');
-								console.log('Migrated ' + fname + ' from ' + oldDir + ' (' + srcParsed.length + ' records)');
-							}
-						}
-					} catch(e) {
-						console.warn('Migration warning for ' + fname + ' from ' + oldDir + ': ' + e.message);
-					}
-				});
-			});
-			// Migrate cached packages from per-user AppData locations to app-local packages/
-			var newPkgStore = path.join(LOCAL_DATA_DIR, 'packages');
-			perUserLocations.forEach(function(legacyDir) {
-				var legacyPkgStore = path.join(legacyDir, 'packages');
-				if (fs.existsSync(legacyPkgStore) && legacyPkgStore !== newPkgStore) {
-					try {
-						var legacyLibDirs = fs.readdirSync(legacyPkgStore);
-						legacyLibDirs.forEach(function(libDir) {
-							var srcLib = path.join(legacyPkgStore, libDir);
-							if (!fs.statSync(srcLib).isDirectory()) return;
-							var dstLib = path.join(newPkgStore, libDir);
-							if (!fs.existsSync(dstLib)) fs.mkdirSync(dstLib, { recursive: true });
-							fs.readdirSync(srcLib).forEach(function(pkgFile) {
-								var srcPkg = path.join(srcLib, pkgFile);
-								var dstPkg = path.join(dstLib, pkgFile);
-								if (!fs.existsSync(dstPkg) && pkgFile.toLowerCase().endsWith('.hxlibpkg')) {
-									fs.copyFileSync(srcPkg, dstPkg);
-									console.log('Migrated package from user profile: ' + libDir + '/' + pkgFile);
-								}
-							});
-						});
-					} catch(e) {
-						console.warn('Per-user package migration warning: ' + e.message);
-					}
-				}
-			});
-			// Migrate old LibraryPackages from HAMILTON\Library to local/packages/
-			var oldPkgStore = path.join("C:\\Program Files (x86)\\HAMILTON\\Library", "LibraryPackages");
-			if (fs.existsSync(oldPkgStore) && oldPkgStore !== newPkgStore) {
-				try {
-					var libDirs = fs.readdirSync(oldPkgStore);
-					libDirs.forEach(function(libDir) {
-						var srcLib = path.join(oldPkgStore, libDir);
-						if (!fs.statSync(srcLib).isDirectory()) return;
-						var dstLib = path.join(newPkgStore, libDir);
-						if (!fs.existsSync(dstLib)) fs.mkdirSync(dstLib, { recursive: true });
-						fs.readdirSync(srcLib).forEach(function(pkgFile) {
-							var srcPkg = path.join(srcLib, pkgFile);
-							var dstPkg = path.join(dstLib, pkgFile);
-							if (!fs.existsSync(dstPkg) && pkgFile.toLowerCase().endsWith('.hxlibpkg')) {
-								fs.copyFileSync(srcPkg, dstPkg);
-								console.log('Migrated package: ' + libDir + '/' + pkgFile);
-							}
-						});
-					});
-				} catch(e) {
-					console.warn('Package store migration warning: ' + e.message);
-				}
-			}
-		})();
-
-		// Re-connect settings DB after migration (picks up any merged keys)
-		db_settings = db.connect(LOCAL_DATA_DIR, ['settings']);
-
-		// Set USER_DATA_DIR to LOCAL_DATA_DIR for backward compatibility with existing code
 		var USER_DATA_DIR = LOCAL_DATA_DIR;
 
 		// Connect data databases to the local/ directory
@@ -1532,6 +1403,71 @@
 			});
 		}
 
+		/**
+		 * Show a styled alert modal (replaces native alert). Returns a Promise that resolves when dismissed.
+		 * @param {string} title - Modal title text
+		 * @param {string} message - Body message text (newlines converted to line breaks)
+		 * @param {Object} [opts] - Options: iconClass ('fa-info-circle'|'fa-exclamation-circle'|'fa-exclamation-triangle'|'fa-check-circle'), iconStyle ('app-alert-icon-error'|'app-alert-icon-warning'|'app-alert-icon-success'|'')
+		 */
+		function showAppAlert(title, message, opts) {
+			opts = opts || {};
+			return new Promise(function(resolve) {
+				var $m = $("#appAlertModal");
+				$m.find(".app-alert-title").text(title);
+				$m.find(".app-alert-message").text(message);
+				var iconCls = sanitizeCssClass(opts.iconClass || 'fa-info-circle');
+				var iconStyle = sanitizeCssClass(opts.iconStyle || '');
+				$m.find(".app-alert-icon").attr('class', 'fas ' + iconCls + ' fa-2x app-alert-icon ' + iconStyle);
+				$m.off('hidden.bs.modal.appalert').on('hidden.bs.modal.appalert', function() {
+					$m.off('hidden.bs.modal.appalert');
+					resolve();
+				});
+				$m.modal('show');
+			});
+		}
+
+		/**
+		 * Show a styled prompt modal (replaces native prompt). Returns Promise<string|null>.
+		 * @param {string} title - Modal title text
+		 * @param {string} message - Body message text
+		 * @param {Object} [opts] - Options: defaultValue, iconClass, placeholder
+		 */
+		function showAppPrompt(title, message, opts) {
+			opts = opts || {};
+			return new Promise(function(resolve) {
+				var $m = $("#appPromptModal");
+				$m.find(".app-prompt-title").text(title);
+				$m.find(".app-prompt-message").text(message);
+				var $input = $m.find(".app-prompt-input");
+				$input.val(opts.defaultValue || '');
+				$input.attr('placeholder', opts.placeholder || '');
+				var iconCls = sanitizeCssClass(opts.iconClass || 'fa-edit');
+				$m.find(".app-prompt-icon").attr('class', 'fas ' + iconCls + ' fa-2x app-prompt-icon');
+				$m.data('resolved', false);
+				var $okBtn = $m.find(".app-prompt-ok-btn");
+				$okBtn.off('click.appprompt').on('click.appprompt', function() {
+					$m.data('resolved', true);
+					$m.modal('hide');
+					resolve($input.val());
+				});
+				$m.find(".app-prompt-cancel-btn, .app-prompt-cancel-x").off('click.appprompt').on('click.appprompt', function() {
+					$m.data('resolved', true);
+					$m.modal('hide');
+					resolve(null);
+				});
+				$input.off('keydown.appprompt').on('keydown.appprompt', function(e) {
+					if (e.which === 13) { $okBtn.trigger('click'); }
+				});
+				$m.off('hidden.bs.modal.appprompt').on('hidden.bs.modal.appprompt', function() {
+					if (!$m.data('resolved')) resolve(null);
+				});
+				$m.off('shown.bs.modal.appprompt').on('shown.bs.modal.appprompt', function() {
+					$input.focus();
+				});
+				$m.modal('show');
+			});
+		}
+
 		/** Check if a library ID belongs to a system library */
 		function isSystemLibrary(libId) {
 			if (!libId) return false;
@@ -1853,7 +1789,7 @@
 				var cached = listCachedVersions(libName);
 				if (cached.length === 0) {
 					var msg = 'No backup package found for system library "' + libName + '".';
-					if (!silent) alert(msg);
+					if (!silent) showAppAlert('Repair Failed', msg, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return { success: false, error: msg };
 				}
 
@@ -1866,7 +1802,7 @@
 					zip = new AdmZip(zipBuf);
 				} catch(e) {
 					var msg2 = 'Failed to read backup package: ' + e.message;
-					if (!silent) alert(msg2);
+					if (!silent) showAppAlert('Repair Failed', msg2, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return { success: false, error: msg2 };
 				}
 
@@ -1874,14 +1810,14 @@
 				var sigResult = verifyPackageSignature(zip);
 				if (sigResult.signed && !sigResult.valid) {
 					var msg3 = 'Backup package signature verification FAILED.\nThe backup package itself may be corrupted.\n\n' + sigResult.errors.join('\n');
-					if (!silent) alert(msg3);
+					if (!silent) showAppAlert('Signature Verification Failed', msg3, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return { success: false, error: 'Backup package signature failed' };
 				}
 
 				var manifestEntry = zip.getEntry('manifest.json');
 				if (!manifestEntry) {
 					var msg4 = 'Backup package is invalid (no manifest.json).';
-					if (!silent) alert(msg4);
+					if (!silent) showAppAlert('Invalid Package', msg4, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return { success: false, error: msg4 };
 				}
 
@@ -1934,7 +1870,7 @@
 
 			} catch(e) {
 				var errMsg = 'System library repair failed: ' + e.message;
-				if (!silent) alert(errMsg);
+				if (!silent) showAppAlert('Notice', errMsg, { iconClass: 'fa-info-circle' });
 				return { success: false, error: errMsg };
 			}
 		}
@@ -2289,7 +2225,7 @@
 			if (fs.existsSync(chmPath)) {
 				nw.Shell.openItem(chmPath);
 			} else {
-				alert('Help file not found: ' + chmPath);
+				showAppAlert('Error', 'Help file not found: ' + chmPath, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		});
 
@@ -3019,9 +2955,9 @@
 				if (savePath) {
 					try {
 						fs.writeFileSync(savePath, csv, 'utf8');
-						alert('Event history exported to:\n' + savePath);
+						showAppAlert('Success', 'Event history exported to:\n' + savePath, { iconClass: 'fa-check-circle', iconStyle: 'app-alert-icon-success' });
 					} catch(ex) {
-						alert('Could not save CSV: ' + ex.message);
+						showAppAlert('Error', 'Could not save CSV: ' + ex.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					}
 				}
 				$(this).val('');
@@ -4783,7 +4719,7 @@
 						var reason = shared.isReservedGroupName(groupName)
 							? 'The group name "' + groupName + '" is reserved and cannot be used.'
 							: 'Group names can only contain letters, numbers, spaces, dashes, and underscores.';
-						alert(reason + ' Please choose a different name.');
+						showAppAlert('Validation', reason + ' Please choose a different name.', { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 						$('#editModal .txt-linkName').css({ "border": "1px solid red", "background": "#FFCECE" });
 						e.preventDefault();
 						return;
@@ -5564,7 +5500,7 @@
 			bool_treeChanged = true;
 			} catch(e) {
 				console.error('saveTree failed: ' + e.message);
-				alert('Error saving navigation tree. Your changes may not have been saved.\n\n' + e.message);
+				showAppAlert('Error', 'Error saving navigation tree. Your changes may not have been saved.\n\n' + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		}
 
@@ -5686,7 +5622,7 @@
 			// Prevent deletion of the protected OEM group
 			var grp = getGroupById(id);
 			if (grp && grp["protected"]) {
-				alert('The "' + grp.name + '" group is protected and cannot be deleted.');
+				showAppAlert('Error', 'The "' + grp.name + '" group is protected and cannot be deleted.', { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			confirmDeleteModal(id, "group");
@@ -6583,7 +6519,7 @@
 			$(this).val('');
 			if (!filePath) return;
 			if (!fs.existsSync(filePath) || path.extname(filePath).toLowerCase() !== '.exe') {
-				alert('Please select a valid .exe file.');
+				showAppAlert('Validation', 'Please select a valid .exe file.', { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			pkg_installerFilePath = filePath;
@@ -6614,12 +6550,12 @@
 			try {
 				// Validate it's a readable image file
 				if (!fs.existsSync(filePath)) {
-					alert("File not found: " + filePath);
+					showAppAlert('Error', "File not found: " + filePath, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 				var stats = fs.statSync(filePath);
 				if (stats.size > 2 * 1024 * 1024) {
-					alert("Image file is too large (max 2 MB).");
+					showAppAlert('Warning', "Image file is too large (max 2 MB).", { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 					return;
 				}
 
@@ -6636,7 +6572,7 @@
 				$("#pkg-icon-name").text(path.basename(filePath));
 				$("#pkg-removeIcon").show();
 			} catch(e) {
-				alert("Error loading image: " + e.message);
+				showAppAlert('Error', "Error loading image: " + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		});
 
@@ -6672,16 +6608,16 @@
 			if (!filePath) return;
 
 			if (path.extname(filePath).toLowerCase() !== '.pdf') {
-				alert("Only PDF files are allowed for release notes.");
+				showAppAlert('Validation', "Only PDF files are allowed for release notes.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			if (!fs.existsSync(filePath)) {
-				alert("File not found: " + filePath);
+				showAppAlert('Error', "File not found: " + filePath, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			var stats = fs.statSync(filePath);
 			if (stats.size > 10 * 1024 * 1024) {
-				alert("PDF file is too large (max 10 MB).");
+				showAppAlert('Warning', "PDF file is too large (max 10 MB).", { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 				return;
 			}
 
@@ -6918,7 +6854,7 @@
 						);
 					}
 				} catch(e) {
-					alert("Error reading folder: " + e.message);
+					showAppAlert('Error', "Error reading folder: " + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				}
 			}
 			$(this).val('');
@@ -7033,7 +6969,7 @@
 						);
 					}
 				} catch(e) {
-					alert("Error reading folder: " + e.message);
+					showAppAlert('Error', "Error reading folder: " + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				}
 			}
 			$(this).val('');
@@ -7105,7 +7041,7 @@
 					});
 					pkgUpdateLabwareFileList();
 				} catch(e) {
-					alert("Error reading folder: " + e.message);
+					showAppAlert('Error', "Error reading folder: " + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				}
 			}
 			$(this).val('');
@@ -7146,7 +7082,7 @@
 					});
 					pkgUpdateBinFileList();
 				} catch(e) {
-					alert("Error reading folder: " + e.message);
+					showAppAlert('Error', "Error reading folder: " + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				}
 			}
 			$(this).val('');
@@ -8738,7 +8674,7 @@
 		$(document).on("click", "#pkg-create-wrapper", function() {
 			if ($("#pkg-create").prop("disabled")) {
 				var reason = $(this).attr("title") || 'Cannot create package.';
-				alert(reason);
+				showAppAlert('Notice', reason, { iconClass: 'fa-info-circle' });
 				$("#pkg-version").focus();
 			}
 		});
@@ -8830,28 +8766,28 @@
 
 			var authorCheck = shared.isValidAuthorName(author);
 			if (!authorCheck.valid) {
-				alert(authorCheck.reason);
+				showAppAlert('Notice', authorCheck.reason, { iconClass: 'fa-info-circle' });
 				$("#pkg-author").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
 			var orgCheck = shared.isValidOrganizationName(organization);
 			if (!orgCheck.valid) {
-				alert(orgCheck.reason);
+				showAppAlert('Notice', orgCheck.reason, { iconClass: 'fa-info-circle' });
 				$("#pkg-organization").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
 			if (!version) {
-				alert("Library Version Number is required.");
+				showAppAlert('Validation', "Library Version Number is required.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				$("#pkg-version").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
 			if (!venusCompat) {
-				alert("VENUS Compatibility is required.");
+				showAppAlert('Validation', "VENUS Compatibility is required.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				$("#pkg-venus-compat").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
 			if (!description) {
-				alert("Description is required.");
+				showAppAlert('Validation', "Description is required.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				$("#pkg-description").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
@@ -8861,14 +8797,14 @@
 			if (githubUrl) {
 				var ghResult = shared.validateGitHubRepoUrl(githubUrl);
 				if (!ghResult.valid) {
-					alert("Invalid GitHub Repository URL:\n" + ghResult.reason);
+					showAppAlert('Error', "Invalid GitHub Repository URL:\n" + ghResult.reason, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					$("#pkg-github-url").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 					return;
 				}
 			}
 
 			if (pkg_libraryFiles.length === 0) {
-				alert("Please add at least one library file.");
+				showAppAlert('Validation', "Please add at least one library file.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 
@@ -8878,7 +8814,7 @@
 				var restrictedFound = allPkgFiles.filter(function(f) { return shared.isRestrictedFileExtension(f); });
 				if (restrictedFound.length > 0) {
 					var names = restrictedFound.map(function(f) { return path.basename(f); }).join('\n');
-					alert("Cannot build package: the following files have restricted file extensions that are not permitted in library packages:\n\n" + names);
+					showAppAlert('Error', "Cannot build package: the following files have restricted file extensions that are not permitted in library packages:\n\n" + names, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 			}
@@ -8886,19 +8822,19 @@
 			// Verify all files still exist
 			for (var i = 0; i < pkg_libraryFiles.length; i++) {
 				if (!fs.existsSync(pkg_libraryFiles[i])) {
-					alert("Library file not found:\n" + pkg_libraryFiles[i]);
+					showAppAlert('Error', "Library file not found:\n" + pkg_libraryFiles[i], { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 			}
 			for (var i = 0; i < pkg_demoMethodFiles.length; i++) {
 				if (!fs.existsSync(pkg_demoMethodFiles[i])) {
-					alert("Demo method file not found:\n" + pkg_demoMethodFiles[i]);
+					showAppAlert('Error', "Demo method file not found:\n" + pkg_demoMethodFiles[i], { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 			}
 			for (var i = 0; i < pkg_labwareFiles.length; i++) {
 				if (!fs.existsSync(pkg_labwareFiles[i])) {
-					alert("Labware file not found:\n" + pkg_labwareFiles[i]);
+					showAppAlert('Error', "Labware file not found:\n" + pkg_labwareFiles[i], { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 			}
@@ -8916,7 +8852,7 @@
 			// Use library name from the detected field
 			var libName = $("#pkg-library-name").val().trim() || "Unknown";
 			if (!isValidLibraryName(libName)) {
-				alert('Invalid library name: "' + libName + '".\nLibrary names can only contain letters, numbers, spaces, dashes, and underscores.');
+				showAppAlert('Error', 'Invalid library name: "' + libName + '".\nLibrary names can only contain letters, numbers, spaces, dashes, and underscores.', { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				$("#pkg-library-name").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
@@ -8967,7 +8903,7 @@
 			if (subdir) {
 				var subdirCheck = shared.isValidSubdirPath(subdir);
 				if (!subdirCheck.valid) {
-					alert(subdirCheck.reason);
+					showAppAlert('Notice', subdirCheck.reason, { iconClass: 'fa-info-circle' });
 					return;
 				}
 			}
@@ -9448,7 +9384,7 @@
 				try {
 					shared.sanitizeManifestFilePaths(manifest);
 				} catch (e) {
-					alert('Package creation aborted:\n' + e.message);
+					showAppAlert('Error', 'Package creation aborted:\n' + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					pkgSetCreateEnabled(true);
 					return;
 				}
@@ -9602,7 +9538,7 @@
 
 			} catch(e) {
 				pkgProgressHide();
-				alert("Error creating package:\n" + e.message);
+				showAppAlert('Error', "Error creating package:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			} finally {
 				_pkgCreateInProgress = false;
 			}
@@ -10636,9 +10572,9 @@
 				refreshSettingsSigningStatus();
 				refreshSigningUI();
 
-				alert('Key pair generated successfully!\n\nPrivate Key: ' + keyPath + '\nCertificate: ' + certPath + '\n\nConfigured as the default signing key.\n\nIMPORTANT: Keep the private key (.key.pem) file secure. Never share it. Only distribute the certificate (.cert.json) file.');
+				showAppAlert('Success', 'Key pair generated successfully!\n\nPrivate Key: ' + keyPath + '\nCertificate: ' + certPath + '\n\nConfigured as the default signing key.\n\nIMPORTANT: Keep the private key (.key.pem) file secure. Never share it. Only distribute the certificate (.cert.json) file.', { iconClass: 'fa-check-circle', iconStyle: 'app-alert-icon-success' });
 			} catch(e) {
-				alert('Error generating key pair:\n' + e.message);
+				showAppAlert('Error', 'Error generating key pair:\n' + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		});
 
@@ -11772,14 +11708,14 @@
 				var zip = new AdmZip(zipBuffer);
 				var manifestEntry = zip.getEntry("manifest.json");
 				if (!manifestEntry) {
-					alert("Cached package is corrupt: manifest.json not found.");
+					showAppAlert('Error', "Cached package is corrupt: manifest.json not found.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 				var manifest = JSON.parse(zip.readAsText(manifestEntry));
 
 				var rLibName = manifest.library_name || libName;
 				if (!isValidLibraryName(rLibName)) {
-					alert('Invalid library name in cached package: "' + rLibName + '".\nRollback cancelled.');
+					showAppAlert('Error', 'Invalid library name in cached package: "' + rLibName + '".\nRollback cancelled.', { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 
@@ -12096,11 +12032,11 @@
 				} catch(_) { /* non-critical */ }
 
 				if (comDlls.length > 0) {
-					alert('NOTE: This library has COM DLLs that may need re-registration:\n\n' + comDlls.join(', ') + '\n\nRe-import via the GUI for automatic 32-bit COM registration, or run the 32-bit RegAsm manually:\n  C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>\n\nIMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.');
+					showAppAlert('Warning', 'NOTE: This library has COM DLLs that may need re-registration:\n\n' + comDlls.join(', ') + '\n\nRe-import via the GUI for automatic 32-bit COM registration, or run the 32-bit RegAsm manually:\n  C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /codebase <dll>\n\nIMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.', { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 				}
 
 			} catch(e) {
-				alert("Error rolling back:\n" + e.message);
+				showAppAlert('Error', "Error rolling back:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		});
 
@@ -12417,11 +12353,11 @@
 			if (!libId) return;
 			// Block export for system libraries
 			if (isSystemLibrary(libId)) {
-				alert("System libraries are read-only and cannot be exported.");
+				showAppAlert('Error', "System libraries are read-only and cannot be exported.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
-			if (!lib) { alert("Library not found."); return; }
+			if (!lib) { showAppAlert('Error', "Library not found.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' }); return; }
 
 			var libName = lib.library_name || "Unknown";
 
@@ -12476,7 +12412,7 @@
 			$("#exportChoiceModal").modal("hide");
 
 			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
-			if (!lib) { alert("Library not found."); return; }
+			if (!lib) { showAppAlert('Error', "Library not found.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' }); return; }
 			var libName = lib.library_name || "Unknown";
 
 			if (choice === "single") {
@@ -12517,7 +12453,7 @@
 		function exportSingleLibrary(libId, savePath, useCodeSigning) {
 			try {
 				var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
-				if (!lib) { alert("Library not found."); return; }
+				if (!lib) { showAppAlert('Error', "Library not found.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' }); return; }
 
 				var libName = lib.library_name || "Unknown";
 				var libBasePath = lib.lib_install_path || "";
@@ -12535,7 +12471,7 @@
 				for (var i = 0; i < libraryFiles.length; i++) {
 					var fp = path.join(libBasePath, libraryFiles[i]);
 					if (!fs.existsSync(fp)) {
-						alert("Library file not found:\n" + fp + "\n\nExport aborted.");
+						showAppAlert('Error', "Library file not found:\n" + fp + "\n\nExport aborted.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 						return;
 					}
 				}
@@ -12593,7 +12529,7 @@
 				try {
 					shared.sanitizeManifestFilePaths(manifest);
 				} catch (e) {
-					alert('Export aborted: unsafe file path detected.\n' + e.message);
+					showAppAlert('Error', 'Export aborted: unsafe file path detected.\n' + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 
@@ -12676,7 +12612,7 @@
 				});
 
 			} catch(e) {
-				alert("Error exporting library:\n" + e.message);
+				showAppAlert('Error', "Error exporting library:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		}
 
@@ -12868,7 +12804,7 @@
 				});
 
 				if (exportedLibs.length === 0) {
-					alert("No libraries could be exported.\n\n" + errors.join("\n"));
+					showAppAlert('Error', "No libraries could be exported.\n\n" + errors.join("\n"), { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 
@@ -12937,7 +12873,7 @@
 				});
 
 			} catch(e) {
-				alert("Error exporting library with dependencies:\n" + e.message);
+				showAppAlert('Error', "Error exporting library with dependencies:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		}
 
@@ -13065,7 +13001,7 @@
 				selectedIds.push($(this).attr("data-lib-id"));
 			});
 			if (selectedIds.length === 0) {
-				alert("Please select at least one library to export.");
+				showAppAlert('Validation', "Please select at least one library to export.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			// Suggest a filename
@@ -13231,7 +13167,7 @@
 				});
 
 				if (exportedLibs.length === 0) {
-					alert("No libraries could be exported.\n\n" + errors.join("\n"));
+					showAppAlert('Error', "No libraries could be exported.\n\n" + errors.join("\n"), { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 
@@ -13293,7 +13229,7 @@
 				});
 
 			} catch(e) {
-				alert("Error creating archive:\n" + e.message);
+				showAppAlert('Error', "Error creating archive:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		}
 
@@ -13311,13 +13247,13 @@
 			}
 
 			if (_isImporting) {
-				alert("An import is already in progress. Please wait for it to complete.");
+				showAppAlert('Warning', "An import is already in progress. Please wait for it to complete.", { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 				return;
 			}
 			_isImporting = true;
 			try {
 				if (!fs.existsSync(archivePath)) {
-					alert("Archive file not found:\n" + archivePath);
+					showAppAlert('Error', "Archive file not found:\n" + archivePath, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 
@@ -13335,7 +13271,7 @@
 				});
 
 				if (pkgEntries.length === 0) {
-					alert("No .hxlibpkg packages found in this archive.\n\nThe .hxlibarch file appears to be empty or invalid.");
+					showAppAlert('Error', "No .hxlibpkg packages found in this archive.\n\nThe .hxlibarch file appears to be empty or invalid.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 
@@ -13393,7 +13329,7 @@
 						});
 						// If everything is a duplicate and user chose to skip, nothing to install
 						if (Object.keys(archSkipIndices).length >= pkgEntries.length) {
-							alert("All libraries in this archive are already installed. No changes were made.");
+							showAppAlert('Warning', "All libraries in this archive are already installed. No changes were made.", { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 							return;
 						}
 					}
@@ -13825,7 +13761,7 @@
 				fitImporterHeight();
 
 			} catch(e) {
-				alert("Error importing archive:\n" + e.message);
+				showAppAlert('Error', "Error importing archive:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			} finally {
 				_isImporting = false;
 			}
@@ -14154,7 +14090,7 @@
 			if (!libId) return;
 			// Block delete for system libraries
 			if (isSystemLibrary(libId)) {
-				alert("System libraries are read-only and cannot be deleted.");
+				showAppAlert('Error', "System libraries are read-only and cannot be deleted.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
@@ -14525,7 +14461,7 @@
 			}
 
 			if (_isImporting) {
-				alert("An import is already in progress. Please wait for it to complete.");
+				showAppAlert('Warning', "An import is already in progress. Please wait for it to complete.", { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 				return;
 			}
 			_isImporting = true;
@@ -14633,7 +14569,7 @@
 					$bm.modal("hide");
 					var errMsg = "No valid packages found to import.";
 					if (parseErrors.length > 0) errMsg += "\n\n" + parseErrors.join("\n");
-					alert(errMsg);
+					showAppAlert('Notice', errMsg, { iconClass: 'fa-info-circle' });
 					return;
 				}
 
@@ -14712,7 +14648,7 @@
 				var sameVersionCount = Object.keys(batchSameVersionIndices).length;
 				if (sameVersionCount > 0) {
 					var sameVerNames = pkgInfos.filter(function(_, idx) { return batchSameVersionIndices[idx]; }).map(function(p) { return p.libName; });
-					alert(sameVersionCount + ' package' + (sameVersionCount !== 1 ? 's were' : ' was') + ' skipped because the same version is already installed:\n\n' + sameVerNames.join('\n'));
+					showAppAlert('Warning', sameVersionCount + ' package' + (sameVersionCount !== 1 ? 's were' : ' was') + ' skipped because the same version is already installed:\n\n' + sameVerNames.join('\n'), { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 				}
 
 				if (batchDuplicates.length > 0) {
@@ -14726,7 +14662,7 @@
 					var remaining = pkgInfos.filter(function(_, idx) { return !batchSkipIndices[idx]; });
 					if (remaining.length === 0 && archivePaths.length === 0) {
 						$bm.modal("hide");
-						alert("All selected packages are already installed. No changes were made.");
+						showAppAlert('Warning', "All selected packages are already installed. No changes were made.", { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 						return;
 					}
 				}
@@ -15134,7 +15070,7 @@
 
 			} catch(e) {
 				$bm.modal("hide");
-				alert("Error during batch import:\n" + e.message);
+				showAppAlert('Error', "Error during batch import:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			} finally {
 				_isImporting = false;
 			}
@@ -15150,7 +15086,7 @@
 			}
 
 			if (_isImporting) {
-				alert("An import is already in progress. Please wait for it to complete.");
+				showAppAlert('Warning', "An import is already in progress. Please wait for it to complete.", { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 				return;
 			}
 			_isImporting = true;
@@ -15160,7 +15096,7 @@
 				var zip = new AdmZip(zipBuffer);
 				var manifestEntry = zip.getEntry("manifest.json");
 				if (!manifestEntry) {
-					alert("Invalid package: manifest.json not found.");
+					showAppAlert('Error', "Invalid package: manifest.json not found.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					_isImporting = false;
 					return;
 				}
@@ -15184,7 +15120,7 @@
 				if (importAuthor) {
 					var impAuthorCheck = shared.isValidAuthorName(importAuthor);
 					if (!impAuthorCheck.valid) {
-						alert("Invalid package: " + impAuthorCheck.reason);
+						showAppAlert('Error', "Invalid package: " + impAuthorCheck.reason, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 						_isImporting = false;
 						return;
 					}
@@ -15192,7 +15128,7 @@
 				if (importOrg) {
 					var impOrgCheck = shared.isValidOrganizationName(importOrg);
 					if (!impOrgCheck.valid) {
-						alert("Invalid package: " + impOrgCheck.reason);
+						showAppAlert('Error', "Invalid package: " + impOrgCheck.reason, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 						_isImporting = false;
 						return;
 					}
@@ -15200,7 +15136,7 @@
 
 				var libName = manifest.library_name || "Unknown";
 				if (!isValidLibraryName(libName)) {
-					alert("Invalid library name: \"" + libName + "\".\nLibrary names cannot contain path separators, '..', or special characters.");
+					showAppAlert('Error', "Invalid library name: \"" + libName + "\".\nLibrary names cannot contain path separators, '..', or special characters.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					_isImporting = false;
 					return;
 				}
@@ -15208,7 +15144,7 @@
 				// Validate all file paths in manifest are safe relative paths
 				var pathValidation = shared.validateManifestPaths(manifest);
 				if (!pathValidation.valid) {
-					alert("Invalid package: unsafe file paths detected.\n\n" + pathValidation.errors.join("\n"));
+					showAppAlert('Error', "Invalid package: unsafe file paths detected.\n\n" + pathValidation.errors.join("\n"), { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					_isImporting = false;
 					return;
 				}
@@ -15589,7 +15525,7 @@
 				$modal.modal("show");
 
 			} catch(e) {
-				alert("Error reading package:\n" + e.message);
+				showAppAlert('Error', "Error reading package:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				_isImporting = false;
 			}
 			// NOTE: _isImporting stays true while the preview modal is open.
@@ -16001,7 +15937,7 @@
 				} catch(_) { /* non-critical */ }
 
 			} catch(e) {
-				alert("Error installing package:\n" + e.message);
+				showAppAlert('Error', "Error installing package:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			} finally {
 				_isImporting = false;
 				$confirmBtn.prop('disabled', false);
@@ -16033,7 +15969,7 @@
 					fs.mkdirSync(logDir, { recursive: true });
 				}
 			} catch(mkdirErr) {
-				alert("Error creating log directory:\n" + logDir + "\n\n" + mkdirErr.message);
+				showAppAlert('Error', "Error creating log directory:\n" + logDir + "\n\n" + mkdirErr.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			var unixTime = Math.floor(Date.now() / 1000);
@@ -16365,7 +16301,7 @@
 				$am.modal("show");
 
 			} catch(e) {
-				alert("Error generating audit log:\n" + e.message);
+				showAppAlert('Error', "Error generating audit log:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				console.error("Audit log error:", e);
 			}
 		}
@@ -16694,12 +16630,12 @@
 			if (!libId) return;
 			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
 			if (!lib) {
-				alert("Library record not found.");
+				showAppAlert('Error', "Library record not found.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			var comDlls = lib.com_register_dlls || [];
 			if (comDlls.length === 0) {
-				alert("No COM DLLs configured for this library.");
+				showAppAlert('Warning', "No COM DLLs configured for this library.", { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 				return;
 			}
 			var libPath = lib.lib_install_path || "";
@@ -16709,7 +16645,7 @@
 			// Verify the DLL files exist before attempting registration
 			var missing = dllPaths.filter(function(p) { return !fs.existsSync(p); });
 			if (missing.length > 0) {
-				alert("The following COM DLL files are missing and cannot be registered:\n\n" + missing.join("\n") + "\n\nRepair the library first to restore the files.");
+				showAppAlert('Error', "The following COM DLL files are missing and cannot be registered:\n\n" + missing.join("\n") + "\n\nRepair the library first to restore the files.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			if (!confirm("Re-register " + comDlls.length + " COM DLL(s) for \"" + (lib.library_name || "Unknown") + "\"?\n\n" + comDlls.join("\n") + "\n\nThis requires administrator privileges (UAC prompt).")) return;
@@ -16717,13 +16653,13 @@
 			if (result.allSuccess) {
 				// Update the DB record
 				db_installed_libs.installed_libs.update({"_id": libId}, { com_registered: true, com_warning: false }, { multi: false, upsert: false });
-				alert("COM registration successful for " + comDlls.length + " DLL(s).");
+				showAppAlert('Success', "COM registration successful for " + comDlls.length + " DLL(s).", { iconClass: 'fa-check-circle', iconStyle: 'app-alert-icon-success' });
 				repairPopulateModal();
 			} else {
 				var failedDlls = result.results.filter(function(r) { return !r.success; });
 				var errMsgs = failedDlls.map(function(r) { return path.basename(r.dll) + ": " + (r.error || "Unknown error"); });
 				db_installed_libs.installed_libs.update({"_id": libId}, { com_registered: false, com_warning: true }, { multi: false, upsert: false });
-				alert("COM registration failed for " + failedDlls.length + " of " + comDlls.length + " DLL(s).\n\n" + errMsgs.join("\n"));
+				showAppAlert('Error', "COM registration failed for " + failedDlls.length + " of " + comDlls.length + " DLL(s).\n\n" + errMsgs.join("\n"), { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		});
 
@@ -16755,7 +16691,7 @@
 			});
 			var msg = repaired + " of " + names.length + " librar" + (names.length === 1 ? "y" : "ies") + " repaired.";
 			if (errors.length > 0) msg += "\n\nErrors:\n" + errors.join("\n");
-			alert(msg);
+			showAppAlert('Notice', msg, { iconClass: 'fa-info-circle' });
 			repairPopulateModal();
 		});
 
@@ -16771,7 +16707,7 @@
 				var cached = listCachedVersions(libName);
 				if (cached.length === 0) {
 					var msg = 'No cached packages found for "' + libName + '".';
-					if (!silent) alert(msg);
+					if (!silent) showAppAlert('Notice', msg, { iconClass: 'fa-info-circle' });
 					return { success: false, error: msg };
 				}
 
@@ -16784,7 +16720,7 @@
 					zip = new AdmZip(zipBuf);
 				} catch(e) {
 					var msg2 = 'Failed to read cached package: ' + e.message;
-					if (!silent) alert(msg2);
+					if (!silent) showAppAlert('Notice', msg2, { iconClass: 'fa-info-circle' });
 					return { success: false, error: msg2 };
 				}
 
@@ -16792,14 +16728,14 @@
 				var sigResult = verifyPackageSignature(zip);
 				if (sigResult.signed && !sigResult.valid) {
 					var msg3 = 'Cached package signature verification FAILED.\nThe cached package itself may be corrupted.\n\n' + sigResult.errors.join('\n');
-					if (!silent) alert(msg3);
+					if (!silent) showAppAlert('Notice', msg3, { iconClass: 'fa-info-circle' });
 					return { success: false, error: 'Cached package signature failed' };
 				}
 
 				var manifestEntry = zip.getEntry('manifest.json');
 				if (!manifestEntry) {
 					var msg4 = 'Cached package is invalid (no manifest.json).';
-					if (!silent) alert(msg4);
+					if (!silent) showAppAlert('Notice', msg4, { iconClass: 'fa-info-circle' });
 					return { success: false, error: msg4 };
 				}
 				var manifest = JSON.parse(zip.readAsText(manifestEntry));
@@ -16808,7 +16744,7 @@
 				var cachedLibName = manifest.library_name || libName;
 				if (!isValidLibraryName(cachedLibName)) {
 					var msg4b = 'Invalid library name in cached package: "' + cachedLibName + '".';
-					if (!silent) alert(msg4b);
+					if (!silent) showAppAlert('Notice', msg4b, { iconClass: 'fa-info-circle' });
 					return { success: false, error: msg4b };
 				}
 
@@ -16816,7 +16752,7 @@
 				var lib = db_installed_libs.installed_libs.findOne({ library_name: libName });
 				if (!lib) {
 					var msg5 = 'Library "' + libName + '" not found in database.';
-					if (!silent) alert(msg5);
+					if (!silent) showAppAlert('Notice', msg5, { iconClass: 'fa-info-circle' });
 					return { success: false, error: msg5 };
 				}
 
@@ -16824,7 +16760,7 @@
 				var demoDestDir = lib.demo_install_path || '';
 				if (!libDestDir) {
 					var msg6 = 'Library install path unknown.';
-					if (!silent) alert(msg6);
+					if (!silent) showAppAlert('Notice', msg6, { iconClass: 'fa-info-circle' });
 					return { success: false, error: msg6 };
 				}
 
@@ -16911,7 +16847,7 @@
 
 			} catch(e) {
 				var errMsg = 'Repair failed: ' + e.message;
-				if (!silent) alert(errMsg);
+				if (!silent) showAppAlert('Notice', errMsg, { iconClass: 'fa-info-circle' });
 				return { success: false, error: errMsg };
 			}
 		}
@@ -17457,7 +17393,7 @@
 		 */
 		function showUnsignedLibDetail(ulibId) {
 			var uLib = db_unsigned_libs.unsigned_libs.findOne({"_id": ulibId});
-			if (!uLib) { alert("Unsigned library not found."); return; }
+			if (!uLib) { showAppAlert('Error', "Unsigned library not found.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' }); return; }
 
 			var $modal = $("#unsignedLibDetailModal");
 			$modal.attr("data-ulib-id", ulibId);
@@ -17575,12 +17511,12 @@
 
 			try {
 				if (!fs.existsSync(filePath)) {
-					alert("File not found: " + filePath);
+					showAppAlert('Error', "File not found: " + filePath, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return;
 				}
 				var stats = fs.statSync(filePath);
 				if (stats.size > 2 * 1024 * 1024) {
-					alert("Image file is too large (max 2 MB).");
+					showAppAlert('Warning', "Image file is too large (max 2 MB).", { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 					return;
 				}
 
@@ -17597,7 +17533,7 @@
 				$("#ulib-icon-name").text(path.basename(filePath));
 				$("#ulib-removeIcon").show();
 			} catch(e) {
-				alert("Error loading image: " + e.message);
+				showAppAlert('Error', "Error loading image: " + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		});
 
@@ -17662,7 +17598,7 @@
 					ulibUpdateLibFileList();
 					ulibUpdateComWarning();
 				} catch(e) {
-					alert("Error reading folder: " + e.message);
+					showAppAlert('Error', "Error reading folder: " + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				}
 			}
 			$(this).val('');
@@ -17697,7 +17633,7 @@
 					});
 					ulibUpdateDemoFileList();
 				} catch(e) {
-					alert("Error reading folder: " + e.message);
+					showAppAlert('Error', "Error reading folder: " + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				}
 			}
 			$(this).val('');
@@ -17809,22 +17745,22 @@
 
 			// Validate author/organization length
 			if (author && author.length < shared.AUTHOR_MIN_LENGTH) {
-				alert("Author Name must be at least " + shared.AUTHOR_MIN_LENGTH + " characters.");
+				showAppAlert('Validation', "Author Name must be at least " + shared.AUTHOR_MIN_LENGTH + " characters.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				$("#ulib-author").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
 			if (author && author.length > shared.AUTHOR_MAX_LENGTH) {
-				alert("Author Name cannot exceed " + shared.AUTHOR_MAX_LENGTH + " characters.");
+				showAppAlert('Error', "Author Name cannot exceed " + shared.AUTHOR_MAX_LENGTH + " characters.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				$("#ulib-author").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
 			if (organization && organization.length < shared.AUTHOR_MIN_LENGTH) {
-				alert("Organization must be at least " + shared.AUTHOR_MIN_LENGTH + " characters.");
+				showAppAlert('Validation', "Organization must be at least " + shared.AUTHOR_MIN_LENGTH + " characters.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				$("#ulib-organization").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
 			if (organization && organization.length > shared.AUTHOR_MAX_LENGTH) {
-				alert("Organization cannot exceed " + shared.AUTHOR_MAX_LENGTH + " characters.");
+				showAppAlert('Error', "Organization cannot exceed " + shared.AUTHOR_MAX_LENGTH + " characters.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				$("#ulib-organization").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 				return;
 			}
@@ -17836,7 +17772,7 @@
 					if (pwOk) {
 						ulib_oemAuthorized = true;
 					} else {
-						alert("Cannot save: restricted OEM author/organization name requires authorization.");
+						showAppAlert('Error', "Cannot save: restricted OEM author/organization name requires authorization.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 						return;
 					}
 				}
@@ -17858,7 +17794,7 @@
 			if (githubUrl) {
 				var ghResult = shared.validateGitHubRepoUrl(githubUrl);
 				if (!ghResult.valid) {
-					alert("Invalid GitHub Repository URL:\n" + ghResult.reason);
+					showAppAlert('Error', "Invalid GitHub Repository URL:\n" + ghResult.reason, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					$("#ulib-github-url").focus().css({"border": "1px solid red", "background": "#FFCECE"});
 					return;
 				}
@@ -17948,7 +17884,7 @@
 			if (!$("#ulib-venus-compat").val().trim()) missingFields.push("VENUS Compatibility");
 			if (!$("#ulib-description").val().trim()) missingFields.push("Description");
 			if (missingFields.length > 0) {
-				alert("The following required fields are missing:\n\n" + missingFields.join("\n"));
+				showAppAlert('Error', "The following required fields are missing:\n\n" + missingFields.join("\n"), { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 
@@ -18035,7 +17971,7 @@
 			if (!$("#ulib-venus-compat").val().trim()) missingFields.push("VENUS Compatibility");
 			if (!$("#ulib-description").val().trim()) missingFields.push("Description");
 			if (missingFields.length > 0) {
-				alert("The following required fields are missing:\n\n" + missingFields.join("\n"));
+				showAppAlert('Error', "The following required fields are missing:\n\n" + missingFields.join("\n"), { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 
@@ -18075,12 +18011,12 @@
 			opts = opts || {};
 			try {
 				var uLib = db_unsigned_libs.unsigned_libs.findOne({"_id": ulibId});
-				if (!uLib) { alert("Unsigned library not found."); return false; }
+				if (!uLib) { showAppAlert('Error', "Unsigned library not found.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' }); return false; }
 
 				var libName = uLib.library_name || "Unknown";
 				var libDir = uLib.lib_base_path || '';
 				if (!libDir) {
-					alert('Cannot register "' + libName + '": library base path is missing.');
+					showAppAlert('Error', 'Cannot register "' + libName + '": library base path is missing.', { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 					return false;
 				}
 				var discoveredFiles = uLib.library_files || [];
@@ -18270,7 +18206,7 @@
 
 				return true;
 			} catch(e) {
-				alert("Error registering unsigned library:\n" + e.message);
+				showAppAlert('Error', "Error registering unsigned library:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return false;
 			}
 		}
@@ -18284,7 +18220,7 @@
 		async function exportUnsignedLibrary(ulibId, savePath) {
 			try {
 				var uLib = db_unsigned_libs.unsigned_libs.findOne({"_id": ulibId});
-				if (!uLib) { alert("Unsigned library not found."); return; }
+				if (!uLib) { showAppAlert('Error', "Unsigned library not found.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' }); return; }
 
 				var comDlls = uLib.com_register_dlls || [];
 
@@ -18303,7 +18239,7 @@
 				// Verify all library files exist
 				for (var i = 0; i < allLibPaths.length; i++) {
 					if (!fs.existsSync(allLibPaths[i])) {
-						alert("Library file not found:\n" + allLibPaths[i] + "\n\nExport aborted.");
+						showAppAlert('Error', "Library file not found:\n" + allLibPaths[i] + "\n\nExport aborted.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 						return;
 					}
 				}
@@ -18311,7 +18247,7 @@
 				// Verify demo method files exist
 				for (var d = 0; d < demoFiles.length; d++) {
 					if (!fs.existsSync(demoFiles[d])) {
-						alert("Demo method file not found:\n" + demoFiles[d] + "\n\nExport aborted.");
+						showAppAlert('Error', "Demo method file not found:\n" + demoFiles[d] + "\n\nExport aborted.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 						return;
 					}
 				}
@@ -18458,7 +18394,7 @@
 				$("#unsignedLibDetailModal").modal("hide");
 
 			} catch(e) {
-				alert("Error exporting unsigned library:\n" + e.message);
+				showAppAlert('Error', "Error exporting unsigned library:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		}
 
@@ -18604,7 +18540,7 @@
 			} catch (e) {
 				$modal.find(".hampkg-loading").addClass("d-none");
 				$modal.find(".hampkg-step-select").removeClass("d-none");
-				alert("Error reading package file:\n" + e.message);
+				showAppAlert('Error', "Error reading package file:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			}
 		}
 
@@ -18874,7 +18810,7 @@
 				if (droppedExt === '.pkg' || droppedExt === '.hampackage') {
 					hampkgLoadFile(droppedPath);
 				} else {
-					alert("Please drop a Hamilton VENUS .pkg or .hamPackage file.");
+					showAppAlert('Validation', "Please drop a Hamilton VENUS .pkg or .hamPackage file.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				}
 			}
 		});
@@ -19017,10 +18953,10 @@
 				var installToRoot = false;
 
 				// Validate required fields
-				if (!libName) { alert("Library name is required."); $btn.prop("disabled", false); return; }
-				if (!isValidLibraryName(libName)) { alert("Invalid library name. Use letters, numbers, spaces, hyphens, and underscores only."); $btn.prop("disabled", false); return; }
-				if (author.length < shared.AUTHOR_MIN_LENGTH) { alert("Author must be at least " + shared.AUTHOR_MIN_LENGTH + " characters."); $btn.prop("disabled", false); return; }
-				if (author.length > shared.AUTHOR_MAX_LENGTH) { alert("Author must be at most " + shared.AUTHOR_MAX_LENGTH + " characters."); $btn.prop("disabled", false); return; }
+				if (!libName) { showAppAlert('Validation', "Library name is required.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' }); $btn.prop("disabled", false); return; }
+				if (!isValidLibraryName(libName)) { showAppAlert('Validation', "Invalid library name. Use letters, numbers, spaces, hyphens, and underscores only.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' }); $btn.prop("disabled", false); return; }
+				if (author.length < shared.AUTHOR_MIN_LENGTH) { showAppAlert('Validation', "Author must be at least " + shared.AUTHOR_MIN_LENGTH + " characters.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' }); $btn.prop("disabled", false); return; }
+				if (author.length > shared.AUTHOR_MAX_LENGTH) { showAppAlert('Validation', "Author must be at most " + shared.AUTHOR_MAX_LENGTH + " characters.", { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' }); $btn.prop("disabled", false); return; }
 
 				// Parse tags
 				var tags = [];
@@ -19055,7 +18991,7 @@
 				}
 
 				if (selectedLibFiles.length === 0 && selectedHelpFiles.length === 0 && selectedDemoFiles.length === 0 && selectedOtherFiles.length === 0) {
-					alert("No files selected for import.");
+					showAppAlert('Notice', "No files selected for import.", { iconClass: 'fa-info-circle' });
 					$btn.prop("disabled", false);
 					return;
 				}
@@ -19286,7 +19222,7 @@
 				} catch(_) { /* non-critical */ }
 
 			} catch (e) {
-				alert("Error importing package:\n" + e.message);
+				showAppAlert('Error', "Error importing package:\n" + e.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 			} finally {
 				$btn.prop("disabled", false);
 			}
@@ -20530,7 +20466,7 @@
 
 		function storeDownloadAndPreview(pkgFile) {
 			if (_isImporting) {
-				alert("An import is already in progress. Please wait for it to complete.");
+				showAppAlert('Warning', "An import is already in progress. Please wait for it to complete.", { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
 				return;
 			}
 

@@ -38,6 +38,7 @@ const path = require('path');
 const os   = require('os');
 const AdmZip = require('adm-zip');
 const shared = require('./lib/shared');
+const advisoryLock = require('./lib/advisory-lock');
 
 // Re-export shared helpers so the rest of the file can use short names
 const safeZipExtractPath     = shared.safeZipExtractPath;
@@ -1002,7 +1003,8 @@ function cmdImportLib(args) {
     if (!filePath)               { die('--file is required'); }
     if (!fs.existsSync(filePath)) { die('File not found: ' + filePath); }
 
-    const db = connectDB(resolveDBPath(args));
+    const dbPath = resolveDBPath(args);
+    const db = connectDB(dbPath);
     const { libBasePath, metBasePath, labwareBasePath, binBasePath } = getInstallPaths(db, args['lib-dir'], args['met-dir']);
 
     console.log('Importing: ' + filePath);
@@ -1085,73 +1087,75 @@ function cmdImportLib(args) {
         die('Packages with restricted OEM author/organization names cannot be imported via the CLI. Use the GUI application instead.');
     }
 
-    // Check for existing installation
-    const existing = db.installed_libs.findOne({ library_name: libName });
-    if (existing && !existing.deleted && !args['force']) {
-        const existingVer = existing.version || '?';
-        const incomingVer = manifest.version || '?';
-        if (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer) {
-            die(`Library "${libName}" v${existingVer} is already installed (same version). Use --force to overwrite.`);
+    // Advisory lock: serialize check-then-install to prevent race conditions (BUG-03)
+    advisoryLock.withLock(dbPath, 'db-write', function() {
+        // Check for existing installation
+        const existing = db.installed_libs.findOne({ library_name: libName });
+        if (existing && !existing.deleted && !args['force']) {
+            const existingVer = existing.version || '?';
+            const incomingVer = manifest.version || '?';
+            if (existingVer !== '?' && incomingVer !== '?' && existingVer === incomingVer) {
+                die(`Library "${libName}" v${existingVer} is already installed (same version). Use --force to overwrite.`);
+            } else {
+                die(`Library "${libName}" is already installed (v${existingVer}). Incoming version: v${incomingVer}. Use --force to overwrite.`);
+            }
+        }
+
+        const cliCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
+        let libDestDir;
+        if (cliCustomSubdir) {
+            libDestDir = path.join(libBasePath, cliCustomSubdir);
         } else {
-            die(`Library "${libName}" is already installed (v${existingVer}). Incoming version: v${incomingVer}. Use --force to overwrite.`);
+            libDestDir = libBasePath;
         }
-    }
+        const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
+        const labwareDestDir = labwareBasePath;
+        const binDestDir = binBasePath;
 
-    const cliCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
-    let libDestDir;
-    if (cliCustomSubdir) {
-        libDestDir = path.join(libBasePath, cliCustomSubdir);
-    } else {
-        libDestDir = libBasePath;
-    }
-    const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
-    const labwareDestDir = labwareBasePath;
-    const binDestDir = binBasePath;
+        const result = installPackage(
+            manifest, zip, libDestDir, demoDestDir,
+            path.basename(filePath), db, !!(args['no-group']), labwareDestDir, binDestDir
+        );
 
-    const result = installPackage(
-        manifest, zip, libDestDir, demoDestDir,
-        path.basename(filePath), db, !!(args['no-group']), labwareDestDir, binDestDir
-    );
+        console.log(`\nSuccess: "${libName}" installed (${result.extractedCount} files)`);
+        console.log(`  Library files  -> ${libDestDir}`);
+        console.log(`  Demo methods   -> ${demoDestDir}`);
+        if ((manifest.labware_files || []).length > 0) {
+            console.log(`  Labware files  -> ${labwareDestDir}`);
+        }
+        if ((manifest.bin_files || []).length > 0) {
+            console.log(`  Bin files      -> ${binDestDir}`);
+        }
+        if (manifest.installer_executable) {
+            var installerStorePath = path.join(INSTALLER_STORE_DIR, libName.replace(/[<>:"\/\\|?*]/g, '_'), manifest.installer_executable);
+            console.log(`  Installer      -> ${installerStorePath}`);
+        }
 
-    console.log(`\nSuccess: "${libName}" installed (${result.extractedCount} files)`);
-    console.log(`  Library files  -> ${libDestDir}`);
-    console.log(`  Demo methods   -> ${demoDestDir}`);
-    if ((manifest.labware_files || []).length > 0) {
-        console.log(`  Labware files  -> ${labwareDestDir}`);
-    }
-    if ((manifest.bin_files || []).length > 0) {
-        console.log(`  Bin files      -> ${binDestDir}`);
-    }
-    if (manifest.installer_executable) {
-        var installerStorePath = path.join(INSTALLER_STORE_DIR, libName.replace(/[<>:"\/\\|?*]/g, '_'), manifest.installer_executable);
-        console.log(`  Installer      -> ${installerStorePath}`);
-    }
-
-    // ---- Audit trail entry ----
-    try {
-        const userDataDir = resolveDBPath(args);
-        appendAuditTrailEntry(userDataDir, buildAuditTrailEntry('library_imported', {
-            library_name:    libName,
-            version:         manifest.version || '',
-            author:          manifest.author || '',
-            organization:    manifest.organization || '',
-            source_file:     path.resolve(filePath),
-            lib_install_path: libDestDir,
-            demo_install_path: demoDestDir,
-            files_extracted: result.extractedCount,
-            signature_status: sigResult.signed ? (sigResult.valid ? 'valid' : 'failed') : 'unsigned'
-        }));
-    } catch (_) { /* non-critical */ }
-
-    // Cache the package file for repair & rollback
-    if (!args['no-cache']) {
+        // ---- Audit trail entry ----
         try {
-            const cachedPath = cachePackage(rawPkgBuf, libName, manifest.version, args);
-            console.log(`  Package cached -> ${cachedPath}`);
-        } catch (e) {
-            process.stderr.write('  Warning: could not cache package: ' + e.message + '\n');
+            appendAuditTrailEntry(dbPath, buildAuditTrailEntry('library_imported', {
+                library_name:    libName,
+                version:         manifest.version || '',
+                author:          manifest.author || '',
+                organization:    manifest.organization || '',
+                source_file:     path.resolve(filePath),
+                lib_install_path: libDestDir,
+                demo_install_path: demoDestDir,
+                files_extracted: result.extractedCount,
+                signature_status: sigResult.signed ? (sigResult.valid ? 'valid' : 'failed') : 'unsigned'
+            }));
+        } catch (_) { /* non-critical */ }
+
+        // Cache the package file for repair & rollback
+        if (!args['no-cache']) {
+            try {
+                const cachedPath = cachePackage(rawPkgBuf, libName, manifest.version, args);
+                console.log(`  Package cached -> ${cachedPath}`);
+            } catch (e) {
+                process.stderr.write('  Warning: could not cache package: ' + e.message + '\n');
+            }
         }
-    }
+    });
 
     const comDlls = manifest.com_register_dlls || [];
     if (comDlls.length > 0) {
@@ -1171,7 +1175,8 @@ function cmdImportArchive(args) {
     if (!filePath)                { die('--file is required'); }
     if (!fs.existsSync(filePath)) { die('File not found: ' + filePath); }
 
-    const db = connectDB(resolveDBPath(args));
+    const dbPath = resolveDBPath(args);
+    const db = connectDB(dbPath);
     const { libBasePath, metBasePath, labwareBasePath, binBasePath } = getInstallPaths(db, args['lib-dir'], args['met-dir']);
 
     console.log('Importing archive: ' + filePath);

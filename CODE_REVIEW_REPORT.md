@@ -305,6 +305,9 @@ EOL since 2021.
 
 The following findings were reviewed and **accepted as by-design**. Library Manager is a private, internally-distributed desktop application — not a public/consumer product. It operates within a trusted corporate environment where the threat model does not include adversarial end-users, MITM on internal networks, or untrusted package sources. These items will **not** be fixed.
 
+QUAL-02: Error Messages Leak Internal Paths
+is fine because these internal paths exist and this is open source and its running on the local machine
+
 | ID | Finding | Rationale |
 |----|---------|----------|
 | **SEC-01** | GitHub App private key embedded in store-reviews.js with XOR obfuscation | Private app with controlled distribution. The key has scoped `discussions:write` permissions only. Access is limited to internal users who already have GitHub org access. |

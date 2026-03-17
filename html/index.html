@@ -24,13 +24,13 @@
 	</style>
 	<!-- Preload CSS (download only — activation is deferred to the tail of
 	     the splash animation so style recalc doesn't block the main thread) -->
-	<link rel="preload" href="css/bootstrap.min.css" as="style" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-	<link rel="preload" href="css/all.min.css" as="style" integrity="sha384-9ZfPnbegQSumzaE7mks2IYgHoayLtuto3AS6ieArECeaR8nCfliJVuLh/GaQ1gyM" crossorigin="anonymous">
-	<link rel="preload" href="css/main.css" as="style" integrity="sha384-P+6yilSKcKZ3P74m+C0X1NSCFp0+BHtuVg9c1JkGMPyR02rZyB5TbK8Z9RdMGepo" crossorigin="anonymous">
+	<link rel="preload" href="css/bootstrap.min.css" as="style" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+	<link rel="preload" href="css/all.min.css" as="style" integrity="sha384-nRgPTkuX86pH8yjPJUAFuASXQSSl2/bBUiNV47vSYpKFxHJhbcrGnmlYpYJMeD7a" crossorigin="anonymous">
+	<link rel="preload" href="css/main.css" as="style" integrity="sha384-6nfgXdJ1BSYl6+6p4DWbltYcgQLo28LM+dFtHtUGtB2anwHn3ZEd/EMcRe+IZD3V" crossorigin="anonymous">
 	<noscript>
-		<link href="css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-		<link href="css/all.min.css" rel="stylesheet" integrity="sha384-9ZfPnbegQSumzaE7mks2IYgHoayLtuto3AS6ieArECeaR8nCfliJVuLh/GaQ1gyM" crossorigin="anonymous">
-		<link href="css/main.css" rel="stylesheet" integrity="sha384-P+6yilSKcKZ3P74m+C0X1NSCFp0+BHtuVg9c1JkGMPyR02rZyB5TbK8Z9RdMGepo" crossorigin="anonymous">
+		<link href="css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+		<link href="css/all.min.css" rel="stylesheet" integrity="sha384-nRgPTkuX86pH8yjPJUAFuASXQSSl2/bBUiNV47vSYpKFxHJhbcrGnmlYpYJMeD7a" crossorigin="anonymous">
+		<link href="css/main.css" rel="stylesheet" integrity="sha384-6nfgXdJ1BSYl6+6p4DWbltYcgQLo28LM+dFtHtUGtB2anwHn3ZEd/EMcRe+IZD3V" crossorigin="anonymous">
 	</noscript>
 
 </head>
@@ -175,7 +175,7 @@
 				</div>
 			</div>
 			<div class="update-release-notes-section">
-				<div class="update-release-notes-label"><i class="fas fa-file-alt mr-1"></i>What's New</div>
+				<div class="update-release-notes-label"><i class="fas fa-file-alt me-1"></i>What's New</div>
 				<div class="update-release-notes-body" id="update-release-notes-body">
 					<ul>
 						<li>Performance improvements and bug fixes</li>
@@ -185,11 +185,11 @@
 				</div>
 			</div>
 			<div class="update-release-footer">
-				<div class="custom-control custom-checkbox">
-					<input type="checkbox" class="custom-control-input" id="chk_showReleaseNotes_overlay">
-					<label class="custom-control-label text-muted" for="chk_showReleaseNotes_overlay" style="font-size:.82rem;">Don't show release notes after updates</label>
+				<div class="form-check">
+					<input type="checkbox" class="form-check-input" id="chk_showReleaseNotes_overlay">
+					<label class="form-check-label text-muted" for="chk_showReleaseNotes_overlay" style="font-size:.82rem;">Don't show release notes after updates</label>
 				</div>
-				<button type="button" class="btn solid-button" id="btn-update-release-dismiss"><i class="fas fa-check mr-1"></i>Got it</button>
+				<button type="button" class="btn solid-button" id="btn-update-release-dismiss"><i class="fas fa-check me-1"></i>Got it</button>
 			</div>
 		</div>
 	</div>
@@ -200,14 +200,14 @@
 				<div class="col-md-12">
 					<nav class="navbar navbar-expand navbar-custom pt-0 pb-0">
 						<div class="collapse navbar-collapse" id="navbarDiv">
-							<ul class="navbar-nav mr-auto navblock-collapsable nav-subgroup navbarLeft">
+							<ul class="navbar-nav me-auto navblock-collapsable nav-subgroup navbarLeft">
 							</ul>
 							<!-- here will be added all the user created groups -->
 							<ul class="navbar-nav nav-subgroup" id="nav-more">
 								<li class="nav-item dropdown">
 									<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink"
-										data-toggle="dropdown">+1</a>
-									<div class="dropdown-menu dropdown-menu-right"
+										data-bs-toggle="dropdown">+1</a>
+									<div class="dropdown-menu dropdown-menu-end"
 										aria-labelledby="navbarDropdownMenuLink" id="nav-overflow">
 									</div>
 								</li>
@@ -220,8 +220,8 @@
 						</div>
 
 						<!-- Search Bar & Overflow Menu -->
-						<div class="navbar-toolbar d-flex align-items-center ml-auto">
-							<div class="mr-5 cleanup-progress" style="display:none;">
+						<div class="navbar-toolbar d-flex align-items-center ms-auto">
+							<div class="me-5 cleanup-progress" style="display:none;">
 								<div class="text-sm cleanup-progress-text" style="color:var(--navbar-font);">Cleaning up run logs</div>
 								<div class="progress">
 									<div class="progress-bar cleanup-progress-bar bg-success" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
@@ -240,25 +240,25 @@
 							<input type="file" class="d-none" id="imp-input-file" accept=".hxlibpkg,.hxlibarch,.pkg,.hampackage" multiple>
 
 							<div class="dropdown btn-overflow-menu">
-								<button class="btn btn-sm btn-overflow-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								<button class="btn btn-sm btn-overflow-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 									<i class="fas fa-ellipsis-v"></i>
 									<span class="update-badge d-none" id="update-badge">1</span>
 								</button>
-								<div class="dropdown-menu dropdown-menu-right">
-									<a class="dropdown-item overflow-import" href="#" id="imp-browse"><i class="fas fa-file-import mr-2"></i>Import</a>
-									<a class="dropdown-item overflow-theme-toggle btn-theme-toggle" href="#" data-theme="auto"><i class="fas fa-adjust mr-2"></i>Auto (System)</a>
+								<div class="dropdown-menu dropdown-menu-end">
+									<a class="dropdown-item overflow-import" href="#" id="imp-browse"><i class="fas fa-file-import me-2"></i>Import</a>
+									<a class="dropdown-item overflow-theme-toggle btn-theme-toggle" href="#" data-theme="auto"><i class="fas fa-adjust me-2"></i>Auto (System)</a>
 									<div class="dropdown-divider"></div>
-									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open mr-2"></i>Package Library</a>
-									<a class="dropdown-item overflow-repair" href="#"><i class="fas fa-tools mr-2"></i>Verify &amp; Repair</a>
-									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group mr-2"></i>Library Groups</a>
-									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list mr-2"></i>History</a>
+									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open me-2"></i>Package Library</a>
+									<a class="dropdown-item overflow-repair" href="#"><i class="fas fa-tools me-2"></i>Verify &amp; Repair</a>
+									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group me-2"></i>Library Groups</a>
+									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list me-2"></i>History</a>
 									<div class="dropdown-divider"></div>
-									<a class="dropdown-item overflow-audit" href="#"><i class="fas fa-file-signature mr-2"></i>Run Library Audit</a>
-									<a class="dropdown-item overflow-check-audit" href="#"><i class="fas fa-clipboard-check mr-2"></i>Check Audit File</a>
+									<a class="dropdown-item overflow-audit" href="#"><i class="fas fa-file-signature me-2"></i>Run Library Audit</a>
+									<a class="dropdown-item overflow-check-audit" href="#"><i class="fas fa-clipboard-check me-2"></i>Check Audit File</a>
 									<div class="dropdown-divider"></div>
-									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive mr-2"></i>Export Archive</a>
-									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog mr-2"></i>Settings<span class="settings-update-dot d-none"></span></a>
-									<a class="dropdown-item overflow-help" href="#"><i class="fas fa-question-circle mr-2"></i>Help</a>
+									<a class="dropdown-item overflow-export-archive" href="#"><i class="fas fa-file-archive me-2"></i>Export Archive</a>
+									<a class="dropdown-item overflow-settings" href="#"><i class="fas fa-cog me-2"></i>Settings<span class="settings-update-dot d-none"></span></a>
+									<a class="dropdown-item overflow-help" href="#"><i class="fas fa-question-circle me-2"></i>Help</a>
 								</div>
 							</div>
 						</div>
@@ -281,25 +281,24 @@
 				<div class="exporter-inner p-4">
 					<div class="row justify-content-center">
 						<div class="col-lg-8 col-md-10">
-							<h4 class="mb-1"><i class="fas fa-box-open mr-2 color-medium"></i>Library Packager</h4>
+							<h4 class="mb-1"><i class="fas fa-box-open me-2 color-medium"></i>Library Packager</h4>
 							<p class="text-muted mb-4">Create a <b>.hxlibpkg</b> package for distributing Hamilton VENUS libraries.</p>
 
 							<!-- Metadata Section -->
 							<div class="card mb-3 exporter-card">
-								<div class="card-header"><i class="fas fa-info-circle mr-2 color-medium"></i>Package Metadata</div>
+								<div class="card-header"><i class="fas fa-info-circle me-2 color-medium"></i>Package Metadata</div>
 								<div class="card-body">
 									<div class="form-group row mb-2">
 										<label class="col-sm-4 col-form-label col-form-label-sm">Library Name</label>
 										<div class="col-sm-8">
 											<div class="input-group input-group-sm" style="position:relative;">
 												<input type="text" class="form-control form-control-sm" id="pkg-library-name" readonly style="background-color:#e9ecef; cursor:default;" title="Based on library file name" placeholder="Detected from library files (.hsl, .hs_, .smt)" autocomplete="off">
-												<div class="input-group-append">
-													<button class="btn btn-outlined btn-sm" type="button" id="pkg-toggle-name-edit" title="Override auto-detected name"><i class="fas fa-pencil-alt"></i></button>
+																									<button class="btn btn-outlined btn-sm" type="button" id="pkg-toggle-name-edit" title="Override auto-detected name"><i class="fas fa-pencil-alt"></i></button>
 												</div>
 												<div class="pkg-name-autocomplete d-none" id="pkg-name-autocomplete"></div>
 											</div>
 											<small class="form-text text-muted" id="pkg-name-hint">Updated when a .hsl, .hs_, or .smt file is added to Library Files</small>
-											<small class="form-text text-warning d-none" id="pkg-name-warning"><i class="fas fa-exclamation-triangle mr-1"></i>Manual override - using a name that doesn't match the library files may cause incorrect behavior during import.</small>
+											<small class="form-text text-warning d-none" id="pkg-name-warning"><i class="fas fa-exclamation-triangle me-1"></i>Manual override - using a name that doesn't match the library files may cause incorrect behavior during import.</small>
 										</div>
 									</div>
 									<div class="form-group row mb-2">
@@ -318,7 +317,7 @@
 										<label class="col-sm-4 col-form-label col-form-label-sm">Library Version <span class="text-danger">*</span></label>
 										<div class="col-sm-8">
 											<input type="text" class="form-control form-control-sm" id="pkg-version" placeholder="e.g. 1.0.0 (required)">
-											<small class="form-text text-danger d-none" id="pkg-version-warning"><i class="fas fa-exclamation-circle mr-1"></i><span id="pkg-version-warning-text"></span></small>
+											<small class="form-text text-danger d-none" id="pkg-version-warning"><i class="fas fa-exclamation-circle me-1"></i><span id="pkg-version-warning-text"></span></small>
 										</div>
 									</div>
 									<div class="form-group row mb-2">
@@ -345,7 +344,7 @@
 										<div class="col-sm-8">
 											<div class="d-flex align-items-center">
 												<button class="btn btn-sm btn-outlined" id="pkg-pickReleasePdf">Choose PDF...</button>
-												<button class="btn btn-sm btn-outlined ml-1" id="pkg-removeReleasePdf" style="display:none;">Remove</button>
+												<button class="btn btn-sm btn-outlined ms-1" id="pkg-removeReleasePdf" style="display:none;">Remove</button>
 												<input type="file" class="d-none" id="pkg-input-release-pdf" accept=".pdf">
 											</div>
 											<div class="text-muted text-sm mt-1" id="pkg-release-pdf-name">No PDF selected</div>
@@ -369,16 +368,16 @@
 
 							<!-- Icon / Image Section -->
 							<div class="card mb-3 exporter-card">
-								<div class="card-header"><i class="fas fa-image mr-2 color-medium"></i>Library Icon / Image</div>
+								<div class="card-header"><i class="fas fa-image me-2 color-medium"></i>Library Icon / Image</div>
 								<div class="card-body">
 									<p class="text-muted text-sm mb-2">Choose an image to represent this library in the installed libraries list. If none is selected, the packager will auto-detect a .bmp matching the library name.</p>
 									<div class="d-flex align-items-center">
-										<div class="pkg-icon-preview mr-3" id="pkg-icon-preview">
+										<div class="pkg-icon-preview me-3" id="pkg-icon-preview">
 											<i class="fas fa-image fa-2x" style="color:#ccc;"></i>
 										</div>
 										<div>
 											<button class="btn btn-sm btn-outlined" id="pkg-pickIcon">Choose Image...</button>
-											<button class="btn btn-sm btn-outlined ml-1" id="pkg-removeIcon" style="display:none;">Remove</button>
+											<button class="btn btn-sm btn-outlined ms-1" id="pkg-removeIcon" style="display:none;">Remove</button>
 											<input type="file" class="d-none" id="pkg-input-icon" accept=".png,.jpg,.jpeg,.bmp,.ico,.gif,.svg">
 											<div class="text-muted text-sm mt-1" id="pkg-icon-name">No image selected</div>
 										</div>
@@ -389,16 +388,16 @@
 							<!-- Library Files Section -->
 							<div class="card mb-3 exporter-card">
 								<div class="card-header">
-									<i class="fas fa-book mr-2 color-medium"></i>Library Files
+									<i class="fas fa-book me-2 color-medium"></i>Library Files
 								</div>
 								<div class="card-body">
-									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
+									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle me-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
 									<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 										<button class="btn btn-sm btn-outlined" id="pkg-addLibFiles">Add Files...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-addLibFolder">Add Folder...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-removeLibFiles">Remove Selected</button>
-										<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="pkg-lib-list"><i class="fas fa-folder-plus mr-1"></i>New Folder</button>
-										<span class="text-muted text-sm ml-2" id="pkg-lib-count">0 files</span>
+										<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="pkg-lib-list"><i class="fas fa-folder-plus me-1"></i>New Folder</button>
+										<span class="text-muted text-sm ms-2" id="pkg-lib-count">0 files</span>
 										<input type="file" class="d-none" id="pkg-input-libfiles" multiple>
 										<input type="file" class="d-none" id="pkg-input-libfolder" nwdirectory>
 									</div>
@@ -409,20 +408,20 @@
 							<!-- Demo Method Files Section -->
 							<div class="card mb-3 exporter-card" id="pkg-demo-section">
 								<div class="card-header d-flex align-items-center">
-									<label class="custom-control custom-switch mb-0 mr-2" title="Enable or disable the Demo Method Files section">
-										<input type="checkbox" class="custom-control-input pkg-section-toggle" id="pkg-toggle-demo" data-section="pkg-demo-body">
-										<span class="custom-control-label"></span>
+									<label class="form-check form-switch mb-0 me-2" title="Enable or disable the Demo Method Files section">
+										<input type="checkbox" class="form-check-input pkg-section-toggle" id="pkg-toggle-demo" data-section="pkg-demo-body">
+										<span class="form-check-label"></span>
 									</label>
-									<i class="fas fa-flask mr-2 color-medium"></i>Demo Method Files
-									<span class="text-muted ml-2 text-sm font-weight-normal">(optional)</span>
+									<i class="fas fa-flask me-2 color-medium"></i>Demo Method Files
+									<span class="text-muted ms-2 text-sm fw-normal">(optional)</span>
 								</div>
 								<div class="card-body" id="pkg-demo-body" style="display:none;">
 									<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 										<button class="btn btn-sm btn-outlined" id="pkg-addDemoFiles">Add Files...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-addDemoFolder">Add Folder...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-removeDemoFiles">Remove Selected</button>
-										<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="pkg-demo-list"><i class="fas fa-folder-plus mr-1"></i>New Folder</button>
-										<span class="text-muted text-sm ml-2" id="pkg-demo-count">0 files</span>
+										<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="pkg-demo-list"><i class="fas fa-folder-plus me-1"></i>New Folder</button>
+										<span class="text-muted text-sm ms-2" id="pkg-demo-count">0 files</span>
 										<input type="file" class="d-none" id="pkg-input-demofiles" multiple accept=".hsl,.stp,.csv,.txt,.med,.wfl">
 										<input type="file" class="d-none" id="pkg-input-demofolder" nwdirectory>
 									</div>
@@ -433,21 +432,21 @@
 							<!-- Labware Files Section -->
 							<div class="card mb-3 exporter-card" id="pkg-labware-section">
 								<div class="card-header d-flex align-items-center">
-									<label class="custom-control custom-switch mb-0 mr-2" title="Enable or disable the Labware Files section">
-										<input type="checkbox" class="custom-control-input pkg-section-toggle" id="pkg-toggle-labware" data-section="pkg-labware-body">
-										<span class="custom-control-label"></span>
+									<label class="form-check form-switch mb-0 me-2" title="Enable or disable the Labware Files section">
+										<input type="checkbox" class="form-check-input pkg-section-toggle" id="pkg-toggle-labware" data-section="pkg-labware-body">
+										<span class="form-check-label"></span>
 									</label>
-									<i class="fas fa-th mr-2 color-medium"></i>Labware Files
-									<span class="text-muted ml-2 text-sm font-weight-normal">(optional)</span>
+									<i class="fas fa-th me-2 color-medium"></i>Labware Files
+									<span class="text-muted ms-2 text-sm fw-normal">(optional)</span>
 								</div>
 								<div class="card-body" id="pkg-labware-body" style="display:none;">
-									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>Add labware definitions (<b>.rck</b>, <b>.ctr</b>, <b>.tml</b>, <b>.dck</b>, <b>.lay</b>) that ship with this library. Use the tree to organize files into subdirectories.</p>
+									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle me-1"></i>Add labware definitions (<b>.rck</b>, <b>.ctr</b>, <b>.tml</b>, <b>.dck</b>, <b>.lay</b>) that ship with this library. Use the tree to organize files into subdirectories.</p>
 									<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 										<button class="btn btn-sm btn-outlined" id="pkg-addLabwareFiles">Add Files...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-addLabwareFolder">Add Folder...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-removeLabwareFiles">Remove Selected</button>
-										<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="pkg-labware-tree"><i class="fas fa-folder-plus mr-1"></i>New Folder</button>
-										<span class="text-muted text-sm ml-2" id="pkg-labware-count">0 files</span>
+										<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="pkg-labware-tree"><i class="fas fa-folder-plus me-1"></i>New Folder</button>
+										<span class="text-muted text-sm ms-2" id="pkg-labware-count">0 files</span>
 										<input type="file" class="d-none" id="pkg-input-labwarefiles" multiple accept=".rck,.ctr,.tml,.dck,.lay">
 										<input type="file" class="d-none" id="pkg-input-labwarefolder" nwdirectory>
 									</div>
@@ -458,21 +457,21 @@
 							<!-- Bin Files Section (optional, developer-only) -->
 							<div class="card mb-3 exporter-card" id="pkg-bin-files-section" style="display:none;">
 								<div class="card-header d-flex align-items-center">
-									<label class="custom-control custom-switch mb-0 mr-2" title="Enable or disable the Bin Files section">
-										<input type="checkbox" class="custom-control-input pkg-section-toggle" id="pkg-toggle-bin" data-section="pkg-bin-body">
-										<span class="custom-control-label"></span>
+									<label class="form-check form-switch mb-0 me-2" title="Enable or disable the Bin Files section">
+										<input type="checkbox" class="form-check-input pkg-section-toggle" id="pkg-toggle-bin" data-section="pkg-bin-body">
+										<span class="form-check-label"></span>
 									</label>
-									<i class="fas fa-cogs mr-2 color-medium"></i>Bin Files
-									<span class="text-muted ml-2 text-sm font-weight-normal">(optional)</span>
+									<i class="fas fa-cogs me-2 color-medium"></i>Bin Files
+									<span class="text-muted ms-2 text-sm fw-normal">(optional)</span>
 								</div>
 								<div class="card-body" id="pkg-bin-body" style="display:none;">
-									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>Add files to be installed under <b>Hamilton\Bin</b>. Use the tree to organize files into the root, a custom subdirectory, or the library-named directory.</p>
+									<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle me-1"></i>Add files to be installed under <b>Hamilton\Bin</b>. Use the tree to organize files into the root, a custom subdirectory, or the library-named directory.</p>
 									<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 										<button class="btn btn-sm btn-outlined" id="pkg-addBinFiles">Add Files...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-addBinFolder">Add Folder...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-removeBinFiles">Remove Selected</button>
-										<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="pkg-bin-tree"><i class="fas fa-folder-plus mr-1"></i>New Folder</button>
-										<span class="text-muted text-sm ml-2" id="pkg-bin-count">0 files</span>
+										<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="pkg-bin-tree"><i class="fas fa-folder-plus me-1"></i>New Folder</button>
+										<span class="text-muted text-sm ms-2" id="pkg-bin-count">0 files</span>
 										<input type="file" class="d-none" id="pkg-input-binfiles" multiple>
 										<input type="file" class="d-none" id="pkg-input-binfolder" nwdirectory>
 									</div>
@@ -483,12 +482,12 @@
 							<!-- Installer Executable Section (optional, developer-only) -->
 							<div class="card mb-3 exporter-card" id="pkg-installer-exe-section" style="display:none;">
 								<div class="card-header d-flex align-items-center">
-									<label class="custom-control custom-switch mb-0 mr-2" title="Enable or disable the Installer Executable section">
-										<input type="checkbox" class="custom-control-input pkg-section-toggle" id="pkg-toggle-installer" data-section="pkg-installer-body">
-										<span class="custom-control-label"></span>
+									<label class="form-check form-switch mb-0 me-2" title="Enable or disable the Installer Executable section">
+										<input type="checkbox" class="form-check-input pkg-section-toggle" id="pkg-toggle-installer" data-section="pkg-installer-body">
+										<span class="form-check-label"></span>
 									</label>
-									<i class="fas fa-download mr-2 color-medium"></i>Installer Executable
-									<span class="text-muted ml-2 text-sm font-weight-normal">(optional)</span>
+									<i class="fas fa-download me-2 color-medium"></i>Installer Executable
+									<span class="text-muted ms-2 text-sm fw-normal">(optional)</span>
 								</div>
 								<div class="card-body" id="pkg-installer-body" style="display:none;">
 									<p class="text-muted text-sm mb-2">Embed a standalone .exe installer in the package. Recipients can extract and run it independently.</p>
@@ -499,35 +498,35 @@
 									</div>
 									<div class="pkg-installer-detail" style="display:none;">
 										<div class="d-flex align-items-center mb-2" style="background:var(--body-background); border-radius:6px; padding:6px 10px;">
-											<i class="fas fa-cog mr-2" style="color:var(--medium)"></i>
+											<i class="fas fa-cog me-2" style="color:var(--medium)"></i>
 											<span class="pkg-installer-filename text-sm"></span>
 										</div>
 									</div>
 									<div class="pkg-installer-empty-msg text-muted text-center py-2 text-sm">
-										<i class="fas fa-inbox mr-1"></i>No installer selected
+										<i class="fas fa-inbox me-1"></i>No installer selected
 									</div>
 								</div>
 							</div>
 
 							<!-- Code Signing Section -->
 							<div class="card mb-3 exporter-card">
-								<div class="card-header"><i class="fas fa-certificate mr-2 color-medium"></i>Code Signing</div>
+								<div class="card-header"><i class="fas fa-certificate me-2 color-medium"></i>Code Signing</div>
 								<div class="card-body">
 									<p class="text-muted text-sm mb-2">Sign this package with a publisher certificate to verify its origin. Recipients can verify the publisher identity before installing.</p>
-									<div class="custom-control custom-checkbox mb-2">
-										<input type="checkbox" class="custom-control-input chk-export-sign" id="chk-pkg-sign">
-										<label class="custom-control-label" for="chk-pkg-sign">Sign with publisher certificate</label>
+									<div class="form-check mb-2">
+										<input type="checkbox" class="form-check-input chk-export-sign" id="chk-pkg-sign">
+										<label class="form-check-label" for="chk-pkg-sign">Sign with publisher certificate</label>
 									</div>
 									<div class="pkg-signing-detail" style="display:none;">
 										<div class="pkg-signing-configured" style="display:none;">
 											<div class="d-flex align-items-center" style="background:var(--body-background); border-radius:6px; padding:6px 10px;">
-												<i class="fas fa-user-shield mr-2" style="color:var(--medium)"></i>
+												<i class="fas fa-user-shield me-2" style="color:var(--medium)"></i>
 												<span class="pkg-signing-publisher-name text-muted text-sm"></span>
-												<span class="badge badge-secondary ml-2 pkg-signing-key-id" style="font-family:Consolas,monospace; font-size:0.75rem;"></span>
+												<span class="badge text-bg-secondary ms-2 pkg-signing-key-id" style="font-family:Consolas,monospace; font-size:0.75rem;"></span>
 											</div>
 										</div>
 										<div class="pkg-signing-not-configured text-sm text-muted" style="display:none;">
-											<i class="fas fa-exclamation-circle mr-1 text-warning"></i>No signing key configured. <a href="#" class="export-signing-open-settings">Configure in Settings</a>
+											<i class="fas fa-exclamation-circle me-1 text-warning"></i>No signing key configured. <a href="#" class="export-signing-open-settings">Configure in Settings</a>
 										</div>
 									</div>
 								</div>
@@ -535,9 +534,9 @@
 
 							<!-- Actions -->
 							<div class="text-center mt-4 mb-5">
-								<span id="pkg-create-wrapper" style="display:inline-block;"><button class="btn solid-button btn-lg" id="pkg-create" style="pointer-events:auto;"><i class="fas fa-box mr-2"></i>Create Package (.hxlibpkg)</button></span>
+								<span id="pkg-create-wrapper" style="display:inline-block;"><button class="btn solid-button btn-lg" id="pkg-create" style="pointer-events:auto;"><i class="fas fa-box me-2"></i>Create Package (.hxlibpkg)</button></span>
 								<div class="mt-2">
-									<button class="btn btn-sm btn-link text-muted" id="pkg-reset"><i class="fas fa-undo mr-1"></i>Reset form</button>
+									<button class="btn btn-sm btn-link text-muted" id="pkg-reset"><i class="fas fa-undo me-1"></i>Reset form</button>
 								</div>
 							</div>
 
@@ -553,16 +552,16 @@
 					<!-- Header row with title and Import button (only shown on All tab) -->
 					<div class="d-flex align-items-center mb-2" id="imp-header">
 						<div>
-							<h4 class="mb-0" id="imp-header-title"><i class="fas fa-book mr-2 color-medium"></i>Installed Libraries</h4>
+							<h4 class="mb-0" id="imp-header-title"><i class="fas fa-book me-2 color-medium"></i>Installed Libraries</h4>
 						</div>
 						<!-- Issues badge (populated dynamically) -->
-						<div id="imp-issues-badge" class="ml-3 d-none" style="cursor:pointer;" title="Click to view issues">
-							<span class="badge badge-danger imp-issues-badge-pill" id="imp-issues-badge-errors" style="display:none;"><i class="fas fa-exclamation-circle mr-1"></i><span class="imp-issues-err-count"></span> Error(s)</span>
-							<span class="badge badge-warning imp-issues-badge-pill" id="imp-issues-badge-warnings" style="display:none;"><i class="fas fa-exclamation-triangle mr-1"></i><span class="imp-issues-warn-count"></span> Warning(s)</span>
+						<div id="imp-issues-badge" class="ms-3 d-none" style="cursor:pointer;" title="Click to view issues">
+							<span class="badge text-bg-danger imp-issues-badge-pill" id="imp-issues-badge-errors" style="display:none;"><i class="fas fa-exclamation-circle me-1"></i><span class="imp-issues-err-count"></span> Error(s)</span>
+							<span class="badge text-bg-warning imp-issues-badge-pill" id="imp-issues-text-bg-warnings" style="display:none;"><i class="fas fa-exclamation-triangle me-1"></i><span class="imp-issues-warn-count"></span> Warning(s)</span>
 						</div>
 						<div class="ml-auto d-flex align-items-center">
-							<div class="imp-sort-dropdown mr-3" id="imp-sort-dropdown">
-								<span class="imp-sort-label" id="imp-sort-label" title="Sort libraries">Name (A-Z) <i class="fas fa-caret-down ml-1"></i></span>
+							<div class="imp-sort-dropdown me-3" id="imp-sort-dropdown">
+								<span class="imp-sort-label" id="imp-sort-label" title="Sort libraries">Name (A-Z) <i class="fas fa-caret-down ms-1"></i></span>
 								<div class="imp-sort-menu" id="imp-sort-menu">
 									<div class="imp-sort-option active" data-sort="az">Name (A-Z)</div>
 									<div class="imp-sort-option" data-sort="za">Name (Z-A)</div>
@@ -578,12 +577,12 @@
 					<div id="imp-issues-banner" class="d-none mb-3">
 						<div class="imp-issues-banner-inner">
 							<div class="d-flex align-items-center justify-content-between imp-issues-banner-header">
-								<span class="font-weight-bold" style="color:#842029;"><i class="fas fa-shield-alt mr-2"></i>Library Issues</span>
+								<span class="fw-bold" style="color:#842029;"><i class="fas fa-shield-alt me-2"></i>Library Issues</span>
 								<button class="btn btn-sm btn-link imp-issues-close" title="Dismiss" style="color:#842029;"><i class="fas fa-times"></i></button>
 							</div>
 							<div class="imp-issues-list" id="imp-issues-list"></div>
 							<div class="d-flex justify-content-end px-3 py-2" style="border-top:1px solid rgba(220,53,69,0.12); background:rgba(220,53,69,0.03);">
-								<a href="#" class="text-sm imp-issues-open-repair" style="color:var(--medium2);"><i class="fas fa-tools mr-1"></i>Open Verify &amp; Repair</a>
+								<a href="#" class="text-sm imp-issues-open-repair" style="color:var(--medium2);"><i class="fas fa-tools me-1"></i>Open Verify &amp; Repair</a>
 							</div>
 						</div>
 					</div>
@@ -607,7 +606,7 @@
 			<div class="modal-content delete-confirm-content">
 				<div class="modal-header delete-confirm-header">
 					<div class="d-flex align-items-center">
-						<div class="delete-confirm-icon mr-3">
+						<div class="delete-confirm-icon me-3">
 							<i class="fas fa-exclamation-triangle fa-2x"></i>
 						</div>
 						<div>
@@ -615,8 +614,7 @@
 							<span class="delete-item-name-header"></span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body delete-confirm-body">
@@ -630,9 +628,9 @@
 					</div>
 				</div>
 				<div class="modal-footer delete-confirm-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-danger delete-confirm-btn btn-delete" disabled>
-						<i class="fas fa-trash-alt mr-1"></i>I understand, delete this <span class="text-lowercase delete-linkorgroup">group</span>
+						<i class="fas fa-trash-alt me-1"></i>I understand, delete this <span class="text-lowercase delete-linkorgroup">group</span>
 					</button>
 				</div>
 			</div>
@@ -646,19 +644,18 @@
 			<div class="modal-content detail-modal-content" data-linkOrGroup="" data-newOrEdit="" data-id="">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-edit fa-2x"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0 text-capitalize detail-modal-name">Edit</h5>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body d-flex">
-					<div class="d-inline-block p-2 mr-4 ml-3 align-top text-center">
+					<div class="d-inline-block p-2 me-4 ms-3 align-top text-center">
 						<div class="container-imageicon">
 							<div class="image-container d-none">
 								<!---- group/link image if set, if not show a placeholder icon--->
@@ -677,7 +674,7 @@
 							<div class="form-group">
 								<input class="form-control form-control-lg txt-linkName" type="text"
 									placeholder="Name (required)">
-								<div class="relative00 float-right"><span class="clear-text d-none"><i
+								<div class="relative00 float-end"><span class="clear-text d-none"><i
 											class="fas fa-times-circle"></i></span></div>
 							</div>
 							
@@ -701,7 +698,7 @@
 									<input type="text" class="form-control txt-filepath text-sm" value="" readonly
 										placeholder="File path (required)">
 								</div>
-								<div class="form-group inputType-radio mt-2 mb-4 text-right">
+								<div class="form-group inputType-radio mt-2 mb-4 text-end">
 										<span class="filetype-selection d-none" data-fileType=""></span>  <!-- hidden stores the selected link type :  method, folder or file -->
 										<span class="filetype-tmpselection d-none" data-fileType=""></span> <!-- hidden temp storage of the browse button clicked, on input change event it will be stored in the filetype-selection span -->
 
@@ -720,14 +717,14 @@
 									<input class="d-none" type="file" id="input-attach1" data-text-input="txt-attach1">
 									<span>Attachment 1: </span>
 									<div class="w-100">
-										<div class="float-right pt-1"><button type="button"
-												class="btn btn-outlined btn-filebrowse float-right"
+										<div class="float-end pt-1"><button type="button"
+												class="btn btn-outlined btn-filebrowse float-end"
 												data-type="input-attach1">Browse</button></div>
 										<div class="relative00">
 											<div class="clear-field d-none"><i class="fas fa-times-circle fa-md"></i>
 											</div>
 										</div>
-										<div class="overflow-hidden w-auto pr-3"><input
+										<div class="overflow-hidden w-auto pe-3"><input
 												class="form-control w-100 txt-attach1 text-sm" type="text" value=""
 												readonly></div>
 									</div>
@@ -736,14 +733,14 @@
 									<input class="d-none" type="file" id="input-attach2" data-text-input="txt-attach2">
 									<span>Attachment 2: </span>
 									<div class="w-100">
-										<div class="float-right pt-1"><button type="button"
-												class="btn btn-outlined btn-filebrowse float-right"
+										<div class="float-end pt-1"><button type="button"
+												class="btn btn-outlined btn-filebrowse float-end"
 												data-type="input-attach2">Browse</button></div>
 										<div class="relative00">
 											<div class="clear-field d-none"><i class="fas fa-times-circle fa-md"></i>
 											</div>
 										</div>
-										<div class="overflow-hidden w-auto pr-3"><input
+										<div class="overflow-hidden w-auto pe-3"><input
 												class="form-control w-100 txt-attach2 text-sm" type="text" value=""
 												readonly></div>
 									</div>
@@ -752,14 +749,14 @@
 									<input class="d-none" type="file" id="input-attach3" data-text-input="txt-attach3">
 									<span>Attachment 3: </span>
 									<div class="w-100">
-										<div class="float-right pt-1"><button type="button"
-												class="btn btn-outlined btn-filebrowse float-right"
+										<div class="float-end pt-1"><button type="button"
+												class="btn btn-outlined btn-filebrowse float-end"
 												data-type="input-attach3">Browse</button></div>
 										<div class="relative00">
 											<div class="clear-field d-none"><i class="fas fa-times-circle fa-md"></i>
 											</div>
 										</div>
-										<div class="overflow-hidden w-auto pr-3"><input
+										<div class="overflow-hidden w-auto pe-3"><input
 												class="form-control w-100 txt-attach3 text-sm" type="text" value=""
 												readonly></div>
 									</div>
@@ -791,17 +788,17 @@
 								<div class="card-header">
 									<b class="border-notch callout-notch"></b>
 									<b class="callout-notch"></b>
-									<div class="custom-control custom-radio d-inline mr-3">
+									<div class="form-check d-inline me-3">
 										<input type="radio" id="inputImg-icon" name="radioiconimage"
-											class="custom-control-input" checked>
-										<label class="custom-control-label" for="inputImg-icon">Icon</label>
+											class="form-check-input" checked>
+										<label class="form-check-label" for="inputImg-icon">Icon</label>
 									</div>
-									<div class="custom-control custom-radio d-inline mr-3">
+									<div class="form-check d-inline me-3">
 										<input type="radio" id="inputImg-image" name="radioiconimage"
-											class="custom-control-input">
-										<label class="custom-control-label" for="inputImg-image">Local image</label>
+											class="form-check-input">
+										<label class="form-check-label" for="inputImg-image">Local image</label>
 									</div>
-									<div class="float-right"><a href="#" class="close-imagediv">Back to form</a></div>
+									<div class="float-end"><a href="#" class="close-imagediv">Back to form</a></div>
 								</div>
 								<div class="card-body">
 									<div id="icon-selection">
@@ -1054,16 +1051,16 @@
 
 										</div><!-- end div icons list -->
 									</div><!-- end div icon selection -->
-									<div id="image-selection" class="d-none ml-3">
+									<div id="image-selection" class="d-none ms-3">
 										<div class="form-group">
 										<input class="d-none"  type="file" id="input-image" accept=".png,.jpg,.bmp,.gif,.jpeg" data-text-input="txt-image"> 
 										<span>Image: </span>
 											<div class="w-100">
-											<div class="float-right pt-1"><button type="button" class="btn btn-outlined btn-filebrowse float-right" data-type="input-image">Browse</button></div>
+											<div class="float-end pt-1"><button type="button" class="btn btn-outlined btn-filebrowse float-end" data-type="input-image">Browse</button></div>
 											<div class="relative00">
 												<div class="clear-field d-none"><i class="fas fa-times-circle fa-md"></i> </div>
 											</div>
-											<div class="overflow-hidden w-auto pr-3"><input class="form-control w-100 txt-image text-sm" type="text" value="" readonly></div>
+											<div class="overflow-hidden w-auto pe-3"><input class="form-control w-100 txt-image text-sm" type="text" value="" readonly></div>
 											</div>
 										</div>
 									</div><!-- end div image-selection-->
@@ -1076,7 +1073,7 @@
 					<button type="button" class="btn btn-danger solid-button-shape btn-delete">Delete</button>
 					<button type="button" class="btn solid-button btn-save">Save</button>
 					<button type="button" class="btn btn-secondary  solid-button-shape"
-						data-dismiss="modal">Cancel</button>
+						data-bs-dismiss="modal">Cancel</button>
 				</div>
 			</div>
 		</div>
@@ -1091,16 +1088,15 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fad fa-dna fa-3x"></i>
 						</div>
 						<div>
 							<h5 class="modal-title detail-modal-name mb-0"></h5>
-							<span class="detail-modal-type badge badge-secondary mt-1"></span>
+							<span class="detail-modal-type badge text-bg-secondary mt-1"></span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body">
@@ -1140,7 +1136,7 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -1153,16 +1149,15 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="lib-detail-modal-icon mr-3">
+						<div class="lib-detail-modal-icon me-3">
 							<i class="fas fa-book fa-3x" style="color:var(--medium)"></i>
 						</div>
 						<div>
 							<h5 class="modal-title lib-detail-name mb-0"></h5>
-							<span class="lib-detail-version badge badge-secondary mt-1"></span>
+							<span class="lib-detail-version badge text-bg-secondary mt-1"></span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body">
@@ -1221,33 +1216,33 @@
 						<div class="lib-detail-tags"></div>
 					</div>
 					<div class="detail-section lib-detail-package-info-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-info-circle mr-1" style="color:var(--medium)"></i>Package Info</h6>
+						<h6 class="detail-section-label"><i class="fas fa-info-circle me-1" style="color:var(--medium)"></i>Package Info</h6>
 						<div class="lib-detail-package-info"></div>
 					</div>
 					<div class="detail-section lib-detail-installer-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-download mr-1" style="color:var(--medium)"></i>Embedded Installer</h6>
+						<h6 class="detail-section-label"><i class="fas fa-download me-1" style="color:var(--medium)"></i>Embedded Installer</h6>
 						<div class="lib-detail-installer-info"></div>
 					</div>
 					<div class="detail-section lib-detail-lineage-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-history mr-1" style="color:var(--medium)"></i>Package Lineage</h6>
+						<h6 class="detail-section-label"><i class="fas fa-history me-1" style="color:var(--medium)"></i>Package Lineage</h6>
 						<div class="lib-detail-lineage"></div>
 					</div>
 					<div class="detail-section lib-detail-integrity-section d-none">
 						<h6 class="detail-section-label">File Integrity</h6>
 						<div class="lib-detail-integrity-status"></div>
 						<div class="lib-detail-integrity-repair d-none mt-2">
-							<button class="btn btn-sm btn-outline-success lib-detail-repair-btn"><i class="fas fa-wrench mr-1"></i>Repair from Backup</button>
+							<button class="btn btn-sm btn-outline-success lib-detail-repair-btn"><i class="fas fa-wrench me-1"></i>Repair from Backup</button>
 						</div>
 					</div>
 					<div class="detail-section lib-detail-release-notes-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-file-alt mr-1" style="color:var(--medium)"></i>Release Notes</h6>
+						<h6 class="detail-section-label"><i class="fas fa-file-alt me-1" style="color:var(--medium)"></i>Release Notes</h6>
 						<div class="lib-detail-release-notes-pdf-wrap d-none mb-2">
-							<a href="#" class="btn btn-sm btn-outlined lib-detail-release-notes-pdf-link"><i class="fas fa-file-pdf mr-1" style="color:#d9534f;"></i>View Release Notes PDF</a>
+							<a href="#" class="btn btn-sm btn-outlined lib-detail-release-notes-pdf-link"><i class="fas fa-file-pdf me-1" style="color:#d9534f;"></i>View Release Notes PDF</a>
 						</div>
 						<p class="lib-detail-release-notes text-muted" style="white-space:pre-line;"></p>
 					</div>
 					<div class="detail-section lib-detail-help-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>
+						<h6 class="detail-section-label"><i class="fas fa-question-circle me-1" style="color:var(--medium)"></i>Help Files</h6>
 						<div class="pkg-file-list lib-detail-help-files"></div>
 					</div>
 					<div class="detail-section">
@@ -1259,12 +1254,12 @@
 						<div class="pkg-file-list lib-detail-demo-files"></div>
 					</div>
 					<div class="detail-section lib-detail-dependencies-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-project-diagram mr-1" style="color:var(--medium)"></i>Required Dependencies</h6>
+						<h6 class="detail-section-label"><i class="fas fa-project-diagram me-1" style="color:var(--medium)"></i>Required Dependencies</h6>
 						<div class="lib-detail-dependencies-status"></div>
 						<div class="lib-detail-dependencies-list" style="max-height:280px; overflow-y:auto;"></div>
 					</div>
 					<div class="detail-section lib-detail-functions-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-code mr-1" style="color:var(--medium)"></i>Public Functions</h6>
+						<h6 class="detail-section-label"><i class="fas fa-code me-1" style="color:var(--medium)"></i>Public Functions</h6>
 						<div class="lib-detail-functions-list" style="max-height:280px; overflow-y:auto;"></div>
 					</div>
 					<div class="detail-section lib-detail-com-section d-none">
@@ -1273,7 +1268,7 @@
 						<div class="lib-detail-com-warning-badge mt-1"></div>
 					</div>
 					<div class="detail-section lib-detail-versions-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-history mr-1" style="color:var(--medium);"></i>Cached Package Versions</h6>
+						<h6 class="detail-section-label"><i class="fas fa-history me-1" style="color:var(--medium);"></i>Cached Package Versions</h6>
 						<div class="lib-detail-versions-list" style="max-height:200px; overflow-y:auto;"></div>
 					</div>
 					<div class="detail-section">
@@ -1287,11 +1282,11 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
-					<button type="button" class="btn btn-danger btn-sm lib-detail-delete-btn"><i class="fas fa-trash-alt mr-1"></i>Delete Library</button>
+					<button type="button" class="btn btn-danger btn-sm lib-detail-delete-btn"><i class="fas fa-trash-alt me-1"></i>Delete Library</button>
 					<div>
-						<button type="button" class="btn btn-sm btn-outline-secondary lib-detail-export-btn mr-2"><i class="fas fa-box-open mr-1"></i>Export Library</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary lib-detail-export-btn me-2"><i class="fas fa-box-open me-1"></i>Export Library</button>
 						<input type="file" class="d-none" id="lib-export-save-dialog" nwsaveas="library.hxlibpkg" accept=".hxlibpkg">
-						<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Close</button>
 					</div>
 				</div>
 			</div>
@@ -1305,7 +1300,7 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="mr-3">
+						<div class="me-3">
 							<i class="fas fa-box-open fa-2x" style="color:var(--medium)"></i>
 						</div>
 						<div>
@@ -1313,26 +1308,25 @@
 							<span class="text-muted text-sm export-choice-libname"></span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body">
 					<p class="mb-3">How would you like to export this library?</p>
 					<div class="export-choice-option p-3 mb-2" data-choice="single" style="border:1px solid var(--border-color); border-radius:8px; cursor:pointer; transition:background 0.15s;">
 						<div class="d-flex align-items-center">
-							<i class="fas fa-book fa-lg mr-3" style="color:var(--medium)"></i>
+							<i class="fas fa-book fa-lg me-3" style="color:var(--medium)"></i>
 							<div>
-								<div class="font-weight-bold" style="color:var(--medium2);">Export Single Library</div>
+								<div class="fw-bold" style="color:var(--medium2);">Export Single Library</div>
 								<div class="text-muted text-sm">Export only this library as a <b>.hxlibpkg</b> package</div>
 							</div>
 						</div>
 					</div>
 					<div class="export-choice-option p-3" data-choice="deps" style="border:1px solid var(--border-color); border-radius:8px; cursor:pointer; transition:background 0.15s;">
 						<div class="d-flex align-items-center">
-							<i class="fas fa-project-diagram fa-lg mr-3" style="color:var(--medium)"></i>
+							<i class="fas fa-project-diagram fa-lg me-3" style="color:var(--medium)"></i>
 							<div>
-								<div class="font-weight-bold" style="color:var(--medium2);">Export with All Dependencies</div>
+								<div class="fw-bold" style="color:var(--medium2);">Export with All Dependencies</div>
 								<div class="text-muted text-sm">Recursively include all required dependencies as a <b>.hxlibarch</b> archive</div>
 							</div>
 						</div>
@@ -1346,30 +1340,30 @@
 					<div class="export-signing-section" style="border:1px solid var(--border-color); border-radius:8px; padding:12px 14px;">
 						<div class="d-flex align-items-center justify-content-between">
 							<div class="d-flex align-items-center">
-								<i class="fas fa-certificate mr-2" style="color:var(--medium)"></i>
-								<span class="font-weight-bold" style="color:var(--medium2); font-size:0.9rem;">Code Signing</span>
+								<i class="fas fa-certificate me-2" style="color:var(--medium)"></i>
+								<span class="fw-bold" style="color:var(--medium2); font-size:0.9rem;">Code Signing</span>
 							</div>
-							<div class="custom-control custom-switch">
-								<input type="checkbox" class="custom-control-input chk-export-sign" id="chk-export-choice-sign">
-								<label class="custom-control-label" for="chk-export-choice-sign"></label>
+							<div class="form-check form-switch">
+								<input type="checkbox" class="form-check-input chk-export-sign" id="chk-export-choice-sign">
+								<label class="form-check-label" for="chk-export-choice-sign"></label>
 							</div>
 						</div>
 						<div class="export-signing-detail mt-2" style="display:none;">
 							<div class="export-signing-configured" style="display:none;">
 								<div class="d-flex align-items-center text-sm" style="background:var(--body-background); border-radius:6px; padding:6px 10px;">
-									<i class="fas fa-user-shield mr-2" style="color:var(--medium)"></i>
+									<i class="fas fa-user-shield me-2" style="color:var(--medium)"></i>
 									<span class="export-signing-publisher-name text-muted"></span>
-									<span class="badge badge-secondary ml-2 export-signing-key-id" style="font-family:Consolas,monospace; font-size:0.75rem;"></span>
+									<span class="badge text-bg-secondary ms-2 export-signing-key-id" style="font-family:Consolas,monospace; font-size:0.75rem;"></span>
 								</div>
 							</div>
 							<div class="export-signing-not-configured text-sm text-muted" style="display:none;">
-								<i class="fas fa-exclamation-circle mr-1 text-warning"></i>No signing key configured. <a href="#" class="export-signing-open-settings">Configure in Settings</a>
+								<i class="fas fa-exclamation-circle me-1 text-warning"></i>No signing key configured. <a href="#" class="export-signing-open-settings">Configure in Settings</a>
 							</div>
 						</div>
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 				</div>
 			</div>
 		</div>
@@ -1383,7 +1377,7 @@
 			<div class="modal-content delete-confirm-content">
 				<div class="modal-header delete-confirm-header">
 					<div class="d-flex align-items-center">
-						<div class="delete-confirm-icon mr-3">
+						<div class="delete-confirm-icon me-3">
 							<i class="fas fa-exclamation-triangle fa-2x"></i>
 						</div>
 						<div>
@@ -1391,8 +1385,7 @@
 							<span class="delete-confirm-libname-header"></span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body delete-confirm-body">
@@ -1402,10 +1395,10 @@
 					</div>
 					<div class="delete-confirm-com-section d-none mt-3">
 						<div class="delete-confirm-com-box">
-							<i class="fas fa-cog mr-1"></i>
+							<i class="fas fa-cog me-1"></i>
 							<strong>COM Registered DLLs:</strong>
 							<span class="delete-confirm-com-dlls"></span>
-							<div class="mt-1 text-sm"><i class="fas fa-shield-alt mr-1"></i>Administrator rights will be required to deregister COM objects.</div>
+							<div class="mt-1 text-sm"><i class="fas fa-shield-alt me-1"></i>Administrator rights will be required to deregister COM objects.</div>
 						</div>
 					</div>
 					<div class="delete-confirm-input-section mt-3">
@@ -1426,9 +1419,9 @@
 					</div>
 				</div>
 				<div class="modal-footer delete-confirm-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-danger delete-confirm-btn" disabled>
-						<i class="fas fa-trash-alt mr-1"></i>I understand, delete this library
+						<i class="fas fa-trash-alt me-1"></i>I understand, delete this library
 					</button>
 				</div>
 			</div>
@@ -1444,7 +1437,7 @@
 			<div class="modal-content upgrade-confirm-content">
 				<div class="modal-header upgrade-confirm-header">
 					<div class="d-flex align-items-center">
-						<div class="upgrade-confirm-icon mr-3">
+						<div class="upgrade-confirm-icon me-3">
 							<i class="fas fa-arrow-circle-up fa-2x"></i>
 						</div>
 						<div>
@@ -1452,8 +1445,7 @@
 							<span class="upgrade-confirm-libname-header"></span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body upgrade-confirm-body">
@@ -1479,9 +1471,9 @@
 					</div>
 				</div>
 				<div class="modal-footer upgrade-confirm-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn upgrade-confirm-btn" disabled>
-						<i class="fas fa-arrow-circle-up mr-1"></i>I understand, upgrade this library
+						<i class="fas fa-arrow-circle-up me-1"></i>I understand, upgrade this library
 					</button>
 				</div>
 			</div>
@@ -1495,7 +1487,7 @@
 			<div class="modal-content rollback-confirm-content">
 				<div class="modal-header rollback-confirm-header">
 					<div class="d-flex align-items-center">
-						<div class="rollback-confirm-icon mr-3">
+						<div class="rollback-confirm-icon me-3">
 							<i class="fas fa-undo-alt fa-2x"></i>
 						</div>
 						<div>
@@ -1503,8 +1495,7 @@
 							<span class="rollback-confirm-libname-header"></span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body rollback-confirm-body">
@@ -1530,9 +1521,9 @@
 					</div>
 				</div>
 				<div class="modal-footer rollback-confirm-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn rollback-confirm-btn" disabled>
-						<i class="fas fa-undo-alt mr-1"></i>I understand, rollback this library
+						<i class="fas fa-undo-alt me-1"></i>I understand, rollback this library
 					</button>
 				</div>
 			</div>
@@ -1546,7 +1537,7 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="mr-3">
+						<div class="me-3">
 							<i class="fas fa-file-archive fa-3x" style="color:var(--medium)"></i>
 						</div>
 						<div>
@@ -1554,15 +1545,14 @@
 							<span class="text-muted text-sm">Select libraries to bundle into a <b>.hxlibarch</b> archive</span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body">
 					<div class="d-flex justify-content-between align-items-center mb-3">
 						<div>
 							<button class="btn btn-sm btn-outlined" id="exp-arch-select-all">Select All</button>
-							<button class="btn btn-sm btn-outlined ml-1" id="exp-arch-select-none">Select None</button>
+							<button class="btn btn-sm btn-outlined ms-1" id="exp-arch-select-none">Select None</button>
 						</div>
 						<span class="text-muted text-sm" id="exp-arch-selected-count">0 selected</span>
 					</div>
@@ -1571,20 +1561,20 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 					<div class="d-flex align-items-center">
 						<!-- Code Signing toggle for archive export -->
-						<div class="archive-signing-section mr-3 d-flex align-items-center" style="border:1px solid var(--border-color); border-radius:6px; padding:4px 12px;">
-							<i class="fas fa-certificate mr-2" style="color:var(--medium); font-size:0.85rem;"></i>
-							<span class="text-sm mr-2" style="color:var(--medium2);">Sign</span>
-							<div class="custom-control custom-switch" style="margin-bottom:0;">
-								<input type="checkbox" class="custom-control-input chk-export-sign" id="chk-archive-sign">
-								<label class="custom-control-label" for="chk-archive-sign"></label>
+						<div class="archive-signing-section me-3 d-flex align-items-center" style="border:1px solid var(--border-color); border-radius:6px; padding:4px 12px;">
+							<i class="fas fa-certificate me-2" style="color:var(--medium); font-size:0.85rem;"></i>
+							<span class="text-sm me-2" style="color:var(--medium2);">Sign</span>
+							<div class="form-check form-switch" style="margin-bottom:0;">
+								<input type="checkbox" class="form-check-input chk-export-sign" id="chk-archive-sign">
+								<label class="form-check-label" for="chk-archive-sign"></label>
 							</div>
-							<span class="archive-signing-publisher text-muted text-sm ml-1" style="display:none;"></span>
-							<span class="archive-signing-not-configured text-sm ml-1" style="display:none;"><i class="fas fa-exclamation-circle text-warning" title="No signing key configured"></i></span>
+							<span class="archive-signing-publisher text-muted text-sm ms-1" style="display:none;"></span>
+							<span class="archive-signing-not-configured text-sm ms-1" style="display:none;"><i class="fas fa-exclamation-circle text-warning" title="No signing key configured"></i></span>
 						</div>
-						<button type="button" class="btn solid-button" id="exp-arch-export" disabled><i class="fas fa-file-archive mr-2"></i>Export Archive (.hxlibarch)</button>
+						<button type="button" class="btn solid-button" id="exp-arch-export" disabled><i class="fas fa-file-archive me-2"></i>Export Archive (.hxlibarch)</button>
 						<input type="file" class="d-none" id="exp-arch-save-dialog" nwsaveas="libraries.hxlibarch" accept=".hxlibarch">
 					</div>
 				</div>
@@ -1599,16 +1589,15 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="mr-3">
+						<div class="me-3">
 							<i class="fas fa-layer-group fa-3x" style="color:var(--medium)"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0">Library Groups</h5>
-							<span class="text-muted text-sm">Organize libraries into custom groups. <i class="fas fa-arrows-alt-v ml-1 mr-1" style="color:var(--medium)"></i> Drag to reorder.</span>
+							<span class="text-muted text-sm">Organize libraries into custom groups. <i class="fas fa-arrows-alt-v ms-1 me-1" style="color:var(--medium)"></i> Drag to reorder.</span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body">
@@ -1618,8 +1607,8 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>
-					<button type="button" class="btn solid-button btn-newgroup-modal"><i class="fas fa-plus mr-2"></i>New Group</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Close</button>
+					<button type="button" class="btn solid-button btn-newgroup-modal"><i class="fas fa-plus me-2"></i>New Group</button>
 				</div>
 			</div>
 		</div>
@@ -1632,7 +1621,7 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="mr-3">
+						<div class="me-3">
 							<i class="fas fa-cog fa-3x" id="settings-cog-icon" style="color:var(--medium); cursor:default; user-select:none;"></i>
 						</div>
 						<div>
@@ -1640,8 +1629,7 @@
 							<span class="text-muted text-sm">Configure application preferences</span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body">
@@ -1650,16 +1638,16 @@
 							<h6>Software Update</h6>
 							<div class="settings-sw-info mb-3">
 								<div class="d-flex flex-wrap text-sm text-muted settings-sw-info-row">
-									<span class="mr-3"><strong>Version:</strong> <span class="settings-sw-version"></span></span>
-									<span class="mr-3"><strong>Build:</strong> <span class="settings-sw-build"></span></span>
-									<span class="mr-3"><strong>OS:</strong> <span class="settings-sw-os"></span></span>
+									<span class="me-3"><strong>Version:</strong> <span class="settings-sw-version"></span></span>
+									<span class="me-3"><strong>Build:</strong> <span class="settings-sw-build"></span></span>
+									<span class="me-3"><strong>OS:</strong> <span class="settings-sw-os"></span></span>
 									<span><strong>VENUS:</strong> <span class="settings-sw-venus"></span></span>
 								</div>
 							</div>
 							<div class="settings-update-no-update">
 								<div class="d-flex align-items-center">
-									<button class="btn btn-sm btn-outlined" type="button" id="btn-settings-update-check"><i class="fas fa-arrows-rotate mr-1"></i>Check for Updates</button>
-									<span class="text-muted text-sm ml-3 settings-update-status"></span>
+									<button class="btn btn-sm btn-outlined" type="button" id="btn-settings-update-check"><i class="fas fa-arrows-rotate me-1"></i>Check for Updates</button>
+									<span class="text-muted text-sm ms-3 settings-update-status"></span>
 								</div>
 							</div>
 							<div class="settings-update-available d-none">
@@ -1668,24 +1656,24 @@
 									<span class="settings-update-available-text">An update is available</span>
 								</div>
 								<div class="d-flex align-items-center mt-2">
-									<button class="btn btn-sm btn-outlined" type="button" id="btn-settings-update-view"><i class="fas fa-arrow-up-right-from-square mr-1"></i>View Update</button>
-									<span class="text-muted text-sm ml-3 settings-update-version"></span>
+									<button class="btn btn-sm btn-outlined" type="button" id="btn-settings-update-view"><i class="fas fa-arrow-up-right-from-square me-1"></i>View Update</button>
+									<span class="text-muted text-sm ms-3 settings-update-version"></span>
 								</div>
 							</div>
-							<div class="custom-control custom-checkbox mt-3">
-								<input type="checkbox" class="custom-control-input" id="chk_autoUpdate" checked>
-								<label class="custom-control-label" for="chk_autoUpdate">Automatically check for updates on startup</label>
+							<div class="form-check mt-3">
+								<input type="checkbox" class="form-check-input" id="chk_autoUpdate" checked>
+								<label class="form-check-label" for="chk_autoUpdate">Automatically check for updates on startup</label>
 							</div>
-							<div class="custom-control custom-checkbox mt-1">
-								<input type="checkbox" class="custom-control-input" id="chk_showReleaseNotes" checked>
-								<label class="custom-control-label" for="chk_showReleaseNotes">Show release notes after updates</label>
+							<div class="form-check mt-1">
+								<input type="checkbox" class="form-check-input" id="chk_showReleaseNotes" checked>
+								<label class="form-check-label" for="chk_showReleaseNotes">Show release notes after updates</label>
 							</div>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
 							<h6>Installation</h6>
-							<div class="custom-control custom-checkbox">
-								<input type="checkbox" class="custom-control-input" id="chk_confirmBeforeInstall" checked>
-								<label class="custom-control-label" for="chk_confirmBeforeInstall">Show preview and confirmation before installing a library</label>
+							<div class="form-check">
+								<input type="checkbox" class="form-check-input" id="chk_confirmBeforeInstall" checked>
+								<label class="form-check-label" for="chk_confirmBeforeInstall">Show preview and confirmation before installing a library</label>
 							</div>
 
 
@@ -1694,45 +1682,44 @@
 						<div class="settings-section col-md-12 p-3 no-gutters">
 							<h6>Audit Trail</h6>
 							<small class="text-muted d-block mb-2">Actions are always logged in history, but these options ensure comments and signatures are included for audit trail accountability.</small>
-							<div class="custom-control custom-checkbox">
-								<input type="checkbox" class="custom-control-input" id="chk_requireActionComment">
-								<label class="custom-control-label" for="chk_requireActionComment">Require comment for destructive and impactful actions</label>
+							<div class="form-check">
+								<input type="checkbox" class="form-check-input" id="chk_requireActionComment">
+								<label class="form-check-label" for="chk_requireActionComment">Require comment for destructive and impactful actions</label>
 							</div>
-							<div class="custom-control custom-checkbox mt-2">
-								<input type="checkbox" class="custom-control-input" id="chk_requireActionSignature">
-								<label class="custom-control-label" for="chk_requireActionSignature">Require user signature for destructive and impactful actions</label>
+							<div class="form-check mt-2">
+								<input type="checkbox" class="form-check-input" id="chk_requireActionSignature">
+								<label class="form-check-label" for="chk_requireActionSignature">Require user signature for destructive and impactful actions</label>
 							</div>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
 							<h6>Display</h6>
-							<div class="custom-control custom-checkbox mt-2">
-								<input type="checkbox" class="custom-control-input" id="chk_hideSystemLibraries">
-								<label class="custom-control-label" for="chk_hideSystemLibraries">Hide system libraries on the front page</label>
+							<div class="form-check mt-2">
+								<input type="checkbox" class="form-check-input" id="chk_hideSystemLibraries">
+								<label class="form-check-label" for="chk_hideSystemLibraries">Hide system libraries on the front page</label>
 							</div>
-							<small class="text-muted ml-4">System libraries with warnings or errors will still be shown.</small>
+							<small class="text-muted ms-4">System libraries with warnings or errors will still be shown.</small>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
 							<h6>Data Location</h6>
 							<small class="text-muted d-block mb-2">All application data (settings, library registry, audit trail, package backups, exports) is stored in the <code>local/</code> directory within the application's install folder. This location is globally accessible to all users on this PC.</small>
 							<div class="input-group input-group-sm">
 								<input type="text" class="form-control txt-localDataPath" placeholder="Path to local data folder" readonly>
-								<div class="input-group-append">
-									<button class="btn btn-outlined btn-openLocalDataDir" type="button"><i class="far fa-folder-open mr-1"></i>Open Folder</button>
+																	<button class="btn btn-outlined btn-openLocalDataDir" type="button"><i class="far fa-folder-open me-1"></i>Open Folder</button>
 								</div>
 							</div>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
 							<h6>Unsigned Libraries</h6>
 
-							<div class="custom-control custom-checkbox">
-								<input type="checkbox" class="custom-control-input" id="chk_includeUnsignedLibs">
-								<label class="custom-control-label" for="chk_includeUnsignedLibs">Include existing unsigned libraries on the front page</label>
+							<div class="form-check">
+								<input type="checkbox" class="form-check-input" id="chk_includeUnsignedLibs">
+								<label class="form-check-label" for="chk_includeUnsignedLibs">Include existing unsigned libraries on the front page</label>
 							</div>
-							<small class="text-muted ml-4 d-block mb-2">Scans the Library folder for .hsl and .smt files that are not part of a signed package or system library. Files and folders starting with ~ or . are automatically excluded (temporary/hidden files). These can be edited and quickly exported as .hxlibpkg packages.</small>
-							<button class="btn btn-sm btn-outlined ml-4" id="btn-scan-unsigned-libs" disabled><i class="fas fa-search mr-1"></i>Scan Now</button>
-							<i class="fas fa-circle-notch fa-spin ml-2 unsigned-scan-spinner" style="display:none; color:#6c757d;"></i>
-							<i class="fas fa-check-circle ml-2 unsigned-scan-done" style="display:none; color:#28a745;"></i>
-							<span class="text-muted text-sm ml-2 unsigned-scan-status"></span>
+							<small class="text-muted ms-4 d-block mb-2">Scans the Library folder for .hsl and .smt files that are not part of a signed package or system library. Files and folders starting with ~ or . are automatically excluded (temporary/hidden files). These can be edited and quickly exported as .hxlibpkg packages.</small>
+							<button class="btn btn-sm btn-outlined ms-4" id="btn-scan-unsigned-libs" disabled><i class="fas fa-search me-1"></i>Scan Now</button>
+							<i class="fas fa-circle-notch fa-spin ms-2 unsigned-scan-spinner" style="display:none; color:#6c757d;"></i>
+							<i class="fas fa-check-circle ms-2 unsigned-scan-done" style="display:none; color:#28a745;"></i>
+							<span class="text-muted text-sm ms-2 unsigned-scan-status"></span>
 						</div>
 						<div class="settings-section col-md-12 p-3 no-gutters">
 							<h6>Code Signing</h6>
@@ -1743,8 +1730,7 @@
 									<div class="col-sm-8">
 										<div class="input-group input-group-sm">
 											<input type="text" class="form-control form-control-sm settings-signing-key-path" placeholder="No private key selected" readonly style="cursor:default;">
-											<div class="input-group-append">
-												<button class="btn btn-outlined btn-sm btn-browse-signing-key" type="button"><i class="far fa-folder-open mr-1"></i>Browse</button>
+																							<button class="btn btn-outlined btn-sm btn-browse-signing-key" type="button"><i class="far fa-folder-open me-1"></i>Browse</button>
 											</div>
 										</div>
 										<input type="file" class="d-none" id="settings-signing-key-picker" accept=".pem">
@@ -1755,8 +1741,7 @@
 									<div class="col-sm-8">
 										<div class="input-group input-group-sm">
 											<input type="text" class="form-control form-control-sm settings-signing-cert-path" placeholder="No certificate selected" readonly style="cursor:default;">
-											<div class="input-group-append">
-												<button class="btn btn-outlined btn-sm btn-browse-signing-cert" type="button"><i class="far fa-folder-open mr-1"></i>Browse</button>
+																							<button class="btn btn-outlined btn-sm btn-browse-signing-cert" type="button"><i class="far fa-folder-open me-1"></i>Browse</button>
 											</div>
 										</div>
 										<input type="file" class="d-none" id="settings-signing-cert-picker" accept=".json">
@@ -1765,20 +1750,20 @@
 							</div>
 							<div class="settings-signing-status mb-2" style="display:none;">
 								<div class="d-flex align-items-center" style="background:var(--body-background); border-radius:6px; padding:8px 12px;">
-									<i class="fas fa-user-shield mr-2" style="color:var(--medium)"></i>
+									<i class="fas fa-user-shield me-2" style="color:var(--medium)"></i>
 									<div>
-										<span class="settings-signing-publisher text-sm font-weight-bold"></span>
-										<span class="badge badge-secondary ml-2 settings-signing-key-id" style="font-family:Consolas,monospace; font-size:0.75rem;"></span>
+										<span class="settings-signing-publisher text-sm fw-bold"></span>
+										<span class="badge text-bg-secondary ms-2 settings-signing-key-id" style="font-family:Consolas,monospace; font-size:0.75rem;"></span>
 										<div class="text-muted text-sm settings-signing-org" style="display:none;"></div>
 									</div>
 								</div>
 							</div>
 							<div class="settings-signing-error mb-2" style="display:none;">
-								<div class="text-sm text-danger"><i class="fas fa-times-circle mr-1"></i><span class="settings-signing-error-text"></span></div>
+								<div class="text-sm text-danger"><i class="fas fa-times-circle me-1"></i><span class="settings-signing-error-text"></span></div>
 							</div>
 							<div class="d-flex">
-								<button class="btn btn-sm btn-outlined btn-generate-keypair mr-2"><i class="fas fa-key mr-1"></i>Generate Key Pair...</button>
-								<button class="btn btn-sm btn-outlined btn-clear-signing-config" style="display:none;"><i class="fas fa-times mr-1"></i>Clear</button>
+								<button class="btn btn-sm btn-outlined btn-generate-keypair me-2"><i class="fas fa-key me-1"></i>Generate Key Pair...</button>
+								<button class="btn btn-sm btn-outlined btn-clear-signing-config" style="display:none;"><i class="fas fa-times me-1"></i>Clear</button>
 							</div>
 							<!-- Hidden file dialogs for key pair generation output -->
 							<input type="file" class="d-none" id="settings-keypair-output-dir" nwdirectory>
@@ -1789,11 +1774,11 @@
 							<div class="dropdown d-inline">
 								Display last:
 								<button class="btn btn-sm btn-outlined dropdown-toggle .btn-recentMax" type="button"
-									id="dd-maxRecent" data-toggle="dropdown" aria-haspopup="true"
+									id="dd-maxRecent" data-bs-toggle="dropdown" aria-haspopup="true"
 									aria-expanded="false">
 									10
 								</button>
-								<button class="btn btn-sm my-2 ml-4 btn-outlined btn-clearRecentList">
+								<button class="btn btn-sm my-2 ms-4 btn-outlined btn-clearRecentList">
 									Clear Recent List
 								</button>
 								<div class="dropdown-menu dd-maxRecent" aria-labelledby="dd-maxRecent">
@@ -1803,18 +1788,18 @@
 									<a class="dropdown-item dropdown-navitem-clearbg" href="#">50</a>
 									<a class="dropdown-item dropdown-navitem-clearbg" href="#">100</a>
 								</div>
-								<div class="d-inline ml-4 txt-recentCleared text-muted"></div>
+								<div class="d-inline ms-4 txt-recentCleared text-muted"></div>
 							</div>
 						</div>
 
 						<div class="settings-section col-md-12 p-3 no-gutters" id="settings-oem-keywords-section" style="display:none;">
 							<h6>OEM Authors &amp; Organizations</h6>
 							<small class="text-muted d-block mb-2">When enabled, restricted OEM author and organization names can be used for library packaging during this session.</small>
-							<div class="custom-control custom-checkbox">
-								<input type="checkbox" class="custom-control-input" id="chk_oemKeywordsEnabled">
-								<label class="custom-control-label" for="chk_oemKeywordsEnabled">Enable OEM restricted authors and organizations</label>
+							<div class="form-check">
+								<input type="checkbox" class="form-check-input" id="chk_oemKeywordsEnabled">
+								<label class="form-check-label" for="chk_oemKeywordsEnabled">Enable OEM restricted authors and organizations</label>
 							</div>
-							<small class="text-muted ml-4 d-block mt-1 oem-keywords-status"></small>
+							<small class="text-muted ms-4 d-block mt-1 oem-keywords-status"></small>
 						</div>
 
 						<!-- Report a Bug -->
@@ -1822,10 +1807,10 @@
 							<h6>Report a Bug</h6>
 							<p class="text-muted text-sm mb-2">You can report bugs, request features, or ask questions by opening an issue on GitHub.</p>
 							<a href="https://github.com/zdmilot/Library-Manager/issues" target="_blank" class="btn btn-sm btn-outlined settings-report-bug-link">
-								<i class="fas fa-external-link-alt mr-1"></i>Open GitHub Issues
+								<i class="fas fa-external-link-alt me-1"></i>Open GitHub Issues
 							</a>
 							<div class="mt-2">
-								<small class="text-muted"><i class="fas fa-exclamation-triangle mr-1" style="color:var(--warning-color, #e67e22);"></i>Do not include sensitive information in public issue reports.</small>
+								<small class="text-muted"><i class="fas fa-exclamation-triangle me-1" style="color:var(--warning-color, #e67e22);"></i>Do not include sensitive information in public issue reports.</small>
 							</div>
 						</div>
 
@@ -1833,8 +1818,8 @@
 						<div class="settings-section col-md-12 p-3 no-gutters" id="settings-about-info-section">
 							<h6>About</h6>
 							<div class="d-flex flex-wrap text-sm text-muted settings-sw-info-row">
-								<span class="mr-3"><strong>Author:</strong> Zachary Milot</span>
-								<span class="mr-3"><a href="#" class="settings-about-privacy-link">Privacy Policy</a></span>
+								<span class="me-3"><strong>Author:</strong> Zachary Milot</span>
+								<span class="me-3"><a href="#" class="settings-about-privacy-link">Privacy Policy</a></span>
 								<span><a href="#" class="settings-about-terms-link">Terms of Use</a></span>
 							</div>
 						</div>
@@ -1892,7 +1877,7 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -1905,22 +1890,21 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="mr-3 unsigned-lib-detail-icon">
+						<div class="me-3 unsigned-lib-detail-icon">
 							<i class="fas fa-file-alt fa-3x" style="color:var(--medium)"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0 unsigned-lib-detail-name">Library</h5>
-							<span class="badge badge-outline-secondary"><i class="fas fa-unlock mr-1"></i>Unsigned</span>
+							<span class="badge badge-outline-secondary"><i class="fas fa-unlock me-1"></i>Unsigned</span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body" style="max-height:65vh; overflow-y:auto;">
 					<!-- Metadata Section -->
 					<div class="card mb-3 exporter-card">
-						<div class="card-header"><i class="fas fa-info-circle mr-2 color-medium"></i>Package Metadata</div>
+						<div class="card-header"><i class="fas fa-info-circle me-2 color-medium"></i>Package Metadata</div>
 						<div class="card-body">
 							<div class="form-group row mb-2">
 								<label class="col-sm-4 col-form-label col-form-label-sm">Library Name</label>
@@ -1975,16 +1959,16 @@
 
 					<!-- Icon / Image Section -->
 					<div class="card mb-3 exporter-card">
-						<div class="card-header"><i class="fas fa-image mr-2 color-medium"></i>Library Icon / Image</div>
+						<div class="card-header"><i class="fas fa-image me-2 color-medium"></i>Library Icon / Image</div>
 						<div class="card-body">
 							<p class="text-muted text-sm mb-2">Choose an image to represent this library. If none is selected, the auto-detected .bmp (if any) will be used.</p>
 							<div class="d-flex align-items-center">
-								<div class="pkg-icon-preview mr-3" id="ulib-icon-preview">
+								<div class="pkg-icon-preview me-3" id="ulib-icon-preview">
 									<i class="fas fa-image fa-2x" style="color:#ccc;"></i>
 								</div>
 								<div>
 									<button class="btn btn-sm btn-outlined" id="ulib-pickIcon">Choose Image...</button>
-									<button class="btn btn-sm btn-outlined ml-1" id="ulib-removeIcon" style="display:none;">Remove</button>
+									<button class="btn btn-sm btn-outlined ms-1" id="ulib-removeIcon" style="display:none;">Remove</button>
 									<input type="file" class="d-none" id="ulib-input-icon" accept=".png,.jpg,.jpeg,.bmp,.ico,.gif,.svg">
 									<div class="text-muted text-sm mt-1" id="ulib-icon-name">No image selected</div>
 								</div>
@@ -1995,17 +1979,17 @@
 					<!-- Library Files Section -->
 					<div class="card mb-3 exporter-card">
 						<div class="card-header">
-							<i class="fas fa-book mr-2 color-medium"></i>Library Files
+							<i class="fas fa-book me-2 color-medium"></i>Library Files
 						</div>
 						<div class="card-body">
-							<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle mr-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
+							<p class="text-muted text-sm mb-2"><i class="fas fa-info-circle me-1"></i>For <b>.dll</b> files that require COM registration, check the <b>COM Register</b> checkbox next to the file. <span class="text-danger">Administrator rights will be required during import.</span></p>
 							<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 								<button class="btn btn-sm btn-outlined" id="ulib-addLibFiles">Add Files...</button>
 								<button class="btn btn-sm btn-outlined" id="ulib-addLibFolder">Add Folder...</button>
 								<button class="btn btn-sm btn-outlined" id="ulib-removeLibFiles">Remove Selected</button>
-								<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="ulib-file-list"><i class="fas fa-folder-plus mr-1"></i>New Folder</button>
-								<button class="btn btn-sm btn-outlined" id="ulib-changeLibPath"><i class="fas fa-folder-open mr-1"></i>Change Path</button>
-								<span class="text-muted text-sm ml-2" id="ulib-lib-count">0 files</span>
+								<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="ulib-file-list"><i class="fas fa-folder-plus me-1"></i>New Folder</button>
+								<button class="btn btn-sm btn-outlined" id="ulib-changeLibPath"><i class="fas fa-folder-open me-1"></i>Change Path</button>
+								<span class="text-muted text-sm ms-2" id="ulib-lib-count">0 files</span>
 								<input type="file" class="d-none" id="ulib-input-libfiles" multiple>
 								<input type="file" class="d-none" id="ulib-input-libfolder" nwdirectory>
 							</div>
@@ -2016,15 +2000,15 @@
 					<!-- Demo Method Files Section -->
 					<div class="card mb-3 exporter-card">
 						<div class="card-header">
-							<i class="fas fa-flask mr-2 color-medium"></i>Demo Method Files
+							<i class="fas fa-flask me-2 color-medium"></i>Demo Method Files
 						</div>
 						<div class="card-body">
 							<div class="mb-2 d-flex flex-wrap align-items-center" style="gap:4px;">
 								<button class="btn btn-sm btn-outlined" id="ulib-addDemoFiles">Add Files...</button>
 								<button class="btn btn-sm btn-outlined" id="ulib-addDemoFolder">Add Folder...</button>
 								<button class="btn btn-sm btn-outlined" id="ulib-removeDemoFiles">Remove Selected</button>
-								<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="ulib-demo-list"><i class="fas fa-folder-plus mr-1"></i>New Folder</button>
-								<span class="text-muted text-sm ml-2" id="ulib-demo-count">0 files</span>
+								<button class="btn btn-sm btn-outlined ft-newFolderBtn" data-tree="ulib-demo-list"><i class="fas fa-folder-plus me-1"></i>New Folder</button>
+								<span class="text-muted text-sm ms-2" id="ulib-demo-count">0 files</span>
 								<input type="file" class="d-none" id="ulib-input-demofiles" multiple accept=".hsl,.stp,.csv,.txt,.med,.wfl">
 								<input type="file" class="d-none" id="ulib-input-demofolder" nwdirectory>
 							</div>
@@ -2034,13 +2018,13 @@
 				</div>
 				<div class="modal-footer detail-modal-footer flex-column">
 					<div class="w-100 d-none text-warning text-sm mb-2 text-center" id="ulib-com-warning">
-						<i class="fas fa-exclamation-triangle mr-1"></i>One or more DLLs are marked for COM registration. Administrator rights will be required during import.
+						<i class="fas fa-exclamation-triangle me-1"></i>One or more DLLs are marked for COM registration. Administrator rights will be required during import.
 					</div>
 					<div class="w-100 d-flex">
-						<button type="button" class="btn btn-outlined mr-auto" id="ulib-remove-btn" title="Remove this entry from the unsigned list"><i class="fas fa-trash-alt mr-1"></i>Remove</button>
-						<button type="button" class="btn btn-outlined" id="ulib-register-btn" title="Register this library directly into Library Manager as a signed library"><i class="fas fa-check-circle mr-1"></i>Register to Library Manager</button>
-						<button type="button" class="btn btn-outlined ml-2" id="ulib-save-btn"><i class="fas fa-save mr-1"></i>Save</button>
-						<button type="button" class="btn solid-button ml-2" id="ulib-export-btn"><i class="fas fa-file-export mr-1"></i>Export .hxlibpkg</button>
+						<button type="button" class="btn btn-outlined me-auto" id="ulib-remove-btn" title="Remove this entry from the unsigned list"><i class="fas fa-trash-alt me-1"></i>Remove</button>
+						<button type="button" class="btn btn-outlined" id="ulib-register-btn" title="Register this library directly into Library Manager as a signed library"><i class="fas fa-check-circle me-1"></i>Register to Library Manager</button>
+						<button type="button" class="btn btn-outlined ms-2" id="ulib-save-btn"><i class="fas fa-save me-1"></i>Save</button>
+						<button type="button" class="btn solid-button ms-2" id="ulib-export-btn"><i class="fas fa-file-export me-1"></i>Export .hxlibpkg</button>
 						<input type="file" class="d-none" id="ulib-export-save-dialog" nwsaveas="library.hxlibpkg" accept=".hxlibpkg">
 					</div>
 				</div>
@@ -2054,9 +2038,8 @@
 		<div class="modal-dialog modal-dialog-centered" role="document">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
-					<h5 class="modal-title"><i class="fas fa-flask mr-2 color-medium"></i>Demo Method File Location</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<h5 class="modal-title"><i class="fas fa-flask me-2 color-medium"></i>Demo Method File Location</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body">
@@ -2064,7 +2047,7 @@
 					<div class="card mb-2 exporter-card cursor-pointer ulib-demo-location-option" data-choice="move" style="border:2px solid transparent;">
 						<div class="card-body py-2 px-3">
 							<div class="d-flex align-items-center">
-								<i class="fas fa-folder-open mr-3" style="font-size:1.4rem; color:var(--medium);"></i>
+								<i class="fas fa-folder-open me-3" style="font-size:1.4rem; color:var(--medium);"></i>
 								<div>
 									<strong>Move to Library Demo Methods</strong>
 									<div class="text-muted text-sm" id="ulib-demo-location-move-path">...\Hamilton\Methods\Library Demo Methods\&lt;libraryname&gt;</div>
@@ -2075,7 +2058,7 @@
 					<div class="card mb-0 exporter-card cursor-pointer ulib-demo-location-option" data-choice="keep" style="border:2px solid transparent;">
 						<div class="card-body py-2 px-3">
 							<div class="d-flex align-items-center">
-								<i class="fas fa-book mr-3" style="font-size:1.4rem; color:var(--medium);"></i>
+								<i class="fas fa-book me-3" style="font-size:1.4rem; color:var(--medium);"></i>
 								<div>
 									<strong>Keep in library area</strong>
 									<div class="text-muted text-sm">Demo files will remain in their current location alongside the library files</div>
@@ -2085,8 +2068,8 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn solid-button" id="ulib-demo-location-confirm" disabled><i class="fas fa-check mr-1"></i>Continue</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn solid-button" id="ulib-demo-location-confirm" disabled><i class="fas fa-check me-1"></i>Continue</button>
 				</div>
 			</div>
 		</div>
@@ -2099,7 +2082,7 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-file-import fa-2x" style="color:var(--medium);"></i>
 						</div>
 						<div>
@@ -2107,8 +2090,7 @@
 							<small class="text-muted">Import library packages, archives, or Hamilton VENUS packages</small>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body hampkg-modal-body">
@@ -2121,7 +2103,7 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 				</div>
 			</div>
 		</div>
@@ -2134,16 +2116,15 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="imp-preview-icon mr-3">
+						<div class="imp-preview-icon me-3">
 							<i class="fas fa-book fa-3x" style="color:var(--medium)"></i>
 						</div>
 						<div>
 							<h5 class="modal-title imp-preview-name mb-0"></h5>
-							<span class="imp-preview-version badge badge-secondary mt-1"></span>
+							<span class="imp-preview-version badge text-bg-secondary mt-1"></span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body">
@@ -2205,25 +2186,25 @@
 					</div>
 					<!-- Release Notes -->
 					<div class="detail-section imp-preview-release-notes-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-file-alt mr-1" style="color:var(--medium)"></i>Release Notes</h6>
+						<h6 class="detail-section-label"><i class="fas fa-file-alt me-1" style="color:var(--medium)"></i>Release Notes</h6>
 						<div class="imp-preview-release-notes-pdf-wrap d-none mb-2">
-							<a href="#" class="btn btn-sm btn-outlined imp-preview-release-notes-pdf-link"><i class="fas fa-file-pdf mr-1" style="color:#d9534f;"></i>View Release Notes PDF</a>
+							<a href="#" class="btn btn-sm btn-outlined imp-preview-release-notes-pdf-link"><i class="fas fa-file-pdf me-1" style="color:#d9534f;"></i>View Release Notes PDF</a>
 						</div>
 						<p class="imp-preview-release-notes text-muted" style="white-space:pre-line;"></p>
 					</div>
 					<!-- Help Files -->
 					<div class="detail-section imp-preview-help-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>
+						<h6 class="detail-section-label"><i class="fas fa-question-circle me-1" style="color:var(--medium)"></i>Help Files</h6>
 						<div class="pkg-file-list imp-preview-help-files"></div>
 					</div>
 					<!-- Bin Files -->
 					<div class="detail-section imp-preview-bin-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-cogs mr-1" style="color:var(--medium)"></i>Bin Files</h6>
+						<h6 class="detail-section-label"><i class="fas fa-cogs me-1" style="color:var(--medium)"></i>Bin Files</h6>
 						<div class="pkg-file-list imp-preview-bin-files"></div>
 					</div>
 					<!-- Package Signature Status -->
 					<div class="detail-section imp-preview-signature-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-shield-alt mr-1" style="color:var(--medium)"></i>Package Integrity</h6>
+						<h6 class="detail-section-label"><i class="fas fa-shield-alt me-1" style="color:var(--medium)"></i>Package Integrity</h6>
 						<div class="imp-preview-signature-status" style="padding:6px 10px; border-radius:6px; background:var(--body-background);"></div>
 
 					</div>
@@ -2236,17 +2217,17 @@
 					<!-- Overwrite warning -->
 					<div class="imp-preview-overwrite-warning d-none mt-2">
 						<div class="alert alert-warning mb-0 py-2 px-3" style="font-size:0.85rem;">
-							<i class="fas fa-exclamation-triangle mr-1"></i>
+							<i class="fas fa-exclamation-triangle me-1"></i>
 							<span class="imp-preview-overwrite-text">A library with this name is already installed and will be updated.</span>
 						</div>
 					</div>
 					<!-- Required Dependencies Warning -->
 					<div class="detail-section imp-preview-deps-section d-none mt-2">
-						<h6 class="detail-section-label"><i class="fas fa-project-diagram mr-1" style="color:var(--medium)"></i>Required Dependencies</h6>
+						<h6 class="detail-section-label"><i class="fas fa-project-diagram me-1" style="color:var(--medium)"></i>Required Dependencies</h6>
 						<div class="imp-preview-deps-list"></div>
 						<div class="imp-preview-deps-warning d-none mt-2">
 							<div class="alert alert-danger mb-0 py-2 px-3" style="font-size:0.85rem;">
-								<i class="fas fa-exclamation-triangle mr-1"></i>
+								<i class="fas fa-exclamation-triangle me-1"></i>
 								<strong>Missing Dependencies</strong><br>
 								<span class="imp-preview-deps-warning-text">This library requires dependencies that are not currently installed. The library may not function correctly without them.</span>
 							</div>
@@ -2255,19 +2236,19 @@
 					<!-- COM registration notice -->
 					<div class="detail-section imp-preview-com-section d-none mt-2">
 						<div class="alert alert-info mb-0 py-2 px-3" style="font-size:0.85rem;">
-							<i class="fas fa-cog mr-1"></i>
+							<i class="fas fa-cog me-1"></i>
 							<strong>COM Registration Required</strong><br>
 							<span>The following DLLs will be registered using the <strong>32-bit</strong> <code>RegAsm.exe /codebase</code> (VENUS requires 32-bit COM):</span><br>
-							<span class="imp-preview-com-list font-weight-bold"></span><br>
+							<span class="imp-preview-com-list fw-bold"></span><br>
 							<span class="text-danger" style="font-size:0.8rem;" title="Administrator (elevated) rights are needed to register COM objects on the system. A UAC prompt will appear when you click Install.">
-								<i class="fas fa-shield-alt mr-1"></i>Administrator rights are required to register COM objects.
+								<i class="fas fa-shield-alt me-1"></i>Administrator rights are required to register COM objects.
 							</span>
 						</div>
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn solid-button" id="imp-preview-confirm"><i class="fas fa-file-import mr-2"></i>Install Library</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn solid-button" id="imp-preview-confirm"><i class="fas fa-file-import me-2"></i>Install Library</button>
 				</div>
 			</div>
 		</div>
@@ -2292,7 +2273,7 @@
 					<div class="import-success-com-status d-none"></div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
-					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Done</button>
+					<button type="button" class="btn solid-button px-5" data-bs-dismiss="modal">Done</button>
 				</div>
 			</div>
 		</div>
@@ -2305,7 +2286,7 @@
 			<div class="modal-content rollback-confirm-content">
 				<div class="modal-header rollback-confirm-header">
 					<div class="d-flex align-items-center">
-						<div class="rollback-confirm-icon mr-3">
+						<div class="rollback-confirm-icon me-3">
 							<i class="fas fa-exclamation-triangle fa-2x"></i>
 						</div>
 						<div>
@@ -2313,8 +2294,7 @@
 							<span class="rollback-confirm-libname-header"><span class="arch-conflict-count">0</span> conflict(s) detected</span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body rollback-confirm-body">
@@ -2352,12 +2332,12 @@
 					</div>
 				</div>
 				<div class="modal-footer rollback-confirm-footer">
-					<span class="arch-conflict-hint text-muted mr-auto" style="font-size:0.8rem;">
+					<span class="arch-conflict-hint text-muted me-auto" style="font-size:0.8rem;">
 						Choose an action for every conflict to continue.
 					</span>
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel import</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel import</button>
 					<button type="button" class="btn rollback-confirm-btn arch-conflict-apply" disabled>
-						<i class="fas fa-check mr-1"></i>Apply and continue import
+						<i class="fas fa-check me-1"></i>Apply and continue import
 					</button>
 				</div>
 			</div>
@@ -2366,20 +2346,19 @@
 	<!---- Modal Archive Conflict Resolution end --->
 
 	<!---- Modal Author Password Prompt start --->
-	<div class="modal" tabindex="-1" role="dialog" id="authorPasswordModal" data-backdrop="static" data-keyboard="false">
+	<div class="modal" tabindex="-1" role="dialog" id="authorPasswordModal" data-bs-backdrop="static" data-bs-keyboard="false">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 420px;">
 			<div class="modal-content security-modal-content">
 				<div class="modal-header security-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="security-modal-icon mr-3">
+						<div class="security-modal-icon me-3">
 							<i class="fas fa-shield-alt fa-2x"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0">Authorization Required</h5>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body security-modal-body">
@@ -2389,11 +2368,11 @@
 						<label for="author-password-input" class="sr-only">Password</label>
 						<input type="password" class="form-control" id="author-password-input" placeholder="Enter password">
 					</div>
-					<small class="text-danger author-password-error d-none"><i class="fas fa-times-circle mr-1"></i>Incorrect password. Please try again.</small>
+					<small class="text-danger author-password-error d-none"><i class="fas fa-times-circle me-1"></i>Incorrect password. Please try again.</small>
 				</div>
 				<div class="modal-footer security-modal-footer">
 					<button type="button" class="btn btn-danger solid-button-shape btn-author-password-confirm">Authorize</button>
-					<button type="button" class="btn btn-secondary solid-button-shape" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-secondary solid-button-shape" data-bs-dismiss="modal">Cancel</button>
 				</div>
 			</div>
 		</div>
@@ -2401,20 +2380,19 @@
 	<!---- Modal Author Password Prompt end --->
 
 	<!---- Modal Restricted Author Warning start --->
-	<div class="modal" tabindex="-1" role="dialog" id="restrictedAuthorWarningModal" data-backdrop="static" data-keyboard="false">
+	<div class="modal" tabindex="-1" role="dialog" id="restrictedAuthorWarningModal" data-bs-backdrop="static" data-bs-keyboard="false">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 420px;">
 			<div class="modal-content security-modal-content">
 				<div class="modal-header security-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="security-modal-icon mr-3">
+						<div class="security-modal-icon me-3">
 							<i class="fas fa-shield-alt fa-2x"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0">Restricted Name</h5>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body security-modal-body">
@@ -2422,7 +2400,7 @@
 					<p class="text-muted mb-0" style="font-size: 0.85rem;">This name is reserved for authorized OEM developers only and cannot be used without developer mode authorization.</p>
 				</div>
 				<div class="modal-footer security-modal-footer">
-					<button type="button" class="btn btn-secondary solid-button-shape" data-dismiss="modal">OK</button>
+					<button type="button" class="btn btn-secondary solid-button-shape" data-bs-dismiss="modal">OK</button>
 				</div>
 			</div>
 		</div>
@@ -2435,27 +2413,26 @@
 			<div class="modal-content security-modal-content">
 				<div class="modal-header security-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="security-modal-icon mr-3">
+						<div class="security-modal-icon me-3">
 							<i class="fas fa-ban fa-2x"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0">Access Denied</h5>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body security-modal-body">
 					<p class="mb-2"><strong>Action:</strong> <span class="access-denied-action"></span></p>
 					<p class="mb-3 access-denied-reason" style="white-space: pre-line;"></p>
 					<div class="p-2 rounded security-modal-info-box">
-						<div><i class="fas fa-user mr-1 text-muted"></i><strong>User:</strong> <span class="access-denied-user"></span></div>
-						<div class="mt-1"><i class="fas fa-users mr-1 text-muted"></i><strong>Groups:</strong> <span class="access-denied-groups text-muted"></span></div>
+						<div><i class="fas fa-user me-1 text-muted"></i><strong>User:</strong> <span class="access-denied-user"></span></div>
+						<div class="mt-1"><i class="fas fa-users me-1 text-muted"></i><strong>Groups:</strong> <span class="access-denied-groups text-muted"></span></div>
 					</div>
 				</div>
 				<div class="modal-footer security-modal-footer">
-					<button type="button" class="btn btn-secondary solid-button-shape" data-dismiss="modal">OK</button>
+					<button type="button" class="btn btn-secondary solid-button-shape" data-bs-dismiss="modal">OK</button>
 				</div>
 			</div>
 		</div>
@@ -2463,12 +2440,12 @@
 	<!---- Modal Access Denied end --->
 
 	<!---- Modal Batch Import start --->
-	<div class="modal" tabindex="-1" role="dialog" id="batchImportModal" data-backdrop="static" data-keyboard="false">
+	<div class="modal" tabindex="-1" role="dialog" id="batchImportModal" data-bs-backdrop="static" data-bs-keyboard="false">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:520px;">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-file-import fa-2x"></i>
 						</div>
 						<div>
@@ -2476,9 +2453,7 @@
 							<small class="batch-import-header-subtitle" style="opacity:0.7;"></small>
 						</div>
 					</div>
-					<button type="button" class="close batch-import-cancel-x" style="display:none;" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
+					<button type="button" class="btn-close batch-import-cancel-x" style="display:none;" aria-label="Close"></button>
 				</div>
 				<div class="modal-body detail-modal-body batch-import-body" style="max-height:50vh;">
 					<!-- Phase 1: Scanning progress -->
@@ -2513,7 +2488,7 @@
 				<div class="modal-footer detail-modal-footer batch-import-footer" style="display:none;">
 					<button type="button" class="btn btn-outlined batch-import-cancel-btn">Cancel</button>
 					<button type="button" class="btn solid-button batch-import-confirm-btn">
-						<i class="fas fa-file-import mr-1"></i>Import All
+						<i class="fas fa-file-import me-1"></i>Import All
 					</button>
 				</div>
 			</div>
@@ -2522,12 +2497,12 @@
 	<!---- Modal Batch Import end --->
 
 	<!---- Modal Batch Duplicates start --->
-	<div class="modal" tabindex="-1" role="dialog" id="batchDuplicateModal" data-backdrop="static" data-keyboard="false">
+	<div class="modal" tabindex="-1" role="dialog" id="batchDuplicateModal" data-bs-backdrop="static" data-bs-keyboard="false">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:480px;">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header batch-dup-header">
 					<div class="d-flex align-items-center">
-						<div class="batch-dup-header-icon mr-3">
+						<div class="batch-dup-header-icon me-3">
 							<i class="fas fa-exclamation-triangle fa-2x"></i>
 						</div>
 						<div>
@@ -2545,7 +2520,7 @@
 				<div class="modal-footer detail-modal-footer d-flex justify-content-end" style="gap:8px;">
 					<button type="button" class="btn btn-outlined batch-dup-skip-btn">Skip Duplicates</button>
 					<button type="button" class="btn solid-button batch-dup-replace-btn">
-						<i class="fas fa-sync-alt mr-1"></i>Replace All
+						<i class="fas fa-sync-alt me-1"></i>Replace All
 					</button>
 				</div>
 			</div>
@@ -2554,12 +2529,12 @@
 	<!---- Modal Batch Duplicates end --->
 
 	<!---- Modal Batch COM start --->
-	<div class="modal" tabindex="-1" role="dialog" id="batchComModal" data-backdrop="static" data-keyboard="false">
+	<div class="modal" tabindex="-1" role="dialog" id="batchComModal" data-bs-backdrop="static" data-bs-keyboard="false">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:480px;">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-shield-alt fa-2x"></i>
 						</div>
 						<div>
@@ -2576,7 +2551,7 @@
 				<div class="modal-footer detail-modal-footer d-flex justify-content-end" style="gap:8px;">
 					<button type="button" class="btn btn-outlined batch-com-cancel-btn">Cancel</button>
 					<button type="button" class="btn solid-button batch-com-continue-btn">
-						<i class="fas fa-check mr-1"></i>Continue
+						<i class="fas fa-check me-1"></i>Continue
 					</button>
 				</div>
 			</div>
@@ -2585,7 +2560,7 @@
 	<!---- Modal Batch COM end --->
 
 	<!---- Modal Package Progress start --->
-	<div class="modal" tabindex="-1" role="dialog" id="pkgProgressModal" data-backdrop="static" data-keyboard="false">
+	<div class="modal" tabindex="-1" role="dialog" id="pkgProgressModal" data-bs-backdrop="static" data-bs-keyboard="false">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:460px;">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-body import-success-body" style="padding:40px 36px 32px;">
@@ -2621,7 +2596,7 @@
 					<div class="import-success-com-status generic-success-status d-none"></div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
-					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Done</button>
+					<button type="button" class="btn solid-button px-5" data-bs-dismiss="modal">Done</button>
 				</div>
 			</div>
 		</div>
@@ -2643,7 +2618,7 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
-					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Done</button>
+					<button type="button" class="btn solid-button px-5" data-bs-dismiss="modal">Done</button>
 				</div>
 			</div>
 		</div>
@@ -2663,7 +2638,7 @@
 					<div class="audit-verify-message" style="margin-top:12px; white-space:pre-wrap; font-size:0.88rem; color:#6c757d; text-align:center;"></div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
-					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Done</button>
+					<button type="button" class="btn solid-button px-5" data-bs-dismiss="modal">Done</button>
 				</div>
 			</div>
 		</div>
@@ -2676,7 +2651,7 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="mr-3">
+						<div class="me-3">
 							<i class="fas fa-search fa-3x" style="color:var(--medium)"></i>
 						</div>
 						<div>
@@ -2684,8 +2659,7 @@
 							<span class="text-muted text-sm" style="color:rgba(255,255,255,0.6)!important;">Search by name, tag, or author</span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body" style="padding:0; background:var(--method-background);">
@@ -2693,15 +2667,13 @@
 					<div class="d-flex align-items-center flex-wrap px-3 pt-3 pb-2" style="gap:8px; border-bottom:1px solid #e9ecef;">
 						<div class="imp-search-bar" style="flex:1; min-width:200px;">
 							<div class="input-group input-group-sm">
-								<div class="input-group-prepend">
-									<span class="input-group-text imp-search-icon"><i class="fas fa-search"></i></span>
+																	<span class="input-group-text imp-search-icon"><i class="fas fa-search"></i></span>
 								</div>
 								<div class="imp-search-flow">
 									<div class="imp-search-chip-wrap d-none" id="imp-search-chip-wrap"></div>
 									<input type="text" class="form-control imp-search-input" id="imp-search-input" placeholder="Search Libraries..." autocomplete="off">
 								</div>
-								<div class="input-group-append imp-search-clear-wrap d-none">
-									<button class="btn btn-outline-secondary imp-search-clear" type="button"><i class="fas fa-times"></i></button>
+																	<button class="btn btn-outline-secondary imp-search-clear" type="button"><i class="fas fa-times"></i></button>
 								</div>
 							</div>
 							<div class="imp-search-autocomplete d-none" id="imp-search-autocomplete"></div>
@@ -2715,7 +2687,7 @@
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<span class="text-muted text-sm search-modal-footer-info"></span>
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -2728,7 +2700,7 @@
 			<div class="modal-content detail-modal-content store-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="mr-3">
+						<div class="me-3">
 							<i class="fas fa-store fa-3x" style="color:var(--medium)"></i>
 						</div>
 						<div>
@@ -2736,8 +2708,7 @@
 							<span class="text-muted text-sm">Browse and install community libraries</span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body store-modal-body" style="padding:0;">
@@ -2745,29 +2716,27 @@
 					<div class="store-toolbar d-flex align-items-center flex-wrap">
 						<div class="store-search-bar" style="flex:1; min-width:200px; max-width:400px;">
 							<div class="input-group input-group-sm">
-								<div class="input-group-prepend">
-									<span class="input-group-text"><i class="fas fa-search"></i></span>
+																	<span class="input-group-text"><i class="fas fa-search"></i></span>
 								</div>
 								<input type="text" class="form-control" id="store-search-input" placeholder="Search packages..." autocomplete="off">
-								<div class="input-group-append store-search-clear-wrap d-none">
-									<button class="btn btn-outline-secondary store-search-clear" type="button"><i class="fas fa-times"></i></button>
+																	<button class="btn btn-outline-secondary store-search-clear" type="button"><i class="fas fa-times"></i></button>
 								</div>
 							</div>
 						</div>
-						<div class="store-toolbar-right ml-auto d-flex align-items-center">
-							<div class="custom-control custom-checkbox store-show-ignored-wrap d-none mr-2" title="Show libraries with ignored updates">
-								<input type="checkbox" class="custom-control-input" id="store-show-ignored">
-								<label class="custom-control-label" for="store-show-ignored" style="font-size:0.8rem; white-space:nowrap;">Show Ignored</label>
+						<div class="store-toolbar-right ms-auto d-flex align-items-center">
+							<div class="form-check store-show-ignored-wrap d-none me-2" title="Show libraries with ignored updates">
+								<input type="checkbox" class="form-check-input" id="store-show-ignored">
+								<label class="form-check-label" for="store-show-ignored" style="font-size:0.8rem; white-space:nowrap;">Show Ignored</label>
 							</div>
 							<div class="dropdown store-sort-dropdown">
-								<button class="btn btn-sm btn-outlined store-sort-btn" type="button" data-toggle="dropdown">
-									<i class="fas fa-sort-amount-down mr-1"></i>Sort
+								<button class="btn btn-sm btn-outlined store-sort-btn" type="button" data-bs-toggle="dropdown">
+									<i class="fas fa-sort-amount-down me-1"></i>Sort
 								</button>
-								<div class="dropdown-menu dropdown-menu-right">
-									<a class="dropdown-item store-sort-option active" href="#" data-sort="name-asc"><i class="fas fa-sort-alpha-down mr-2"></i>Name (A-Z)</a>
-									<a class="dropdown-item store-sort-option" href="#" data-sort="name-desc"><i class="fas fa-sort-alpha-up mr-2"></i>Name (Z-A)</a>
-									<a class="dropdown-item store-sort-option" href="#" data-sort="date-desc"><i class="fas fa-calendar-alt mr-2"></i>Newest First</a>
-									<a class="dropdown-item store-sort-option" href="#" data-sort="date-asc"><i class="fas fa-calendar-alt mr-2"></i>Oldest First</a>
+								<div class="dropdown-menu dropdown-menu-end">
+									<a class="dropdown-item store-sort-option active" href="#" data-sort="name-asc"><i class="fas fa-sort-alpha-down me-2"></i>Name (A-Z)</a>
+									<a class="dropdown-item store-sort-option" href="#" data-sort="name-desc"><i class="fas fa-sort-alpha-up me-2"></i>Name (Z-A)</a>
+									<a class="dropdown-item store-sort-option" href="#" data-sort="date-desc"><i class="fas fa-calendar-alt me-2"></i>Newest First</a>
+									<a class="dropdown-item store-sort-option" href="#" data-sort="date-asc"><i class="fas fa-calendar-alt me-2"></i>Oldest First</a>
 								</div>
 							</div>
 							<button class="btn btn-sm btn-outlined store-refresh-btn" type="button" title="Refresh catalog">
@@ -2795,22 +2764,22 @@
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<span class="text-muted text-sm store-footer-info">
-						<i class="fas fa-info-circle mr-1"></i>Packages are downloaded from
+						<i class="fas fa-info-circle me-1"></i>Packages are downloaded from
 						<a href="#" class="store-repo-link" style="color:var(--medium);">GitHub</a>
 					</span>
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
 	</div>
 
 	<!-- Store Package Detail overlay (nested inside storeModal conceptually) -->
-	<div class="modal" tabindex="-1" role="dialog" id="storeDetailModal" data-backdrop="false">
+	<div class="modal" tabindex="-1" role="dialog" id="storeDetailModal" data-bs-backdrop="false">
 		<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="store-detail-icon-wrap mr-3">
+						<div class="store-detail-icon-wrap me-3">
 							<i class="fas fa-book fa-3x" style="color:var(--medium)"></i>
 						</div>
 						<div>
@@ -2820,8 +2789,7 @@
 							</div>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body" style="max-height:60vh; overflow-y:auto;">
@@ -2887,20 +2855,20 @@
 					</div>
 					<!-- Release Notes -->
 					<div class="detail-section store-detail-release-notes-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-file-alt mr-1" style="color:var(--medium)"></i>Release Notes</h6>
+						<h6 class="detail-section-label"><i class="fas fa-file-alt me-1" style="color:var(--medium)"></i>Release Notes</h6>
 						<div class="store-detail-release-notes-pdf-wrap d-none mb-2">
-							<a href="#" class="btn btn-sm btn-outlined store-detail-release-notes-pdf-link"><i class="fas fa-file-pdf mr-1" style="color:#d9534f;"></i>View Release Notes PDF</a>
+							<a href="#" class="btn btn-sm btn-outlined store-detail-release-notes-pdf-link"><i class="fas fa-file-pdf me-1" style="color:#d9534f;"></i>View Release Notes PDF</a>
 						</div>
 						<p class="store-detail-release-notes text-muted" style="white-space:pre-line;"></p>
 					</div>
 					<!-- Help Files -->
 					<div class="detail-section store-detail-help-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-question-circle mr-1" style="color:var(--medium)"></i>Help Files</h6>
+						<h6 class="detail-section-label"><i class="fas fa-question-circle me-1" style="color:var(--medium)"></i>Help Files</h6>
 						<div class="pkg-file-list store-detail-help-files"></div>
 					</div>
 					<!-- Bin Files -->
 					<div class="detail-section store-detail-bin-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-cogs mr-1" style="color:var(--medium)"></i>Bin Files</h6>
+						<h6 class="detail-section-label"><i class="fas fa-cogs me-1" style="color:var(--medium)"></i>Bin Files</h6>
 						<div class="pkg-file-list store-detail-bin-files"></div>
 					</div>
 					<!-- Install Paths -->
@@ -2911,19 +2879,19 @@
 					</div>
 					<!-- Dependencies -->
 					<div class="detail-section store-detail-deps-section d-none">
-						<h6 class="detail-section-label"><i class="fas fa-project-diagram mr-1" style="color:var(--medium)"></i>Dependencies</h6>
+						<h6 class="detail-section-label"><i class="fas fa-project-diagram me-1" style="color:var(--medium)"></i>Dependencies</h6>
 						<div class="store-detail-deps-list"></div>
 					</div>
 					<!-- Overwrite warning -->
 					<div class="store-detail-overwrite-warning d-none mt-2">
 						<div class="alert alert-warning mb-0 py-2 px-3" style="font-size:0.85rem;">
-							<i class="fas fa-exclamation-triangle mr-1"></i>
+							<i class="fas fa-exclamation-triangle me-1"></i>
 							<span class="store-detail-overwrite-text"></span>
 						</div>
 					</div>
 					<!-- Ratings & Reviews -->
 					<div class="detail-section store-detail-reviews-section mt-3">
-						<h6 class="detail-section-label"><i class="fas fa-star mr-1" style="color:#f5a623;"></i>Ratings &amp; Reviews</h6>
+						<h6 class="detail-section-label"><i class="fas fa-star me-1" style="color:#f5a623;"></i>Ratings &amp; Reviews</h6>
 						<!-- Rating summary -->
 						<div class="store-review-summary mb-3">
 							<div class="store-review-summary-left">
@@ -2932,7 +2900,7 @@
 								<span class="store-review-count text-muted"></span>
 							</div>
 							<button class="btn btn-sm solid-button store-write-review-btn">
-								<i class="fas fa-pen mr-1"></i>Write a Review
+								<i class="fas fa-pen me-1"></i>Write a Review
 							</button>
 						</div>
 						<!-- Write review form (hidden by default) -->
@@ -2955,7 +2923,7 @@
 							<div class="d-flex justify-content-end mt-2" style="gap:8px;">
 								<button class="btn btn-sm btn-outlined store-review-cancel-btn">Cancel</button>
 								<button class="btn btn-sm solid-button store-review-submit-btn" disabled>
-									<i class="fas fa-paper-plane mr-1"></i>Submit Review
+									<i class="fas fa-paper-plane me-1"></i>Submit Review
 								</button>
 							</div>
 							<div class="store-review-error text-danger mt-1 d-none" style="font-size:0.8rem;"></div>
@@ -2963,19 +2931,19 @@
 						<!-- Reviews list -->
 						<div class="store-review-list">
 							<div class="store-reviews-loading text-center text-muted py-3">
-								<i class="fas fa-spinner fa-spin mr-1"></i>Loading reviews…
+								<i class="fas fa-spinner fa-spin me-1"></i>Loading reviews…
 							</div>
 						</div>
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 					<div class="d-flex align-items-center" style="gap:8px;">
 						<button type="button" class="btn btn-outlined store-detail-ignore-btn d-none">
-							<i class="fas fa-bell-slash mr-1"></i>Ignore Update
+							<i class="fas fa-bell-slash me-1"></i>Ignore Update
 						</button>
 						<button type="button" class="btn solid-button store-detail-install-btn">
-							<i class="fas fa-download mr-1"></i>Download and Install
+							<i class="fas fa-download me-1"></i>Download and Install
 						</button>
 					</div>
 				</div>
@@ -2998,7 +2966,7 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
-					<button type="button" class="btn solid-button px-5" data-dismiss="modal">OK</button>
+					<button type="button" class="btn solid-button px-5" data-bs-dismiss="modal">OK</button>
 				</div>
 			</div>
 		</div>
@@ -3010,9 +2978,8 @@
 		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document" style="max-width:560px;">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
-					<h5 class="modal-title mb-0"><i class="fas fa-project-diagram mr-2"></i>Required Dependencies</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<h5 class="modal-title mb-0"><i class="fas fa-project-diagram me-2"></i>Required Dependencies</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body" style="max-height:55vh; overflow-y:auto;">
@@ -3020,9 +2987,9 @@
 					<div class="store-deps-tree"></div>
 				</div>
 				<div class="modal-footer detail-modal-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn solid-button store-deps-confirm-btn">
-						<i class="fas fa-download mr-1"></i>Download All and Install
+						<i class="fas fa-download me-1"></i>Download All and Install
 					</button>
 				</div>
 			</div>
@@ -3031,15 +2998,15 @@
 	<!---- Modal Store Dependencies end --->
 
 	<!---- Modal Store Breaking Changes start --->
-	<div class="modal" tabindex="-1" role="dialog" id="storeBreakingModal" data-backdrop="static" data-keyboard="false">
+	<div class="modal" tabindex="-1" role="dialog" id="storeBreakingModal" data-bs-backdrop="static" data-bs-keyboard="false">
 		<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document" style="max-width:620px;">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
-					<h5 class="modal-title mb-0"><i class="fas fa-exclamation-triangle mr-2" style="color:#dc3545;"></i>Breaking Changes Detected</h5>
+					<h5 class="modal-title mb-0"><i class="fas fa-exclamation-triangle me-2" style="color:#dc3545;"></i>Breaking Changes Detected</h5>
 				</div>
 				<div class="modal-body" style="max-height:60vh; overflow-y:auto;">
 					<div class="alert alert-danger mb-3" style="font-size:0.85rem;">
-						<i class="fas fa-exclamation-circle mr-1"></i>
+						<i class="fas fa-exclamation-circle me-1"></i>
 						<strong>Warning:</strong> The new version of this library has changes to existing function signatures.
 						This can <strong>break existing methods</strong> that depend on this library.
 						Review the changes below carefully before proceeding.
@@ -3052,9 +3019,9 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel Update</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel Update</button>
 					<button type="button" class="btn btn-danger store-breaking-accept-btn" disabled>
-						<i class="fas fa-exclamation-triangle mr-1"></i>Accept &amp; Update
+						<i class="fas fa-exclamation-triangle me-1"></i>Accept &amp; Update
 					</button>
 				</div>
 			</div>
@@ -3068,7 +3035,7 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="mr-3">
+						<div class="me-3">
 							<i class="fas fa-history fa-3x" style="color:var(--medium)"></i>
 						</div>
 						<div>
@@ -3076,16 +3043,14 @@
 							<span class="text-muted text-sm" style="color:rgba(255,255,255,0.6)!important;">Complete activity log - all actions with user, timestamp, and details</span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body" style="padding:0; background:var(--method-background);">
 					<!-- Toolbar: search + filters -->
 					<div class="d-flex align-items-center flex-wrap px-3 pt-3 pb-2" style="gap:8px; border-bottom:1px solid #e9ecef;">
 						<div class="input-group input-group-sm" style="max-width:260px;">
-							<div class="input-group-prepend">
-								<span class="input-group-text"><i class="fas fa-search"></i></span>
+															<span class="input-group-text"><i class="fas fa-search"></i></span>
 							</div>
 							<input type="text" class="form-control evt-history-search" placeholder="Search events..." autocomplete="off">
 						</div>
@@ -3107,7 +3072,7 @@
 						</select>
 						<div class="ml-auto d-flex align-items-center" style="gap:14px; padding-right:4px;">
 							<span class="text-muted text-sm evt-history-count"></span>
-							<button class="btn btn-sm btn-outlined evt-history-export" title="Export to CSV"><i class="fas fa-file-csv mr-1"></i>Export</button>
+							<button class="btn btn-sm btn-outlined evt-history-export" title="Export to CSV"><i class="fas fa-file-csv me-1"></i>Export</button>
 						</div>
 					</div>
 					<!-- Event list -->
@@ -3117,7 +3082,7 @@
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<span class="text-muted text-sm evt-history-footer-info"></span>
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -3131,8 +3096,8 @@
 		<div class="modal-dialog modal-dialog-centered modal-lg" role="document" style="max-width:700px;">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
-					<h5 class="modal-title"><i class="fas fa-tools mr-2"></i>Verify &amp; Repair Libraries</h5>
-					<button type="button" class="close" data-dismiss="modal" style="color:var(--light);">&times;</button>
+					<h5 class="modal-title"><i class="fas fa-tools me-2"></i>Verify &amp; Repair Libraries</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body" style="max-height:500px; overflow-y:auto; padding:0;">
 					<div class="repair-lib-list" style="padding:8px 16px;"></div>
@@ -3140,11 +3105,11 @@
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<div class="d-flex align-items-center">
 						<span class="repair-status-text text-muted text-sm"></span>
-						<a href="#" class="text-sm ml-3 repair-toggle-all" style="color:var(--medium); display:none;">Select All</a>
+						<a href="#" class="text-sm ms-3 repair-toggle-all" style="color:var(--medium); display:none;">Select All</a>
 					</div>
 					<div>
-						<button type="button" class="btn btn-outlined mr-2" data-dismiss="modal">Close</button>
-						<button type="button" class="btn solid-button repair-all-btn" disabled><i class="fas fa-wrench mr-1"></i>Repair Selected (<span class="repair-selected-count">0</span>)</button>
+						<button type="button" class="btn btn-outlined me-2" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn solid-button repair-all-btn" disabled><i class="fas fa-wrench me-1"></i>Repair Selected (<span class="repair-selected-count">0</span>)</button>
 					</div>
 				</div>
 			</div>
@@ -3158,7 +3123,7 @@
 			<div class="modal-content pkg-filetype-warn-content">
 				<div class="modal-body pkg-filetype-warn-body">
 					<div class="d-flex align-items-start">
-						<div class="pkg-filetype-warn-icon mr-3 flex-shrink-0">
+						<div class="pkg-filetype-warn-icon me-3 flex-shrink-0">
 							<i class="fas fa-exclamation-triangle fa-2x"></i>
 						</div>
 						<div class="pkg-filetype-warn-text">
@@ -3182,22 +3147,21 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-info-circle fa-2x app-info-icon"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0 app-info-title"></h5>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body" style="text-align:center; padding:28px 24px;">
 					<p class="app-info-message mb-0" style="font-size:1rem;"></p>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
-					<button type="button" class="btn solid-button px-5" data-dismiss="modal">OK</button>
+					<button type="button" class="btn solid-button px-5" data-bs-dismiss="modal">OK</button>
 				</div>
 			</div>
 		</div>
@@ -3205,21 +3169,19 @@
 	<!---- Modal App Info end --->
 
 	<!---- Modal App Confirm (styled replacement for native confirm) start --->
-	<div class="modal" tabindex="-1" role="dialog" id="appConfirmModal" data-backdrop="static" data-keyboard="false">
+	<div class="modal" tabindex="-1" role="dialog" id="appConfirmModal" data-bs-backdrop="static" data-bs-keyboard="false">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:440px;">
 			<div class="modal-content app-confirm-content">
 				<div class="modal-header app-confirm-header">
 					<div class="d-flex align-items-center">
-						<div class="app-confirm-header-icon mr-3">
+						<div class="app-confirm-header-icon me-3">
 							<i class="fas fa-trash-alt fa-2x app-confirm-icon"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0 app-confirm-title"></h5>
 						</div>
 					</div>
-					<button type="button" class="close app-confirm-cancel-x" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
+					<button type="button" class="btn-close app-confirm-cancel-x" aria-label="Close"></button>
 				</div>
 				<div class="modal-body app-confirm-body">
 					<p class="app-confirm-message mb-0"></p>
@@ -3227,7 +3189,7 @@
 				<div class="modal-footer app-confirm-footer">
 					<button type="button" class="btn btn-outlined app-confirm-cancel-btn">Cancel</button>
 					<button type="button" class="btn btn-danger app-confirm-ok-btn">
-						<i class="fas fa-trash-alt mr-1"></i>Delete
+						<i class="fas fa-trash-alt me-1"></i>Delete
 					</button>
 				</div>
 			</div>
@@ -3235,21 +3197,75 @@
 	</div>
 	<!---- Modal App Confirm end --->
 
+	<!---- Modal App Alert (styled replacement for native alert) start --->
+	<div class="modal" tabindex="-1" role="dialog" id="appAlertModal">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:460px;">
+			<div class="modal-content app-alert-content">
+				<div class="modal-header app-alert-header">
+					<div class="d-flex align-items-center">
+						<div class="app-alert-header-icon mr-3">
+							<i class="fas fa-info-circle fa-2x app-alert-icon"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0 app-alert-title"></h5>
+						</div>
+					</div>
+					<button type="button" class="btn-close" data-dismiss="modal" aria-label="Close">
+					</button>
+				</div>
+				<div class="modal-body app-alert-body">
+					<p class="app-alert-message mb-0"></p>
+				</div>
+				<div class="modal-footer app-alert-footer">
+					<button type="button" class="btn solid-button px-4" data-dismiss="modal">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal App Alert end --->
+
+	<!---- Modal App Prompt (styled replacement for native prompt) start --->
+	<div class="modal" tabindex="-1" role="dialog" id="appPromptModal" data-backdrop="static" data-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:460px;">
+			<div class="modal-content app-prompt-content">
+				<div class="modal-header app-prompt-header">
+					<div class="d-flex align-items-center">
+						<div class="app-prompt-header-icon mr-3">
+							<i class="fas fa-edit fa-2x app-prompt-icon"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0 app-prompt-title"></h5>
+						</div>
+					</div>
+					<button type="button" class="btn-close app-prompt-cancel-x" aria-label="Close"></button>
+				</div>
+				<div class="modal-body app-prompt-body">
+					<p class="app-prompt-message mb-0"></p>
+					<input type="text" class="form-control app-prompt-input mt-2" autocomplete="off">
+				</div>
+				<div class="modal-footer app-prompt-footer">
+					<button type="button" class="btn btn-outlined app-prompt-cancel-btn">Cancel</button>
+					<button type="button" class="btn solid-button app-prompt-ok-btn">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal App Prompt end --->
+
 	<!---- Modal About start --->
 	<div class="modal" tabindex="-1" role="dialog" id="aboutModal">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:540px;">
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-flask fa-2x" id="about-flask-icon" style="color:var(--medium); cursor:default; user-select:none;"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0">About Library Manager</h5>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body about-modal-body" style="max-height:70vh; overflow-y:auto;">
@@ -3270,7 +3286,7 @@
 					</div>
 					<hr class="my-3">
 					<div class="about-attributions">
-						<h6 class="mb-2"><i class="fas fa-balance-scale mr-1"></i>Third-Party Licenses</h6>
+						<h6 class="mb-2"><i class="fas fa-balance-scale me-1"></i>Third-Party Licenses</h6>
 						<div class="about-attributions-list" style="font-size:0.8rem;">
 							<table class="table table-sm table-borderless mb-0 about-license-table">
 								<thead>
@@ -3318,7 +3334,7 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
-					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Close</button>
+					<button type="button" class="btn solid-button px-5" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -3331,7 +3347,7 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-arrows-rotate fa-2x" style="color:var(--medium);"></i>
 						</div>
 						<div>
@@ -3339,8 +3355,7 @@
 							<span class="text-muted text-sm" style="color:rgba(255,255,255,0.6)!important;">Check for and install the latest version</span>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body update-modal-body">
@@ -3355,7 +3370,7 @@
 					<div class="update-state update-state-available d-none">
 						<div class="update-available-card">
 							<div class="d-flex align-items-center mb-3">
-								<div class="update-new-icon mr-3"><i class="fas fa-cloud-download-alt fa-lg"></i></div>
+								<div class="update-new-icon me-3"><i class="fas fa-cloud-download-alt fa-lg"></i></div>
 								<div>
 									<div class="update-available-title">A new version is available!</div>
 									<div class="text-muted text-sm">Review the changes below and update when ready.</div>
@@ -3373,7 +3388,7 @@
 								</div>
 							</div>
 							<div class="update-release-notes">
-								<div class="update-release-notes-label mb-1"><i class="fas fa-file-alt mr-1"></i>Release Notes</div>
+								<div class="update-release-notes-label mb-1"><i class="fas fa-file-alt me-1"></i>Release Notes</div>
 								<div class="update-release-notes-body" id="update-release-notes">No release notes available.</div>
 							</div>
 						</div>
@@ -3425,8 +3440,8 @@
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<span class="text-muted text-sm update-footer-info"></span>
 					<div>
-						<button type="button" class="btn btn-outlined mr-2" data-dismiss="modal" id="update-close-btn">Close</button>
-						<button type="button" class="btn solid-button d-none" id="update-install-btn"><i class="fas fa-download mr-1"></i>Update Now</button>
+						<button type="button" class="btn btn-outlined me-2" data-bs-dismiss="modal" id="update-close-btn">Close</button>
+						<button type="button" class="btn solid-button d-none" id="update-install-btn"><i class="fas fa-download me-1"></i>Update Now</button>
 					</div>
 				</div>
 			</div>
@@ -3440,34 +3455,33 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-bug fa-2x" style="color:var(--medium);"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0">Report Issue</h5>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body report-issue-modal-body">
 					<p class="mb-2">You can report bugs, request features, or ask questions by opening an issue on GitHub:</p>
 					<p class="text-center mb-3">
 						<a href="https://github.com/zdmilot/Library-Manager/issues" target="_blank" class="report-issue-link">
-							<i class="fas fa-external-link-alt mr-1"></i>https://github.com/zdmilot/Library-Manager/issues
+							<i class="fas fa-external-link-alt me-1"></i>https://github.com/zdmilot/Library-Manager/issues
 						</a>
 					</p>
 					<hr>
 					<div class="report-issue-warnings">
-						<p class="mb-2 text-muted text-sm"><i class="fas fa-info-circle mr-1"></i>The App does not automatically send device details (such as Windows version) or application details (such as VENUS version) to GitHub.</p>
-						<p class="mb-2 text-muted text-sm"><i class="fas fa-eye mr-1"></i>Any information you enter into the GitHub issue form is submitted by you and may be publicly visible because the repository is public.</p>
-						<p class="mb-2 text-muted text-sm"><i class="fas fa-shield-alt mr-1"></i>GitHub processes information you submit according to <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank">GitHub's privacy practices</a>.</p>
-						<p class="mb-0 text-sm" style="color:var(--warning-color, #e67e22);"><i class="fas fa-exclamation-triangle mr-1"></i><strong>Recommendation:</strong> Do not include sensitive information (such as usernames, machine names, domain names, file paths, license keys, regulated data, or proprietary method/library contents) in public issue reports.</p>
+						<p class="mb-2 text-muted text-sm"><i class="fas fa-info-circle me-1"></i>The App does not automatically send device details (such as Windows version) or application details (such as VENUS version) to GitHub.</p>
+						<p class="mb-2 text-muted text-sm"><i class="fas fa-eye me-1"></i>Any information you enter into the GitHub issue form is submitted by you and may be publicly visible because the repository is public.</p>
+						<p class="mb-2 text-muted text-sm"><i class="fas fa-shield-alt me-1"></i>GitHub processes information you submit according to <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank">GitHub's privacy practices</a>.</p>
+						<p class="mb-0 text-sm" style="color:var(--warning-color, #e67e22);"><i class="fas fa-exclamation-triangle me-1"></i><strong>Recommendation:</strong> Do not include sensitive information (such as usernames, machine names, domain names, file paths, license keys, regulated data, or proprietary method/library contents) in public issue reports.</p>
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
-					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Close</button>
+					<button type="button" class="btn solid-button px-5" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -3480,22 +3494,21 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-shield-alt fa-2x" style="color:var(--medium);"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0">Privacy Policy</h5>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body privacy-modal-body">
 					<pre class="privacy-policy-text"></pre>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
-					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Close</button>
+					<button type="button" class="btn solid-button px-5" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -3508,22 +3521,21 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-file-contract fa-2x" style="color:var(--medium);"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0">Terms of Use</h5>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body terms-modal-body">
 					<pre class="terms-of-use-text"></pre>
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-center">
-					<button type="button" class="btn solid-button px-5" data-dismiss="modal">Close</button>
+					<button type="button" class="btn solid-button px-5" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -3536,7 +3548,7 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-file-import fa-2x" style="color:var(--medium);"></i>
 						</div>
 						<div>
@@ -3544,8 +3556,7 @@
 							<small class="text-muted hampkg-subtitle">Extract and import libraries from Hamilton VENUS packages</small>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body hampkg-modal-body">
@@ -3614,15 +3625,15 @@
 						<div class="d-flex align-items-center mb-2">
 							<div class="hampkg-category-tabs flex-grow-1">
 								<button class="btn btn-sm hampkg-cat-btn active" data-cat="all">All</button>
-								<button class="btn btn-sm hampkg-cat-btn" data-cat="library"><i class="fas fa-code mr-1"></i>Library</button>
-								<button class="btn btn-sm hampkg-cat-btn" data-cat="help"><i class="fas fa-question-circle mr-1"></i>Help</button>
-								<button class="btn btn-sm hampkg-cat-btn" data-cat="labware"><i class="fas fa-th mr-1"></i>Labware</button>
-								<button class="btn btn-sm hampkg-cat-btn" data-cat="config"><i class="fas fa-sliders-h mr-1"></i>Config</button>
-								<button class="btn btn-sm hampkg-cat-btn" data-cat="demo"><i class="fas fa-project-diagram mr-1"></i>Methods</button>
+								<button class="btn btn-sm hampkg-cat-btn" data-cat="library"><i class="fas fa-code me-1"></i>Library</button>
+								<button class="btn btn-sm hampkg-cat-btn" data-cat="help"><i class="fas fa-question-circle me-1"></i>Help</button>
+								<button class="btn btn-sm hampkg-cat-btn" data-cat="labware"><i class="fas fa-th me-1"></i>Labware</button>
+								<button class="btn btn-sm hampkg-cat-btn" data-cat="config"><i class="fas fa-sliders-h me-1"></i>Config</button>
+								<button class="btn btn-sm hampkg-cat-btn" data-cat="demo"><i class="fas fa-project-diagram me-1"></i>Methods</button>
 							</div>
-							<div class="hampkg-select-controls ml-2">
-								<button class="btn btn-sm btn-outlined hampkg-select-all" title="Select All Visible"><i class="fas fa-check-double mr-1"></i>All</button>
-								<button class="btn btn-sm btn-outlined hampkg-select-none" title="Deselect All"><i class="fas fa-times mr-1"></i>None</button>
+							<div class="hampkg-select-controls ms-2">
+								<button class="btn btn-sm btn-outlined hampkg-select-all" title="Select All Visible"><i class="fas fa-check-double me-1"></i>All</button>
+								<button class="btn btn-sm btn-outlined hampkg-select-none" title="Deselect All"><i class="fas fa-times me-1"></i>None</button>
 							</div>
 						</div>
 
@@ -3640,7 +3651,7 @@
 
 						<!-- Step 3: Library Metadata (inline) -->
 						<div class="hampkg-metadata">
-							<h6 class="detail-section-label mb-2"><i class="fas fa-book mr-1" style="color:var(--medium);"></i>Library Configuration</h6>
+							<h6 class="detail-section-label mb-2"><i class="fas fa-book me-1" style="color:var(--medium);"></i>Library Configuration</h6>
 							<p class="text-muted text-sm mb-3">Configure how the selected files will be imported as a library. You can merge multiple HSL files, help files, and supporting files into a single library entity.</p>
 
 							<div class="row">
@@ -3745,11 +3756,11 @@
 				</div>
 				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
 					<div>
-						<button type="button" class="btn btn-outlined hampkg-btn-back d-none"><i class="fas fa-arrow-left mr-1"></i>Back</button>
+						<button type="button" class="btn btn-outlined hampkg-btn-back d-none"><i class="fas fa-arrow-left me-1"></i>Back</button>
 					</div>
 					<div>
-						<button type="button" class="btn btn-outlined mr-2" data-dismiss="modal">Cancel</button>
-						<button type="button" class="btn solid-button hampkg-btn-import" disabled><i class="fas fa-file-import mr-2"></i>Import as Library</button>
+						<button type="button" class="btn btn-outlined me-2" data-bs-dismiss="modal">Cancel</button>
+						<button type="button" class="btn solid-button hampkg-btn-import" disabled><i class="fas fa-file-import me-2"></i>Import as Library</button>
 					</div>
 				</div>
 			</div>
@@ -3765,24 +3776,22 @@
 			<div class="modal-content detail-modal-content">
 				<div class="modal-header detail-modal-header">
 					<div class="d-flex align-items-center">
-						<div class="detail-modal-icon mr-3">
+						<div class="detail-modal-icon me-3">
 							<i class="fas fa-folder-open fa-2x"></i>
 						</div>
 						<div>
 							<h5 class="modal-title mb-0 detail-modal-name">Change Install Path</h5>
 						</div>
 					</div>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					</button>
 				</div>
 				<div class="modal-body detail-modal-body">
 					<div class="form-group mb-3">
-						<label class="text-sm font-weight-bold mb-1" for="fpedit-path-input">Install directory</label>
+						<label class="text-sm fw-bold mb-1" for="fpedit-path-input">Install directory</label>
 						<small class="form-text text-muted mt-0 mb-2">Enter the subdirectory within the Library folder. Leave empty to install to the Library root.</small>
 						<div class="input-group">
-							<div class="input-group-prepend">
-								<span class="input-group-text"><i class="fas fa-folder"></i></span>
+															<span class="input-group-text"><i class="fas fa-folder"></i></span>
 							</div>
 							<input type="text" class="form-control" id="fpedit-path-input" placeholder="e.g. MyLibrary" autocomplete="off" spellcheck="false">
 						</div>
@@ -3793,8 +3802,8 @@
 					</div>
 				</div>
 				<div class="modal-footer detail-modal-footer">
-					<button type="button" class="btn btn-outlined" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary btn-filepath-edit-apply"><i class="fas fa-check mr-1"></i>Apply</button>
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-filepath-edit-apply"><i class="fas fa-check me-1"></i>Apply</button>
 				</div>
 			</div>
 		</div>
@@ -3813,16 +3822,15 @@
 	<script>
 	(function() {
 		var cssFiles = [
-			{ href: 'css/bootstrap.min.css', integrity: 'sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh' },
-			{ href: 'css/all.min.css',       integrity: 'sha384-9ZfPnbegQSumzaE7mks2IYgHoayLtuto3AS6ieArECeaR8nCfliJVuLh/GaQ1gyM' },
-			{ href: 'css/main.css',          integrity: 'sha384-P+6yilSKcKZ3P74m+C0X1NSCFp0+BHtuVg9c1JkGMPyR02rZyB5TbK8Z9RdMGepo' }
+			{ href: 'css/bootstrap.min.css', integrity: 'sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH' },
+			{ href: 'css/all.min.css',       integrity: 'sha384-nRgPTkuX86pH8yjPJUAFuASXQSSl2/bBUiNV47vSYpKFxHJhbcrGnmlYpYJMeD7a' },
+			{ href: 'css/main.css',          integrity: 'sha384-6nfgXdJ1BSYl6+6p4DWbltYcgQLo28LM+dFtHtUGtB2anwHn3ZEd/EMcRe+IZD3V' }
 		];
 		var scripts = [
-			'js/jquery-2.1.3.min.js',
-			'js/jquery-ui.min.js',
-			'js/popper.min.js',
-			'js/bootstrap.min.js',
-			'js/main.js'
+			{ src: 'js/jquery-2.1.3.min.js',       integrity: 'sha384-E7gp+UYBLS2XewcxoJbfi0UpGMHSvt9XyI9bH4YIw5GDGW8AlC+2J7bVBBlMFC6p' },
+			{ src: 'js/jquery-ui.min.js',           integrity: 'sha384-SStJQoPipVtHHnIgUfDI+jTAbSyU+HMbhwt2XRRNpLIRFg9VguopT6Y4+cdOlkqg' },
+			{ src: 'js/bootstrap.bundle.min.js',    integrity: 'sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz' },
+			{ src: 'js/main.js',                    integrity: 'sha384-GlsnpECPorrE155L7yox8DhN62TrXleXAqUaNumsJL8C1TN7LJPms67NCeioGOF/' }
 		];
 
 		function activateCSS() {
@@ -3839,8 +3847,11 @@
 		var i = 0;
 		function loadNextScript() {
 			if (i >= scripts.length) return;
+			var entry = scripts[i++];
 			var s = document.createElement('script');
-			s.src = scripts[i++];
+			s.src = entry.src;
+			s.integrity = entry.integrity;
+			s.crossOrigin = 'anonymous';
 			s.onload = s.onerror = function() {
 				setTimeout(loadNextScript, 0);
 			};
