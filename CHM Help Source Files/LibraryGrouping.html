@@ -13,7 +13,7 @@
 <p>Library Manager supports organizing installed libraries into custom groups for easier navigation and management. Groups appear as tabs in the main window, allowing you to filter the library view to show only libraries assigned to a specific group.</p>
 
 <h2>Default Groups (Hardcoded)</h2>
-<p>The application defines seven built-in groups. These groups are always present and cannot be removed. They are resolved at runtime and are never stored in <code>groups.json</code>.</p>
+<p>The application defines built-in groups. These groups are always present and cannot be removed. They are resolved at runtime and are never stored in <code>groups.json</code>.</p>
 
 <table>
 <thead><tr><th>Name</th><th>Purpose</th></tr></thead>
@@ -28,17 +28,6 @@
 </table>
 
 <p>User-created groups are stored in <code>groups.json</code> with <code>"default": false</code> and auto-generated <code>_id</code> values.</p>
-
-
-<h3>Protection</h3>
-<ul>
-  <li><b>Always visible</b> - It appears in the left-side navigation between the System libraries group and user-created groups. It cannot be hidden.</li>
-  <li><b>Solid checkmark icon</b> - Uses a solid checkmark icon to visually distinguish it from user-created groups.</li>
-</ul>
-
-<h3>Reserved Author Names</h3>
-
-<h3>Empty State</h3>
 
 <h2>Managing Groups</h2>
 
