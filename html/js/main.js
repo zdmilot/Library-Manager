@@ -2578,7 +2578,7 @@
 			});
 		});
 
-		/** Full installer update path - downloads .exe and launches with UAC */
+		/** Full installer update path - downloads .exe and applies delta in-app (no UAC) */
 		function _applyFullInstallerUpdate(releaseInfo, downloadDir) {
 			if (!releaseInfo.installerAsset) {
 				$('#update-splash').addClass('d-none');
@@ -2589,6 +2589,72 @@
 				return Promise.resolve();
 			}
 
+			var asset = releaseInfo.installerAsset;
+			var installPath = _isInstalledApp.installPath || path.dirname(process.execPath);
+
+			// Attempt in-app delta update (no UAC, no Inno Setup UI)
+			if (updater.resolveInnounpPath(installPath)) {
+				$('#update-splash-status').text('Downloading update...');
+				$('#update-splash-bar').css('width', '0%');
+				$('#update-splash-pct').text('0%');
+
+				return updater.applyDeltaUpdate({
+					downloadUrl: asset.downloadUrl,
+					assetName: asset.name,
+					installPath: installPath,
+					downloadProgressCb: function (downloaded, total) {
+						var pct = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : 0;
+						$('#update-splash-bar').css('width', pct + '%');
+						$('#update-splash-pct').text(pct + '%');
+					},
+					statusCb: function (message) {
+						$('#update-splash-status').text(message);
+					},
+					deltaProgressCb: function (copied, total, filename) {
+						var pct = Math.min(100, Math.round((copied / total) * 100));
+						$('#update-splash-bar').css('width', pct + '%');
+						// Show the file being copied (just the last path segment)
+						var shortName = filename.split('/').pop();
+						$('#update-splash-pct').text(copied + ' / ' + total + ' files  \u2014  ' + shortName);
+					}
+				}).then(function (result) {
+					if (result.filesCopied === 0) {
+						$('#update-splash-status').text('Already up to date!');
+						$('#update-splash-pct').text('No files needed updating.');
+						setTimeout(function () {
+							$('#update-splash').addClass('d-none');
+							_updateInProgress = false;
+						}, 2000);
+						return;
+					}
+
+					var summary = result.filesCopied + ' file' + (result.filesCopied === 1 ? '' : 's') + ' updated.';
+					if (result.errors.length > 0) {
+						summary += ' (' + result.errors.length + ' error' + (result.errors.length === 1 ? '' : 's') + ')';
+						console.warn('Delta update errors:', result.errors);
+					}
+
+					$('#update-splash-status').text('Update complete! Restarting...');
+					$('#update-splash-bar').css('width', '100%');
+					$('#update-splash-pct').text(summary);
+
+					// Ensure restart happens
+					setTimeout(function () {
+						updater.restartApp(win);
+					}, 1500);
+				}).catch(function (err) {
+					console.warn('Delta update failed, falling back to full installer:', err.message);
+					// Fall back to traditional Inno Setup launch
+					_applyFullInstallerFallback(releaseInfo, downloadDir);
+				});
+			}
+
+			// No innounp available — fall back to traditional Inno Setup launch
+			return _applyFullInstallerFallback(releaseInfo, downloadDir);
+		}
+
+		/** Legacy fallback: launch the Inno Setup .exe with /SILENT (requires UAC) */
+		function _applyFullInstallerFallback(releaseInfo, downloadDir) {
 			var asset = releaseInfo.installerAsset;
 			var destPath = path.join(downloadDir, asset.name);
 

@@ -14,9 +14,9 @@
 | **CRITICAL** | 10 | ~~10~~ → 0 remaining (all fixed or accepted by design) |
 | **HIGH** | 26 | ~~26~~ → 0 remaining (26 fixed) |
 | **MEDIUM** | 29 | ~~29~~ → 2 remaining (20 fixed) |
-| **LOW** | 18 | ~~18~~ → 0 remaining (18 fixed) |
+| **LOW** | 18 | ~~18~~ → 2 remaining (16 fixed) |
 | **BY DESIGN** | 7 | Accepted risk (private app) |
-| **TOTAL** | **89** | **72 FIXED, 7 BY DESIGN, 2 REMAINING** |
+| **TOTAL** | **89** | **70 FIXED, 7 BY DESIGN, 4 REMAINING** |
 
 > **Note:** This is a private, internally-distributed application — not a public/consumer product. Several findings flagged by standard OWASP criteria have been reviewed and accepted as by-design given the trust model (see "Accepted by Design" section below).
 

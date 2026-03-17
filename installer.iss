@@ -814,6 +814,10 @@ Source: "tools\hxlibpkg-extract\hxlibpkg-extract.exe"; DestDir: "{app}\tools\hxl
 Source: "tools\hxlibpkg-extract\hxlibpkg-extract.js"; DestDir: "{app}\tools\hxlibpkg-extract"; Flags: ignoreversion
 Source: "tools\hxlibpkg-extract\README.md"; DestDir: "{app}\tools\hxlibpkg-extract"; Flags: ignoreversion
 
+; Inno Setup unpacker — used by the in-app delta updater to extract
+; installer .exe files without running the installer or requiring UAC.
+Source: "tools\innounp\innounp.exe"; DestDir: "{app}\tools\innounp"; Flags: ignoreversion
+
 ; Database template files (initial state)
 ; onlyifdoesntexist — never overwrite existing data on upgrade.
 ; uninsneveruninstall — three-tier uninstaller controls removal.
@@ -877,6 +881,7 @@ Name: "{app}\assets"; Permissions: users-modify
 Name: "{app}\icons"; Permissions: users-modify
 Name: "{app}\tools"; Permissions: users-modify
 Name: "{app}\tools\hxlibpkg-extract"; Permissions: users-modify
+Name: "{app}\tools\innounp"; Permissions: users-modify
 
 [Registry]
 ; --------------------------------------------------------------------------
