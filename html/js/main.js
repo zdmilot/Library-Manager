@@ -2628,7 +2628,7 @@
 			$('.update-download-bar').css('width', '0%').attr('aria-valuenow', 0);
 			$('.update-download-pct').text('0%');
 			$('#update-close-btn').prop('disabled', false).text('Close');
-			$('#updateModal').removeAttr('data-backdrop').removeAttr('data-keyboard');
+			$('#updateModal').removeAttr('data-bs-backdrop').removeAttr('data-bs-keyboard');
 			// If settings modal is still open, restore modal-open on body
 			if ($('#settingsModal').hasClass('show')) {
 				$('body').addClass('modal-open');

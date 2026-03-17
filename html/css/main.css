@@ -569,13 +569,16 @@ body {
 	padding: 20px 24px;
 }
 
-.detail-modal-header .close {
+.detail-modal-header .close,
+.detail-modal-header .btn-close {
 	color: white;
 	opacity: 0.7;
 	text-shadow: none;
+	filter: invert(1) grayscale(100%) brightness(200%);
 }
 
-.detail-modal-header .close:hover {
+.detail-modal-header .close:hover,
+.detail-modal-header .btn-close:hover {
 	opacity: 1;
 }
 
@@ -695,13 +698,16 @@ body {
 	padding: 20px 24px;
 }
 
-.delete-confirm-header .close {
+.delete-confirm-header .close,
+.delete-confirm-header .btn-close {
 	color: #ffcfcf;
 	opacity: 0.7;
 	text-shadow: none;
+	filter: invert(1) grayscale(100%) brightness(200%);
 }
 
-.delete-confirm-header .close:hover {
+.delete-confirm-header .close:hover,
+.delete-confirm-header .btn-close:hover {
 	opacity: 1;
 }
 
@@ -828,13 +834,16 @@ body {
 	padding: 20px 24px;
 }
 
-.security-modal-header .close {
+.security-modal-header .close,
+.security-modal-header .btn-close {
 	color: #ffcfcf;
 	opacity: 0.7;
 	text-shadow: none;
+	filter: invert(1) grayscale(100%) brightness(200%);
 }
 
-.security-modal-header .close:hover {
+.security-modal-header .close:hover,
+.security-modal-header .btn-close:hover {
 	opacity: 1;
 }
 
@@ -869,13 +878,16 @@ body {
 	border-radius: 12px 12px 0 0;
 }
 
-.batch-dup-header .close {
+.batch-dup-header .close,
+.batch-dup-header .btn-close {
 	color: #fff3cd;
 	opacity: 0.7;
 	text-shadow: none;
+	filter: invert(1) grayscale(100%) brightness(200%);
 }
 
-.batch-dup-header .close:hover {
+.batch-dup-header .close:hover,
+.batch-dup-header .btn-close:hover {
 	opacity: 1;
 }
 
@@ -978,13 +990,16 @@ body {
 	padding: 20px 24px;
 }
 
-.upgrade-confirm-header .close {
+.upgrade-confirm-header .close,
+.upgrade-confirm-header .btn-close {
 	color: #ffe3e7;
 	opacity: 0.7;
 	text-shadow: none;
+	filter: invert(1) grayscale(100%) brightness(200%);
 }
 
-.upgrade-confirm-header .close:hover {
+.upgrade-confirm-header .close:hover,
+.upgrade-confirm-header .btn-close:hover {
 	opacity: 1;
 }
 
@@ -1099,13 +1114,16 @@ body {
 	padding: 20px 24px;
 }
 
-.rollback-confirm-header .close {
+.rollback-confirm-header .close,
+.rollback-confirm-header .btn-close {
 	color: #ffe3e7;
 	opacity: 0.7;
 	text-shadow: none;
+	filter: invert(1) grayscale(100%) brightness(200%);
 }
 
-.rollback-confirm-header .close:hover {
+.rollback-confirm-header .close:hover,
+.rollback-confirm-header .btn-close:hover {
 	opacity: 1;
 }
 
@@ -1319,12 +1337,15 @@ body {
 	border-bottom: 3px solid var(--medium);
 	padding: 20px 24px;
 }
-.app-alert-header .close {
+.app-alert-header .close,
+.app-alert-header .btn-close {
 	color: white;
 	opacity: 0.7;
 	text-shadow: none;
+	filter: invert(1) grayscale(100%) brightness(200%);
 }
-.app-alert-header .close:hover {
+.app-alert-header .close:hover,
+.app-alert-header .btn-close:hover {
 	opacity: 1;
 }
 .app-alert-header-icon i {
@@ -1371,12 +1392,15 @@ body {
 	border-bottom: 3px solid var(--medium);
 	padding: 20px 24px;
 }
-.app-confirm-header .close {
+.app-confirm-header .close,
+.app-confirm-header .btn-close {
 	color: white;
 	opacity: 0.7;
 	text-shadow: none;
+	filter: invert(1) grayscale(100%) brightness(200%);
 }
-.app-confirm-header .close:hover {
+.app-confirm-header .close:hover,
+.app-confirm-header .btn-close:hover {
 	opacity: 1;
 }
 .app-confirm-header-icon i {
@@ -1415,12 +1439,15 @@ body {
 	border-bottom: 3px solid var(--medium);
 	padding: 20px 24px;
 }
-.app-prompt-header .close {
+.app-prompt-header .close,
+.app-prompt-header .btn-close {
 	color: white;
 	opacity: 0.7;
 	text-shadow: none;
+	filter: invert(1) grayscale(100%) brightness(200%);
 }
-.app-prompt-header .close:hover {
+.app-prompt-header .close:hover,
+.app-prompt-header .btn-close:hover {
 	opacity: 1;
 }
 .app-prompt-header-icon i {
@@ -4360,11 +4387,14 @@ body.dark-mode .links-container {
 }
 
 /* Close button */
-body.dark-mode .close {
+body.dark-mode .close,
+body.dark-mode .btn-close {
 	color: #8899aa;
 	text-shadow: none;
+	filter: invert(1) grayscale(100%) brightness(200%);
 }
-body.dark-mode .close:hover {
+body.dark-mode .close:hover,
+body.dark-mode .btn-close:hover {
 	color: #c8d6e5;
 }
 
@@ -4423,6 +4453,35 @@ body.dark-mode .custom-control-input:checked ~ .custom-control-label::before {
 body.dark-mode .custom-control-label::before {
 	background-color: #0f0f23;
 	border-color: #2a3a5c;
+}
+
+/* BS5 form-check dark mode */
+body.dark-mode .form-check-label {
+	color: #c8d6e5;
+}
+body.dark-mode .form-check-input {
+	background-color: #0f0f23;
+	border-color: #2a3a5c;
+}
+body.dark-mode .form-check-input:checked {
+	background-color: #3a7bd5;
+	border-color: #3a7bd5;
+}
+body.dark-mode .form-check-input:focus {
+	border-color: #3a7bd5;
+	box-shadow: 0 0 0 0.25rem rgba(58,123,213,0.25);
+}
+
+/* BS5 form-select dark mode */
+body.dark-mode .form-select {
+	background-color: #0f0f23;
+	color: #c8d6e5;
+	border-color: #2a3a5c;
+}
+body.dark-mode .form-select:focus {
+	background-color: #16213e;
+	color: #e0e6ed;
+	border-color: #3a7bd5;
 }
 
 /* Custom select */
@@ -5043,7 +5102,7 @@ body.dark-mode [style*="ffcece"] {
 
 /* Paragraph and span text inside modals */
 body.dark-mode .modal p,
-body.dark-mode .modal span:not(.badge):not(.close span) {
+body.dark-mode .modal span:not(.badge):not(.close span):not(.btn-close span) {
 	color: inherit;
 }
 
@@ -5068,6 +5127,10 @@ body.dark-mode .badge-info {
 body.dark-mode .badge-success {
 	background-color: rgba(40, 167, 69, 0.2);
 	color: #6dda89;
+}
+body.dark-mode .badge-light {
+	background-color: rgba(255, 255, 255, 0.1);
+	color: #c8d6e5;
 }
 body.dark-mode .badge-outline-secondary {
 	border-color: #3a4a6c;
