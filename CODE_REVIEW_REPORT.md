@@ -97,11 +97,11 @@ Wrapped organization validation in `if (importOrg) { ... }` guard.
 
 ---
 
-### BUG-03: Race Condition in Library Installation (service.js:566-572)
+### BUG-03: ~~Race Condition in Library Installation (service.js:566-572)~~ — FIXED
 
-Between checking if a library exists and performing the install, concurrent operations can create duplicate entries or corrupt state. No advisory locking exists.
+Between checking if a library exists and performing the install, concurrent operations could create duplicate entries or corrupt state.
 
-**Fix:** Implement file-based locking or atomic check-and-install.
+**Fix applied:** Added cross-process advisory file locking via `lib/advisory-lock.js` and wrapped concurrent mutating operations in lock-protected critical sections (`importLibrary`, `importArchive`, `deleteLibrary`, `rollbackLibrary` in service and CLI paths).
 
 ---
 
@@ -286,7 +286,7 @@ EOL since 2021.
 1. ~~Replace silent `catch(_){}` blocks with logged warnings~~ — **FIXED**
 2. ~~Add rate limiting to review submission~~ — **FIXED**
 3. ~~Validate GraphQL response structure~~ — **FIXED**
-4. Implement advisory locking for concurrent operations
+4. ~~Implement advisory locking for concurrent operations~~ — **FIXED**
 5. ~~Add image size cap before base64 encoding~~ — **FIXED**
 6. ~~Remove or guard 100+ console.log calls~~ — **FIXED**
 7. Sanitize error messages shown to users
