@@ -13,12 +13,12 @@
 		// ---------------------------------------------------------------------------
 		window.onerror = function(message, source, lineno, colno, error) {
 			console.error('Unhandled error:', message, 'at', source, ':', lineno);
-			try { _isImporting = false; } catch(_) {}
+			try { _isImporting = false; } catch(_) { console.warn(_); }
 			return false; // allow default browser error handling to continue
 		};
 		window.addEventListener('unhandledrejection', function(event) {
 			console.error('Unhandled promise rejection:', event.reason);
-			try { _isImporting = false; } catch(_) {}
+			try { _isImporting = false; } catch(_) { console.warn(_); }
 		});
 
 		/// Default VENUS executables. 
@@ -50,6 +50,9 @@
 
 		/** Escape HTML - delegated to shared module */
 		var escapeHtml = shared.escapeHtml;
+
+		/** Sanitize a CSS class string to prevent injection via .html() */
+		function sanitizeCssClass(cls) { return String(cls || '').replace(/[^a-zA-Z0-9_ -]/g, ''); }
 
 		/** Validate library name - delegated to shared module */
 		var isValidLibraryName = shared.isValidLibraryName;
@@ -740,7 +743,7 @@
 				default:
 					var grp = getGroupById(groupId);
 					if (grp) {
-						icon = 'fas ' + (grp['icon-class'] || 'fa-folder');
+						icon = 'fas ' + sanitizeCssClass(grp['icon-class'] || 'fa-folder');
 						title = escapeHtml(grp.name || 'Libraries');
 					} else {
 						icon = 'fas fa-folder';
@@ -787,7 +790,7 @@
 				if (typeof process !== 'undefined' && process.env && process.env.LMV6_DATA_DIR && process.env.LMV6_DATA_DIR.trim()) {
 					return path.resolve(process.env.LMV6_DATA_DIR.trim());
 				}
-			} catch(_) {}
+			} catch(_) { console.warn(_); }
 
 			return path.join(APP_ROOT, 'local');
 		}
@@ -849,12 +852,12 @@
 				if (profileRoot) {
 					perUserLocations.push(path.join(profileRoot, 'Library Manager for Venus 6', 'local'));
 				}
-			} catch(_) {}
+			} catch(_) { console.warn(_); }
 			try {
 				if (typeof nw !== 'undefined' && nw.App && typeof nw.App.dataPath === 'string' && nw.App.dataPath.trim()) {
 					perUserLocations.push(path.join(nw.App.dataPath, 'local'));
 				}
-			} catch(_) {}
+			} catch(_) { console.warn(_); }
 			var oldLocations = [
 				path.join(APP_ROOT, 'db')
 			].concat(perUserLocations).concat([
@@ -1508,9 +1511,9 @@
 				var $m = $("#appConfirmModal");
 				$m.find(".app-confirm-title").text(title);
 				$m.find(".app-confirm-message").html(message);
-				$m.find(".app-confirm-icon").attr('class', 'fas ' + (opts.iconClass || 'fa-trash-alt') + ' fa-2x app-confirm-icon');
+				$m.find(".app-confirm-icon").attr('class', 'fas ' + sanitizeCssClass(opts.iconClass || 'fa-trash-alt') + ' fa-2x app-confirm-icon');
 				var $okBtn = $m.find(".app-confirm-ok-btn");
-				$okBtn.html('<i class="fas ' + (opts.confirmIcon || 'fa-trash-alt') + ' mr-1"></i>' + (opts.confirmLabel || 'Delete'));
+				$okBtn.html('<i class="fas ' + sanitizeCssClass(opts.confirmIcon || 'fa-trash-alt') + ' mr-1"></i>' + escapeHtml(opts.confirmLabel || 'Delete'));
 				$m.data('resolved', false);
 				$okBtn.off('click.appconfirm').on('click.appconfirm', function() {
 					$m.data('resolved', true);
@@ -1664,7 +1667,7 @@
 						createdDate = m.created_date  || '';
 						author      = m.author        || '';
 					}
-				} catch(e) {}
+				} catch(e) { console.warn(e); }
 				var stat = fs.statSync(fullPath);
 				return {
 					file:     f,
@@ -1729,7 +1732,7 @@
 							try {
 								libImageBase64 = fs.readFileSync(bmpPath).toString('base64');
 								libImageMime = 'image/bmp';
-							} catch(e) {}
+							} catch(e) { console.warn(e); }
 						}
 					}
 				});
@@ -1956,14 +1959,14 @@
 			try {
 				saveSetting('windowMaximized', _windowIsMaximized);
 				localStorage.setItem('windowMaximized', String(_windowIsMaximized));
-			} catch(e) { console.log('Could not save window state: ' + e); }
+			} catch(e) { console.warn('Could not save window state: ' + e); }
 
 			// Force-close the window (skip the close event re-fire)
 			win.close(true);
 
 			// Quit the NW.js application entirely — this terminates the
 			// Node.js event loop and kills all nw.exe processes for this app.
-			try { nw.App.quit(); } catch(_) {}
+			try { nw.App.quit(); } catch(_) { console.warn(_); }
 
 			// Safety net: if nw.App.quit() didn't terminate within 3 seconds
 			// (e.g. a lingering async callback keeps the event loop alive),
@@ -2039,7 +2042,7 @@
 						_windowIsMaximized = true;
 						localStorage.setItem('windowMaximized', 'true');
 					}
-				} catch(e) { console.log('Could not restore window state: ' + e); }
+				} catch(e) { console.warn('Could not restore window state: ' + e); }
 
 				// Use setTimeout instead of waitForFinalEvent so that an async
 				// resize triggered by win.maximize() cannot cancel this init.
@@ -2049,11 +2052,11 @@
 						createGroups();
 						setTimeout(function(){historyCleanup()},100);
 					} catch(e) {
-						console.log("Error in startup chain: " + e);
-						try { createGroups(); } catch(e2) { console.log("Error in createGroups: " + e2); }
+						console.warn('Error in startup chain: ' + e);
+						try { createGroups(); } catch(e2) { console.warn('Error in createGroups: ' + e2); }
 					}
 					// Ensure we always navigate to home screen after startup
-					try { navigateHome(); } catch(e3) { console.log("Error navigating home: " + e3); }
+					try { navigateHome(); } catch(e3) { console.warn('Error navigating home: ' + e3); }
 
 					// Mark init complete, dismiss splash if animation also done
 					_splashInitDone = true;
@@ -2450,7 +2453,7 @@
 					console.log('Auto-update skipped: disabled in settings');
 					return;
 				}
-			} catch (_) {}
+			} catch(_) { console.warn(_); }
 
 			console.log('Auto-update: checking for updates...');
 			_performUpdateCheck(true).then(function (result) {
@@ -2679,6 +2682,7 @@
 		var _flaskClickCount = 0;
 		var _flaskClickTimer = null;
 		$(document).on("click", "#about-flask-icon, #settings-cog-icon", async function () {
+			try {
 			_flaskClickCount++;
 			if (_flaskClickTimer) clearTimeout(_flaskClickTimer);
 			_flaskClickTimer = setTimeout(function () { _flaskClickCount = 0; }, 3000);
@@ -2703,6 +2707,7 @@
 					}
 				}
 			}
+			} catch(e) { console.error('Developer settings handler error:', e.message); }
 		});
 
 		/** Show or hide OEM/developer settings sections.
@@ -2798,7 +2803,7 @@
 					appVersion = pkgData.version || '';
 					buildNumber = pkgData.build || '';
 				}
-			} catch (_) {}
+			} catch(_) { console.warn(_); }
 			$(".settings-sw-version").text(appVersion || 'N/A');
 			$(".settings-sw-build").text(buildNumber || appVersion || 'N/A');
 
@@ -2813,7 +2818,7 @@
 					if (pnMatch) {
 						winVersion = pnMatch[1].trim() + ' (Build ' + winRelease + ')';
 					}
-				} catch (_) {}
+				} catch(_) { console.warn(_); }
 				$(".settings-sw-os").text(winVersion);
 			} catch (_) {
 				$(".settings-sw-os").text('N/A');
@@ -5503,11 +5508,9 @@
 			var options = {multi: false,upsert: false};
 			if(linkOrGroup=="link"){
 				var updated = db_links.links.update(query, dataToBeUpdate, options);
-				//console.log(updated); // { updated: 1, inserted: 0 }
 			}
 			if(linkOrGroup=="group"){
 				var updated = db_groups.groups.update(query, dataToBeUpdate, options);
-				//console.log(updated); // { updated: 1, inserted: 0 }
 			}
 		}
 
@@ -5545,7 +5548,7 @@
 					$icon.html('<i class="fad fa-image fa-3x color-gray"></i>');
 				}
 			} else {
-				$icon.html('<i class="fad ' + icon_class + ' fa-3x ' + icon_color + '"></i>');
+				$icon.html('<i class="fad ' + sanitizeCssClass(icon_class) + ' fa-3x ' + sanitizeCssClass(icon_color) + '"></i>');
 			}
 
 			// Set name and type
@@ -5716,7 +5719,6 @@
 						upsert: false
 					};
 					var updated = db_groups.groups.update(query, dataToSave, options);
-					// console.log(updated); // { updated: 1, inserted: 0 }
 				}
 				if(newOrEdit =="new"){
 					var saved = db_groups.groups.save(dataToSave);
@@ -5734,7 +5736,6 @@
 		
 			createGroups();
 			$("#editModal").modal('hide');
-			// console.log("group_id =" + group_id );
 			$("#collapse_"+group_id).collapse("show"); //expand the group 
 			
 
@@ -5777,6 +5778,7 @@
 					
 					//get data from the database and populate fields
 					var method = db_links.links.findOne({"_id":id}); // load link with the given id
+					if (!method) { console.warn('Link record not found for id:', id); return; }
 					var name = method["name"];
 					var description = method["description"];
 					var icon_customImage = method["icon-customImage"];  //the path to a custom image, if empty use icon.
@@ -5805,9 +5807,7 @@
 					if(icon_customImage!="" && icon_customImage!="placeholder"){
 						try {
 							if(fs.existsSync(icon_customImage)) {
-								//console.log("The file exists.");
 							} else {
-								//console.log('The file does not exist.');
 								icon_customImage = "placeholder";
 							}
 						} catch (err) {
@@ -6080,7 +6080,7 @@
 
 			//setting - Recent
 			int_maxRecent = parseInt(settings["recent-max"], 10) || 20;
-			console.log("int_maxRecent=" + int_maxRecent);
+			
 			$("#dd-maxRecent").text(int_maxRecent);
 
 			//setting - Installation checkboxes
@@ -6164,8 +6164,6 @@
 				upsert: false
 			};
 			var updated = db_settings.settings.update(query, dataToSave, options);
-			//  console.log(dataToSave);
-			//  console.log(updated);
 		}
 
 		/** Check if OEM keywords bypass is enabled in settings */
@@ -6175,6 +6173,7 @@
 
 		// ---- OEM Keywords toggle handler: require password to enable ----
 		$(document).on("click", "#chk_oemKeywordsEnabled", async function () {
+			try {
 			var isChecked = $(this).is(":checked");
 			if (isChecked) {
 				// Require OEM password to enable
@@ -6191,6 +6190,7 @@
 				_oemSessionKeywordsEnabled = false;
 				$(".oem-keywords-status").html('');
 			}
+			} catch(e) { console.error('OEM keywords handler error:', e.message); }
 		});
 
 		/** Read a single setting value from the settings DB */
@@ -6229,8 +6229,6 @@
 				upsert: false
 			};
 			var updated = db_links.links.update(query, dataToSave, options);
-			//  console.log(dataToSave);
-			//  console.log(updated);
 		}
 
 		function clearRecentList(){
@@ -6286,7 +6284,6 @@
 				$(".cleanup-progress-bar").text("0%").css("width","0%").attr("aria-valuenow", 0);
 				$(".cleanup-progress-text").text("Cleaning up run logs");
 				$(".cleanup-progress").css("display","inline"); //force display after JQuery fadeout if a previous cleanup was run
-					// console.log(files.length);
 
 					files.forEach(function(file, index) {
 							var currentPath = path.join(HxFolder_LogFiles,file);
@@ -6304,16 +6301,14 @@
 											endtime.setDate(endtime.getDate() + days);
 
 										if (today > endtime) {
-											//   console.log(currentPath);
 											  if(cleanup_action=="delete"){
 												fs.unlink(currentPath, (err) => {
 													counter++;
 													cleanupProgress(counter, files.length);
 												  if (err) {
-													console.log( "error deleting file :" + currentPath);
+													console.warn('Error deleting file: ' + currentPath);
 												  }
 												  //file deleted OK
-												//   console.log(currentPath);
 												  });
 											  }
 											  if(cleanup_action=="archive"){
@@ -6322,10 +6317,10 @@
 														counter++;
 														cleanupProgress(counter, files.length);
 													  if (err) {
-														console.log("error moving file :" + currentPath);
+														console.warn('Error moving file: ' + currentPath);
 													  } else {
 														//file moved OK
-														 console.log("Moved at first try = " + destinationPath);
+														 
 													  }
 													});
 											  }
@@ -6421,7 +6416,7 @@
 		var pkg_binSubdirs = {};           // absolutePath -> subdirectory within Bin root
 		var pkg_fileRelPaths = {};    // absolutePath -> relative path within package (preserves subfolder structure)
 		var pkg_fileCustomDirs = {};  // absolutePath -> custom install subdir ("" = root, string = subdir, undefined = default)
-		var pkg_installSubdir = null;  // global install subdir: null = default (library name), '' = root, string = custom subdir
+		var pkg_installSubdir = '';  // global install subdir: '' = root (default), string = custom subdir
 		var pkg_libEmptyFolders = [];      // empty folders for library tree
 		var pkg_demoEmptyFolders = [];     // empty folders for demo tree
 		var pkg_libNameFolderDeleted = false;   // user explicitly deleted library-name folder in lib tree
@@ -6458,7 +6453,7 @@
 					} else if (stat.isDirectory()) {
 						results = results.concat(getFilesRecursive(fullPath, baseDir));
 					}
-				} catch(e) {}
+				} catch(e) { console.warn(e); }
 			});
 			return results;
 		}
@@ -7495,9 +7490,8 @@
 				if (latest.description) $("#pkg-description").val(latest.description);
 				if (latest.github_url) $("#pkg-github-url").val(latest.github_url);
 				if (latest.tags && latest.tags.length > 0) $("#pkg-tags").val(latest.tags.join(", "));
-				if (latest.install_to_library_root) pkg_installSubdir = '';
-				else if (latest.custom_install_subdir) pkg_installSubdir = latest.custom_install_subdir;
-				else pkg_installSubdir = null;
+				if (latest.custom_install_subdir) pkg_installSubdir = latest.custom_install_subdir;
+				else pkg_installSubdir = '';
 
 				// Populate version with current version (user should change it)
 				if (latest.version) {
@@ -7639,12 +7633,9 @@
 			var fileName = path.basename(relPath);
 			var relDir = path.dirname(relPath).replace(/\\/g, '/');
 			var relDirPrefix = (relDir && relDir !== '.') ? relDir.replace(/\//g, '\\') + '\\' : '';
-			if (pkg_installSubdir !== null) {
-				if (pkg_installSubdir === '') return '...\\Hamilton\\Library\\' + relDirPrefix + fileName;
-				var sanitized = pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-				return '...\\Hamilton\\Library\\' + sanitized + '\\' + relDirPrefix + fileName;
-			}
-			return '...\\Hamilton\\Library\\' + libName + '\\' + relDirPrefix + fileName;
+			if (pkg_installSubdir === '') return '...\\Hamilton\\Library\\' + relDirPrefix + fileName;
+			var sanitized = pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+			return '...\\Hamilton\\Library\\' + sanitized + '\\' + relDirPrefix + fileName;
 		}
 
 		/**
@@ -7656,12 +7647,9 @@
 			var fileName = path.basename(relPath);
 			var relDir = path.dirname(relPath).replace(/\\/g, '/');
 			var relDirPrefix = (relDir && relDir !== '.') ? relDir.replace(/\//g, '\\') + '\\' : '';
-			if (ulib_installSubdir !== null) {
-				if (ulib_installSubdir === '') return '...\\Hamilton\\Library\\' + relDirPrefix + fileName;
-				var sanitized = ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-				return '...\\Hamilton\\Library\\' + sanitized + '\\' + relDirPrefix + fileName;
-			}
-			return '...\\Hamilton\\Library\\' + libName + '\\' + relDirPrefix + fileName;
+			if (ulib_installSubdir === '') return '...\\Hamilton\\Library\\' + relDirPrefix + fileName;
+			var sanitized = ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+			return '...\\Hamilton\\Library\\' + sanitized + '\\' + relDirPrefix + fileName;
 		}
 
 		// ---- Shared tree rendering helpers ----
@@ -7761,11 +7749,8 @@
 		function ftGetInstallPath(treeId) {
 			var libName = $("#pkg-library-name").val() || '<libraryname>';
 			if (treeId === 'pkg-lib-list') {
-				if (pkg_installSubdir !== null) {
-					var sub = pkg_installSubdir === '' ? '' : pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-					return '...\\Hamilton\\Library\\' + (sub ? sub + '\\' : '');
-				}
-				return '...\\Hamilton\\Library\\' + libName + '\\';
+				var sub = pkg_installSubdir === '' ? '' : pkg_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				return '...\\Hamilton\\Library\\' + (sub ? sub + '\\' : '');
 			} else if (treeId === 'pkg-demo-list') {
 				return '...\\Hamilton\\Methods\\Library Demo Methods\\' + libName + '\\';
 			} else if (treeId === 'pkg-labware-tree') {
@@ -8236,6 +8221,7 @@
 
 		// ---- Delete folder button handler ----
 		$(document).on("click", ".ft-folder-delete", async function(e) {
+			try {
 			e.stopPropagation();
 			var $folderRow = $(this).closest(".ft-folder-row");
 			var $tree = $folderRow.closest(".pkg-file-tree");
@@ -8291,6 +8277,7 @@
 			}));
 
 			state.update();
+			} catch(e) { console.error('Folder delete handler error:', e.message); }
 		});
 
 		// ================================================================
@@ -8657,6 +8644,15 @@
 		// ---- Author/Organization field restriction: warn or allow based on developer mode ----
 		$(document).on("blur", "#pkg-author, #pkg-organization", async function() {
 			var fieldVal = $(this).val().trim();
+			// Enforce length and character limits
+			if (fieldVal.length > 100) {
+				$(this).val(fieldVal.substring(0, 100));
+				fieldVal = $(this).val();
+			}
+			if (fieldVal && /[<>"'&\\]/.test(fieldVal)) {
+				$(this).val(fieldVal.replace(/[<>"'&\\]/g, ''));
+				fieldVal = $(this).val().trim();
+			}
 			if (isRestrictedAuthor(fieldVal)) {
 				if (_oemSessionUnlocked) {
 					// Developer mode active – allow restricted names
@@ -8705,7 +8701,7 @@
 			pkg_demoMethodFiles = [];
 			pkg_fileRelPaths = {};
 			pkg_fileCustomDirs = {};
-			pkg_installSubdir = null;
+			pkg_installSubdir = '';
 			pkg_iconFilePath = null;
 			pkg_iconAutoDetected = false;
 			pkg_iconAutoDetectedPath = null;
@@ -8730,7 +8726,7 @@
 			$(".pkg-installer-detail").hide();
 			$(".pkg-installer-empty-msg").show();
 			$(".pkg-installer-filename").text('');
-			pkg_installSubdir = null;
+			pkg_installSubdir = '';
 			pkgUpdateLibFileList();
 			pkgUpdateDemoFileList();
 			pkgUpdateLabwareFileList();
@@ -8879,7 +8875,7 @@
 		$(document).on("click", "#ulib-changeLibPath", function() {
 			_fpEditContext = 'ulib';
 			var libName = $("#ulib-name").val().trim() || "";
-			var currentPath = (ulib_installSubdir !== null) ? ulib_installSubdir : libName;
+			var currentPath = ulib_installSubdir;
 			$("#fpedit-path-input").val(currentPath);
 			fpEditUpdatePreview();
 			$("#filePathEditModal").modal("show");
@@ -8911,11 +8907,11 @@
 			}
 			if (_fpEditContext === 'pkg') {
 				var libName = $("#pkg-library-name").val().trim() || "";
-				pkg_installSubdir = (subdir === libName) ? null : subdir;
+				pkg_installSubdir = subdir;
 				pkgUpdatePathPlaceholders(libName);
 			} else {
 				var libName = $("#ulib-name").val().trim() || "";
-				ulib_installSubdir = (subdir === libName) ? null : subdir;
+				ulib_installSubdir = subdir;
 				ulibUpdateInstallPathHint();
 			}
 			$("#filePathEditModal").modal("hide");
@@ -9137,7 +9133,10 @@
 		}
 
 		// ---- Core packaging function ----
+		var _pkgCreateInProgress = false;
 		async function pkgCreatePackageFile(savePath) {
+			if (_pkgCreateInProgress) return;
+			_pkgCreateInProgress = true;
 			try {
 				var author = $("#pkg-author").val().trim();
 				var organization = $("#pkg-organization").val().trim();
@@ -9232,13 +9231,10 @@
 
 				// Compute the install directory prefix to strip from relative paths.
 				// This prevents double-nesting during import: the import already creates
-				// the library-name subdirectory, so ZIP paths must NOT include it.
+				// the custom subdirectory, so ZIP paths must NOT include it.
 				var _pkgStripPrefix = '';
-				if (pkg_installSubdir === null) {
-					// Default: library name is the install subdirectory
-					_pkgStripPrefix = libName;
-				} else if (pkg_installSubdir !== '') {
-					// Custom install subdirectory
+				if (pkg_installSubdir !== '') {
+					// Custom install subdirectory - strip its prefix
 					_pkgStripPrefix = pkg_installSubdir.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
 				}
 				// else pkg_installSubdir === '' means root install - no prefix to strip
@@ -9476,6 +9472,8 @@
 
 			} catch(e) {
 				alert("Error creating package:\n" + e.message);
+			} finally {
+				_pkgCreateInProgress = false;
 			}
 		}
 
@@ -9572,8 +9570,8 @@
 					var regasmOutput = '';
 					try { regasmOutput = fs.readFileSync(outFile, 'utf8').trim(); } catch(e) { /* file may not exist if UAC was cancelled */ }
 					// Clean up temp files
-					try { fs.unlinkSync(outFile); } catch(e) {}
-					try { fs.unlinkSync(scriptFile); } catch(e) {}
+					try { fs.unlinkSync(outFile); } catch(e) { console.warn(e); }
+					try { fs.unlinkSync(scriptFile); } catch(e) { console.warn(e); }
 
 					if (error) {
 						var errMsg = "COM " + (register ? "registration" : "deregistration") + " failed for " + path.basename(dllPath) + ".\n";
@@ -9680,15 +9678,15 @@
 					for (var ri = 0; ri < outFiles.length; ri++) {
 						var regasmOutput = '';
 						var exitCode = -1;
-						try { regasmOutput = fs.readFileSync(outFiles[ri].log, 'utf8').trim(); } catch(e) {}
+						try { regasmOutput = fs.readFileSync(outFiles[ri].log, 'utf8').trim(); } catch(e) { console.warn(e); }
 						try {
 							var exitStr = fs.readFileSync(outFiles[ri].exit, 'utf8').trim();
 							exitCode = parseInt(exitStr, 10);
-						} catch(e) {}
+						} catch(e) { console.warn(e); }
 
 						// Clean up per-DLL temp files
-						try { fs.unlinkSync(outFiles[ri].log); } catch(e) {}
-						try { fs.unlinkSync(outFiles[ri].exit); } catch(e) {}
+						try { fs.unlinkSync(outFiles[ri].log); } catch(e) { console.warn(e); }
+						try { fs.unlinkSync(outFiles[ri].exit); } catch(e) { console.warn(e); }
 
 						if (error && exitCode === -1) {
 							// UAC was cancelled or elevation failed - no per-DLL files written
@@ -9708,7 +9706,7 @@
 					}
 
 					// Clean up the batch script
-					try { fs.unlinkSync(scriptFile); } catch(e) {}
+					try { fs.unlinkSync(scriptFile); } catch(e) { console.warn(e); }
 
 					resolve({allSuccess: allSuccess, results: results});
 				});
@@ -9751,16 +9749,16 @@
 				});
 			} catch (e) {
 				// RegAsm /regfile can fail if the DLL is not a valid .NET assembly
-				try { fs.unlinkSync(tmpReg); } catch(_) {}
+				try { fs.unlinkSync(tmpReg); } catch(_) { console.warn(_); }
 				return { registered: false, details: 'RegAsm /regfile failed: ' + (e.message || '').substring(0, 120) };
 			}
 
 			// Parse the .reg file for CLSID entries
 			var regContent = '';
 			try { regContent = fs.readFileSync(tmpReg, 'utf16le'); } catch(_) {
-				try { regContent = fs.readFileSync(tmpReg, 'utf8'); } catch(_2) {}
+				try { regContent = fs.readFileSync(tmpReg, 'utf8'); } catch(_2) { console.warn(_2); }
 			}
-			try { fs.unlinkSync(tmpReg); } catch(_) {}
+			try { fs.unlinkSync(tmpReg); } catch(_) { console.warn(_); }
 
 			var clsidPattern = /\[HKEY_CLASSES_ROOT\\CLSID\\(\{[0-9A-Fa-f\-]+\})/g;
 			var clsids = [];
@@ -11670,12 +11668,10 @@
 				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
 				var rollbackCustomSubdir = manifest.custom_install_subdir || '';
 				var libDestDir;
-				if (manifest.install_to_library_root) {
-					libDestDir = libBasePath;
-				} else if (rollbackCustomSubdir) {
+				if (rollbackCustomSubdir) {
 					libDestDir = path.join(libBasePath, rollbackCustomSubdir);
 				} else {
-					libDestDir = path.join(libBasePath, rLibName);
+					libDestDir = libBasePath;
 				}
 				var demoDestDir = path.join(metBasePath, "Library Demo Methods", rLibName);
 
@@ -11894,7 +11890,9 @@
 					installer_info: manifest.installer_info || null,
 					installer_path: rbInstallerPath || null,
 					installer_original_name: rbInstallerOriginalName || null,
-					installer_size: rbInstallerSize || null
+					installer_size: rbInstallerSize || null,
+					install_to_library_root: !!manifest.install_to_library_root,
+					custom_install_subdir: manifest.custom_install_subdir || ''
 				};
 				// Forward-compat: preserve unknown manifest fields in DB record
 				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
@@ -12469,6 +12467,10 @@
 				if (labwareFiles.length > 0) manifest.labware_files = labwareFiles.slice();
 				if (binFiles.length > 0) manifest.bin_files = binFiles.slice();
 
+				// Preserve install path configuration so re-import places files correctly
+				if (lib.install_to_library_root) manifest.install_to_library_root = true;
+				if (lib.custom_install_subdir)   manifest.custom_install_subdir = lib.custom_install_subdir;
+
 				// Sanitize all file paths in manifest to ensure only safe relative paths
 				try {
 					shared.sanitizeManifestFilePaths(manifest);
@@ -12679,6 +12681,10 @@
 					// Include installer metadata in export manifest
 					if (lib.installer_executable) manifest.installer_executable = lib.installer_executable;
 					if (lib.installer_info) manifest.installer_info = lib.installer_info;
+
+					// Preserve install path configuration so re-import places files correctly
+					if (lib.install_to_library_root) manifest.install_to_library_root = true;
+					if (lib.custom_install_subdir)   manifest.custom_install_subdir = lib.custom_install_subdir;
 
 					// Preserve extra DB fields for forward compatibility
 					Object.keys(lib).forEach(function(k) {
@@ -13038,6 +13044,10 @@
 						})])
 					};
 
+					// Preserve install path configuration so re-import places files correctly
+					if (lib.install_to_library_root) manifest.install_to_library_root = true;
+					if (lib.custom_install_subdir)   manifest.custom_install_subdir = lib.custom_install_subdir;
+
 					// Preserve extra DB fields for forward compatibility
 					Object.keys(lib).forEach(function(k) {
 						if (shared.KNOWN_LIB_DB_KEYS.indexOf(k) === -1 && !(k in manifest)) {
@@ -13396,12 +13406,10 @@
 
 						var archCustomSubdir = manifest.custom_install_subdir || '';
 						var libDestDir;
-						if (manifest.install_to_library_root) {
-							libDestDir = libBasePath;
-						} else if (archCustomSubdir) {
+						if (archCustomSubdir) {
 							libDestDir = path.join(libBasePath, archCustomSubdir);
 						} else {
-							libDestDir = path.join(libBasePath, libName);
+							libDestDir = libBasePath;
 						}
 						var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
 						var labwareFiles = manifest.labware_files || [];
@@ -13521,7 +13529,9 @@
 							labware_install_path: labwareFiles.length > 0 ? labwareBasePathArch : null,
 							bin_files: manifest.bin_files || [],
 							bin_install_path: (manifest.bin_files || []).length > 0 ? binBasePathArch : null,
-							publisher_cert: (innerSig && innerSig.code_signed && innerSig.valid && innerSig.publisher_cert) ? innerSig.publisher_cert : null
+							publisher_cert: (innerSig && innerSig.code_signed && innerSig.valid && innerSig.publisher_cert) ? innerSig.publisher_cert : null,
+							install_to_library_root: !!manifest.install_to_library_root,
+							custom_install_subdir: manifest.custom_install_subdir || ''
 						};
 						// Forward-compat: preserve unknown manifest fields in DB record
 						Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
@@ -14687,15 +14697,12 @@
 							}
 						});
 
-						var installToRoot = !!manifest.install_to_library_root;
 						var customSubdir = manifest.custom_install_subdir || '';
 						var libDestDir;
-						if (installToRoot) {
-							libDestDir = libBasePath;
-						} else if (customSubdir) {
+						if (customSubdir) {
 							libDestDir = path.join(libBasePath, customSubdir);
 						} else {
-							libDestDir = path.join(libBasePath, libName);
+							libDestDir = libBasePath;
 						}
 
 						var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
@@ -14778,7 +14785,7 @@
 						}
 
 						var fileHashes = {};
-						try { fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls); } catch(e) {}
+						try { fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls); } catch(e) { console.warn(e); }
 
 						var dbRecord = {
 							library_name: manifest.library_name || "",
@@ -14826,7 +14833,7 @@
 						Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
 						var saved = db_installed_libs.installed_libs.save(dbRecord);
 
-						try { shared.updateMarkerForLibrary(dbRecord); } catch(_) {}
+						try { shared.updateMarkerForLibrary(dbRecord); } catch(_) { console.warn(_); }
 
 						registerPublisher(manifest.author || '');
 						registerPublisher(manifest.organization || '');
@@ -14880,7 +14887,7 @@
 						try {
 							var pkgBuffer = fs.readFileSync(info.filePath);
 							cachePackageToStore(pkgBuffer, libName, manifest.version);
-						} catch(cacheErr) {}
+						} catch(cacheErr) { console.warn(cacheErr); }
 
 						results.success.push(libName + " (" + extractedCount + " files)");
 
@@ -14901,7 +14908,7 @@
 								signature_status: sigStatus,
 								batch_import: true
 							}));
-						} catch(_) {}
+						} catch(_) { console.warn(_); }
 
 					} catch(e) {
 						results.failed.push(info.libName + ": " + e.message);
@@ -15109,15 +15116,12 @@
 				var metFolder = db_links.links.findOne({"_id":"met-folder"});
 				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
 				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
-				var installToRoot = !!manifest.install_to_library_root;
 				var customSubdir = manifest.custom_install_subdir || '';
 				var libDestDir;
-				if (installToRoot) {
-					libDestDir = libBasePath;
-				} else if (customSubdir) {
+				if (customSubdir) {
 					libDestDir = path.join(libBasePath, customSubdir);
 				} else {
-					libDestDir = path.join(libBasePath, libName);
+					libDestDir = libBasePath;
 				}
 				var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
 				var labFolderImp = db_links.links.findOne({"_id":"labware-folder"});
@@ -15561,7 +15565,7 @@
 						if (!confirm(proceedMsg)) {
 							// User chose not to proceed - clean up extracted COM DLLs
 							for (var di = 0; di < comDllPaths.length; di++) {
-								try { if (fs.existsSync(comDllPaths[di])) fs.unlinkSync(comDllPaths[di]); } catch(ex) {}
+								try { if (fs.existsSync(comDllPaths[di])) fs.unlinkSync(comDllPaths[di]); } catch(ex) { console.warn(ex); }
 							}
 							// Remove libDestDir if empty
 							try {
@@ -15569,7 +15573,7 @@
 									var rem = fs.readdirSync(libDestDir);
 									if (rem.length === 0) fs.rmdirSync(libDestDir);
 								}
-							} catch(ex) {}
+							} catch(ex) { console.warn(ex); }
 							_isImporting = false;
 							return;
 						}
@@ -16860,7 +16864,7 @@
 		var ulib_demoEmptyFolders = [];   // empty folders for demo method file tree
 		var ulib_libNameFolderDeleted = false;   // user explicitly deleted library-name folder in ulib lib tree
 		var ulib_demoLibNameFolderDeleted = false; // user explicitly deleted library-name folder in ulib demo tree
-		var ulib_installSubdir = null;    // global install subdir: null = default (library name), '' = root, string = custom subdir
+		var ulib_installSubdir = '';    // global install subdir: '' = root (default), string = custom subdir
 		var ulib_iconBase64 = null;       // base64-encoded icon data (user-picked or from DB)
 		var ulib_iconMime = null;         // MIME type of the icon
 		var ulib_iconFilename = null;     // original filename of the icon
@@ -16879,11 +16883,8 @@
 		function ulibGetInstallPath(treeId) {
 			var libName = $("#ulib-name").val() || '<libraryname>';
 			if (treeId === 'ulib-file-list') {
-				if (ulib_installSubdir !== null) {
-					var sub = ulib_installSubdir === '' ? '' : ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
-					return '...\\Hamilton\\Library\\' + (sub ? sub + '\\' : '');
-				}
-				return '...\\Hamilton\\Library\\' + libName + '\\';
+				var sub = ulib_installSubdir === '' ? '' : ulib_installSubdir.replace(/\//g, '\\').replace(/\\{2,}/g, '\\').replace(/^\\|\\$/g, '');
+				return '...\\Hamilton\\Library\\' + (sub ? sub + '\\' : '');
 			} else if (treeId === 'ulib-demo-list') {
 				return '...\\Hamilton\\Methods\\Library Demo Methods\\' + libName + '\\';
 			}
@@ -17420,9 +17421,8 @@
 			}
 
 			// Populate install path state
-			if (uLib.install_to_library_root) ulib_installSubdir = '';
-			else if (uLib.custom_install_subdir) ulib_installSubdir = uLib.custom_install_subdir;
-			else ulib_installSubdir = null;
+			if (uLib.custom_install_subdir) ulib_installSubdir = uLib.custom_install_subdir;
+			else ulib_installSubdir = '';
 			ulib_fileCustomDirs = {};
 			ulibUpdateInstallPathHint();
 
@@ -17653,6 +17653,15 @@
 		$(document).on("blur", "#ulib-author, #ulib-organization", async function() {
 			if (_ulibExportInProgress) return;
 			var fieldVal = $(this).val().trim();
+			// Enforce length and character limits
+			if (fieldVal.length > 100) {
+				$(this).val(fieldVal.substring(0, 100));
+				fieldVal = $(this).val();
+			}
+			if (fieldVal && /[<>"'&\\]/.test(fieldVal)) {
+				$(this).val(fieldVal.replace(/[<>"'&\\]/g, ''));
+				fieldVal = $(this).val().trim();
+			}
 			if (isRestrictedAuthor(fieldVal)) {
 				if (_oemSessionUnlocked) {
 					ulib_oemAuthorized = true;
@@ -19069,7 +19078,7 @@
 								dbRecord.library_image = bf.fileName;
 								dbRecord.library_image_base64 = bf.data.toString('base64');
 								dbRecord.library_image_mime = bf.extension === 'png' ? 'image/png' : 'image/bmp';
-							} catch(_) {}
+							} catch(_) { console.warn(_); }
 							break;
 						}
 					}
@@ -19449,7 +19458,7 @@
 			for (var i = 0; i < _storeCatalog.length; i++) {
 				var pkg = _storeCatalog[i];
 				var installed = null;
-				try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
+				try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch(_) { console.warn(_); }
 				if (installed && !installed.deleted && installed.version && shared.compareVersions(pkg.version, installed.version) > 0) {
 					if (!isStoreUpdateIgnored(pkg.library_name, pkg.version)) {
 						count++;
@@ -19472,7 +19481,7 @@
 		function storeDetectBreakingChanges(libName, zipObj, manifest) {
 			var changes = [];
 			var installed = null;
-			try { installed = db_installed_libs.installed_libs.findOne({"library_name": libName}); } catch (_) {}
+			try { installed = db_installed_libs.installed_libs.findOne({"library_name": libName}); } catch(_) { console.warn(_); }
 			if (!installed || installed.deleted) return changes; // fresh install, no breaking changes
 
 			var oldLibPath = installed.lib_install_path || '';
@@ -19647,7 +19656,7 @@
 
 			// Check if installed
 			var installed = null;
-			try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
+			try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch(_) { console.warn(_); }
 			var isInstalled = !!(installed && !installed.deleted);
 			var hasUpdate = isInstalled && installed.version && shared.compareVersions(pkg.version, installed.version) > 0;
 
@@ -19846,15 +19855,12 @@
 			var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
 			var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
 
-			var installToRoot = !!ver.install_to_library_root;
 			var customSubdir = ver.custom_install_subdir || '';
 			var libDestDir;
-			if (installToRoot) {
-				libDestDir = libBasePath;
-			} else if (customSubdir) {
+			if (customSubdir) {
 				libDestDir = path.join(libBasePath, customSubdir);
 			} else {
-				libDestDir = path.join(libBasePath, libName);
+				libDestDir = libBasePath;
 			}
 			var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
 
@@ -19946,7 +19952,7 @@
 				for (var di = 0; di < deps.length; di++) {
 					var depName = deps[di];
 					var depInstalled = null;
-					try { depInstalled = db_installed_libs.installed_libs.findOne({"library_name": depName}); } catch (_) {}
+					try { depInstalled = db_installed_libs.installed_libs.findOne({"library_name": depName}); } catch(_) { console.warn(_); }
 					var depIsInstalled = !!(depInstalled && !depInstalled.deleted);
 					var depInCatalog = false;
 					if (_storeCatalog) {
@@ -19990,7 +19996,7 @@
 			$installBtn.attr("data-pkg-file", pkgFile);
 
 			var installed = null;
-			try { installed = db_installed_libs.installed_libs.findOne({"library_name": libName}); } catch (_) {}
+			try { installed = db_installed_libs.installed_libs.findOne({"library_name": libName}); } catch(_) { console.warn(_); }
 			var $ignoreBtn = $m.find(".store-detail-ignore-btn");
 			if (installed && !installed.deleted) {
 				var existingVer = installed.version || '?';
@@ -20180,7 +20186,7 @@
 
 				// Check if this dependency is already installed
 				var installed = null;
-				try { installed = db_installed_libs.installed_libs.findOne({"library_name": depName}); } catch (_) {}
+				try { installed = db_installed_libs.installed_libs.findOne({"library_name": depName}); } catch(_) { console.warn(_); }
 
 				// Find the dependency in the catalog
 				var depPkg = null;
@@ -20221,7 +20227,7 @@
 			visited[nameKey] = true;
 
 			var installed = null;
-			try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
+			try { installed = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch(_) { console.warn(_); }
 			var isInstalled = !!(installed && !installed.deleted);
 
 			var itemClass = 'store-deps-item';
@@ -20267,7 +20273,7 @@
 					} else {
 						// Dependency not found in catalog
 						var depInstalled = null;
-						try { depInstalled = db_installed_libs.installed_libs.findOne({"library_name": depName}); } catch (_) {}
+						try { depInstalled = db_installed_libs.installed_libs.findOne({"library_name": depName}); } catch(_) { console.warn(_); }
 						var depIsInstalled = !!(depInstalled && !depInstalled.deleted);
 						html += '<div class="store-deps-item' + (depIsInstalled ? ' store-deps-installed' : '') + '">'
 							+ '<div class="store-deps-icon">' + (depIsInstalled ? '<i class="fas fa-check-circle text-success"></i>' : '<i class="fas fa-question-circle text-muted"></i>') + '</div>'
@@ -20347,7 +20353,7 @@
 
 			var downloadUrl = storePackageDownloadUrl(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
-			try { if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true }); } catch (_) {}
+			try { if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true }); } catch(_) { console.warn(_); }
 			var tmpPath = path.join(tmpDir, pkgFile);
 
 			var https = require('https');
@@ -20369,7 +20375,7 @@
 						var libName = manifest.library_name || '';
 						breakingChanges = storeDetectBreakingChanges(libName, zipObj, manifest);
 					}
-				} catch (_) {}
+				} catch(_) { console.warn(_); }
 
 				var proceedWithQueueInstall = function () {
 					_storeImportActive = true;
@@ -20407,7 +20413,7 @@
 
 			var downloadUrl = storePackageDownloadUrl(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
-			try { if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true }); } catch (_) {}
+			try { if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true }); } catch(_) { console.warn(_); }
 			var tmpPath = path.join(tmpDir, pkgFile);
 
 			var https = require('https');
@@ -20429,7 +20435,7 @@
 						var libName = manifest.library_name || '';
 						breakingChanges = storeDetectBreakingChanges(libName, zipObj, manifest);
 					}
-				} catch (_) {}
+				} catch(_) { console.warn(_); }
 
 				if (breakingChanges.length > 0) {
 					// Show breaking changes modal — wait for user acceptance
@@ -20485,18 +20491,18 @@
 					fileStream.close(function () { callback(null); });
 				});
 				fileStream.on('error', function (err) {
-					try { fs.unlinkSync(destPath); } catch (_) {}
+					try { fs.unlinkSync(destPath); } catch(_) { console.warn(_); }
 					callback(err);
 				});
 			});
 
 			req.on('error', function (err) {
-				try { fs.unlinkSync(destPath); } catch (_) {}
+				try { fs.unlinkSync(destPath); } catch(_) { console.warn(_); }
 				callback(err);
 			});
 			req.on('timeout', function () {
 				req.destroy();
-				try { fs.unlinkSync(destPath); } catch (_) {}
+				try { fs.unlinkSync(destPath); } catch(_) { console.warn(_); }
 				callback(new Error("Download timed out"));
 			});
 			req.end();
@@ -20608,7 +20614,7 @@
 						try {
 							var d = new Date(rev.createdAt || rev.timestamp);
 							dateStr = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-						} catch (_) {}
+						} catch(_) { console.warn(_); }
 						html += '<div class="store-review-item">';
 						html += '  <div class="store-review-item-header">';
 						html += '    <div><span class="store-review-item-user">' + escapeHtml(rev.username) + '</span>';
@@ -20726,15 +20732,15 @@
 
 			// Gather system details for the review payload
 			var installedLib = null;
-			try { installedLib = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch (_) {}
+			try { installedLib = db_installed_libs.installed_libs.findOne({"library_name": pkg.library_name}); } catch(_) { console.warn(_); }
 			var systemInfo = {
 				windowsVersion: '',
 				venusVersion: _cachedVENUSVersion || '',
 				libraryVersion: (installedLib && installedLib.version) ? installedLib.version : '',
 				appVersion: ''
 			};
-			try { systemInfo.windowsVersion = shared.getWindowsVersion(); } catch (_) {}
-			try { systemInfo.appVersion = require('../../package.json').version; } catch (_) {}
+			try { systemInfo.windowsVersion = shared.getWindowsVersion(); } catch(_) { console.warn(_); }
+			try { systemInfo.appVersion = require('../../package.json').version; } catch(_) { console.warn(_); }
 
 			$btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Submitting\u2026');
 			$m.find('.store-review-error').addClass('d-none');

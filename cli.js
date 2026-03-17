@@ -333,15 +333,11 @@ function resolveDBPath(args) {
  * Ensure local data directory exists with seed files and subdirectories.
  */
 function ensureLocalDataDir(dirPath) {
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-    }
+    fs.mkdirSync(dirPath, { recursive: true });
     // Ensure subdirectories
     ['packages', 'exports'].forEach(function(sub) {
         const subPath = path.join(dirPath, sub);
-        if (!fs.existsSync(subPath)) {
-            fs.mkdirSync(subPath, { recursive: true });
-        }
+        fs.mkdirSync(subPath, { recursive: true });
     });
     const seeds = {
         'settings.json': '[{"_id":"0"}]',
@@ -614,7 +610,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
             const fname = entry.entryName.substring('library/'.length);
             if (fname) {
                 const safePath = safeZipExtractPath(libDestDir, fname);
-                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName.replace(/[\x00-\x1f\x7f]/g, '?')); return; }
                 const parentDir = path.dirname(safePath);
                 if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
                 fs.writeFileSync(safePath, entry.getData());
@@ -624,7 +620,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
             const fname = entry.entryName.substring('demo_methods/'.length);
             if (fname) {
                 const safePath = safeZipExtractPath(demoDestDir, fname);
-                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName.replace(/[\x00-\x1f\x7f]/g, '?')); return; }
                 const parentDir = path.dirname(safePath);
                 if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
                 fs.writeFileSync(safePath, entry.getData());
@@ -635,7 +631,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
             const fname = entry.entryName.substring('help_files/'.length);
             if (fname) {
                 const safePath = safeZipExtractPath(libDestDir, fname);
-                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName.replace(/[\x00-\x1f\x7f]/g, '?')); return; }
                 const parentDir = path.dirname(safePath);
                 if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
                 fs.writeFileSync(safePath, entry.getData());
@@ -645,7 +641,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
             const fname = entry.entryName.substring('labware/'.length);
             if (fname) {
                 const safePath = safeZipExtractPath(labwareDestDir, fname);
-                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName.replace(/[\x00-\x1f\x7f]/g, '?')); return; }
                 const parentDir = path.dirname(safePath);
                 if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
                 fs.writeFileSync(safePath, entry.getData());
@@ -655,7 +651,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
             const fname = entry.entryName.substring('bin/'.length);
             if (fname) {
                 const safePath = safeZipExtractPath(binDestDir, fname);
-                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+                if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName.replace(/[\x00-\x1f\x7f]/g, '?')); return; }
                 const parentDir = path.dirname(safePath);
                 if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
                 fs.writeFileSync(safePath, entry.getData());
@@ -677,7 +673,7 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
                 var fname = entry.entryName.substring('installer/'.length);
                 if (fname) {
                     var safePath = safeZipExtractPath(installerLibDir, fname);
-                    if (!safePath) { console.warn('Skipping unsafe installer ZIP entry: ' + entry.entryName); return; }
+                    if (!safePath) { console.warn('Skipping unsafe installer ZIP entry: ' + entry.entryName.replace(/[\x00-\x1f\x7f]/g, '?')); return; }
                     if (!fs.existsSync(installerLibDir)) fs.mkdirSync(installerLibDir, { recursive: true });
                     var data = entry.getData();
                     fs.writeFileSync(safePath, data);
@@ -743,7 +739,9 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         installer_info:      manifest.installer_info       || null,
         installer_path:      installerPath                 || null,
         installer_original_name: installerOriginalName     || null,
-        installer_size:      installerSize                 || 0
+        installer_size:      installerSize                 || 0,
+        install_to_library_root: !!manifest.install_to_library_root,
+        custom_install_subdir: manifest.custom_install_subdir || ''
     };
 
     // Preserve any unknown manifest fields for forward compatibility
@@ -1060,15 +1058,12 @@ function cmdImportLib(args) {
         }
     }
 
-    const installToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
     const cliCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
     let libDestDir;
-    if (installToRoot) {
-        libDestDir = libBasePath;
-    } else if (cliCustomSubdir) {
+    if (cliCustomSubdir) {
         libDestDir = path.join(libBasePath, cliCustomSubdir);
     } else {
-        libDestDir = path.join(libBasePath, libName);
+        libDestDir = libBasePath;
     }
     const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
     const labwareDestDir = labwareBasePath;
@@ -1232,15 +1227,12 @@ function cmdImportArchive(args) {
                 }
             }
 
-            const archInstallToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
             const archCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
             let libDestDir;
-            if (archInstallToRoot) {
-                libDestDir = libBasePath;
-            } else if (archCustomSubdir) {
+            if (archCustomSubdir) {
                 libDestDir = path.join(libBasePath, archCustomSubdir);
             } else {
-                libDestDir = path.join(libBasePath, libName);
+                libDestDir = libBasePath;
             }
             const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
             const labwareDestDir = labwareBasePath;
@@ -1364,6 +1356,10 @@ function cmdExportLib(args) {
         manifest.installer_executable = lib.installer_executable;
         if (lib.installer_info) manifest.installer_info = lib.installer_info;
     }
+
+    // Preserve install path configuration so re-import places files correctly
+    if (lib.install_to_library_root) manifest.install_to_library_root = true;
+    if (lib.custom_install_subdir)   manifest.custom_install_subdir = lib.custom_install_subdir;
 
     // Preserve any extra DB fields for forward compatibility
     Object.keys(lib).forEach(function(k) {
@@ -1535,6 +1531,10 @@ function cmdExportArchive(args) {
                 manifest.installer_executable = lib.installer_executable;
                 if (lib.installer_info) manifest.installer_info = lib.installer_info;
             }
+
+            // Preserve install path configuration so re-import places files correctly
+            if (lib.install_to_library_root) manifest.install_to_library_root = true;
+            if (lib.custom_install_subdir)   manifest.custom_install_subdir = lib.custom_install_subdir;
 
             // Preserve extra DB fields for forward compatibility
             Object.keys(lib).forEach(function(k) {
@@ -1817,11 +1817,11 @@ function cmdCreatePackage(args) {
     const validationErrors = [];
     if (!spec.author)                              validationErrors.push('"author" is required');
     if (spec.author) {
-        const specAuthorCheck = shared.isValidAuthorName(spec.author.trim());
+        const specAuthorCheck = shared.isValidAuthorName(typeof spec.author === 'string' ? spec.author.trim() : String(spec.author));
         if (!specAuthorCheck.valid) validationErrors.push(specAuthorCheck.reason);
     }
     if (spec.organization) {
-        const specOrgCheck = shared.isValidOrganizationName(spec.organization.trim());
+        const specOrgCheck = shared.isValidOrganizationName(typeof spec.organization === 'string' ? spec.organization.trim() : String(spec.organization));
         if (!specOrgCheck.valid) validationErrors.push(specOrgCheck.reason);
     }
     if (!spec.version)                             validationErrors.push('"version" is required');
@@ -2435,7 +2435,7 @@ function cmdRollbackLib(args) {
     } else if (args['index']) {
         // Select by 1-based index from list-versions output
         const idx = parseInt(args['index'], 10);
-        if (isNaN(idx) || idx < 1 || idx > entries.length) {
+        if (isNaN(idx) || idx < 1 || idx > entries.length || String(idx) !== String(args['index']).trim()) {
             die(`Invalid index ${args['index']}. Use list-versions to see available entries (1 to ${entries.length}).`);
         }
         target = entries[idx - 1];
@@ -2486,15 +2486,12 @@ function cmdRollbackLib(args) {
         die('Cached package signature verification FAILED:\n  ' + sigResult.errors.join('\n  ') + '\nRollback aborted.');
     }
 
-    const rbInstallToRoot = !!(args['no-subdir'] || manifest.install_to_library_root);
     const rbCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
     let libDestDir;
-    if (rbInstallToRoot) {
-        libDestDir = libBasePath;
-    } else if (rbCustomSubdir) {
+    if (rbCustomSubdir) {
         libDestDir = path.join(libBasePath, rbCustomSubdir);
     } else {
-        libDestDir = path.join(libBasePath, libName);
+        libDestDir = libBasePath;
     }
     const demoDestDir = path.join(metBasePath, 'Library Demo Methods', libName);
     const labwareDestDir = labwareBasePath;

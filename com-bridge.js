@@ -24,11 +24,11 @@
 var service = require('./lib/service');
 
 function success(data) {
-    process.stdout.write(JSON.stringify({ success: true, data: data }));
+    process.stdout.write(JSON.stringify({ success: true, data: data }) + '\n');
 }
 
 function fail(message) {
-    process.stdout.write(JSON.stringify({ success: false, error: String(message) }));
+    process.stdout.write(JSON.stringify({ success: false, error: String(message) }) + '\n');
     process.exit(1);
 }
 
@@ -46,7 +46,6 @@ function parseArgs() {
 
 function main() {
     var parsed = parseArgs();
-    if (!parsed) return;
 
     var command = parsed.command;
     var args = parsed.args;
@@ -56,6 +55,10 @@ function main() {
         ctx = service.createContext(args);
     } catch (e) {
         fail('Failed to create service context: ' + e.message);
+    }
+
+    if (!ctx) {
+        fail('Failed to create service context: createContext returned null');
     }
 
     try {
@@ -154,7 +157,7 @@ function main() {
                 fail('Unknown command: ' + command);
         }
     } catch (e) {
-        fail(e.message || String(e));
+        fail('Command "' + command + '" failed: ' + (e.message || String(e)));
     }
 }
 

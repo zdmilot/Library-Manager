@@ -71,6 +71,16 @@ var
   gPreviousVersion: String;
 
 // -----------------------------------------------------------------------
+// RegAsm existence check — skips COM registration if .NET Framework missing
+// -----------------------------------------------------------------------
+function RegAsmExists(): Boolean;
+begin
+  Result := FileExists('C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe');
+  if not Result then
+    Log('Warning: RegAsm.exe not found — skipping COM registration');
+end;
+
+// -----------------------------------------------------------------------
 // Running-instance detection — blocks install while app is open
 // -----------------------------------------------------------------------
 function IsLibraryManagerRunning(): Boolean;
@@ -418,7 +428,8 @@ begin
     '}]';
 
   // Ensure the parent directory exists (needed for the %LOCALAPPDATA% path)
-  ForceDirectories(ExtractFileDir(SettingsPath));
+  if not ForceDirectories(ExtractFileDir(SettingsPath)) then
+    Log('Warning: ForceDirectories failed for ' + ExtractFileDir(SettingsPath));
   SaveStringToFile(SettingsPath, Json, False);
 end;
 
@@ -443,9 +454,10 @@ begin
     // Grant the Users group Modify permissions on the local data directory.
     // The [Dirs] section sets initial ACLs, but icacls ensures inheritance
     // propagates to all existing files and future subdirectories.
-    Exec('icacls.exe',
+    if not Exec('icacls.exe',
       '"' + ExpandConstant('{app}\local') + '" /grant *S-1-5-32-545:(OI)(CI)M /T /Q',
-      '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      Log('Warning: icacls.exe failed to set permissions on local directory (exit code ' + IntToStr(ResultCode) + ')');
 
     // Rename the default uninstaller to a friendly name
     if FileExists(ExpandConstant('{app}\unins000.exe')) then
@@ -861,10 +873,10 @@ Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFil
 
 [Run]
 ; Register COM DLL with 32-bit RegAsm during install (silent, requires admin)
-Filename: "C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe"; Parameters: "/codebase ""{app}\com\VenusLibraryManager.dll"""; StatusMsg: "Registering COM object..."; Flags: runhidden waituntilterminated
+Filename: "C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe"; Parameters: "/codebase ""{app}\com\VenusLibraryManager.dll"""; StatusMsg: "Registering COM object..."; Flags: runhidden waituntilterminated; Check: RegAsmExists
 
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
 ; Unregister COM DLL with 32-bit RegAsm during uninstall
-Filename: "C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe"; Parameters: "/unregister ""{app}\com\VenusLibraryManager.dll"""; Flags: runhidden waituntilterminated
+Filename: "C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe"; Parameters: "/unregister ""{app}\com\VenusLibraryManager.dll"""; Flags: runhidden waituntilterminated; Check: RegAsmExists

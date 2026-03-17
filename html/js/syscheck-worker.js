@@ -151,8 +151,14 @@ function findMissingBackups(systemLibraries, packageStoreDir) {
 }
 
 // ---- IPC message handler ----
+var WORKER_TIMEOUT_MS = 120000; // 2 minutes max for sys check
 process.on('message', function(msg) {
 	if (msg.type !== 'run') return;
+
+	var timer = setTimeout(function() {
+		process.send({ type: 'result', payload: { integrityResults: {}, missingPackages: [], baselineGenerated: null, metadataNeeded: false, backupsNeeded: false, error: 'Worker timed out after ' + (WORKER_TIMEOUT_MS / 1000) + 's' } });
+		process.exit(1);
+	}, WORKER_TIMEOUT_MS);
 
 	var payload = msg.payload;
 	var sysLibDir = payload.sysLibDir;
@@ -194,6 +200,7 @@ process.on('message', function(msg) {
 		result.error = e.message;
 	}
 
+	clearTimeout(timer);
 	process.send({ type: 'result', payload: result });
 	process.exit(0);
 });

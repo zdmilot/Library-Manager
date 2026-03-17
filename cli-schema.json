@@ -162,8 +162,8 @@
 
     "install_to_library_root": {
       "type": "boolean",
-      "default": false,
-      "description": "When true, library files are installed directly into the Library root directory instead of a subdirectory named after the library. Some libraries require this for compatibility. The user can override this setting at import time."
+      "default": true,
+      "description": "When true (default), library files are installed directly into the Library root directory. When false with a custom_install_subdir specified, files are installed into that subdirectory. The user can override this setting at import time."
     }
 
   },
