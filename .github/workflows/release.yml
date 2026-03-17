@@ -8,9 +8,9 @@ on:
         required: true
         type: string
       release_notes:
-        description: 'Release notes for this version'
+        description: 'Release notes / changelog for this version (supports multiple lines)'
         required: true
-        type: string
+        type: text
 
 permissions:
   contents: write
