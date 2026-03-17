@@ -9134,10 +9134,31 @@
 
 		// ---- Core packaging function ----
 		var _pkgCreateInProgress = false;
+
+		function pkgProgressShow() {
+			var $m = $("#pkgProgressModal");
+			$m.find(".pkg-progress-bar").css("width", "0%");
+			$m.find(".pkg-progress-pct").text("0%");
+			$m.find(".pkg-progress-step").text("Preparing\u2026");
+			$m.modal("show");
+		}
+		function pkgProgressUpdate(pct, stepText) {
+			var $m = $("#pkgProgressModal");
+			$m.find(".pkg-progress-bar").css("width", pct + "%");
+			$m.find(".pkg-progress-pct").text(Math.round(pct) + "%");
+			if (stepText) $m.find(".pkg-progress-step").text(stepText);
+		}
+		function pkgProgressHide() {
+			$("#pkgProgressModal").modal("hide");
+		}
+
 		async function pkgCreatePackageFile(savePath) {
 			if (_pkgCreateInProgress) return;
 			_pkgCreateInProgress = true;
+			pkgProgressShow();
 			try {
+				await new Promise(function(r) { setTimeout(r, 80); }); // let modal render
+				pkgProgressUpdate(5, 'Validating fields\u2026');
 				var author = $("#pkg-author").val().trim();
 				var organization = $("#pkg-organization").val().trim();
 
@@ -9165,6 +9186,9 @@
 
 				// Use library name from the detected field
 				var libName = $("#pkg-library-name").val().trim() || "Unknown";
+
+				pkgProgressUpdate(10, 'Detecting icon\u2026');
+				await new Promise(function(r) { setTimeout(r, 60); });
 
 				// Find matching BMP image (same name as .hsl file) - auto-detect fallback
 				var libImageFilename = null;
@@ -9209,6 +9233,9 @@
 				// for the .hxlibpkg file in Explorer.  The manifest stores the RAW
 				// (uncomposited) image so imported libraries display the original
 				// library artwork without the overlay.
+				pkgProgressUpdate(20, 'Compositing icon\u2026');
+				await new Promise(function(r) { setTimeout(r, 60); });
+
 				var compositedIconBase64 = null;
 				var compositedIconFilename = null;
 				try {
@@ -9225,6 +9252,9 @@
 					// Compositing failed - icon/ will use the raw image (non-critical)
 					console.warn('Icon compositing failed:', e);
 				}
+
+				pkgProgressUpdate(35, 'Building manifest\u2026');
+				await new Promise(function(r) { setTimeout(r, 60); });
 
 				// Build manifest JSON (matches C# HxLibPkgManifest.ToJson() format)
 				// Manifest stores the RAW library image - no overlay
@@ -9336,6 +9366,9 @@
 					return;
 				}
 
+				pkgProgressUpdate(50, 'Assembling package files\u2026');
+				await new Promise(function(r) { setTimeout(r, 60); });
+
 				// Create ZIP package using adm-zip
 				var zip = new AdmZip();
 
@@ -9398,9 +9431,15 @@
 					zip.addLocalFile(pkg_installerFilePath, 'installer');
 				}
 
+				pkgProgressUpdate(70, 'Signing package\u2026');
+				await new Promise(function(r) { setTimeout(r, 60); });
+
 				// Sign the package for integrity verification
 				var pkgUseCodeSigning = $("#chk-pkg-sign").is(":checked");
 				var sigResult = applyPackageSigning(zip, pkgUseCodeSigning);
+
+				pkgProgressUpdate(85, 'Writing package file\u2026');
+				await new Promise(function(r) { setTimeout(r, 60); });
 
 				// Wrap in binary container and write
 				fs.writeFileSync(savePath, packContainer(zip.toBuffer(), CONTAINER_MAGIC_PKG));
@@ -9457,6 +9496,10 @@
 					appendAuditTrailEntry(buildAuditTrailEntry('package_created', auditData));
 				} catch(_) { /* non-critical */ }
 
+				pkgProgressUpdate(100, 'Done!');
+				await new Promise(function(r) { setTimeout(r, 400); }); // let bar fill visually
+				pkgProgressHide();
+
 				// Clear the form and navigate home before showing the success modal
 				$('#pkg-reset').trigger('click');
 				navigateHome();
@@ -9471,6 +9514,7 @@
 				});
 
 			} catch(e) {
+				pkgProgressHide();
 				alert("Error creating package:\n" + e.message);
 			} finally {
 				_pkgCreateInProgress = false;

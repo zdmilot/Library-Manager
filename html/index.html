@@ -2590,6 +2590,26 @@
 	</div>
 	<!---- Modal Batch COM end --->
 
+	<!---- Modal Package Progress start --->
+	<div class="modal" tabindex="-1" role="dialog" id="pkgProgressModal" data-backdrop="static" data-keyboard="false">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:460px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-body import-success-body" style="padding:40px 36px 32px;">
+					<div style="margin-bottom:20px;">
+						<i class="fas fa-box-open fa-3x" style="color:var(--medium); filter:drop-shadow(0 2px 6px rgba(2,117,216,0.25));"></i>
+					</div>
+					<h4 class="import-success-title" style="margin-bottom:6px;">Creating Package&hellip;</h4>
+					<p class="pkg-progress-step text-muted" style="font-size:0.88rem; margin-bottom:20px;">Preparing&hellip;</p>
+					<div class="pkg-progress-bar-wrap" style="width:100%; background:var(--body-background); border-radius:8px; height:10px; overflow:hidden;">
+						<div class="pkg-progress-bar" style="width:0%; height:100%; background:var(--solid-button-background); border-radius:8px; transition:width 0.4s ease;"></div>
+					</div>
+					<div class="pkg-progress-pct text-muted mt-2" style="font-size:0.78rem;">0%</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Package Progress end --->
+
 	<!---- Modal Generic Success start --->
 	<div class="modal" tabindex="-1" role="dialog" id="genericSuccessModal">
 		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:480px;">
