@@ -12676,11 +12676,7 @@
 					var helpFiles   = lib.help_files || [];
 					var comDlls     = lib.com_register_dlls || [];
 
-					// Include CHMs in manifest library_files for backward compatibility
 					var manifestLibFiles = libraryFiles.slice();
-					helpFiles.forEach(function(hf) {
-						if (manifestLibFiles.indexOf(hf) === -1) manifestLibFiles.push(hf);
-					});
 
 					var manifest = {
 						format_version: shared.FORMAT_VERSION,
@@ -13041,11 +13037,7 @@
 					var helpFiles = lib.help_files || [];
 					var comDlls = lib.com_register_dlls || [];
 
-					// Include CHMs in manifest library_files for backward compatibility
 					var manifestLibFiles = libraryFiles.slice();
-					helpFiles.forEach(function(hf) {
-						if (manifestLibFiles.indexOf(hf) === -1) manifestLibFiles.push(hf);
-					});
 
 					// Build manifest for this library
 					var manifest = {
