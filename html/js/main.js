@@ -20448,17 +20448,10 @@
 				} catch(_) { console.warn(_); }
 
 				var proceedWithQueueInstall = function () {
-					_storeImportActive = true;
-					_storeAutoInstall = true;
-					impLoadAndInstall(tmpPath);
-					var checkFlag = setInterval(function () {
-						if (!_isImporting) {
-							clearInterval(checkFlag);
-							_storeImportActive = false;
-							storeRenderGrid();
-							storeInstallQueue(queue, idx + 1);
-						}
-					}, 500);
+					storeAutoInstallPkg(tmpPath, function () {
+						_storeImportActive = false;
+						storeInstallQueue(queue, idx + 1);
+					});
 				};
 
 				if (breakingChanges.length > 0) {
@@ -20469,6 +20462,25 @@
 					proceedWithQueueInstall();
 				}
 			});
+		}
+
+		/**
+		 * Run impLoadAndInstall with auto-confirm for store installs.
+		 * Skips the import preview modal since the user already reviewed info in the store.
+		 * @param {string} tmpPath - Path to the downloaded package file
+		 * @param {function} [onComplete] - Optional callback when install finishes
+		 */
+		function storeAutoInstallPkg(tmpPath, onComplete) {
+			_storeImportActive = true;
+			_storeAutoInstall = true;
+			impLoadAndInstall(tmpPath);
+			var checkFlag = setInterval(function () {
+				if (!_isImporting) {
+					clearInterval(checkFlag);
+					storeRenderGrid();
+					if (onComplete) onComplete();
+				}
+			}, 500);
 		}
 
 		function storeDownloadAndPreview(pkgFile) {
@@ -20485,10 +20497,9 @@
 			$m.find(".detail-modal-body").addClass("d-none");
 			$m.find(".store-detail-progress").removeClass("d-none");
 			$m.find(".store-detail-progress-label").text("Downloading package\u2026");
-			$m.find(".store-detail-progress-icon").removeClass("fa-cog fa-check-circle text-success").addClass("fa-cloud-download-alt");
+			$m.find(".store-detail-progress-icon").attr("class", "fas fa-cloud-download-alt fa-2x store-detail-progress-icon").css("color", "var(--medium)");
 			$m.find(".store-detail-progress-status").text("Please wait\u2026");
-			$m.find(".store-detail-progress-bar").css("width", "100%")
-				.addClass("progress-bar-striped progress-bar-animated");
+			$m.find(".store-detail-progress-bar").css("width", "100%");
 
 			var downloadUrl = storePackageDownloadUrl(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
@@ -20527,15 +20538,7 @@
 				var proceedWithAutoInstall = function () {
 					// Hide the detail modal and auto-install
 					$m.modal("hide");
-					_storeImportActive = true;
-					_storeAutoInstall = true;
-					impLoadAndInstall(tmpPath);
-					var checkFlag = setInterval(function () {
-						if (!_isImporting) {
-							clearInterval(checkFlag);
-							storeRenderGrid();
-						}
-					}, 500);
+					storeAutoInstallPkg(tmpPath);
 				};
 
 				if (breakingChanges.length > 0) {
@@ -20545,15 +20548,7 @@
 					$detailBtn.html(origBtnHtml).prop("disabled", false);
 					$m.modal("hide");
 					storeShowBreakingChangesModal(breakingChanges, function () {
-						_storeImportActive = true;
-						_storeAutoInstall = true;
-						impLoadAndInstall(tmpPath);
-						var checkFlag = setInterval(function () {
-							if (!_isImporting) {
-								clearInterval(checkFlag);
-								storeRenderGrid();
-							}
-						}, 500);
+						storeAutoInstallPkg(tmpPath);
 					});
 				} else {
 					proceedWithAutoInstall();
