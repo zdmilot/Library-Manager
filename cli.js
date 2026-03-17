@@ -1735,6 +1735,44 @@ function cmdDeleteLib(args) {
             } catch (_) {}
         }
 
+        // Delete labware files
+        const labwareFiles = lib.labware_files || [];
+        const labwarePath  = lib.labware_install_path || '';
+        if (labwarePath && labwareFiles.length > 0) {
+            labwareFiles.forEach(f => {
+                try {
+                    const fp = path.join(labwarePath, f);
+                    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+                } catch (e) {
+                    process.stderr.write(`  Warning: could not delete labware ${f}: ${e.message}\n`);
+                }
+            });
+            try {
+                if (fs.existsSync(labwarePath) && fs.readdirSync(labwarePath).length === 0) {
+                    fs.rmdirSync(labwarePath);
+                }
+            } catch (_) {}
+        }
+
+        // Delete bin files
+        const binFiles = lib.bin_files || [];
+        const binPath  = lib.bin_install_path || '';
+        if (binPath && binFiles.length > 0) {
+            binFiles.forEach(f => {
+                try {
+                    const fp = path.join(binPath, f);
+                    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+                } catch (e) {
+                    process.stderr.write(`  Warning: could not delete bin ${f}: ${e.message}\n`);
+                }
+            });
+            try {
+                if (fs.existsSync(binPath) && fs.readdirSync(binPath).length === 0) {
+                    fs.rmdirSync(binPath);
+                }
+            } catch (_) {}
+        }
+
         console.log('  Disk files removed.');
     } else {
         console.log('  --keep-files set: disk files left in place.');
@@ -1787,9 +1825,12 @@ function cmdDeleteLib(args) {
     } catch (_) { /* non-critical */ }
 
     const comDlls = lib.com_register_dlls || [];
-    if (comDlls.length > 0 && !args['keep-files']) {
-        console.log(`\n  Deregistering ${comDlls.length} COM DLL(s)...`);
+    const binComDlls = lib.bin_com_register_dlls || [];
+    const allComDlls = comDlls.concat(binComDlls);
+    if (allComDlls.length > 0 && !args['keep-files']) {
+        console.log(`\n  Deregistering ${allComDlls.length} COM DLL(s)...`);
         const libPath = lib.lib_install_path || '';
+        const binPath = lib.bin_install_path || '';
         // Locate 32-bit RegAsm.exe (NEVER use Framework64 - VENUS is 32-bit x86)
         const frameworkDir = 'C:\\Windows\\Microsoft.NET\\Framework\\';
         let regasmPath = null;
@@ -1813,9 +1854,13 @@ function cmdDeleteLib(args) {
             comDlls.forEach(dll => {
                 console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /unregister "${path.join(libPath, dll)}"`);
             });
+            binComDlls.forEach(dll => {
+                console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /unregister "${path.join(binPath, dll)}"`);
+            });
         } else {
             let deregOk = 0;
             let deregFail = 0;
+            // Deregister library COM DLLs
             comDlls.forEach(dll => {
                 const dllPath = path.join(libPath, dll);
                 if (!fs.existsSync(dllPath)) {
@@ -1837,10 +1882,32 @@ function cmdDeleteLib(args) {
                     console.log(`  You may need to run this CLI as Administrator for COM deregistration.`);
                 }
             });
+            // Deregister bin COM DLLs
+            binComDlls.forEach(dll => {
+                const dllPath = path.join(binPath, dll);
+                if (!fs.existsSync(dllPath)) {
+                    console.log(`  Skip: ${dll} [bin] (file not found)`);
+                    return;
+                }
+                try {
+                    const { execFileSync } = require('child_process');
+                    execFileSync(regasmPath, ['/unregister', dllPath], {
+                        timeout: 30000,
+                        windowsHide: true,
+                        stdio: 'pipe'
+                    });
+                    deregOk++;
+                    console.log(`  Deregistered: ${dll} [bin]`);
+                } catch (e) {
+                    deregFail++;
+                    console.log(`  FAILED to deregister: ${dll} [bin] - ${(e.message || '').substring(0, 100)}`);
+                    console.log(`  You may need to run this CLI as Administrator for COM deregistration.`);
+                }
+            });
             console.log(`  COM deregistration: ${deregOk} succeeded, ${deregFail} failed.`);
         }
-    } else if (comDlls.length > 0 && args['keep-files']) {
-        console.log(`\n  NOTE: --keep-files set. COM DLLs were NOT deregistered: ${comDlls.join(', ')}`);
+    } else if (allComDlls.length > 0 && args['keep-files']) {
+        console.log(`\n  NOTE: --keep-files set. COM DLLs were NOT deregistered: ${allComDlls.join(', ')}`);
         console.log(`  Run the 32-bit RegAsm with elevated privileges if needed:`);
         console.log(`    C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\RegAsm.exe /unregister <dll>`);
         console.log(`  IMPORTANT: Do NOT use Framework64 - VENUS is a 32-bit application.`);

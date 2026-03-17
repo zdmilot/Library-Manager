@@ -1399,7 +1399,8 @@
 							<i class="fas fa-cog me-1"></i>
 							<strong>COM Registered DLLs:</strong>
 							<span class="delete-confirm-com-dlls"></span>
-							<div class="mt-1 text-sm"><i class="fas fa-shield-alt me-1"></i>Administrator rights will be required to deregister COM objects.</div>
+							<div class="delete-confirm-com-admin-notice mt-1 text-sm"><i class="fas fa-shield-alt me-1"></i>Administrator rights will be required to deregister COM objects.</div>
+							<div class="delete-confirm-com-oem-notice mt-1 text-sm d-none" style="color:var(--success,#28a745);"><i class="fas fa-check-circle me-1"></i>Verified OEM package — no administrator prompt required.</div>
 						</div>
 					</div>
 					<div class="delete-confirm-input-section mt-3">
@@ -2235,11 +2236,14 @@
 					<div class="detail-section imp-preview-com-section d-none mt-2">
 						<div class="alert alert-info mb-0 py-2 px-3" style="font-size:0.85rem;">
 							<i class="fas fa-cog me-1"></i>
-							<strong>COM Registration Required</strong><br>
+							<strong class="imp-preview-com-title">COM Registration Required</strong><br>
 							<span>The following DLLs will be registered using the <strong>32-bit</strong> <code>RegAsm.exe /codebase</code> (VENUS requires 32-bit COM):</span><br>
 							<span class="imp-preview-com-list fw-bold"></span><br>
-							<span class="text-danger" style="font-size:0.8rem;" title="Administrator (elevated) rights are needed to register COM objects on the system. A UAC prompt will appear when you click Install.">
+							<span class="imp-preview-com-admin-notice text-danger" style="font-size:0.8rem;" title="Administrator (elevated) rights are needed to register COM objects on the system. A UAC prompt will appear when you click Install.">
 								<i class="fas fa-shield-alt me-1"></i>Administrator rights are required to register COM objects.
+							</span>
+							<span class="imp-preview-com-oem-notice text-success d-none" style="font-size:0.8rem;" title="This is a verified OEM package. COM objects will be registered without requiring administrator privileges.">
+								<i class="fas fa-check-circle me-1"></i>Verified OEM package — no administrator prompt required.
 							</span>
 						</div>
 					</div>
