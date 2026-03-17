@@ -2369,6 +2369,8 @@
 				} else if (result) {
 					console.log('Auto-update: app is up to date (v' + result.currentVersion + ')');
 				}
+			}).catch(function (err) {
+				console.warn('Auto-update check failed:', err.message || err);
 			});
 		}
 
@@ -9170,6 +9172,7 @@
 
 				// Check restricted author/organization name
 				if ((isRestrictedAuthor(author) || isRestrictedAuthor(organization)) && !_oemSessionUnlocked) {
+					pkgProgressHide();
 					$("#restrictedAuthorWarningModal").modal("show");
 					return;
 				}
