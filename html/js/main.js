@@ -5066,7 +5066,7 @@
 						if(!group_favorite){navItemStr+=' d-none';}
 						
 						navItemStr +=  classCustomGroup + '" data-group-id="' + group_id + '">' +
-										'<div class="navitem-content"><div><i class="far fa-1x ' + group_icon + '"></i></div>' +
+										'<div class="navitem-content"><div><i class="fas fa-1x ' + group_icon + '"></i></div>' +
 										'<div><span class="nav-item-text">' + group_name + '</span></div></div></li>';
 
 						(group_navbar==="left") ?  $(".navbarLeft").append(navItemStr) : $(".navbarRight").append(navItemStr);
@@ -5087,7 +5087,7 @@
 						// Protected group: show in accordion with read-only badge, no edit/delete, no visibility toggle
 						var accordionStr = '<div class="card mb-2 settings-links-group protected-group'+displayClass+'" data-group-id="'+ group_id +'">' +
 								'<div class="card-header collapsed" role="tab" id="heading_'+group_id +'" data-bs-toggle="collapse" href="#collapse_'+ group_id+'" aria-expanded="true" aria-controls="collapse_'+ group_id+'">' +
-										'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
+										'<span class="fas fa-chevron-right mr-2 caret-right color-medium"></span>' +
 										'<span class="color-medium2"><i class="fas '+ group_icon +' fa-md ml-2 mr-2"></i><span class="group-name">'+ group_name +' </span></span>'+
 										'<span class="badge badge-warning ml-2" style="font-size:0.7rem;">Protected</span>';
 								accordionStr+='</div>'+  
@@ -5099,13 +5099,13 @@
 					} else {
 						accordionStr = '<div class="card mb-2 settings-links-group cursor-pointer'+displayClass+'" data-group-id="'+ group_id +'">' +
 								'<div class="card-header collapsed" role="tab" id="heading_'+group_id +'" data-bs-toggle="collapse" href="#collapse_'+ group_id+'" aria-expanded="true" aria-controls="collapse_'+ group_id+'">' +
-										'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
+										'<span class="fas fa-chevron-right mr-2 caret-right color-medium"></span>' +
 										'<span class="color-medium2"><i class="fas '+ group_icon +' fa-md ml-2 mr-2"></i><span class="group-name">'+ group_name +' </span></span>'+
 										'<span class="cursor-pointer float-right pl-2 pr-2 " id="ddg_'+group_id+'" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'+
-											'<i class="far fa-ellipsis-v fa-md color-grayblue"></i>'+
+											'<i class="fas fa-ellipsis-v fa-md color-grayblue"></i>'+
 											'<div class="dropdown-menu" aria-labelledby="ddg_'+group_id+'">'+
-												'<a class="dropdown-item dropdown-navitem-clearbg" href="#" onclick="groupEdit(\''+group_id+'\');"><i class="far fa-pencil fa-sm mr-2 color-blue"></i>Edit</a>'+
-												'<a class="dropdown-item dropdown-navitem-clearbg" href="#" onclick="groupDelete(\''+ group_id +'\');"><i class="far fa-trash fa-sm mr-2 color-blue"></i>Delete</a>'+
+												'<a class="dropdown-item dropdown-navitem-clearbg" href="#" onclick="groupEdit(\''+group_id+'\');"><i class="fas fa-pencil fa-sm mr-2 color-blue"></i>Edit</a>'+
+												'<a class="dropdown-item dropdown-navitem-clearbg" href="#" onclick="groupDelete(\''+ group_id +'\');"><i class="fas fa-trash fa-sm mr-2 color-blue"></i>Delete</a>'+
 											'</div>'+
 										'</span>';
 										if(group_favorite){
@@ -5185,14 +5185,14 @@
 			var _unsignedLibs = _unsignedEnabled ? (db_unsigned_libs.unsigned_libs.find() || []) : [];
 			if (_unsignedEnabled && _unsignedLibs.length > 0) {
 				var unsNavStr = '<li class="nav-item unsigned-group-nav" data-group-id="gUnsigned">' +
-					'<div class="navitem-content"><div><i class="far fa-1x fa-times-circle"></i></div>' +
+					'<div class="navitem-content"><div><i class="fas fa-1x fa-times-circle"></i></div>' +
 					'<div><span class="nav-item-text">Unsigned</span></div></div></li>';
 				$(".navbarLeft").append(unsNavStr);
 
 				// Add Unsigned group to Settings accordion (read-only, no edit/delete/drag)
 				var unsAccStr = '<div class="card mb-2 settings-links-group unsigned-group-settings protected-group" data-group-id="gUnsigned">' +
 					'<div class="card-header collapsed" role="tab" id="heading_gUnsigned" data-bs-toggle="collapse" href="#collapse_gUnsigned" aria-expanded="false" aria-controls="collapse_gUnsigned">' +
-						'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
+						'<span class="fas fa-chevron-right mr-2 caret-right color-medium"></span>' +
 						'<span class="color-medium2"><i class="far fa-times-circle fa-md ml-2 mr-2"></i><span class="group-name">Unsigned </span></span>' +
 						'<span class="badge badge-secondary ml-2" style="font-size:0.7rem;">Auto-Detected</span>' +
 					'</div>' +
@@ -5222,14 +5222,14 @@
 			// ---- Inject the static "System" group nav item ----
 			if (systemLibraries.length > 0) {
 				var sysNavStr = '<li class="nav-item system-group-nav" data-group-id="gSystem">' +
-					'<div class="navitem-content"><div><i class="far fa-1x fa-lock"></i></div>' +
+					'<div class="navitem-content"><div><i class="fas fa-1x fa-lock"></i></div>' +
 					'<div><span class="nav-item-text">System</span></div></div></li>';
 				$(".navbarLeft").append(sysNavStr);
 
 				// Add System group to Settings accordion (read-only, no edit/delete)
 				var sysAccStr = '<div class="card mb-2 settings-links-group system-group-settings protected-group" data-group-id="gSystem">' +
 					'<div class="card-header collapsed" role="tab" id="heading_gSystem" data-bs-toggle="collapse" href="#collapse_gSystem" aria-expanded="false" aria-controls="collapse_gSystem">' +
-						'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
+						'<span class="fas fa-chevron-right mr-2 caret-right color-medium"></span>' +
 						'<span class="color-medium2"><i class="fas fa-lock fa-md ml-2 mr-2"></i><span class="group-name">System </span></span>' +
 						'<span class="badge badge-secondary ml-2" style="font-size:0.7rem;">Read-Only</span>' +
 					'</div>' +
@@ -5308,7 +5308,7 @@
 
 			var strUnassigned = '<div class="card mb-2 settings-links-group" data-group-id="unassigned">' +
 				'<div class="card-header collapsed" role="tab" id="heading_unassigned" data-bs-toggle="collapse" href="#collapse_unassigned" aria-expanded="true" aria-controls="collapse_unassigned">' +
-					'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
+					'<span class="fas fa-chevron-right mr-2 caret-right color-medium"></span>' +
 					'<span class="color-medium2"><i class="fas fa-inbox fa-md ml-2 mr-2"></i><span class="group-name">Unassigned Libraries</span></span>' +
 				'</div>' +
 				'<div id="collapse_unassigned" class="collapse" role="tabpanel" aria-labelledby="heading_unassigned">' +
@@ -5575,7 +5575,7 @@
 				for(var a = 0; a < attachments.length; a++){
 					$attList.append(
 						'<a href="#" class="link-attachment" data-filepath="' + attachments[a].replace(/"/g, '&quot;') + '">' +
-							'<i class="far fa-paperclip fa-sm mr-2 color-blue"></i>' + escapeHtml(path.basename(attachments[a])) +
+							'<i class="fas fa-paperclip fa-sm mr-2 color-blue"></i>' + escapeHtml(path.basename(attachments[a])) +
 						'</a>'
 					);
 				}
