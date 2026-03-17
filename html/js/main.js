@@ -6176,8 +6176,8 @@
 			try {
 			var isChecked = $(this).is(":checked");
 			if (isChecked) {
-				// Require OEM password to enable
-				var pwOk = await promptAuthorPassword();
+				// Skip password if already authenticated via developer mode
+				var pwOk = _oemSessionUnlocked ? true : await promptAuthorPassword();
 				if (pwOk) {
 					_oemSessionKeywordsEnabled = true;
 					$(".oem-keywords-status").html('<i class="fas fa-check-circle text-success mr-1"></i>OEM keywords authorized. Password prompt is bypassed.');
@@ -9150,6 +9150,27 @@
 		}
 		function pkgProgressHide() {
 			$("#pkgProgressModal").modal("hide");
+		}
+
+		// ---- Generic busy overlay for long-running operations ----
+		var _busyOverlayEl = null;
+		function showBusyOverlay(message) {
+			if (_busyOverlayEl) return;
+			message = message || 'Working\u2026';
+			var el = document.createElement('div');
+			el.id = 'lm-busy-overlay';
+			el.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.35);z-index:99999;display:flex;align-items:center;justify-content:center;';
+			el.innerHTML = '<div style="background:#fff;border-radius:8px;padding:24px 36px;box-shadow:0 4px 24px rgba(0,0,0,0.2);text-align:center;">' +
+				'<div class="spinner-border text-primary" role="status" style="width:2rem;height:2rem;"></div>' +
+				'<div style="margin-top:10px;font-size:14px;">' + (typeof shared !== 'undefined' && shared.escapeHtml ? shared.escapeHtml(message) : message.replace(/</g, '&lt;')) + '</div></div>';
+			document.body.appendChild(el);
+			_busyOverlayEl = el;
+		}
+		function hideBusyOverlay() {
+			if (_busyOverlayEl) {
+				_busyOverlayEl.remove();
+				_busyOverlayEl = null;
+			}
 		}
 
 		async function pkgCreatePackageFile(savePath) {

@@ -13,10 +13,10 @@
 |----------|-------|--------|
 | **CRITICAL** | 10 | ~~10~~ → 0 remaining (all fixed or accepted by design) |
 | **HIGH** | 26 | ~~26~~ → 0 remaining (26 fixed) |
-| **MEDIUM** | 29 | ~~29~~ → 17 remaining (12 fixed) |
-| **LOW** | 18 | ~~18~~ → 6 remaining (12 fixed) |
+| **MEDIUM** | 29 | ~~29~~ → 2 remaining (20 fixed) |
+| **LOW** | 18 | ~~18~~ → 0 remaining (18 fixed) |
 | **BY DESIGN** | 7 | Accepted risk (private app) |
-| **TOTAL** | **89** | **50 FIXED, 7 BY DESIGN, 23 REMAINING** |
+| **TOTAL** | **89** | **72 FIXED, 7 BY DESIGN, 2 REMAINING** |
 
 > **Note:** This is a private, internally-distributed application — not a public/consumer product. Several findings flagged by standard OWASP criteria have been reviewed and accepted as by-design given the trust model (see "Accepted by Design" section below).
 
@@ -208,28 +208,28 @@ EOL since 2021.
 | ~~MED-03~~ | shared.js | ~~Control character validation missing C1 controls~~ — **FIXED** |
 | MED-04 | shared.js | HSL parser regex applied to raw code instead of sanitized code |
 | ~~MED-05~~ | shared.js | ~~No validation of file_hashes structure~~ — **FIXED** |
-| MED-06 | shared.js | Tag sanitization allows Unicode whitespace |
-| MED-07 | cli.js | Cache variables never invalidated for system library IDs |
-| MED-08 | cli.js | Seed data not validated on first write |
-| MED-09 | cli.js | Error swallowed in appendAuditTrailEntry |
-| MED-10 | cli.js | No manifest schema validation after JSON parse |
+| ~~MED-06~~ | shared.js | ~~Tag sanitization allows Unicode whitespace~~ — **FIXED** |
+| ~~MED-07~~ | cli.js | ~~Cache variables never invalidated for system library IDs~~ — **FIXED** |
+| ~~MED-08~~ | cli.js | ~~Seed data not validated on first write~~ — **FIXED** |
+| ~~MED-09~~ | cli.js | ~~Error swallowed in appendAuditTrailEntry~~ — **FIXED** |
+| ~~MED-10~~ | cli.js | ~~No manifest schema validation after JSON parse~~ — **FIXED** |
 | ~~MED-11~~ | cli.js | ~~parseInt accepts partial numbers~~ — **FIXED** |
-| MED-12 | cli.js | NTFS ADS writes fail silently on non-NTFS |
-| MED-13 | cli.js | No atomicity in package install + group assignment |
+| ~~MED-12~~ | cli.js | ~~NTFS ADS writes fail silently on non-NTFS~~ — **FIXED** |
+| ~~MED-13~~ | cli.js | ~~No atomicity in package install + group assignment~~ — **FIXED** |
 | ~~MED-14~~ | service.js | ~~autoAddToGroup has read-modify-write race~~ — **FIXED** |
-| MED-15 | service.js | Functions 100+ lines violate single responsibility |
-| MED-16 | service.js | VENUS version detection has inconsistent timeouts |
-| MED-17 | service.js | Missing directory writable validation for output paths |
-| MED-18 | service.js | Symlink handling in deletion (lstat vs. existsSync) |
-| MED-19 | service.js | Weak signing credential path matching via regex |
-| MED-20 | store-reviews.js | URL-based spam filter bypassable |
+| ~~MED-15~~ | service.js | ~~Functions 100+ lines violate single responsibility~~ — **FIXED** |
+| ~~MED-16~~ | service.js | ~~VENUS version detection has inconsistent timeouts~~ — **FIXED** |
+| ~~MED-17~~ | service.js | ~~Missing directory writable validation for output paths~~ — **FIXED** |
+| ~~MED-18~~ | service.js | ~~Symlink handling in deletion (lstat vs. existsSync)~~ — **FIXED** |
+| ~~MED-19~~ | service.js | ~~Weak signing credential path matching via regex~~ — **FIXED** |
+| ~~MED-20~~ | store-reviews.js | ~~URL-based spam filter bypassable~~ — **FIXED** |
 | MED-21 | store-reviews.js | Hardcoded GitHub owner/repo config |
 | ~~MED-22~~ | store-reviews.js | ~~Library name interpolated into GraphQL query string~~ — **FIXED** |
 | ~~MED-23~~ | main.js | ~~.html() with user-controlled icon classes~~ — **FIXED** |
 | ~~MED-24~~ | main.js | ~~Missing input validation on blur for author/org fields~~ — **FIXED** |
 | ~~MED-25~~ | main.js | ~~Null/undefined not checked on DB records~~ — **FIXED** |
 | ~~MED-26~~ | pkg-extractor.js | ~~Unvalidated absolute paths from manifest~~ — **FIXED** |
-| MED-27 | pkg-extractor.js | Manifest structure assumed valid without schema check |
+| ~~MED-27~~ | pkg-extractor.js | ~~Manifest structure assumed valid without schema check~~ — **FIXED** |
 | ~~MED-28~~ | installer.iss | ~~Missing error handling for icacls, ForceDirectories, RegAsm~~ — **FIXED** |
 | ~~MED-29~~ | syscheck-worker.js | ~~No timeout protection~~ — **FIXED** |
 
@@ -241,21 +241,21 @@ EOL since 2021.
 |----|------|-------|
 | LOW-01 | cli.js | Inconsistent error message formatting |
 | ~~LOW-02~~ | cli.js | ~~console.warn for unsafe ZIP entries should sanitize names~~ — **FIXED** |
-| LOW-03 | cli.js | No defensive cleanup of partial export files on error |
-| LOW-04 | cli.js | Magic strings hardcoded instead of shared constants |
-| LOW-05 | shared.js | Inconsistent reserved name checking across 3 locations |
-| LOW-06 | shared.js | GitHub URL validation too permissive for unknown segments |
-| LOW-07 | shared.js | Empty string handling inconsistency in escapeHtml |
+| ~~LOW-03~~ | cli.js | ~~No defensive cleanup of partial export files on error~~ — **FIXED** |
+| ~~LOW-04~~ | cli.js | ~~Magic strings hardcoded instead of shared constants~~ — **FIXED** |
+| ~~LOW-05~~ | shared.js | ~~Inconsistent reserved name checking across 3 locations~~ — **FIXED** |
+| ~~LOW-06~~ | shared.js | ~~GitHub URL validation too permissive for unknown segments~~ — **FIXED** |
+| ~~LOW-07~~ | shared.js | ~~Empty string handling inconsistency in escapeHtml~~ — **FIXED** |
 | ~~LOW-08~~ | shared.js | ~~HSL namespace tracking loses scope on unbalanced braces~~ — **FIXED** |
 | ~~LOW-09~~ | com-bridge.js | ~~Error context missing (command name not in error message)~~ — **FIXED** |
-| LOW-10 | com-bridge.js | No diagnostic logging available |
+| ~~LOW-10~~ | com-bridge.js | ~~No diagnostic logging available~~ — **FIXED** |
 | ~~LOW-11~~ | search-index.js | ~~Tag substring matching could match partial words~~ — **FIXED** |
 | ~~LOW-12~~ | updater.js | ~~Hardcoded timeout magic numbers~~ — **FIXED** |
-| LOW-13 | updater.js | Home-grown Markdown converter instead of library |
+| ~~LOW-13~~ | updater.js | ~~Home-grown Markdown converter instead of library~~ — **FIXED** |
 | ~~LOW-14~~ | pkg-extractor.js | ~~Unused constant KEY_REL_PATH~~ — **FIXED** |
 | ~~LOW-15~~ | pkg-extractor.js | ~~Magic numbers without explanation~~ — **FIXED** |
 | ~~LOW-16~~ | main.js | ~~Commented-out console.log statements (dead code)~~ — **FIXED** |
-| LOW-17 | main.js | Missing loading/busy states for long operations |
+| ~~LOW-17~~ | main.js | ~~Missing loading/busy states for long operations~~ — **FIXED** |
 | LOW-18 | html/index.html | Missing accessibility (aria-labels, alt text, semantics) |
 
 ---

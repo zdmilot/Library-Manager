@@ -23,6 +23,13 @@
 
 var service = require('./lib/service');
 
+// Optional diagnostic logging via LM_DEBUG environment variable.
+// Logs go to stderr so they don't interfere with structured JSON on stdout.
+var _debug = !!process.env.LM_DEBUG;
+function logDebug(msg) {
+    if (_debug) process.stderr.write('[COM-BRIDGE] ' + msg + '\n');
+}
+
 function success(data) {
     process.stdout.write(JSON.stringify({ success: true, data: data }) + '\n');
 }
@@ -50,10 +57,13 @@ function main() {
     var command = parsed.command;
     var args = parsed.args;
 
+    logDebug('Command: ' + command);
+
     var ctx;
     try {
         ctx = service.createContext(args);
     } catch (e) {
+        logDebug('Context creation failed: ' + e.message);
         fail('Failed to create service context: ' + e.message);
     }
 
@@ -157,6 +167,7 @@ function main() {
                 fail('Unknown command: ' + command);
         }
     } catch (e) {
+        logDebug('Command "' + command + '" failed: ' + (e.message || String(e)));
         fail('Command "' + command + '" failed: ' + (e.message || String(e)));
     }
 }
