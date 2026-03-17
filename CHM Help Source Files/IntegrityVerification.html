@@ -51,7 +51,7 @@
 <tr><td><b>File modified</b></td><td style="color:#d9534f;">&#10008;</td><td>A file exists on disk but its SHA-256 hash no longer matches - content has been changed since installation.</td></tr>
 <tr><td><b>File missing</b></td><td style="color:#d9534f;">&#10008;</td><td>A tracked file no longer exists at its expected path.</td></tr>
 <tr><td><b>No stored hash</b></td><td style="color:#f0ad4e;">&#9888;</td><td>Warning - a qualifying file exists but no hash was stored for it (may have been added to the library after initial import).</td></tr>
-<tr><td><b>Legacy / no-hash library</b></td><td style="color:#f0ad4e;">&#9888;</td><td>Warning - the library was imported before integrity tracking was added and has no stored hashes. The library still passes validation but shows a warning.</td></tr>
+<tr><td><b>No-hash library</b></td><td style="color:#f0ad4e;">&#9888;</td><td>Warning - the library has no stored hashes. The library still passes validation but shows a warning.</td></tr>
 </tbody>
 </table>
 
@@ -60,7 +60,7 @@
 <ul>
   <li><b>Normal card styling:</b> All files pass integrity checks.</li>
   <li><b>Red / error border:</b> One or more tracked files are missing or have been modified. The card also shows a red tooltip with details.</li>
-  <li><b>Yellow / warning icon:</b> Non-critical issues such as legacy libraries without hash data.</li>
+  <li><b>Yellow / warning icon:</b> Non-critical issues such as libraries without hash data.</li>
 </ul>
 <img src="images/dependency-issues.png" alt="Library card integrity error styling" class="doc-screenshot">
 <p>The library detail modal (clicked from a card) shows a dedicated <b>File Integrity</b> section listing every error and warning. If errors are detected and a cached backup package exists, a <b>Repair from Backup</b> button is displayed. See <a href="#repair">Repair</a> below.</p>
@@ -109,7 +109,7 @@
 <p>Binary resource files (<code>.bmp</code>, <code>.ico</code>, <code>.chm</code>, <code>.stp</code>, <code>.dll</code>) are <b>not</b> baselined for system libraries. Only HSL-type files with Hamilton's native metadata footer are tracked. This keeps the baseline portable and lightweight.</p>
 
 <h3>HSL Files Without a Footer</h3>
-<p>HSL-type files that lack a metadata footer (created outside Hamilton tools, legacy files, or third-party files) are reported during baseline generation but are not tracked, since there is no Hamilton-native integrity indicator for them.</p>
+<p>HSL-type files that lack a metadata footer (created outside Hamilton tools or by third-party files) are reported during baseline generation but are not tracked, since there is no Hamilton-native integrity indicator for them.</p>
 
 <!-- ================================================================== -->
 <h2>Package Signing (HMAC-SHA256)</h2>
@@ -136,7 +136,7 @@
   </li>
 </ol>
 <div class="note">
-<p><b>Note:</b> Legacy v1.0 packages (HMAC-SHA256 only, no Ed25519 signature) are <b>rejected</b> on import. Only unsigned packages (no <code>signature.json</code>) or v2.0 code-signed packages are accepted.</p>
+<p><b>Note:</b> v1.0 packages (HMAC-SHA256 only, no Ed25519 signature) are <b>rejected</b> on import. Only unsigned packages (no <code>signature.json</code>) or v2.0 code-signed packages are accepted.</p>
 </div>
 
 <h3>Three-Phase Verification</h3>
@@ -174,7 +174,7 @@
   <li>For each system library that does <b>not</b> already have an entry in the package store, a <code>.hxlibpkg</code> backup is created:
     <ul>
       <li>All discovered library files (e.g., <code>.hsl</code>, <code>.hs_</code>, <code>.bmp</code>, <code>.ico</code>, <code>.stp</code>) are packaged under a <code>library/</code> folder in the ZIP.</li>
-      <li>All help files (<code>.chm</code>) are packaged under a <code>help_files/</code> folder in the ZIP.</li>
+      <li>All help files (<code>.chm</code>) are packaged under the <code>library/</code> folder in the ZIP.</li>
       <li>A <code>manifest.json</code> is created with version <code>"system"</code>, author <code>"Hamilton"</code>, and the tags <code>["system", "hamilton", "backup"]</code>. It also includes the flag <code>is_system_backup: true</code>.</li>
       <li>The ZIP is signed using the same HMAC-SHA256 mechanism as regular packages (via <code>signPackageZip</code>).</li>
       <li><b>No demo method files</b> are included - system libraries do not ship with demo methods.</li>
@@ -194,8 +194,7 @@
 <thead><tr><th>ZIP Entry</th><th>Contents</th></tr></thead>
 <tbody>
 <tr><td><code>manifest.json</code></td><td>Package metadata: library name, author, version (<code>"system"</code>), description, tags, file lists, optional Base64 image</td></tr>
-<tr><td><code>library/</code></td><td>All non-CHM library files: <code>.hsl</code>, <code>.hs_</code>, <code>.bmp</code>, <code>.ico</code>, <code>.stp</code>, <code>.sub</code>, etc.</td></tr>
-<tr><td><code>help_files/</code></td><td>All <code>.chm</code> help files</td></tr>
+<tr><td><code>library/</code></td><td>All library files, including <code>.hsl</code>, <code>.hs_</code>, <code>.bmp</code>, <code>.ico</code>, <code>.stp</code>, <code>.sub</code>, and <code>.chm</code></td></tr>
 </tbody>
 </table>
 <p>System library backups are wrapped in a <a href="BinaryContainerFormat.html">binary container</a> for tamper resistance but do not include an internal <code>signature.json</code>. The binary container's own HMAC-SHA256 digest provides integrity protection.</p>
@@ -220,7 +219,6 @@
   <li>Files are extracted from the ZIP back to their original locations, overwriting the modified or corrupted files on disk:
     <ul>
       <li><code>library/*</code> entries -> the library's install directory</li>
-      <li><code>help_files/*</code> entries -> the library's install directory (system libraries) or library directory (user libraries)</li>
       <li><code>demo_methods/*</code> entries -> the demo methods directory (user libraries only; system libraries have no demo methods)</li>
     </ul>
   </li>
@@ -270,7 +268,7 @@
 <thead><tr><th>Status</th><th>Color</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td><b>OK</b></td><td style="color:#5cb85c;">Green</td><td>All tracked files pass integrity checks</td></tr>
-<tr><td><b>WARNING</b></td><td style="color:#f0ad4e;">Yellow</td><td>Non-critical issues (e.g., no baseline, legacy library without hashes)</td></tr>
+<tr><td><b>WARNING</b></td><td style="color:#f0ad4e;">Yellow</td><td>Non-critical issues (e.g., no baseline, library without hashes)</td></tr>
 <tr><td><b>FAILED</b></td><td style="color:#d9534f;">Red</td><td>One or more tracked files are missing or have been modified</td></tr>
 </tbody>
 </table>

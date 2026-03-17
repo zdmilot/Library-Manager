@@ -27,8 +27,8 @@
     <ul>
       <li><b>Verified</b> (green) - All file hashes match, the HMAC is valid, and the Ed25519 digital signature verifies against the embedded publisher certificate</li>
       <li><b>Converted Distribution</b> (grey) - Package was converted from an executable installer. Shows the source <code>.exe</code> filename and Authenticode signer info (if signed), or &ldquo;Created from official library distribution&rdquo; (if unsigned). HMAC integrity is still verified.</li>
-      <li><b>Unsigned</b> (yellow) - No signature found (legacy/third-party package). Import proceeds normally.</li>
-      <li><b>Failed</b> (red) - Package may be corrupt or tampered with, or uses a rejected legacy v1.0 HMAC-only signature. A confirmation dialog warns the user before proceeding.</li>
+      <li><b>Unsigned</b> (yellow) - No signature found. Import proceeds normally.</li>
+      <li><b>Failed</b> (red) - Package may be corrupt or tampered with, or uses a rejected v1.0 HMAC-only signature. A confirmation dialog warns the user before proceeding.</li>
     </ul>
   </li>
   <li>A <b>pre-install preview modal</b> appears showing:
@@ -55,9 +55,9 @@
 <h3>What Happens During Import</h3>
 <p>When an import is confirmed, Library Manager performs the following steps in order:</p>
 <ol>
-  <li><b>Version Mismatch Check:</b> If the package's <code>app_version</code> differs from the running application version, a warning is shown. A higher-severity warning appears when the package was created with a <b>newer major version</b>, as it may contain unsupported features. Legacy packages (without an <code>app_version</code>) are accepted silently with a console notice.</li>
+  <li><b>Version Mismatch Check:</b> If the package's <code>app_version</code> differs from the running application version, a warning is shown. A higher-severity warning appears when the package was created with a <b>newer major version</b>, as it may contain unsupported features. Packages without an <code>app_version</code> are accepted with a console notice.</li>
   <li><b>Directory Creation:</b> Creates the target library directory at <code>&lt;Library Root&gt;\&lt;LibraryName&gt;</code> and the demo methods directory at <code>&lt;Methods Root&gt;\Library Demo Methods\&lt;LibraryName&gt;</code> if they do not exist</li>
-  <li><b>File Extraction:</b> Extracts all files from the <code>library/</code> folder in the ZIP to the library directory, and all files from <code>demo_methods/</code> to the demo directory. Help files from <code>help_files/</code> are also extracted to the library directory.</li>
+  <li><b>File Extraction:</b> Extracts all files from the <code>library/</code> folder in the ZIP to the library directory, and all files from <code>demo_methods/</code> to the demo directory.</li>
   <li><b>CHM Detection:</b> Any <code>.chm</code> files among the library files are automatically identified and tracked separately in the <code>help_files</code> field</li>
   <li><b>COM Registration (GUI only):</b> If the manifest lists COM DLLs, the GUI initiates a UAC elevation flow to register them with <code>RegAsm.exe /codebase</code>. If registration fails, the user can choose to continue (with a warning badge) or cancel and clean up</li>
   <li><b>Integrity Hashing:</b> SHA-256 hashes are computed for all tracked file types (<code>.hsl</code>, <code>.hs_</code>, <code>.sub</code>, and COM-registered <code>.dll</code> files) and stored in the database record</li>

@@ -17115,10 +17115,7 @@
 						if (stat.isDirectory()) {
 							// Skip special directories
 							var lowerEntry = entry.toLowerCase();
-							if (lowerEntry === 'librarymanagerforvenus6' ||
-								lowerEntry === 'librarymanager' ||
-								lowerEntry === 'librarypackages' ||
-								lowerEntry === '.librarymanagerforvenus6' ||
+							if (lowerEntry === 'librarymanager' ||
 								lowerEntry === 'libraryintegrityaudit') return;
 							scanDir(fullPath, relPath);
 							return;
@@ -17167,7 +17164,7 @@
 						try { stat = fs.statSync(fullPath); } catch(e) { return; }
 						if (stat.isDirectory()) {
 							var lowerEntry = entry.toLowerCase();
-							if (lowerEntry === 'librarymanagerforvenus6' || lowerEntry === 'librarymanager' || lowerEntry === 'librarypackages' || lowerEntry === '.librarymanagerforvenus6' || lowerEntry === 'libraryintegrityaudit') return;
+							if (lowerEntry === 'librarymanager' || lowerEntry === 'libraryintegrityaudit') return;
 							// Skip dot-prefixed directories (temp/hidden)
 							if (entry.charAt(0) === '.') return;
 							scanDirFlat(fullPath, relPath, result);

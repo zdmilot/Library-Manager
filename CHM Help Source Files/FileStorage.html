@@ -83,20 +83,8 @@
 <p>Library Manager supports three theme modes: <b>Auto</b> (follows the Windows system theme), <b>Light</b>, and <b>Dark</b>. The theme is cycled via the theme toggle in the overflow menu.</p>
 <p>The theme preference is stored in <code>local/settings.json</code> as <code>themeMode</code> and is persisted between application sessions. Because settings are global, the theme preference applies to all users on the PC.</p>
 
-<h2>Migration from Previous Versions</h2>
-<p>When upgrading from an earlier version of Library Manager, the application automatically migrates data from legacy storage locations:</p>
-
-<table>
-<thead><tr><th>Legacy Location</th><th>Version</th><th>Migration Action</th></tr></thead>
-<tbody>
-<tr><td><code>&lt;app&gt;/db/</code></td><td>Pre-1.3</td><td>Settings and library data are merged into <code>local/</code></td></tr>
-<tr><td><code>HAMILTON\Library\LibraryManagerForVenus6\</code></td><td>1.2&ndash;1.3</td><td>Library registry, groups, tree, links, and audit trail are copied to <code>local/</code></td></tr>
-<tr><td><code>HAMILTON\Library\.LibraryManagerForVenus6\</code></td><td>1.0&ndash;1.1</td><td>Same as above (hidden folder variant)</td></tr>
-<tr><td><code>HAMILTON\Library\LibraryPackages\</code></td><td>1.2&ndash;1.3</td><td>Cached package backups are copied to <code>local/packages/</code></td></tr>
-</tbody>
-</table>
-
-<p>Migration is non-destructive &mdash; data is only copied if the destination file is empty or contains default seed data. Original files in legacy locations are not deleted.</p>
+<h2>Upgrade Behavior</h2>
+<p>Upgrades preserve the existing <code>local/</code> directory. Current releases read and write all mutable application data directly in this location.</p>
 
 <h2>Backup Recommendations</h2>
 <ul>

@@ -355,7 +355,7 @@
 <tr><td class="step-label">verifyPackageSignature(zip)</td><td>Read signature.json, recompute HMAC over stored hashes, compare each file hash to actual ZIP entry</td></tr>
 <tr class="decision"><td class="step-label">Result?</td><td>
   <b>Valid &rarr;</b> Signature confirmed, continue<br/>
-  <b>Unsigned &rarr;</b> Legacy package (no signature.json), continue with warning<br/>
+  <b>Unsigned &rarr;</b> Package has no signature.json, continue with warning<br/>
   <b>Failed &rarr;</b> Check for <code>--force</code> flag. With force: continue with WARNING. Without force: <b>abort</b>
 </td></tr>
 </table>
@@ -392,7 +392,7 @@
 <tr><th colspan="2">Phase 5: Installation (installPackage)</th></tr>
 <tr><td class="step-label">Sanitize file lists</td><td><code>safeZipExtractPath()</code> to prevent path traversal</td></tr>
 <tr><td class="step-label">Create directories</td><td>Library: <code>HAMILTON\Library\LibName\</code> &mdash; Demo: <code>HAMILTON\Methods\Library Demo Methods\LibName\</code></td></tr>
-<tr><td class="step-label">Extract ZIP entries</td><td><code>library/*</code> &rarr; lib dir, <code>demo_methods/*</code> &rarr; demo dir, <code>help_files/*</code> &rarr; lib dir. Skip manifest.json, signature.json, icon/</td></tr>
+<tr><td class="step-label">Extract ZIP entries</td><td><code>library/*</code> &rarr; lib dir, <code>demo_methods/*</code> &rarr; demo dir. Skip manifest.json, signature.json, icon/</td></tr>
 <tr class="decision"><td class="step-label">COM DLLs declared?</td><td>
   <b>Yes (GUI) &rarr;</b> UAC-elevated <b>32-bit</b> <code>RegAsm.exe</code> from <code>C:\Windows\Microsoft.NET\Framework\</code> via PowerShell Start-Process. <b>Never uses Framework64</b> &mdash; VENUS is a 32-bit (x86) application.<br/>
   <b>No or CLI &rarr;</b> Skip COM registration (CLI users must run the 32-bit <code>RegAsm.exe /codebase</code> manually)
@@ -403,7 +403,7 @@
 
 <table class="phase-table">
 <tr><th colspan="2">Phase 6: Database &amp; Indexing</th></tr>
-<tr><td class="step-label">Version mismatch check</td><td>Compare manifest <code>app_version</code> to the running Library Manager version. If they differ, warn the user (GUI shows a confirm dialog; CLI prints a warning). Packages from a newer major version produce a stronger warning. Legacy packages with no <code>app_version</code> are noted.</td></tr>
+<tr><td class="step-label">Version mismatch check</td><td>Compare manifest <code>app_version</code> to the running Library Manager version. If they differ, warn the user (GUI shows a confirm dialog; CLI prints a warning). Packages from a newer major version produce a stronger warning. Packages with no <code>app_version</code> are noted.</td></tr>
 <tr><td class="step-label">Upsert DB record</td><td>Remove existing record if overwriting; compute SHA-256 file hashes; parse public HSL functions; extract #include dependencies; preserve <code>app_version</code>, <code>format_version</code>, <code>windows_version</code>, <code>venus_version</code>, and <code>package_lineage</code> from the manifest; copy any unrecognized manifest fields for forward compatibility; save to installed_libs.json</td></tr>
 <tr><td class="step-label">Auto-assign to group</td><td>Recognized OEM vendor &rarr; OEM group. Others &rarr; first custom group. Auto-create &ldquo;Libraries&rdquo; group if none exist.</td></tr>
 </table>

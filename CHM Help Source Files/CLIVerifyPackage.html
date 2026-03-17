@@ -48,8 +48,8 @@
 <tbody>
 <tr><td><b>VALID [Ed25519]</b></td><td><code>0</code></td><td>Ed25519 digital signature and all file hashes are valid. Publisher identity is confirmed.</td></tr>
 <tr><td><b>VALID [Converted]</b></td><td><code>0</code></td><td>Package uses the 2.0-converted format (created from an installer by a companion tool). HMAC integrity is valid but no Ed25519 code signature is present.</td></tr>
-<tr><td><b>UNSIGNED</b></td><td><code>0</code></td><td>No <code>signature.json</code> found - the package is a legacy or third-party package created before signing was implemented</td></tr>
-<tr><td><b>FAILED</b></td><td><code>1</code></td><td>One or more file hashes do not match, the HMAC is invalid, the Ed25519 signature verification failed, or the package uses legacy HMAC-only format (v1.0) which is no longer accepted</td></tr>
+<tr><td><b>UNSIGNED</b></td><td><code>0</code></td><td>No <code>signature.json</code> found</td></tr>
+<tr><td><b>FAILED</b></td><td><code>1</code></td><td>One or more file hashes do not match, the HMAC is invalid, the Ed25519 signature verification failed, or the package uses v1.0 HMAC-only format which is no longer accepted</td></tr>
 </tbody>
 </table>
 
@@ -106,7 +106,7 @@ node cli.js verify-package --file "\\server\share\packages\LibraryA.hxlibpkg"</p
 
 Result: ALL PACKAGES VERIFIED (code signed)</pre></div>
 <p>Unsigned packages display as:</p>
-<div class="code"><pre>LegacyLib.hxlibpkg: UNSIGNED
+<div class="code"><pre>UnsignedLib.hxlibpkg: UNSIGNED
 
 Result: NO SIGNED PACKAGES FOUND</pre></div>
 
@@ -128,8 +128,8 @@ Result: NO SIGNED PACKAGES FOUND</pre></div>
 </tbody>
 </table>
 
-<h3>v1.0 Format (HMAC-Only, Legacy)</h3>
-<p>Older format with HMAC integrity but no cryptographic publisher identity. Packages with this format are reported as <b>FAILED</b> because legacy HMAC-only signatures (v1.0) are no longer accepted. Only Ed25519 code-signed packages (v2.0) pass verification.</p>
+<h3>v1.0 Format (HMAC-Only)</h3>
+<p>Older format with HMAC integrity but no cryptographic publisher identity. Packages with this format are reported as <b>FAILED</b> because HMAC-only signatures (v1.0) are no longer accepted. Only Ed25519 code-signed packages (v2.0) pass verification.</p>
 <table>
 <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
