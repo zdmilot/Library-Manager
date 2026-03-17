@@ -1684,10 +1684,14 @@ function cmdDeleteLib(args) {
         );
     }
 
-    const db  = connectDB(resolveDBPath(args));
-    const lib = findLibrary(db, args);
-    if (!lib) die(`Library "${args.name || args.id}" not found.`);
-    if (isSystemLibrary(lib._id)) die(`SYSTEM_LIBRARY_READ_ONLY: "${lib.library_name || args.name || args.id}" is a Hamilton system library and cannot be deleted.`);
+    const dbPath = resolveDBPath(args);
+
+    // Advisory lock: serialize find-then-delete to prevent concurrent modification
+    advisoryLock.withLock(dbPath, 'db-write', function() {
+        const db  = connectDB(dbPath);
+        const lib = findLibrary(db, args);
+        if (!lib) die(`Library "${args.name || args.id}" not found.`);
+        if (isSystemLibrary(lib._id)) die(`SYSTEM_LIBRARY_READ_ONLY: "${lib.library_name || args.name || args.id}" is a Hamilton system library and cannot be deleted.`);
 
     const displayName = lib.library_name || args.name || args.id;
     console.log(`Deleting: ${displayName}`);
