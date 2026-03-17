@@ -11345,14 +11345,6 @@
 				$("#libDetailModal .lib-detail-lineage-section").addClass("d-none");
 			}
 
-			// Library image in body
-			if (lib.library_image_base64) {
-				$("#libDetailModal .lib-detail-image").attr("src", "data:" + detailMime + ";base64," + lib.library_image_base64);
-				$("#libDetailModal .lib-detail-image-section").removeClass("d-none");
-			} else {
-				$("#libDetailModal .lib-detail-image-section").addClass("d-none");
-			}
-
 			// Library files list
 			var $libFiles = $("#libDetailModal .lib-detail-lib-files");
 			$libFiles.empty();
@@ -12069,9 +12061,6 @@
 			// Tags
 			$("#libDetailModal .lib-detail-tags").text("system, hamilton, read-only");
 			$("#libDetailModal .lib-detail-tags-section").removeClass("d-none");
-
-			// No image
-			$("#libDetailModal .lib-detail-image-section").addClass("d-none");
 
 			// Library files list (from discovered_files) - separate CHMs into help section
 			var $libFiles = $("#libDetailModal .lib-detail-lib-files");
