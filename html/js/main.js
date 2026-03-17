@@ -4306,7 +4306,7 @@
 			}
 			// Multiple CHM files, no default - render a dropdown
 			var html = '<div class="dropdown imp-help-dropdown" style="display:inline-block;">';
-			html += '<a href="#" class="text-sm dropdown-toggle imp-lib-card-help-link" style="' + helpColor + '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-lib-id="' + libId + '" title="Help"><i class="fas fa-question-circle"></i></a>';
+			html += '<a href="#" class="text-sm dropdown-toggle imp-lib-card-help-link" style="' + helpColor + '" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-lib-id="' + libId + '" title="Help"><i class="fas fa-question-circle"></i></a>';
 			html += '<div class="dropdown-menu imp-help-dropdown-menu">';
 			for (var i = 0; i < chmFiles.length; i++) {
 				var fname = chmFiles[i];
@@ -5086,7 +5086,7 @@
 					if (group_protected) {
 						// Protected group: show in accordion with read-only badge, no edit/delete, no visibility toggle
 						var accordionStr = '<div class="card mb-2 settings-links-group protected-group'+displayClass+'" data-group-id="'+ group_id +'">' +
-								'<div class="card-header collapsed" role="tab" id="heading_'+group_id +'" data-toggle="collapse" href="#collapse_'+ group_id+'" aria-expanded="true" aria-controls="collapse_'+ group_id+'">' +
+								'<div class="card-header collapsed" role="tab" id="heading_'+group_id +'" data-bs-toggle="collapse" href="#collapse_'+ group_id+'" aria-expanded="true" aria-controls="collapse_'+ group_id+'">' +
 										'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
 										'<span class="color-medium2"><i class="fas '+ group_icon +' fa-md ml-2 mr-2"></i><span class="group-name">'+ group_name +' </span></span>'+
 										'<span class="badge badge-warning ml-2" style="font-size:0.7rem;">Protected</span>';
@@ -5098,10 +5098,10 @@
 							'</div>';
 					} else {
 						accordionStr = '<div class="card mb-2 settings-links-group cursor-pointer'+displayClass+'" data-group-id="'+ group_id +'">' +
-								'<div class="card-header collapsed" role="tab" id="heading_'+group_id +'" data-toggle="collapse" href="#collapse_'+ group_id+'" aria-expanded="true" aria-controls="collapse_'+ group_id+'">' +
+								'<div class="card-header collapsed" role="tab" id="heading_'+group_id +'" data-bs-toggle="collapse" href="#collapse_'+ group_id+'" aria-expanded="true" aria-controls="collapse_'+ group_id+'">' +
 										'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
 										'<span class="color-medium2"><i class="fas '+ group_icon +' fa-md ml-2 mr-2"></i><span class="group-name">'+ group_name +' </span></span>'+
-										'<span class="cursor-pointer float-right pl-2 pr-2 " id="ddg_'+group_id+'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'+
+										'<span class="cursor-pointer float-right pl-2 pr-2 " id="ddg_'+group_id+'" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">'+
 											'<i class="far fa-ellipsis-v fa-md color-grayblue"></i>'+
 											'<div class="dropdown-menu" aria-labelledby="ddg_'+group_id+'">'+
 												'<a class="dropdown-item dropdown-navitem-clearbg" href="#" onclick="groupEdit(\''+group_id+'\');"><i class="far fa-pencil fa-sm mr-2 color-blue"></i>Edit</a>'+
@@ -5109,11 +5109,11 @@
 											'</div>'+
 										'</span>';
 										if(group_favorite){
-											accordionStr+='<span class="cursor-pointer color-medium float-right pl-2 pr-2 favorite-icon favorite tooltip-delay1000" data-toggle="tooltip" title="Show/hide in home screen"">'+
+											accordionStr+='<span class="cursor-pointer color-medium float-right pl-2 pr-2 favorite-icon favorite tooltip-delay1000" data-bs-toggle="tooltip" title="Show/hide in home screen"">'+
 												'<i class="fas fa-eye fa-md"></i>'+
 											'</span>';
 										}else{
-											accordionStr+='<span class="cursor-pointer color-medium float-right pl-2 pr-2 favorite-icon tooltip-delay1000" data-toggle="tooltip" title="Show/hide in home screen"">'+
+											accordionStr+='<span class="cursor-pointer color-medium float-right pl-2 pr-2 favorite-icon tooltip-delay1000" data-bs-toggle="tooltip" title="Show/hide in home screen"">'+
 												'<i class="far fa-eye-slash fa-md"></i>'+
 											'</span>';
 										}
@@ -5191,7 +5191,7 @@
 
 				// Add Unsigned group to Settings accordion (read-only, no edit/delete/drag)
 				var unsAccStr = '<div class="card mb-2 settings-links-group unsigned-group-settings protected-group" data-group-id="gUnsigned">' +
-					'<div class="card-header collapsed" role="tab" id="heading_gUnsigned" data-toggle="collapse" href="#collapse_gUnsigned" aria-expanded="false" aria-controls="collapse_gUnsigned">' +
+					'<div class="card-header collapsed" role="tab" id="heading_gUnsigned" data-bs-toggle="collapse" href="#collapse_gUnsigned" aria-expanded="false" aria-controls="collapse_gUnsigned">' +
 						'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
 						'<span class="color-medium2"><i class="far fa-times-circle fa-md ml-2 mr-2"></i><span class="group-name">Unsigned </span></span>' +
 						'<span class="badge badge-secondary ml-2" style="font-size:0.7rem;">Auto-Detected</span>' +
@@ -5228,7 +5228,7 @@
 
 				// Add System group to Settings accordion (read-only, no edit/delete)
 				var sysAccStr = '<div class="card mb-2 settings-links-group system-group-settings protected-group" data-group-id="gSystem">' +
-					'<div class="card-header collapsed" role="tab" id="heading_gSystem" data-toggle="collapse" href="#collapse_gSystem" aria-expanded="false" aria-controls="collapse_gSystem">' +
+					'<div class="card-header collapsed" role="tab" id="heading_gSystem" data-bs-toggle="collapse" href="#collapse_gSystem" aria-expanded="false" aria-controls="collapse_gSystem">' +
 						'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
 						'<span class="color-medium2"><i class="fas fa-lock fa-md ml-2 mr-2"></i><span class="group-name">System </span></span>' +
 						'<span class="badge badge-secondary ml-2" style="font-size:0.7rem;">Read-Only</span>' +
@@ -5307,7 +5307,7 @@
 			});
 
 			var strUnassigned = '<div class="card mb-2 settings-links-group" data-group-id="unassigned">' +
-				'<div class="card-header collapsed" role="tab" id="heading_unassigned" data-toggle="collapse" href="#collapse_unassigned" aria-expanded="true" aria-controls="collapse_unassigned">' +
+				'<div class="card-header collapsed" role="tab" id="heading_unassigned" data-bs-toggle="collapse" href="#collapse_unassigned" aria-expanded="true" aria-controls="collapse_unassigned">' +
 					'<span class="far fa-chevron-right mr-2 caret-right color-medium"></span>' +
 					'<span class="color-medium2"><i class="fas fa-inbox fa-md ml-2 mr-2"></i><span class="group-name">Unassigned Libraries</span></span>' +
 				'</div>' +

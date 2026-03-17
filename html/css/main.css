@@ -401,12 +401,14 @@ body {
 
 
 			/* Arrows to expand/collapse Settings > Links > Groups contents */
-			[data-toggle="collapse"].collapsed .caret-right {
+			[data-toggle="collapse"].collapsed .caret-right,
+			[data-bs-toggle="collapse"].collapsed .caret-right {
 			  transform: rotate(0deg) ;
 			  transition: all linear 0.25s;
 			  }   
 
-			[data-toggle="collapse"] .caret-right {
+			[data-toggle="collapse"] .caret-right,
+			[data-bs-toggle="collapse"] .caret-right {
 			  transform: rotate(90deg) ;
 			  transition: all linear 0.25s;
 			}

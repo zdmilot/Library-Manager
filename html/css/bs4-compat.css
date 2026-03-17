@@ -1,0 +1,110 @@
+/*  Bootstrap 4 → 5 Compatibility Layer
+ *  ────────────────────────────────────
+ *  Maps removed/renamed BS4 utility classes to their BS5 equivalents
+ *  so that JS-generated HTML using legacy class names renders correctly.
+ */
+
+/* ── Grid: no-gutters ── */
+.no-gutters { --bs-gutter-x: 0; --bs-gutter-y: 0; }
+.no-gutters > .col, .no-gutters > [class*="col-"] { padding-right: 0; padding-left: 0; }
+
+/* ── Spacing: margin-left / margin-right ── */
+.ml-0 { margin-left: 0 !important; }
+.ml-1 { margin-left: 0.25rem !important; }
+.ml-2 { margin-left: 0.5rem !important; }
+.ml-3 { margin-left: 1rem !important; }
+.ml-4 { margin-left: 1.5rem !important; }
+.ml-5 { margin-left: 3rem !important; }
+.ml-auto { margin-left: auto !important; }
+
+.mr-0 { margin-right: 0 !important; }
+.mr-1 { margin-right: 0.25rem !important; }
+.mr-2 { margin-right: 0.5rem !important; }
+.mr-3 { margin-right: 1rem !important; }
+.mr-4 { margin-right: 1.5rem !important; }
+.mr-5 { margin-right: 3rem !important; }
+.mr-auto { margin-right: auto !important; }
+
+/* ── Spacing: padding-left / padding-right ── */
+.pl-0 { padding-left: 0 !important; }
+.pl-1 { padding-left: 0.25rem !important; }
+.pl-2 { padding-left: 0.5rem !important; }
+.pl-3 { padding-left: 1rem !important; }
+.pl-4 { padding-left: 1.5rem !important; }
+.pl-5 { padding-left: 3rem !important; }
+
+.pr-0 { padding-right: 0 !important; }
+.pr-1 { padding-right: 0.25rem !important; }
+.pr-2 { padding-right: 0.5rem !important; }
+.pr-3 { padding-right: 1rem !important; }
+.pr-4 { padding-right: 1.5rem !important; }
+.pr-5 { padding-right: 3rem !important; }
+
+/* ── Float utilities ── */
+.float-left  { float: left !important; }
+.float-right { float: right !important; }
+
+/* ── Text alignment ── */
+.text-left   { text-align: left !important; }
+.text-right  { text-align: right !important; }
+
+/* ── Font weight ── */
+.font-weight-bold   { font-weight: 700 !important; }
+.font-weight-bolder { font-weight: bolder !important; }
+.font-weight-normal { font-weight: 400 !important; }
+.font-weight-light  { font-weight: 300 !important; }
+.font-italic        { font-style: italic !important; }
+
+/* ── Badge color variants (BS4 badge-* → BS5 text-bg-*) ── */
+.badge-primary   { color: #fff; background-color: #0d6efd; }
+.badge-secondary { color: #fff; background-color: #6c757d; }
+.badge-success   { color: #fff; background-color: #198754; }
+.badge-danger    { color: #fff; background-color: #dc3545; }
+.badge-warning   { color: #212529; background-color: #ffc107; }
+.badge-info      { color: #fff; background-color: #0dcaf0; }
+.badge-light     { color: #212529; background-color: #f8f9fa; }
+.badge-dark      { color: #fff; background-color: #212529; }
+
+/* ── Badge pill shape ── */
+.badge-pill { border-radius: 50rem !important; }
+
+/* ── Custom form controls (BS4 → BS5 form-check) ── */
+.custom-control        { position: relative; display: block; min-height: 1.5rem; padding-left: 1.5rem; }
+.custom-control-input  { position: absolute; left: 0; z-index: -1; width: 1rem; height: 1.25rem; opacity: 0; }
+.custom-control-label  { position: relative; margin-bottom: 0; vertical-align: top; cursor: pointer; }
+.custom-control-label::before {
+	position: absolute; top: 0.1rem; left: -1.5rem; display: block;
+	width: 1rem; height: 1rem; content: "";
+	background-color: #fff; border: 1px solid #adb5bd; border-radius: 0.25rem;
+	transition: background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+.custom-control-label::after {
+	position: absolute; top: 0.1rem; left: -1.5rem; display: block;
+	width: 1rem; height: 1rem; content: "";
+	background: 50%/50% 50% no-repeat;
+}
+.custom-control-input:checked ~ .custom-control-label::before {
+	color: #fff; border-color: var(--medium, #0d6efd); background-color: var(--medium, #0d6efd);
+}
+.custom-control-input:checked ~ .custom-control-label::after {
+	background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
+}
+.custom-checkbox { /* alias */ }
+.custom-switch { padding-left: 2.25rem; }
+.custom-switch .custom-control-label::before { left: -2.25rem; width: 1.75rem; border-radius: 0.5rem; }
+.custom-switch .custom-control-label::after  {
+	top: calc(0.1rem + 2px); left: calc(-2.25rem + 2px);
+	width: calc(1rem - 4px); height: calc(1rem - 4px);
+	background-color: #adb5bd; border-radius: 0.5rem;
+	transition: transform .15s ease-in-out, background-color .15s ease-in-out;
+}
+.custom-switch .custom-control-input:checked ~ .custom-control-label::after {
+	background-color: #fff; transform: translateX(0.75rem);
+}
+
+/* ── Close button compat ── */
+.close { background: transparent; border: 0; font-size: 1.5rem; font-weight: 700; line-height: 1; color: #000; opacity: .5; cursor: pointer; }
+.close:hover { opacity: .75; }
+
+/* ── sr-only (BS4) ── */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
