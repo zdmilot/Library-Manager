@@ -11,3 +11,4 @@
   After a successful release, this file is automatically reset to this
   template so it is ready for the next release cycle.
 -->
+Bug fixes including but not limited to the addition of bin file com object registration and the ability to register without uac only trusted oem packages
