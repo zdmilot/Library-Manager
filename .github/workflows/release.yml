@@ -7,10 +7,6 @@ on:
         description: 'Version increment to add to current version (e.g. 0.0.1 for patch, 0.1.0 for minor, 1.0.0 for major)'
         required: true
         type: string
-      release_notes:
-        description: 'Release notes / changelog for this version (supports multiple lines)'
-        required: true
-        type: text
 
 permissions:
   contents: write
@@ -22,6 +18,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Validate release notes
+        shell: pwsh
+        run: |
+          $file = "RELEASE_NOTES.md"
+          if (-not (Test-Path $file)) {
+            Write-Error "RELEASE_NOTES.md not found. Please create it with your changelog before triggering a release."
+            exit 1
+          }
+          # Read the file and strip the HTML comment block and heading to check for real content
+          $raw = Get-Content $file -Raw
+          $stripped = $raw -replace '(?s)<!--.*?-->', '' -replace '#\s*Changelog', '' -replace '\r?\n', '' -replace '\s', ''
+          if ([string]::IsNullOrWhiteSpace($stripped)) {
+            Write-Error "RELEASE_NOTES.md has no changelog content. Please add your release notes before triggering a release."
+            exit 1
+          }
+          Write-Host "Release notes found in RELEASE_NOTES.md"
 
       - name: Compute new version
         id: versioning
@@ -152,17 +165,35 @@ jobs:
         with:
           tag_name: v${{ steps.versioning.outputs.version }}
           name: v${{ steps.versioning.outputs.version }}
-          body: ${{ inputs.release_notes }}
+          body_path: RELEASE_NOTES.md
           files: |
             artifacts/LibraryManager_v${{ steps.versioning.outputs.version }}_Setup.exe
             tools/hxlibpkg-extract/hxlibpkg-extract.exe
 
-      - name: Commit version bump back to repo
+      - name: Reset release notes and commit version bump back to repo
         shell: pwsh
         run: |
+          # Reset RELEASE_NOTES.md to the blank template for the next release
+          $template = @'
+          # Changelog
+
+          <!--
+            Edit this file with the release notes for the next version BEFORE
+            triggering the "Build and Release" workflow.
+
+            Use standard Markdown: headings, bullet lists, code fences, etc.
+            Everything between the "Changelog" heading and the end of the file
+            will appear as the GitHub Release body.
+
+            After a successful release, this file is automatically reset to this
+            template so it is ready for the next release cycle.
+          -->
+          '@
+          Set-Content "RELEASE_NOTES.md" $template -NoNewline
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json installer.iss
+          git add package.json installer.iss RELEASE_NOTES.md
           git diff --cached --quiet
           if ($LASTEXITCODE -ne 0) {
             git commit -m "chore: bump version to ${{ steps.versioning.outputs.version }} [skip ci]"
