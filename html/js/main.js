@@ -19179,7 +19179,7 @@
 		// ====================================================================
 
 		var STORE_CATALOG_URL = 'https://raw.githubusercontent.com/zdmilot/Library-Manager-Packages/main/catalog.json';
-		var STORE_PKG_BASE    = 'https://raw.githubusercontent.com/zdmilot/Library-Manager-Packages/main/packages/';
+		var STORE_PKG_BASE    = 'https://raw.githubusercontent.com/zdmilot/Library-Manager-Packages/main/Packages/';
 		var STORE_REPO_URL    = 'https://github.com/zdmilot/Library-Manager-Packages';
 
 		var _storeCatalog   = null; // array of catalog entries (cached)
@@ -19187,6 +19187,16 @@
 		var _storeSort      = 'name-asc';
 		var _storeSearchTerm = '';
 		var _storeShowIgnored = false; // when true, show ignored updates in grid
+
+		/**
+		 * Show a styled error modal for store download/operation failures.
+		 */
+		function storeShowErrorModal(title, detail) {
+			var $m = $("#storeErrorModal");
+			$m.find(".store-error-modal-title").text(title || "Error");
+			$m.find(".store-error-modal-detail").text(detail || "An unknown error occurred.");
+			$m.modal("show");
+		}
 
 		// ---- Ignored store updates persistence ----
 		// Stored as { "LibraryName": "ignored_version", ... }
@@ -20359,7 +20369,7 @@
 			var https = require('https');
 			storeDownloadFile(https, downloadUrl, tmpPath, function (err) {
 				if (err) {
-					alert("Download failed for " + pkgFile + ": " + err.message + "\n\nRemaining packages were not installed.");
+					storeShowErrorModal("Download failed", err.message + "\n\nPackage: " + pkgFile + "\nRemaining packages were not installed.");
 					storeRenderGrid();
 					return;
 				}
@@ -20420,7 +20430,7 @@
 			storeDownloadFile(https, downloadUrl, tmpPath, function (err) {
 				if (err) {
 					$detailBtn.html(origBtnHtml).prop("disabled", false);
-					alert("Download failed: " + err.message);
+					storeShowErrorModal("Download failed", err.message);
 					return;
 				}
 
