@@ -7426,7 +7426,7 @@
 				} catch(e) {
 					// silently ignore read errors
 				}
-			} else if (pkg_iconAutoDetected) {
+			} else if (pkg_iconAutoDetected && pkg_iconAutoDetectedPath) {
 				// BMP was removed from file list - clear auto-detected preview
 				pkg_iconAutoDetected = false;
 				pkg_iconAutoDetectedPath = null;
@@ -8118,12 +8118,12 @@
 				}
 			}
 			if (duplicate) {
-				$("#pkg-version").addClass("version-duplicate");
-				$("#pkg-version-warning-text").text('Version "' + version + '" already exists for "' + libName + '". Use a different version number.');
+				$("#pkg-version").addClass("version-duplicate version-duplicate-warn");
+				$("#pkg-version-warning-text").text('Version "' + version + '" already exists for "' + libName + '". The existing package will be overwritten.');
 				$("#pkg-version-warning").removeClass("d-none");
-				pkgSetCreateEnabled(false, 'Version "' + version + '" already exists for "' + libName + '". Change the version number to create a package.');
+				pkgSetCreateEnabled(true);
 			} else {
-				$("#pkg-version").removeClass("version-duplicate");
+				$("#pkg-version").removeClass("version-duplicate version-duplicate-warn");
 				$("#pkg-version-warning").addClass("d-none");
 				pkgSetCreateEnabled(true);
 			}
@@ -16053,7 +16053,8 @@
 					$libFilesList.html('<div class="text-muted text-center py-2 pkg-empty-msg"><i class="fas fa-inbox mr-1"></i>None</div>');
 				} else {
 					libFiles.forEach(function(f) {
-						var isCom = comDlls.indexOf(f) !== -1;
+						var _fBase = path.basename(f);
+						var isCom = comDlls.indexOf(f) !== -1 || comDlls.indexOf(_fBase) !== -1;
 						var _impOemVerified = isVerifiedOemPackage(manifest, sigResult);
 						var comBadgeTitle = _impOemVerified
 							? 'This DLL will be registered as a COM object using RegAsm.exe /codebase. Verified OEM — no administrator prompt required.'
@@ -20758,7 +20759,8 @@
 			} else {
 				for (var i = 0; i < libFiles.length; i++) {
 					var f = libFiles[i];
-					var isCom = comDlls.indexOf(f) !== -1;
+					var _fBase = path.basename(f);
+					var isCom = comDlls.indexOf(f) !== -1 || comDlls.indexOf(_fBase) !== -1;
 					var comBadge = isCom ? '<span class="badge badge-info ml-2" title="This DLL will be registered as a COM object using RegAsm.exe /codebase."><i class="fas fa-cog mr-1"></i>COM</span>' : '';
 					var destFile = path.join(libDestDir, f);
 					$libFilesList.append(
