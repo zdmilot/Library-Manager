@@ -2714,11 +2714,13 @@
 				$("#pkg-installer-exe-section").show();
 				$("#pkg-bin-files-section").show();
 				$("#pkg-release-notes-pdf-section").show();
+				$(".overflow-repack").show();
 			} else {
 				$("#settings-oem-keywords-section").hide();
 				$("#pkg-installer-exe-section").hide();
 				$("#pkg-bin-files-section").hide();
 				$("#pkg-release-notes-pdf-section").hide();
+				$(".overflow-repack").hide();
 			}
 			// Ensure About, Report a Bug, Licenses stay at the bottom in that order
 			var $container = $(".settings-settings");
@@ -2901,6 +2903,104 @@
 			$(".pkg-signing-detail").toggle(!!sigInfo);
 			fitExporterHeight();
 			return false;
+		});
+
+		//Click "Edit & Re-Pack" from overflow menu
+		$(document).on("click", ".overflow-repack", function (e) {
+			e.preventDefault();
+			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
+			$(".btn-overflow-toggle").attr("aria-expanded", "false");
+			if (!isOemKeywordsEnabled()) {
+				showAppAlert('Access Denied', 'OEM developer mode must be unlocked to use Edit & Re-Pack.', { iconClass: 'fa-lock', iconStyle: 'app-alert-icon-error' });
+				return false;
+			}
+			// Build list of OEM libraries
+			var allLibs = db_installed_libs.installed_libs.find() || [];
+			var oemLibs = allLibs.filter(function(lib) {
+				return !lib.deleted && (isRestrictedAuthor(lib.author) || isRestrictedAuthor(lib.organization));
+			});
+			// Deduplicate by library_name (latest installed_date wins)
+			var libMap = {};
+			oemLibs.forEach(function(lib) {
+				var name = lib.library_name;
+				if (!libMap[name] || (lib.installed_date || '') > (libMap[name].installed_date || '')) {
+					libMap[name] = lib;
+				}
+			});
+			var uniqueOemLibs = Object.keys(libMap).sort(function(a, b) {
+				return a.toLowerCase().localeCompare(b.toLowerCase());
+			}).map(function(k) { return libMap[k]; });
+
+			var $list = $("#repack-picker-list");
+			$list.empty();
+			if (uniqueOemLibs.length === 0) {
+				$("#repack-picker-empty").removeClass("d-none");
+			} else {
+				$("#repack-picker-empty").addClass("d-none");
+				uniqueOemLibs.forEach(function(lib) {
+					var iconHtml = '<i class="fas fa-book fa-lg" style="color:var(--medium);"></i>';
+					if (lib.library_image_base64 && lib.library_image_mime) {
+						iconHtml = '<img src="data:' + lib.library_image_mime + ';base64,' + lib.library_image_base64 + '" style="width:32px;height:32px;object-fit:contain;border-radius:4px;">';
+					}
+					var verHtml = lib.version ? ' <span class="text-muted text-sm">v' + escapeHtml(lib.version) + '</span>' : '';
+					var orgHtml = lib.organization ? '<div class="text-muted text-sm">' + escapeHtml(lib.organization) + '</div>' : '';
+					$list.append(
+						'<div class="repack-picker-item d-flex align-items-center px-3 py-2 border-bottom" ' +
+						'data-lib-id="' + escapeHtml(lib._id) + '" style="cursor:pointer;">' +
+						'<div class="me-3">' + iconHtml + '</div>' +
+						'<div class="flex-grow-1">' +
+						'<div class="fw-bold">' + escapeHtml(lib.library_name) + verHtml + '</div>' +
+						orgHtml +
+						'</div>' +
+						'<div><i class="fas fa-chevron-right text-muted"></i></div>' +
+						'</div>'
+					);
+				});
+			}
+			$("#repack-picker-search").val('');
+			$("#repackPickerModal").modal("show");
+			return false;
+		});
+
+		// Search filter within the re-pack picker
+		$(document).on("input", "#repack-picker-search", function() {
+			var term = $(this).val().toLowerCase();
+			var anyVisible = false;
+			$("#repack-picker-list .repack-picker-item").each(function() {
+				var text = $(this).text().toLowerCase();
+				var match = !term || text.indexOf(term) !== -1;
+				$(this).toggle(match);
+				if (match) anyVisible = true;
+			});
+			$("#repack-picker-empty").toggleClass("d-none", anyVisible);
+		});
+
+		// Click a library in the re-pack picker -> populate packager
+		$(document).on("click", ".repack-picker-item", function() {
+			var libId = $(this).attr("data-lib-id");
+			if (!libId) return;
+			$("#repackPickerModal").modal("hide");
+			// Reset the packager form first
+			$("#pkg-reset").trigger("click");
+			// Small delay so reset completes before populating
+			setTimeout(function() {
+				pkgPopulateForRepack(libId);
+				// Navigate to the packager view (same as overflow-export)
+				$(".navbar-custom .nav-item, .navbar-custom .dropdown-navitem").removeClass("active");
+				$('.navbar-custom .nav-item[data-group-id="gEditors"]').addClass("active");
+				$('.group-container').addClass('d-none');
+				$(".links-container").addClass("d-none");
+				$(".exporter-container").removeClass("d-none");
+				$(".importer-container").addClass("d-none");
+				if (!$("#pkg-venus-compat").val().trim() && _cachedVENUSVersion) {
+					$("#pkg-venus-compat").val(_cachedVENUSVersion);
+				}
+				refreshSigningUI();
+				var sigInfo = getSigningDisplayInfo();
+				$("#chk-pkg-sign").prop("checked", !!sigInfo);
+				$(".pkg-signing-detail").toggle(!!sigInfo);
+				fitExporterHeight();
+			}, 100);
 		});
 
 		//Click "History" from overflow menu
@@ -7572,6 +7672,173 @@
 					pkgUpdateLibFileList();
 				}
 			}
+		}
+
+		/**
+		 * Populate the packager form from an installed library's DB record for re-packing.
+		 * Loads ALL data including labware, bin files, installer, release notes PDF, etc.
+		 * Only used by the Edit & Re-Pack feature for OEM libraries.
+		 */
+		function pkgPopulateForRepack(libId) {
+			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
+			if (!lib) {
+				showAppAlert('Error', 'Library record not found.', { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
+				return;
+			}
+
+			pkg_libNameFolderDeleted = false;
+			pkg_demoLibNameFolderDeleted = false;
+			pkg_binLibNameFolderDeleted = false;
+
+			// ---- Metadata fields ----
+			if (lib.library_name) {
+				$("#pkg-library-name").val(lib.library_name).prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
+				pkg_autoDetectedName = lib.library_name;
+			}
+			if (lib.author) $("#pkg-author").val(lib.author);
+			if (lib.organization) $("#pkg-organization").val(lib.organization);
+			if (lib.version) $("#pkg-version").val(lib.version);
+			if (lib.venus_compatibility) $("#pkg-venus-compat").val(lib.venus_compatibility);
+			if (lib.description) $("#pkg-description").val(lib.description);
+			if (lib.github_url) $("#pkg-github-url").val(lib.github_url);
+			if (lib.tags && lib.tags.length > 0) $("#pkg-tags").val(lib.tags.join(", "));
+			if (lib.release_notes) $("#pkg-release-notes").val(lib.release_notes);
+			if (lib.custom_install_subdir) pkg_installSubdir = lib.custom_install_subdir;
+			else if (lib.install_to_library_root) pkg_installSubdir = '';
+			else pkg_installSubdir = '';
+
+			// Mark OEM authorized so restricted-author warnings are bypassed
+			pkg_oemAuthorized = true;
+
+			// ---- Library files ----
+			var libBasePath = lib.lib_install_path || "";
+			var libFiles = lib.library_files || [];
+			if (libBasePath && libFiles.length > 0) {
+				pkg_libraryFiles = [];
+				pkg_fileRelPaths = {};
+				pkg_fileCustomDirs = {};
+				for (var i = 0; i < libFiles.length; i++) {
+					var fullPath = path.join(libBasePath, libFiles[i]);
+					if (fs.existsSync(fullPath)) {
+						pkg_libraryFiles.push(fullPath);
+						pkg_fileRelPaths[fullPath] = libFiles[i];
+					}
+				}
+				// Restore COM DLL selections
+				pkg_comRegisterDlls = (lib.com_register_dlls || []).slice();
+				pkgUpdateLibFileList();
+			}
+
+			// ---- Demo method files ----
+			var demoBasePath = lib.demo_install_path || "";
+			var demoFiles = lib.demo_method_files || [];
+			if (demoBasePath && demoFiles.length > 0) {
+				pkg_demoMethodFiles = [];
+				for (var d = 0; d < demoFiles.length; d++) {
+					var demoFullPath = path.join(demoBasePath, demoFiles[d]);
+					if (fs.existsSync(demoFullPath)) {
+						pkg_demoMethodFiles.push(demoFullPath);
+						pkg_fileRelPaths[demoFullPath] = demoFiles[d];
+					}
+				}
+				// Turn on demo section toggle
+				$("#pkg-toggle-demo").prop("checked", true);
+				$("#pkg-demo-body").show();
+				pkgUpdateDemoFileList();
+			}
+
+			// ---- Labware files ----
+			var labwareBasePath = lib.labware_install_path || "";
+			var labwareFiles = lib.labware_files || [];
+			if (labwareBasePath && labwareFiles.length > 0) {
+				pkg_labwareFiles = [];
+				pkg_labwareSubdirs = {};
+				for (var lw = 0; lw < labwareFiles.length; lw++) {
+					var lwRelPath = labwareFiles[lw];
+					var lwFullPath = path.join(labwareBasePath, lwRelPath);
+					if (fs.existsSync(lwFullPath)) {
+						pkg_labwareFiles.push(lwFullPath);
+						pkg_fileRelPaths[lwFullPath] = path.basename(lwRelPath);
+						var lwDir = path.dirname(lwRelPath).replace(/\\/g, '/');
+						if (lwDir && lwDir !== '.') {
+							pkg_labwareSubdirs[lwFullPath] = lwDir;
+						}
+					}
+				}
+				// Turn on labware section toggle
+				$("#pkg-toggle-labware").prop("checked", true);
+				$("#pkg-labware-body").show();
+				pkgUpdateLabwareFileList();
+			}
+
+			// ---- Bin files ----
+			var binBasePath = lib.bin_install_path || "";
+			var binFiles = lib.bin_files || [];
+			if (binBasePath && binFiles.length > 0) {
+				pkg_binFiles = [];
+				pkg_binSubdirs = {};
+				for (var bf = 0; bf < binFiles.length; bf++) {
+					var bfRelPath = binFiles[bf];
+					var bfFullPath = path.join(binBasePath, bfRelPath);
+					if (fs.existsSync(bfFullPath)) {
+						pkg_binFiles.push(bfFullPath);
+						pkg_fileRelPaths[bfFullPath] = path.basename(bfRelPath);
+						var bfDir = path.dirname(bfRelPath).replace(/\\/g, '/');
+						if (bfDir && bfDir !== '.') {
+							pkg_binSubdirs[bfFullPath] = bfDir;
+						}
+					}
+				}
+				// Restore bin COM DLL selections
+				pkg_binComRegisterDlls = (lib.bin_com_register_dlls || []).slice();
+				// Turn on bin section toggle
+				$("#pkg-toggle-bin").prop("checked", true);
+				$("#pkg-bin-body").show();
+				pkgUpdateBinFileList();
+			}
+
+			// ---- Installer executable ----
+			if (lib.installer_path && fs.existsSync(lib.installer_path)) {
+				pkg_installerFilePath = lib.installer_path;
+				$(".pkg-installer-filename").text(lib.installer_original_name || path.basename(lib.installer_path));
+				$(".pkg-installer-detail").show();
+				$(".pkg-installer-empty-msg").hide();
+				// Turn on installer section toggle
+				$("#pkg-toggle-installer").prop("checked", true);
+				$("#pkg-installer-body").show();
+			}
+
+			// ---- Release Notes PDF ----
+			if (lib.release_notes_pdf_base64) {
+				try {
+					var tmpDir = path.join(os.tmpdir(), 'libmgr_repack');
+					if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+					var pdfName = (lib.release_notes_pdf || lib.library_name || 'release_notes') + (lib.release_notes_pdf ? '' : '.pdf');
+					var tmpPdfPath = path.join(tmpDir, pdfName);
+					fs.writeFileSync(tmpPdfPath, Buffer.from(lib.release_notes_pdf_base64, 'base64'));
+					pkg_releaseNotesPdfPath = tmpPdfPath;
+					$("#pkg-release-pdf-name").text(pdfName);
+					$("#pkg-removeReleasePdf").show();
+				} catch (pdfErr) {
+					console.warn('Could not extract release notes PDF for repack: ' + pdfErr.message);
+				}
+			}
+
+			// ---- Default help file ----
+			if (lib.default_help_file) {
+				pkg_defaultHelpFile = lib.default_help_file;
+			}
+
+			// ---- Icon ----
+			if (lib.library_image_base64 && lib.library_image_mime) {
+				$("#pkg-icon-preview").html('<img src="data:' + lib.library_image_mime + ';base64,' + lib.library_image_base64 + '">').addClass('has-image');
+				$("#pkg-icon-name").text((lib.library_image || "library icon") + " (from installed library)");
+				$("#pkg-removeIcon").show();
+				pkg_iconAutoDetected = true;
+			}
+
+			// Check version duplicate
+			pkgCheckVersionDuplicate();
 		}
 
 		// ---- Version duplicate checking ----

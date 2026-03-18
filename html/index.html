@@ -251,6 +251,7 @@
 									<a class="dropdown-item overflow-theme-toggle btn-theme-toggle" href="#" data-theme="auto"><i class="fas fa-adjust me-2"></i>Auto (System)</a>
 									<div class="dropdown-divider"></div>
 									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open me-2"></i>Package Library</a>
+									<a class="dropdown-item overflow-repack" href="#" style="display:none;"><i class="fas fa-pen-square me-2"></i>Edit &amp; Re-Pack</a>
 									<a class="dropdown-item overflow-repair" href="#"><i class="fas fa-tools me-2"></i>Verify &amp; Repair</a>
 									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group me-2"></i>Library Groups</a>
 									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list me-2"></i>History</a>
@@ -1371,6 +1372,40 @@
 	</div>
 	<input type="file" class="d-none" id="lib-export-deps-save-dialog" nwsaveas="library.hxlibarch" accept=".hxlibarch">
 	<!---- Modal Export Choice end --->
+
+	<!---- Modal Edit & Re-Pack Picker start --->
+	<div class="modal" tabindex="-1" role="dialog" id="repackPickerModal">
+		<div class="modal-dialog modal-dialog-centered" role="document" style="max-width:540px;">
+			<div class="modal-content detail-modal-content">
+				<div class="modal-header detail-modal-header">
+					<div class="d-flex align-items-center">
+						<div class="me-3">
+							<i class="fas fa-pen-square fa-2x" style="color:var(--medium)"></i>
+						</div>
+						<div>
+							<h5 class="modal-title mb-0">Edit &amp; Re-Pack</h5>
+							<span class="text-muted text-sm">Select an OEM library to edit and re-package</span>
+						</div>
+					</div>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body detail-modal-body" style="max-height:420px; overflow-y:auto;">
+					<div class="repack-picker-search mb-3">
+						<input type="text" class="form-control form-control-sm" id="repack-picker-search" placeholder="Search OEM libraries..." autocomplete="off">
+					</div>
+					<div id="repack-picker-list"></div>
+					<div id="repack-picker-empty" class="text-center text-muted py-4 d-none">
+						<i class="fas fa-inbox fa-2x mb-2" style="color:#ccc;"></i>
+						<p class="mb-0">No OEM libraries found.<br><span class="text-sm">Only libraries with OEM author/organization names can be edited.</span></p>
+					</div>
+				</div>
+				<div class="modal-footer detail-modal-footer d-flex justify-content-end">
+					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!---- Modal Edit & Re-Pack Picker end --->
 
 	<!---- Modal Delete Library Confirmation start --->
 	<div class="modal" tabindex="-1" role="dialog" id="deleteLibConfirmModal">
@@ -3843,7 +3878,7 @@
 			{ src: 'js/jquery-2.1.3.min.js',       integrity: 'sha384-dcRjNfDZXzv8C2sE54SSQl7ad+14QPo0iqeye7mv29YaHQN978BwuDyaPD4/Lwbo' },
 			{ src: 'js/jquery-ui.min.js',           integrity: 'sha384-cMbOs3LjRI/EFjDex0/JyNtNLhWZyKEKb959iX7VMKqs4yyM++OHEUbgzenzhyZ7' },
 			{ src: 'js/bootstrap.bundle.min.js',    integrity: 'sha384-HZYy7/e2t5ulY6HtYcKY7AWRuIBuyk3YMY+jfKGECq5pbYjpOnD+SSNz14RIH6F7' },
-			{ src: 'js/main.js',                    integrity: 'sha384-BnMspug4oCfB+NSFB23itQ9slo1ImdnLTUWfH0f3DY6Nwa/ZFuL/npDznZRyx+Fg' }
+			{ src: 'js/main.js',                    integrity: 'sha384-C1cBm6G1dtiKWmu7vgiw3ksUsEC2d+MgzcGjMgc9d+POlOWpELWwiiqilh9ElSZ8' }
 		];
 
 		function activateCSS() {
