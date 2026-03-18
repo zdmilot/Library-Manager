@@ -2714,11 +2714,13 @@
 				$("#pkg-installer-exe-section").show();
 				$("#pkg-bin-files-section").show();
 				$("#pkg-release-notes-pdf-section").show();
+				$(".overflow-repack").show();
 			} else {
 				$("#settings-oem-keywords-section").hide();
 				$("#pkg-installer-exe-section").hide();
 				$("#pkg-bin-files-section").hide();
 				$("#pkg-release-notes-pdf-section").hide();
+				$(".overflow-repack").hide();
 			}
 			// Ensure About, Report a Bug, Licenses stay at the bottom in that order
 			var $container = $(".settings-settings");
@@ -2967,6 +2969,43 @@
 				if (match) anyVisible = true;
 			});
 			$("#repack-picker-empty").toggleClass("d-none", anyVisible);
+		});
+
+		// Click "Browse Package File..." in repack picker footer
+		$(document).on("click", ".btn-repack-browse-pkg", function() {
+			$("#repack-browse-pkg-input").trigger("click");
+		});
+
+		// File selected via repack package browse
+		$(document).on("change", "#repack-browse-pkg-input", function() {
+			var filePath = '';
+			if (this.files && this.files.length > 0) {
+				filePath = this.files[0].path;
+			} else {
+				filePath = $(this).val();
+			}
+			$(this).val('');
+			if (!filePath) return;
+			$("#repackPickerModal").modal("hide");
+			// Reset the packager form first
+			$("#pkg-reset").trigger("click");
+			setTimeout(function() {
+				pkgPopulateForRepackFromFile(filePath);
+				$(".navbar-custom .nav-item, .navbar-custom .dropdown-navitem").removeClass("active");
+				$('.navbar-custom .nav-item[data-group-id="gEditors"]').addClass("active");
+				$('.group-container').addClass('d-none');
+				$(".links-container").addClass("d-none");
+				$(".exporter-container").removeClass("d-none");
+				$(".importer-container").addClass("d-none");
+				if (!$("#pkg-venus-compat").val().trim() && _cachedVENUSVersion) {
+					$("#pkg-venus-compat").val(_cachedVENUSVersion);
+				}
+				refreshSigningUI();
+				var sigInfo = getSigningDisplayInfo();
+				$("#chk-pkg-sign").prop("checked", !!sigInfo);
+				$(".pkg-signing-detail").toggle(!!sigInfo);
+				fitExporterHeight();
+			}, 100);
 		});
 
 		// Click a library in the re-pack picker -> populate packager
@@ -7834,6 +7873,205 @@
 			}
 
 			// Check version duplicate
+			pkgCheckVersionDuplicate();
+		}
+
+		/**
+		 * Populate the packager form from a .hxlibpkg package file for re-packing.
+		 * Extracts the manifest and all files to a temp directory, then fills the form.
+		 */
+		function pkgPopulateForRepackFromFile(filePath) {
+			try {
+				var rawBuffer = fs.readFileSync(filePath);
+				var zipBuffer = unpackContainer(rawBuffer, CONTAINER_MAGIC_PKG);
+				var zip = new AdmZip(zipBuffer);
+				var manifestEntry = zip.getEntry("manifest.json");
+				if (!manifestEntry) {
+					showAppAlert('Error', 'Invalid package: manifest.json not found.', { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
+					return;
+				}
+				var manifest = JSON.parse(zip.readAsText(manifestEntry));
+			} catch (ex) {
+				showAppAlert('Error', 'Could not read package file: ' + ex.message, { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
+				return;
+			}
+
+			// Extract all files to a temp directory
+			var libName = manifest.library_name || 'Unknown';
+			var safeName = libName.replace(/[<>:"\/\\|?*]/g, '_');
+			var tmpBase = path.join(os.tmpdir(), 'libmgr_repack', safeName + '_' + Date.now());
+			try { fs.mkdirSync(tmpBase, { recursive: true }); } catch(e) { /* ignore */ }
+
+			var tmpLibDir = path.join(tmpBase, 'library');
+			var tmpDemoDir = path.join(tmpBase, 'demo_methods');
+			var tmpLabwareDir = path.join(tmpBase, 'labware');
+			var tmpBinDir = path.join(tmpBase, 'bin');
+			var tmpInstallerDir = path.join(tmpBase, 'installer');
+
+			var zipEntries = zip.getEntries();
+			zipEntries.forEach(function(entry) {
+				if (entry.isDirectory) return;
+				var eName = entry.entryName;
+				var destDir = null;
+				var relName = '';
+				if (eName.indexOf('library/') === 0) { destDir = tmpLibDir; relName = eName.substring('library/'.length); }
+				else if (eName.indexOf('demo_methods/') === 0) { destDir = tmpDemoDir; relName = eName.substring('demo_methods/'.length); }
+				else if (eName.indexOf('labware/') === 0) { destDir = tmpLabwareDir; relName = eName.substring('labware/'.length); }
+				else if (eName.indexOf('bin/') === 0) { destDir = tmpBinDir; relName = eName.substring('bin/'.length); }
+				else if (eName.indexOf('installer/') === 0) { destDir = tmpInstallerDir; relName = eName.substring('installer/'.length); }
+				if (destDir && relName) {
+					var outPath = safeZipExtractPath(destDir, relName);
+					if (!outPath) return;
+					var parentDir = path.dirname(outPath);
+					if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+					fs.writeFileSync(outPath, entry.getData());
+				}
+			});
+
+			pkg_libNameFolderDeleted = false;
+			pkg_demoLibNameFolderDeleted = false;
+			pkg_binLibNameFolderDeleted = false;
+
+			// ---- Metadata fields ----
+			if (manifest.library_name) {
+				$("#pkg-library-name").val(manifest.library_name).prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
+				pkg_autoDetectedName = manifest.library_name;
+			}
+			if (manifest.author) $("#pkg-author").val(manifest.author);
+			if (manifest.organization) $("#pkg-organization").val(manifest.organization);
+			if (manifest.version) $("#pkg-version").val(manifest.version);
+			if (manifest.venus_compatibility) $("#pkg-venus-compat").val(manifest.venus_compatibility);
+			if (manifest.description) $("#pkg-description").val(manifest.description);
+			if (manifest.github_url) $("#pkg-github-url").val(manifest.github_url);
+			if (manifest.tags && manifest.tags.length > 0) $("#pkg-tags").val(manifest.tags.join(", "));
+			if (manifest.release_notes) $("#pkg-release-notes").val(manifest.release_notes);
+			if (manifest.custom_install_subdir) pkg_installSubdir = manifest.custom_install_subdir;
+			else if (manifest.install_to_library_root) pkg_installSubdir = '';
+			else pkg_installSubdir = '';
+
+			// If package has a restricted author, mark OEM authorized so warnings are bypassed
+			if (isRestrictedAuthor(manifest.author) || isRestrictedAuthor(manifest.organization)) {
+				pkg_oemAuthorized = true;
+			}
+
+			// ---- Library files ----
+			var libFiles = manifest.library_files || [];
+			if (libFiles.length > 0) {
+				pkg_libraryFiles = [];
+				pkg_fileRelPaths = {};
+				pkg_fileCustomDirs = {};
+				for (var i = 0; i < libFiles.length; i++) {
+					var fullPath = path.join(tmpLibDir, libFiles[i]);
+					if (fs.existsSync(fullPath)) {
+						pkg_libraryFiles.push(fullPath);
+						pkg_fileRelPaths[fullPath] = libFiles[i];
+					}
+				}
+				pkg_comRegisterDlls = (manifest.com_register_dlls || []).slice();
+				pkgUpdateLibFileList();
+			}
+
+			// ---- Demo method files ----
+			var demoFiles = manifest.demo_method_files || [];
+			if (demoFiles.length > 0) {
+				pkg_demoMethodFiles = [];
+				for (var d = 0; d < demoFiles.length; d++) {
+					var demoFullPath = path.join(tmpDemoDir, demoFiles[d]);
+					if (fs.existsSync(demoFullPath)) {
+						pkg_demoMethodFiles.push(demoFullPath);
+						pkg_fileRelPaths[demoFullPath] = demoFiles[d];
+					}
+				}
+				$("#pkg-toggle-demo").prop("checked", true);
+				$("#pkg-demo-body").show();
+				pkgUpdateDemoFileList();
+			}
+
+			// ---- Labware files ----
+			var labwareFiles = manifest.labware_files || [];
+			if (labwareFiles.length > 0) {
+				pkg_labwareFiles = [];
+				pkg_labwareSubdirs = {};
+				for (var lw = 0; lw < labwareFiles.length; lw++) {
+					var lwRelPath = labwareFiles[lw];
+					var lwFullPath = path.join(tmpLabwareDir, lwRelPath);
+					if (fs.existsSync(lwFullPath)) {
+						pkg_labwareFiles.push(lwFullPath);
+						pkg_fileRelPaths[lwFullPath] = path.basename(lwRelPath);
+						var lwDir = path.dirname(lwRelPath).replace(/\\/g, '/');
+						if (lwDir && lwDir !== '.') {
+							pkg_labwareSubdirs[lwFullPath] = lwDir;
+						}
+					}
+				}
+				$("#pkg-toggle-labware").prop("checked", true);
+				$("#pkg-labware-body").show();
+				pkgUpdateLabwareFileList();
+			}
+
+			// ---- Bin files ----
+			var binFiles = manifest.bin_files || [];
+			if (binFiles.length > 0) {
+				pkg_binFiles = [];
+				pkg_binSubdirs = {};
+				for (var bf = 0; bf < binFiles.length; bf++) {
+					var bfRelPath = binFiles[bf];
+					var bfFullPath = path.join(tmpBinDir, bfRelPath);
+					if (fs.existsSync(bfFullPath)) {
+						pkg_binFiles.push(bfFullPath);
+						pkg_fileRelPaths[bfFullPath] = path.basename(bfRelPath);
+						var bfDir = path.dirname(bfRelPath).replace(/\\/g, '/');
+						if (bfDir && bfDir !== '.') {
+							pkg_binSubdirs[bfFullPath] = bfDir;
+						}
+					}
+				}
+				pkg_binComRegisterDlls = (manifest.bin_com_register_dlls || []).slice();
+				$("#pkg-toggle-bin").prop("checked", true);
+				$("#pkg-bin-body").show();
+				pkgUpdateBinFileList();
+			}
+
+			// ---- Installer executable ----
+			if (manifest.installer_executable) {
+				var installerPath = path.join(tmpInstallerDir, manifest.installer_executable);
+				if (fs.existsSync(installerPath)) {
+					pkg_installerFilePath = installerPath;
+					$(".pkg-installer-filename").text(manifest.installer_executable);
+					$(".pkg-installer-detail").show();
+					$(".pkg-installer-empty-msg").hide();
+					$("#pkg-toggle-installer").prop("checked", true);
+					$("#pkg-installer-body").show();
+				}
+			}
+
+			// ---- Release Notes PDF ----
+			if (manifest.release_notes_pdf_base64) {
+				try {
+					var pdfName = (manifest.release_notes_pdf || manifest.library_name || 'release_notes') + (manifest.release_notes_pdf ? '' : '.pdf');
+					var tmpPdfPath = path.join(tmpBase, pdfName);
+					fs.writeFileSync(tmpPdfPath, Buffer.from(manifest.release_notes_pdf_base64, 'base64'));
+					pkg_releaseNotesPdfPath = tmpPdfPath;
+					$("#pkg-release-pdf-name").text(pdfName);
+					$("#pkg-removeReleasePdf").show();
+				} catch (pdfErr) {
+					console.warn('Could not extract release notes PDF for repack: ' + pdfErr.message);
+				}
+			}
+
+			// ---- Default help file ----
+			if (manifest.default_help_file) {
+				pkg_defaultHelpFile = manifest.default_help_file;
+			}
+
+			// ---- Icon ----
+			if (manifest.library_image_base64 && manifest.library_image_mime) {
+				$("#pkg-icon-preview").html('<img src="data:' + manifest.library_image_mime + ';base64,' + manifest.library_image_base64 + '">').addClass('has-image');
+				$("#pkg-icon-name").text((manifest.library_image || "library icon") + " (from package file)");
+				$("#pkg-removeIcon").show();
+				pkg_iconAutoDetected = true;
+			}
+
 			pkgCheckVersionDuplicate();
 		}
 

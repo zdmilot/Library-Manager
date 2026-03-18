@@ -251,7 +251,7 @@
 									<a class="dropdown-item overflow-theme-toggle btn-theme-toggle" href="#" data-theme="auto"><i class="fas fa-adjust me-2"></i>Auto (System)</a>
 									<div class="dropdown-divider"></div>
 									<a class="dropdown-item overflow-export" href="#"><i class="fas fa-box-open me-2"></i>Package Library</a>
-									<a class="dropdown-item overflow-repack" href="#"><i class="fas fa-pen-square me-2"></i>Edit &amp; Re-Pack</a>
+									<a class="dropdown-item overflow-repack" href="#" style="display:none;"><i class="fas fa-pen-square me-2"></i>Edit &amp; Re-Pack</a>
 									<a class="dropdown-item overflow-repair" href="#"><i class="fas fa-tools me-2"></i>Verify &amp; Repair</a>
 									<a class="dropdown-item overflow-groups" href="#"><i class="fas fa-layer-group me-2"></i>Library Groups</a>
 									<a class="dropdown-item overflow-history" href="#"><i class="fas fa-list me-2"></i>History</a>
@@ -1371,6 +1371,7 @@
 		</div>
 	</div>
 	<input type="file" class="d-none" id="lib-export-deps-save-dialog" nwsaveas="library.hxlibarch" accept=".hxlibarch">
+	<input type="file" class="d-none" id="repack-browse-pkg-input" accept=".hxlibpkg">
 	<!---- Modal Export Choice end --->
 
 	<!---- Modal Edit & Re-Pack Picker start --->
@@ -1399,7 +1400,8 @@
 						<p class="mb-0">No installed libraries found.</p>
 					</div>
 				</div>
-				<div class="modal-footer detail-modal-footer d-flex justify-content-end">
+				<div class="modal-footer detail-modal-footer d-flex justify-content-between">
+					<button type="button" class="btn btn-outlined btn-repack-browse-pkg"><i class="fas fa-file-archive me-1"></i>Browse Package File...</button>
 					<button type="button" class="btn btn-outlined" data-bs-dismiss="modal">Cancel</button>
 				</div>
 			</div>
@@ -3878,7 +3880,7 @@
 			{ src: 'js/jquery-2.1.3.min.js',       integrity: 'sha384-dcRjNfDZXzv8C2sE54SSQl7ad+14QPo0iqeye7mv29YaHQN978BwuDyaPD4/Lwbo' },
 			{ src: 'js/jquery-ui.min.js',           integrity: 'sha384-cMbOs3LjRI/EFjDex0/JyNtNLhWZyKEKb959iX7VMKqs4yyM++OHEUbgzenzhyZ7' },
 			{ src: 'js/bootstrap.bundle.min.js',    integrity: 'sha384-HZYy7/e2t5ulY6HtYcKY7AWRuIBuyk3YMY+jfKGECq5pbYjpOnD+SSNz14RIH6F7' },
-			{ src: 'js/main.js',                    integrity: 'sha384-NIGIHZOD2/BOB5hiohcM2y6NbhNEPi6aat5ex0Oaaem4RTPA+hSjmsu94gVOxn3W' }
+			{ src: 'js/main.js',                    integrity: 'sha384-gBcthWsdusfO5Vcj6vAOqBuMIeSbvC/6tbH12dZEpvAVel011T6NRzjVn8dsTbJx' }
 		];
 
 		function activateCSS() {
