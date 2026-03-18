@@ -1,5 +1,13 @@
-. COM visualization — The import preview and store detail modals were comparing com_register_dlls entries (basenames like "MyDll.dll") against library_files entries (which can be relative paths like "subfolder/MyDll.dll"). Fixed both locations to also check path.basename(f), matching what the bin files section already does.
+# Changelog
 
-2. Same version in edit/repack — Changed pkgCheckVersionDuplicate() from blocking the Create button to showing a yellow/orange warning: "Version X already exists for Y. The existing package will be overwritten." The input field now uses amber styling instead of red, and the icon changed from error circle to warning triangle. The Create button remains enabled.
+<!--
+  Edit this file with the release notes for the next version BEFORE
+  triggering the "Build and Release" workflow.
 
-3. Image removal on file move — When editing an existing library, the icon is loaded from base64 data with pkg_iconAutoDetectedPath = null. Previously, pkgAutoDetectBmpImage() would clear any auto-detected image when no matching BMP was found in the file list. Fixed the guard to only clear images that came from actual file paths (pkg_iconAutoDetectedPath is not null), preserving images loaded from existing library data.
+  Use standard Markdown: headings, bullet lists, code fences, etc.
+  Everything between the "Changelog" heading and the end of the file
+  will appear as the GitHub Release body.
+
+  After a successful release, this file is automatically reset to this
+  template so it is ready for the next release cycle.
+-->
