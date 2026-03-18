@@ -79,6 +79,7 @@ before considering the task complete:
 - Verified OEM packages skip UAC for COM registration via `comRegisterMultipleDllsNoUac()`.
 - The delete flow must handle library files, help files, demo files, labware files, bin files, and COM deregistration.
 - `isRestrictedAuthor()` in `lib/shared.js` controls OEM keyword matching.
+- In Settings UI (and any blue header/background region), text must use the same high-contrast title color; never ship black text on a blue background.
 
 ## Testing After Changes
 

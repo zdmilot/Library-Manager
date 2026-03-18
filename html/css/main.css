@@ -582,6 +582,10 @@ body {
 	opacity: 1;
 }
 
+.detail-modal-header .settings-modal-subtitle {
+	color: inherit;
+}
+
 .detail-modal-icon i {
 	color: var(--medium);
 }
