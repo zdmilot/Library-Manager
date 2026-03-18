@@ -636,6 +636,11 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         fs.mkdirSync(binDestDir, { recursive: true });
     }
 
+    // Ensure the Users group has write access to the bin directory (best-effort)
+    if (binFiles.length > 0 && binDestDir) {
+        ensureBinFolderPermissions(binDestDir);
+    }
+
     // Extract payload files - CHM files are extracted to the library directory
     let extractedCount = 0;
     zip.getEntries().forEach(function (entry) {
@@ -3382,6 +3387,26 @@ function cmdListPublishers(args) {
 function die(msg) {
     process.stderr.write('Error: ' + msg + '\n');
     process.exit(1);
+}
+
+/**
+ * Attempt to ensure the Users group has Modify permissions on the given
+ * directory (typically Hamilton\Bin).  This is best-effort: it requires
+ * elevation, so failures are logged but not fatal.
+ * @param {string} dirPath - The directory to grant permissions on
+ */
+function ensureBinFolderPermissions(dirPath) {
+    if (!dirPath || !fs.existsSync(dirPath)) return;
+    try {
+        var execFileSync = require('child_process').execFileSync;
+        execFileSync('icacls.exe', [
+            dirPath,
+            '/grant', '*S-1-5-32-545:(OI)(CI)M',
+            '/T', '/Q'
+        ], { stdio: 'pipe', timeout: 30000 });
+    } catch (_) {
+        // Best-effort: requires elevation — failure is expected for non-admin users
+    }
 }
 
 // ===========================================================================

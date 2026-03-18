@@ -488,6 +488,17 @@ begin
       '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
       Log('Warning: icacls.exe failed to set permissions on local directory (exit code ' + IntToStr(ResultCode) + ')');
 
+    // Grant the Users group Modify permissions on the Hamilton\Bin directory.
+    // OEM packages may install bin_files here, and non-admin users need write access.
+    // This is best-effort — the folder may not exist on machines without VENUS installed.
+    if DirExists('C:\Program Files (x86)\HAMILTON\Bin') then
+    begin
+      if not Exec('icacls.exe',
+        '"C:\Program Files (x86)\HAMILTON\Bin" /grant *S-1-5-32-545:(OI)(CI)M /T /Q',
+        '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+        Log('Warning: icacls.exe failed to set permissions on Hamilton\Bin directory (exit code ' + IntToStr(ResultCode) + ')');
+    end;
+
     // Rename the default uninstaller to a friendly name
     if FileExists(ExpandConstant('{app}\unins000.exe')) then
     begin

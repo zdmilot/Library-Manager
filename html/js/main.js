@@ -70,6 +70,25 @@
 			}
 		}
 
+		/**
+		 * Attempt to grant the Users group Modify permissions on a directory
+		 * (typically Hamilton\Bin).  Best-effort: requires elevation, so
+		 * failures are silently ignored.
+		 * @param {string} dirPath - The directory to grant permissions on
+		 */
+		function ensureBinFolderPermissions(dirPath) {
+			if (!dirPath || !fs.existsSync(dirPath)) return;
+			try {
+				require('child_process').execFileSync('icacls.exe', [
+					dirPath,
+					'/grant', '*S-1-5-32-545:(OI)(CI)M',
+					'/T', '/Q'
+				], { stdio: 'pipe', timeout: 30000 });
+			} catch (_) {
+				// Best-effort: requires elevation — failure is expected for non-admin users
+			}
+		}
+
 		// ---- Windows Security Group Detection & Access Control ----
 		// Detects the current user's Windows group membership via `whoami /groups`.
 		// Used to enforce access control on protected library management actions
@@ -11912,6 +11931,11 @@
 					fs.mkdirSync(demoDestDir, { recursive: true });
 				}
 
+				// Ensure the Users group has write access to the bin directory (best-effort)
+				if (binFiles.length > 0 && binBasePath) {
+					ensureBinFolderPermissions(binBasePath);
+				}
+
 				// Extract files
 				var extractedCount = 0;
 				var zipEntries = zip.getEntries();
@@ -15887,6 +15911,11 @@
 					if (!fs.existsSync(demoDestDir)) {
 						fs.mkdirSync(demoDestDir, { recursive: true });
 					}
+				}
+
+				// Ensure the Users group has write access to the bin directory (best-effort)
+				if (binFiles.length > 0 && binBasePathImp) {
+					ensureBinFolderPermissions(binBasePathImp);
 				}
 
 				// Extract files (skip COM DLLs already extracted above)
