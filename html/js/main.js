@@ -2714,13 +2714,11 @@
 				$("#pkg-installer-exe-section").show();
 				$("#pkg-bin-files-section").show();
 				$("#pkg-release-notes-pdf-section").show();
-				$(".overflow-repack").show();
 			} else {
 				$("#settings-oem-keywords-section").hide();
 				$("#pkg-installer-exe-section").hide();
 				$("#pkg-bin-files-section").hide();
 				$("#pkg-release-notes-pdf-section").hide();
-				$(".overflow-repack").hide();
 			}
 			// Ensure About, Report a Bug, Licenses stay at the bottom in that order
 			var $container = $(".settings-settings");
@@ -2910,34 +2908,30 @@
 			e.preventDefault();
 			$(".btn-overflow-menu .dropdown-menu").removeClass("show");
 			$(".btn-overflow-toggle").attr("aria-expanded", "false");
-			if (!isOemKeywordsEnabled()) {
-				showAppAlert('Access Denied', 'OEM developer mode must be unlocked to use Edit & Re-Pack.', { iconClass: 'fa-lock', iconStyle: 'app-alert-icon-error' });
-				return false;
-			}
-			// Build list of OEM libraries
+			// Build list of all installed libraries
 			var allLibs = db_installed_libs.installed_libs.find() || [];
-			var oemLibs = allLibs.filter(function(lib) {
-				return !lib.deleted && (isRestrictedAuthor(lib.author) || isRestrictedAuthor(lib.organization));
+			var availLibs = allLibs.filter(function(lib) {
+				return !lib.deleted;
 			});
 			// Deduplicate by library_name (latest installed_date wins)
 			var libMap = {};
-			oemLibs.forEach(function(lib) {
+			availLibs.forEach(function(lib) {
 				var name = lib.library_name;
 				if (!libMap[name] || (lib.installed_date || '') > (libMap[name].installed_date || '')) {
 					libMap[name] = lib;
 				}
 			});
-			var uniqueOemLibs = Object.keys(libMap).sort(function(a, b) {
+			var uniqueLibs = Object.keys(libMap).sort(function(a, b) {
 				return a.toLowerCase().localeCompare(b.toLowerCase());
 			}).map(function(k) { return libMap[k]; });
 
 			var $list = $("#repack-picker-list");
 			$list.empty();
-			if (uniqueOemLibs.length === 0) {
+			if (uniqueLibs.length === 0) {
 				$("#repack-picker-empty").removeClass("d-none");
 			} else {
 				$("#repack-picker-empty").addClass("d-none");
-				uniqueOemLibs.forEach(function(lib) {
+				uniqueLibs.forEach(function(lib) {
 					var iconHtml = '<i class="fas fa-book fa-lg" style="color:var(--medium);"></i>';
 					if (lib.library_image_base64 && lib.library_image_mime) {
 						iconHtml = '<img src="data:' + lib.library_image_mime + ';base64,' + lib.library_image_base64 + '" style="width:32px;height:32px;object-fit:contain;border-radius:4px;">';
@@ -7677,7 +7671,7 @@
 		/**
 		 * Populate the packager form from an installed library's DB record for re-packing.
 		 * Loads ALL data including labware, bin files, installer, release notes PDF, etc.
-		 * Only used by the Edit & Re-Pack feature for OEM libraries.
+		 * Used by the Edit & Re-Pack feature for any installed library.
 		 */
 		function pkgPopulateForRepack(libId) {
 			var lib = db_installed_libs.installed_libs.findOne({"_id": libId});
@@ -7707,8 +7701,10 @@
 			else if (lib.install_to_library_root) pkg_installSubdir = '';
 			else pkg_installSubdir = '';
 
-			// Mark OEM authorized so restricted-author warnings are bypassed
-			pkg_oemAuthorized = true;
+			// If library has a restricted author, mark OEM authorized so warnings are bypassed
+			if (isRestrictedAuthor(lib.author) || isRestrictedAuthor(lib.organization)) {
+				pkg_oemAuthorized = true;
+			}
 
 			// ---- Library files ----
 			var libBasePath = lib.lib_install_path || "";
