@@ -6557,7 +6557,7 @@
 		var pkg_iconDismissedAuto = false;    // true if user explicitly dismissed the auto-detected image
 		var pkg_comRegisterDlls = [];  // DLL filenames selected for COM registration via RegAsm
 		var pkg_binComRegisterDlls = []; // DLL filenames in bin section selected for COM registration via RegAsm
-		var pkg_installerFilePath = null;  // optional .exe installer to embed in the package
+		var pkg_installerFilePath = null;  // optional .exe or .msi installer to embed in the package
 		var pkg_defaultHelpFile = null;  // basename of CHM file selected as default help for multi-CHM libraries
 		var pkg_releaseNotesPdfPath = null;  // optional release notes PDF (OEM developer only)
 		var _pkgLastClickedRow = {};  // per-tree last clicked .ft-file-row element for shift-select
@@ -6646,8 +6646,9 @@
 			var filePath = fileInput.files[0].path;
 			$(this).val('');
 			if (!filePath) return;
-			if (!fs.existsSync(filePath) || path.extname(filePath).toLowerCase() !== '.exe') {
-				showAppAlert('Validation', 'Please select a valid .exe file.', { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
+			var _instExt = path.extname(filePath).toLowerCase();
+			if (!fs.existsSync(filePath) || (_instExt !== '.exe' && _instExt !== '.msi')) {
+				showAppAlert('Validation', 'Please select a valid .exe or .msi file.', { iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
 				return;
 			}
 			pkg_installerFilePath = filePath;

@@ -492,11 +492,11 @@
 									<span class="text-muted ms-2 text-sm fw-normal">(optional)</span>
 								</div>
 								<div class="card-body" id="pkg-installer-body" style="display:none;">
-									<p class="text-muted text-sm mb-2">Embed a standalone .exe installer in the package. Recipients can extract and run it independently.</p>
+									<p class="text-muted text-sm mb-2">Embed a standalone .exe or .msi installer in the package. Recipients can extract and run it independently.</p>
 									<div class="mb-2">
-										<button class="btn btn-sm btn-outlined" id="pkg-pickInstallerExe">Choose .exe...</button>
+										<button class="btn btn-sm btn-outlined" id="pkg-pickInstallerExe">Choose .exe / .msi...</button>
 										<button class="btn btn-sm btn-outlined" id="pkg-removeInstaller" style="display:none;">Remove</button>
-										<input type="file" class="d-none" id="pkg-input-installer" accept=".exe">
+										<input type="file" class="d-none" id="pkg-input-installer" accept=".exe,.msi">
 									</div>
 									<div class="pkg-installer-detail" style="display:none;">
 										<div class="d-flex align-items-center mb-2" style="background:var(--body-background); border-radius:6px; padding:6px 10px;">
@@ -3880,7 +3880,7 @@
 			{ src: 'js/jquery-2.1.3.min.js',       integrity: 'sha384-dcRjNfDZXzv8C2sE54SSQl7ad+14QPo0iqeye7mv29YaHQN978BwuDyaPD4/Lwbo' },
 			{ src: 'js/jquery-ui.min.js',           integrity: 'sha384-cMbOs3LjRI/EFjDex0/JyNtNLhWZyKEKb959iX7VMKqs4yyM++OHEUbgzenzhyZ7' },
 			{ src: 'js/bootstrap.bundle.min.js',    integrity: 'sha384-HZYy7/e2t5ulY6HtYcKY7AWRuIBuyk3YMY+jfKGECq5pbYjpOnD+SSNz14RIH6F7' },
-			{ src: 'js/main.js',                    integrity: 'sha384-gBcthWsdusfO5Vcj6vAOqBuMIeSbvC/6tbH12dZEpvAVel011T6NRzjVn8dsTbJx' }
+			{ src: 'js/main.js',                    integrity: 'sha384-eXPxol+3Qsx4YehE5sXpPyAAb4QAhrhV1UaKpDDUsJzdqF64oj3mLewjnHQA1BP3' }
 		];
 
 		function activateCSS() {
