@@ -2292,6 +2292,7 @@
 		// ---- Update system state ----
 		var _cachedUpdateInfo = null;  // Cached result from last update check
 		var _updateInProgress = false; // Prevent concurrent update operations
+		var _updateAbortHandle = null; // Abort handle for in-flight download
 		var _isInstalledApp = updater.isInstalledApp(); // Check once at startup
 
 		function _getAppVersion() {
@@ -2458,6 +2459,7 @@
 			$('#update-splash-status').text('Checking update type...');
 			$('#update-splash-bar').css('width', '0%');
 			$('#update-splash-pct').text('0%');
+			$('#update-splash-cancel').prop('disabled', false);
 
 			// Clean up any previous downloads
 			updater.cleanupDownloads();
@@ -2471,11 +2473,13 @@
 
 					$('#update-splash-status').text('Downloading update (no admin required)...');
 
+					_updateAbortHandle = {};
 					return updater.downloadUpdate(patchAsset.downloadUrl, patchDest, function (downloaded, total) {
 						var pct = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : 0;
 						$('#update-splash-bar').css('width', pct + '%');
 						$('#update-splash-pct').text(pct + '%');
-					}).then(function (zipPath) {
+					}, _updateAbortHandle).then(function (zipPath) {
+						$('#update-splash-cancel').prop('disabled', true);
 						$('#update-splash-status').text('Applying update...');
 						$('#update-splash-bar').css('width', '100%');
 
@@ -2502,10 +2506,22 @@
 				console.error('Update failed:', err);
 				$('#update-splash').addClass('d-none');
 				_updateInProgress = false;
+				_updateAbortHandle = null;
+				if (err.message === 'Download cancelled by user') return; // user cancelled, no error UI
 				$('.update-error-msg').text('Update failed: ' + err.message + '. Please try again.');
 				_showUpdateState('error');
 				$('#updateModal').modal('show');
 			});
+		});
+
+		// Cancel button on the download splash screen
+		$(document).on("click", "#update-splash-cancel", function () {
+			if (_updateAbortHandle && typeof _updateAbortHandle.abort === 'function') {
+				_updateAbortHandle.abort();
+			}
+			_updateAbortHandle = null;
+			_updateInProgress = false;
+			$('#update-splash').addClass('d-none');
 		});
 
 		/** Full installer update path - downloads .exe and applies delta in-app (no UAC) */
@@ -2528,10 +2544,12 @@
 				$('#update-splash-bar').css('width', '0%');
 				$('#update-splash-pct').text('0%');
 
+				_updateAbortHandle = {};
 				return updater.applyDeltaUpdate({
 					downloadUrl: asset.downloadUrl,
 					assetName: asset.name,
 					installPath: installPath,
+					abortHandle: _updateAbortHandle,
 					downloadProgressCb: function (downloaded, total) {
 						var pct = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : 0;
 						$('#update-splash-bar').css('width', pct + '%');
@@ -2541,6 +2559,7 @@
 						$('#update-splash-status').text(message);
 					},
 					deltaProgressCb: function (copied, total, filename) {
+						$('#update-splash-cancel').prop('disabled', true);
 						var pct = Math.min(100, Math.round((copied / total) * 100));
 						$('#update-splash-bar').css('width', pct + '%');
 						// Show the file being copied (just the last path segment)
@@ -2593,11 +2612,13 @@
 			$('#update-splash-pct').text('0%');
 
 			// Download the installer with real progress
+			_updateAbortHandle = {};
 			return updater.downloadUpdate(asset.downloadUrl, destPath, function (downloaded, total) {
 				var pct = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : 0;
 				$('#update-splash-bar').css('width', pct + '%');
 				$('#update-splash-pct').text(pct + '%');
 			}).then(function (installerPath) {
+				$('#update-splash-cancel').prop('disabled', true);
 				// Download complete - launch installer
 				$('#update-splash-status').text('Launching installer...');
 				$('#update-splash-bar').css('width', '100%');
@@ -2620,6 +2641,8 @@
 				console.error('Update download failed:', err);
 				$('#update-splash').addClass('d-none');
 				_updateInProgress = false;
+				_updateAbortHandle = null;
+				if (err.message === 'Download cancelled by user') return;
 				$('.update-error-msg').text('Download failed: ' + err.message + '. Please check your internet connection and try again.');
 				_showUpdateState('error');
 				$('#updateModal').modal('show');

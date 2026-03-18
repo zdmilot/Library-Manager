@@ -26,12 +26,12 @@
 	     the splash animation so style recalc doesn't block the main thread) -->
 	<link rel="preload" href="css/bootstrap.min.css" as="style" integrity="sha384-iyVHgWdgbOYA1Qxlw7jRhcp52l0uPEs4zrd0MRrcr1fDCFRPyz0k1VrxB1urC55B" crossorigin="anonymous">
 	<link rel="preload" href="css/all.min.css" as="style" integrity="sha384-MB1nN9Z2v7uIJTIcZDzf6U4b1w42+akUMIAwqL0ZfLFN4s2ZMzashYVGnB3WVYnV" crossorigin="anonymous">
-	<link rel="preload" href="css/main.css" as="style" integrity="sha384-Jco3NBrCB8j+GLIYlZrGIYlorpmukkX6KfLDv9rjVIl+XFhKO8WGab1l0HArlzgD" crossorigin="anonymous">
+	<link rel="preload" href="css/main.css" as="style" integrity="sha384-6vtI81RGcJ+viWIew2bfhwDOGlys5l4zwW5Q5Uv0fBTrAqwamSKge1AJOmDj98zO" crossorigin="anonymous">
 	<link rel="preload" href="css/bs4-compat.css" as="style" integrity="sha384-SZO6T7DFdtw5uEvdTdii83QfW3QeuCQv/f9qWdzJz1PKvudJU2wdJJtdmUb57z/o" crossorigin="anonymous">
 	<noscript>
 		<link href="css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iyVHgWdgbOYA1Qxlw7jRhcp52l0uPEs4zrd0MRrcr1fDCFRPyz0k1VrxB1urC55B" crossorigin="anonymous">
 		<link href="css/all.min.css" rel="stylesheet" integrity="sha384-MB1nN9Z2v7uIJTIcZDzf6U4b1w42+akUMIAwqL0ZfLFN4s2ZMzashYVGnB3WVYnV" crossorigin="anonymous">
-		<link href="css/main.css" rel="stylesheet" integrity="sha384-Jco3NBrCB8j+GLIYlZrGIYlorpmukkX6KfLDv9rjVIl+XFhKO8WGab1l0HArlzgD" crossorigin="anonymous">
+		<link href="css/main.css" rel="stylesheet" integrity="sha384-6vtI81RGcJ+viWIew2bfhwDOGlys5l4zwW5Q5Uv0fBTrAqwamSKge1AJOmDj98zO" crossorigin="anonymous">
 		<link href="css/bs4-compat.css" rel="stylesheet" integrity="sha384-SZO6T7DFdtw5uEvdTdii83QfW3QeuCQv/f9qWdzJz1PKvudJU2wdJJtdmUb57z/o" crossorigin="anonymous">
 	</noscript>
 
@@ -163,6 +163,7 @@
 				<div class="update-splash-progress-bar" id="update-splash-bar"></div>
 			</div>
 			<div class="update-splash-pct" id="update-splash-pct"></div>
+			<button class="btn update-splash-cancel-btn" id="update-splash-cancel">Cancel</button>
 		</div>
 	</div>
 
@@ -3873,14 +3874,14 @@
 		var cssFiles = [
 			{ href: 'css/bootstrap.min.css', integrity: 'sha384-iyVHgWdgbOYA1Qxlw7jRhcp52l0uPEs4zrd0MRrcr1fDCFRPyz0k1VrxB1urC55B' },
 			{ href: 'css/all.min.css',       integrity: 'sha384-MB1nN9Z2v7uIJTIcZDzf6U4b1w42+akUMIAwqL0ZfLFN4s2ZMzashYVGnB3WVYnV' },
-			{ href: 'css/main.css',          integrity: 'sha384-Jco3NBrCB8j+GLIYlZrGIYlorpmukkX6KfLDv9rjVIl+XFhKO8WGab1l0HArlzgD' },
+			{ href: 'css/main.css',          integrity: 'sha384-6vtI81RGcJ+viWIew2bfhwDOGlys5l4zwW5Q5Uv0fBTrAqwamSKge1AJOmDj98zO' },
 			{ href: 'css/bs4-compat.css',    integrity: 'sha384-SZO6T7DFdtw5uEvdTdii83QfW3QeuCQv/f9qWdzJz1PKvudJU2wdJJtdmUb57z/o' }
 		];
 		var scripts = [
 			{ src: 'js/jquery-2.1.3.min.js',       integrity: 'sha384-dcRjNfDZXzv8C2sE54SSQl7ad+14QPo0iqeye7mv29YaHQN978BwuDyaPD4/Lwbo' },
 			{ src: 'js/jquery-ui.min.js',           integrity: 'sha384-cMbOs3LjRI/EFjDex0/JyNtNLhWZyKEKb959iX7VMKqs4yyM++OHEUbgzenzhyZ7' },
 			{ src: 'js/bootstrap.bundle.min.js',    integrity: 'sha384-HZYy7/e2t5ulY6HtYcKY7AWRuIBuyk3YMY+jfKGECq5pbYjpOnD+SSNz14RIH6F7' },
-			{ src: 'js/main.js',                    integrity: 'sha384-eXPxol+3Qsx4YehE5sXpPyAAb4QAhrhV1UaKpDDUsJzdqF64oj3mLewjnHQA1BP3' }
+			{ src: 'js/main.js',                    integrity: 'sha384-Hg2yZF5s4fvLtijnC83mj4H255hTTeulYF2k1HfKxZbIsyC4/EEtQDJVafgLaraU' }
 		];
 
 		function activateCSS() {

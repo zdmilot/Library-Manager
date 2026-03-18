@@ -5519,6 +5519,26 @@ body.dark-mode #searchModal .d-flex[style*="border-bottom"] {
 	letter-spacing: 0.3px;
 }
 
+.update-splash-cancel-btn {
+	margin-top: 28px;
+	font-size: 0.8rem;
+	padding: 4px 24px;
+	color: rgba(255,255,255,0.6);
+	border: 1px solid rgba(255,255,255,0.25);
+	border-radius: 4px;
+	background: transparent;
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+}
+.update-splash-cancel-btn:hover {
+	color: #fff;
+	border-color: rgba(255,255,255,0.6);
+}
+.update-splash-cancel-btn:disabled {
+	opacity: 0.3;
+	cursor: default;
+}
+
 /* ── Update Release Notes Overlay ─────────────────────────────────────────── */
 
 #update-release-overlay {
