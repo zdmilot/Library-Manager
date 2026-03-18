@@ -20349,6 +20349,41 @@
 			$m.find(".store-detail-lib-path").text("Library \u2192 " + libDestDir);
 			$m.find(".store-detail-demo-path").text("Demo Methods \u2192 " + demoDestDir);
 
+			// Public functions
+			var storePubFns = ver.public_functions || [];
+			var $storeFnSection = $m.find('.store-detail-functions-section');
+			var $storeFnList = $m.find('.store-detail-functions-list');
+			$storeFnList.empty();
+			if (storePubFns.length > 0) {
+				$storeFnSection.removeClass('d-none');
+				storePubFns.forEach(function(fn) {
+					var paramStr = (fn.params || []).map(function(p) {
+						return '<span class="fn-param-type">' + escapeHtml(p.type || 'variable') + '</span>' +
+							(p.byRef ? '<span class="fn-param-ref">&amp;</span> ' : ' ') +
+							'<span class="fn-param-name">' + escapeHtml(p.name) + '</span>' +
+							(p.array ? '<span class="fn-param-array">[]</span>' : '');
+					}).join(', ');
+					var retBadge = fn.returnType && fn.returnType !== 'void'
+						? '<span class="badge badge-light ml-1" style="font-size:0.65rem; vertical-align:middle;">' + escapeHtml(fn.returnType) + '</span>'
+						: '<span class="badge badge-light ml-1" style="font-size:0.65rem; vertical-align:middle; opacity:0.5;">void</span>';
+					var docHtml = fn.doc
+						? '<div class="fn-doc text-muted text-sm" style="margin-left:22px; font-size:0.75rem; white-space:pre-wrap;">' + $("<span>").text(fn.doc.split('\n')[0]).html() + '</div>'
+						: '';
+					$storeFnList.append(
+						'<div class="fn-item" style="padding:3px 0; border-bottom:1px solid rgba(128,128,128,0.1);">' +
+							'<div><i class="fas fa-cube fn-icon" style="color:var(--medium); font-size:0.7rem; margin-right:5px;"></i>' +
+							'<span class="fn-name" style="font-family:Consolas,monospace; font-weight:600; font-size:0.82rem;">' + escapeHtml(fn.qualifiedName) + '</span>' +
+							'<span style="font-family:Consolas,monospace; font-size:0.78rem; color:#888;">(' + paramStr + ')</span>' +
+							retBadge + '</div>' +
+							docHtml +
+						'</div>'
+					);
+				});
+				$storeFnList.prepend('<div class="text-muted text-sm mb-1"><i class="fas fa-info-circle mr-1"></i>' + storePubFns.length + ' public function' + (storePubFns.length !== 1 ? 's' : '') + '</div>');
+			} else {
+				$storeFnSection.addClass('d-none');
+			}
+
 			// Overwrite warning & install button state
 			var $installBtn = $m.find(".store-detail-install-btn");
 			$installBtn.removeClass("downloading").prop("disabled", false);
@@ -20689,26 +20724,47 @@
 			if (!queue || queue.length === 0) return;
 
 			$m.modal("hide");
-			$("#storeDetailModal").modal("hide");
+
+			// Show progress in the store detail modal
+			var $storeModal = $("#storeDetailModal");
+			$storeModal.find(".detail-modal-body").addClass("d-none");
+			$storeModal.find(".store-detail-progress").removeClass("d-none");
+			$storeModal.find(".store-detail-progress-label").text("Installing dependencies\u2026");
+			$storeModal.find(".store-detail-progress-icon").attr("class", "fas fa-cloud-download-alt fa-2x store-detail-progress-icon").css("color", "var(--medium)");
+			$storeModal.find(".store-detail-progress-status").text("Downloading package 1 of " + queue.length + "\u2026");
+			$storeModal.find(".store-detail-progress-bar").css("width", "100%");
+			$storeModal.find(".store-detail-install-btn").html('<i class="fas fa-spinner fa-spin mr-1"></i>Installing\u2026').prop("disabled", true);
 
 			// Download and install each package in order (deps first, main last)
-			storeInstallQueue(queue.slice(), 0);
+			storeInstallQueue(queue.slice(), 0, $storeModal);
 		});
 
 		/**
 		 * Sequentially download and install a queue of packages from the store.
-		 * Each package goes through the full impLoadAndInstall flow.
+		 * Uses storeDirectInstall for seamless installs without modal flashing.
 		 * @param {Array} queue - Array of package_file strings to install in order
 		 * @param {number} idx - Current index in the queue
+		 * @param {jQuery} $progressModal - Store detail modal showing progress
 		 */
-		function storeInstallQueue(queue, idx) {
+		function storeInstallQueue(queue, idx, $progressModal) {
 			if (idx >= queue.length) {
-				// All done — refresh grid to show installed state
+				// All done — refresh grid and restore modal
+				if ($progressModal) {
+					$progressModal.find(".store-detail-progress").addClass("d-none");
+					$progressModal.find(".detail-modal-body").removeClass("d-none");
+					$progressModal.modal("hide");
+				}
 				storeRenderGrid();
 				return;
 			}
 
 			var pkgFile = queue[idx];
+
+			if ($progressModal) {
+				$progressModal.find(".store-detail-progress-label").text("Installing package " + (idx + 1) + " of " + queue.length + "\u2026");
+				$progressModal.find(".store-detail-progress-status").text("Downloading " + pkgFile + "\u2026");
+				$progressModal.find(".store-detail-progress-icon").attr("class", "fas fa-cloud-download-alt fa-2x store-detail-progress-icon").css("color", "var(--medium)");
+			}
 
 			var downloadUrl = storePackageDownloadUrl(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
@@ -20718,6 +20774,11 @@
 			var https = require('https');
 			storeDownloadFile(https, downloadUrl, tmpPath, function (err) {
 				if (err) {
+					if ($progressModal) {
+						$progressModal.find(".store-detail-progress").addClass("d-none");
+						$progressModal.find(".detail-modal-body").removeClass("d-none");
+						$progressModal.modal("hide");
+					}
 					storeShowErrorModal("Download failed", err.message + "\n\nPackage: " + pkgFile + "\nRemaining packages were not installed.");
 					storeRenderGrid();
 					return;
@@ -20736,15 +20797,32 @@
 					}
 				} catch(_) { console.warn(_); }
 
+				if ($progressModal) {
+					$progressModal.find(".store-detail-progress-status").text("Installing " + pkgFile + "\u2026");
+					$progressModal.find(".store-detail-progress-icon").attr("class", "fas fa-cog fa-spin fa-2x store-detail-progress-icon").css("color", "var(--medium)");
+				}
+
+				var origBtnHtml = '<i class="fas fa-download mr-1"></i>Download and Install';
+				var isLastInQueue = (idx === queue.length - 1);
+				var installOpts = isLastInQueue ? {} : { silent: true };
 				var proceedWithQueueInstall = function () {
-					storeAutoInstallPkg(tmpPath, function () {
-						_storeImportActive = false;
-						storeInstallQueue(queue, idx + 1);
-					});
+					storeDirectInstall(tmpPath, $progressModal || $("#storeDetailModal"), origBtnHtml, function () {
+						storeInstallQueue(queue, idx + 1, $progressModal);
+					}, installOpts);
 				};
 
 				if (breakingChanges.length > 0) {
+					if ($progressModal) {
+						$progressModal.find(".store-detail-progress").addClass("d-none");
+						$progressModal.find(".detail-modal-body").removeClass("d-none");
+						$progressModal.modal("hide");
+					}
 					storeShowBreakingChangesModal(breakingChanges, function () {
+						if ($progressModal) {
+							$progressModal.modal("show");
+							$progressModal.find(".detail-modal-body").addClass("d-none");
+							$progressModal.find(".store-detail-progress").removeClass("d-none");
+						}
 						proceedWithQueueInstall();
 					});
 				} else {
@@ -20778,6 +20856,15 @@
 				return;
 			}
 
+			// ---- Access control check ----
+			var accessCheck = canManageLibraries();
+			if (!accessCheck.allowed) {
+				showAccessDeniedModal('Import Library', accessCheck.reason);
+				return;
+			}
+
+			_isImporting = true;
+
 			// Show download progress bar in the detail modal
 			var $m = $("#storeDetailModal");
 			var $detailBtn = $m.find(".store-detail-install-btn");
@@ -20802,6 +20889,7 @@
 					$m.find(".store-detail-progress").addClass("d-none");
 					$m.find(".detail-modal-body").removeClass("d-none");
 					$detailBtn.html(origBtnHtml).prop("disabled", false);
+					_isImporting = false;
 					storeShowErrorModal("Download failed", err.message);
 					return;
 				}
@@ -20821,13 +20909,11 @@
 
 				// Update progress UI to show installing state
 				$m.find(".store-detail-progress-label").text("Installing\u2026");
-				$m.find(".store-detail-progress-icon").removeClass("fa-cloud-download-alt").addClass("fa-cog");
+				$m.find(".store-detail-progress-icon").attr("class", "fas fa-cog fa-spin fa-2x store-detail-progress-icon").css("color", "var(--medium)");
 				$m.find(".store-detail-progress-status").text("Setting up the library\u2026");
 
-				var proceedWithAutoInstall = function () {
-					// Hide the detail modal and auto-install
-					$m.modal("hide");
-					storeAutoInstallPkg(tmpPath);
+				var proceedWithDirectInstall = function () {
+					storeDirectInstall(tmpPath, $m, origBtnHtml);
 				};
 
 				if (breakingChanges.length > 0) {
@@ -20836,13 +20922,518 @@
 					$m.find(".detail-modal-body").removeClass("d-none");
 					$detailBtn.html(origBtnHtml).prop("disabled", false);
 					$m.modal("hide");
+					_isImporting = false;
 					storeShowBreakingChangesModal(breakingChanges, function () {
-						storeAutoInstallPkg(tmpPath);
+						_isImporting = true;
+						// Re-show progress in modal
+						$m.modal("show");
+						$m.find(".detail-modal-body").addClass("d-none");
+						$m.find(".store-detail-progress").removeClass("d-none");
+						$m.find(".store-detail-progress-label").text("Installing\u2026");
+						$m.find(".store-detail-progress-icon").attr("class", "fas fa-cog fa-spin fa-2x store-detail-progress-icon").css("color", "var(--medium)");
+						$m.find(".store-detail-progress-status").text("Setting up the library\u2026");
+						$detailBtn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Installing\u2026').prop("disabled", true);
+						storeDirectInstall(tmpPath, $m, origBtnHtml);
 					});
 				} else {
-					proceedWithAutoInstall();
+					proceedWithDirectInstall();
 				}
 			});
+		}
+
+		/**
+		 * Perform a direct install from the store without showing the import preview modal.
+		 * Keeps the store detail modal progress overlay visible throughout.
+		 * @param {string} filePath - Path to the downloaded .hxlibpkg file
+		 * @param {jQuery} $m - Store detail modal jQuery object
+		 * @param {string} origBtnHtml - Original button HTML for restore on error
+		 * @param {function} [onComplete] - Optional callback when install finishes
+		 * @param {Object} [opts] - Options: { silent: true } suppresses success modal and modal hide
+		 */
+		async function storeDirectInstall(filePath, $m, origBtnHtml, onComplete, opts) {
+			var $detailBtn = $m.find(".store-detail-install-btn");
+
+			function restoreModal() {
+				$m.find(".store-detail-progress").addClass("d-none");
+				$m.find(".detail-modal-body").removeClass("d-none");
+				$detailBtn.html(origBtnHtml).prop("disabled", false);
+			}
+
+			try {
+				var rawBuffer = fs.readFileSync(filePath);
+				var zipBuffer = unpackContainer(rawBuffer, CONTAINER_MAGIC_PKG);
+				var zip = new AdmZip(zipBuffer);
+				var manifestEntry = zip.getEntry("manifest.json");
+				if (!manifestEntry) {
+					restoreModal();
+					_isImporting = false;
+					storeShowErrorModal("Install failed", "Invalid package: manifest.json not found.");
+					if (onComplete) onComplete();
+					return;
+				}
+				var manifest = JSON.parse(zip.readAsText(manifestEntry));
+
+				// ---- Verify package signature ----
+				var sigResult = verifyPackageSignature(zip);
+				if (sigResult.signed && !sigResult.valid) {
+					var sigMsg = "WARNING: Package signature verification FAILED!\n\n";
+					sigResult.errors.forEach(function(e) { sigMsg += "  \u274C " + e + "\n"; });
+					sigMsg += "\nThis package may be corrupted or tampered with.\nDo you want to continue anyway?";
+					$m.modal("hide");
+					if (!(await showAppConfirm('Signature Verification Failed', sigMsg, {
+						iconClass: 'fa-exclamation-triangle',
+						confirmLabel: 'Install Anyway',
+						confirmIcon: 'fa-shield-alt'
+					}))) {
+						_isImporting = false;
+						if (onComplete) onComplete();
+						return;
+					}
+					$m.modal("show");
+				}
+
+				// ---- Validate manifest ----
+				var importAuthor = (manifest.author || '').trim();
+				var importOrg = (manifest.organization || '').trim();
+				if (importAuthor) {
+					var impAuthorCheck = shared.isValidAuthorName(importAuthor);
+					if (!impAuthorCheck.valid) {
+						restoreModal();
+						_isImporting = false;
+						storeShowErrorModal("Install failed", "Invalid package: " + impAuthorCheck.reason);
+						if (onComplete) onComplete();
+						return;
+					}
+				}
+				if (importOrg) {
+					var impOrgCheck = shared.isValidOrganizationName(importOrg);
+					if (!impOrgCheck.valid) {
+						restoreModal();
+						_isImporting = false;
+						storeShowErrorModal("Install failed", "Invalid package: " + impOrgCheck.reason);
+						if (onComplete) onComplete();
+						return;
+					}
+				}
+
+				var libName = manifest.library_name || "Unknown";
+				if (!isValidLibraryName(libName)) {
+					restoreModal();
+					_isImporting = false;
+					storeShowErrorModal("Install failed", 'Invalid library name: "' + libName + '".\nLibrary names cannot contain path separators, \'..\', or special characters.');
+					if (onComplete) onComplete();
+					return;
+				}
+
+				var pathValidation = shared.validateManifestPaths(manifest);
+				if (!pathValidation.valid) {
+					restoreModal();
+					_isImporting = false;
+					storeShowErrorModal("Install failed", "Invalid package: unsafe file paths detected.\n\n" + pathValidation.errors.join("\n"));
+					if (onComplete) onComplete();
+					return;
+				}
+
+				var libFiles = manifest.library_files || [];
+				var demoFiles = manifest.demo_method_files || [];
+				var declaredHelp = manifest.help_files || [];
+				var helpFiles = declaredHelp.slice();
+				var filteredLibFiles = [];
+				libFiles.forEach(function(f) {
+					if (path.extname(f).toLowerCase() === '.chm') {
+						if (helpFiles.indexOf(f) === -1) helpFiles.push(f);
+					} else {
+						filteredLibFiles.push(f);
+					}
+				});
+				libFiles = filteredLibFiles;
+
+				// Determine install paths
+				var libFolder = db_links.links.findOne({"_id":"lib-folder"});
+				var metFolder = db_links.links.findOne({"_id":"met-folder"});
+				var libBasePath = libFolder ? libFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Library";
+				var metBasePath = metFolder ? metFolder.path : "C:\\Program Files (x86)\\HAMILTON\\Methods";
+				var customSubdir = manifest.custom_install_subdir || '';
+				var libDestDir = customSubdir ? path.join(libBasePath, customSubdir) : libBasePath;
+				var demoDestDir = path.join(metBasePath, "Library Demo Methods", libName);
+				var labFolderImp = db_links.links.findOne({"_id":"labware-folder"});
+				var labwareBasePathImp = labFolderImp ? labFolderImp.path : (function() {
+					var hamiltonDir = path.dirname(libBasePath);
+					var sibling = path.join(hamiltonDir, 'Labware');
+					return fs.existsSync(sibling) ? sibling : 'C:\\Program Files (x86)\\HAMILTON\\Labware';
+				})();
+				var labwareFiles = manifest.labware_files || [];
+				var binFolderImp = db_links.links.findOne({"_id":"bin-folder"});
+				var binBasePathImp = binFolderImp ? binFolderImp.path : 'C:\\Program Files (x86)\\HAMILTON\\Bin';
+				var binFiles = manifest.bin_files || [];
+				var comDlls = manifest.com_register_dlls || [];
+				var comWarning = false;
+
+				// ---- COM REGISTRATION FIRST ----
+				if (comDlls.length > 0) {
+					$m.find(".store-detail-progress-status").text("Registering COM DLLs\u2026");
+					if (!fs.existsSync(libDestDir)) fs.mkdirSync(libDestDir, { recursive: true });
+
+					var zipEntries = zip.getEntries();
+					var comDllPaths = [];
+					for (var ci = 0; ci < comDlls.length; ci++) {
+						var comDllName = comDlls[ci];
+						for (var ei = 0; ei < zipEntries.length; ei++) {
+							var entry = zipEntries[ei];
+							if (entry.entryName === "library/" + comDllName) {
+								var outPath = path.join(libDestDir, comDllName);
+								fs.writeFileSync(outPath, entry.getData());
+								comDllPaths.push(outPath);
+								break;
+							}
+						}
+					}
+
+					if (comDllPaths.length > 0) {
+						var _oemVerified = isVerifiedOemPackage(manifest, sigResult);
+						var regResult = _oemVerified
+							? await comRegisterMultipleDllsNoUac(comDllPaths, true)
+							: await comRegisterMultipleDlls(comDllPaths, true);
+
+						if (!regResult.allSuccess) {
+							var failedDlls = [];
+							var errDetails = "";
+							for (var ri = 0; ri < regResult.results.length; ri++) {
+								if (!regResult.results[ri].success) {
+									failedDlls.push(path.basename(regResult.results[ri].dll));
+									errDetails += "\n- " + path.basename(regResult.results[ri].dll) + ": " + regResult.results[ri].error;
+								}
+							}
+
+							var proceedMsg = "COM registration failed for the following DLL(s):\n" + errDetails + "\n\n" +
+								"This library may not work correctly without COM registration.\n\n" +
+								"Do you still want to proceed with the install?\n" +
+								"(The library card will be marked with a warning)";
+
+							$m.modal("hide");
+							if (!(await showAppConfirm('COM Registration Failed', proceedMsg, {
+								iconClass: 'fa-exclamation-triangle',
+								confirmLabel: 'Continue Install',
+								confirmIcon: 'fa-arrow-right'
+							}))) {
+								for (var di = 0; di < comDllPaths.length; di++) {
+									try { if (fs.existsSync(comDllPaths[di])) fs.unlinkSync(comDllPaths[di]); } catch(ex) { console.warn(ex); }
+								}
+								try {
+									if (fs.existsSync(libDestDir)) {
+										var rem = fs.readdirSync(libDestDir);
+										if (rem.length === 0) fs.rmdirSync(libDestDir);
+									}
+								} catch(ex) { console.warn(ex); }
+								_isImporting = false;
+								if (onComplete) onComplete();
+								return;
+							}
+							$m.modal("show");
+							comWarning = true;
+						}
+					}
+				}
+
+				// ---- Extract files ----
+				$m.find(".store-detail-progress-status").text("Extracting files\u2026");
+				var extractedCount = 0;
+
+				if (libFiles.length > 0 || helpFiles.length > 0) {
+					if (!fs.existsSync(libDestDir)) fs.mkdirSync(libDestDir, { recursive: true });
+				}
+				if (demoFiles.length > 0) {
+					if (!fs.existsSync(demoDestDir)) fs.mkdirSync(demoDestDir, { recursive: true });
+				}
+
+				if (binFiles.length > 0 && binBasePathImp) {
+					ensureBinFolderPermissions(binBasePathImp);
+				}
+
+				var zipEntries = zip.getEntries();
+				zipEntries.forEach(function(entry) {
+					if (entry.entryName === "manifest.json" || entry.entryName === "signature.json") return;
+					if (!isOemKeywordsEnabled() && shared.isRestrictedFileExtension(entry.entryName)) return;
+
+					if (entry.entryName.indexOf("library/") === 0) {
+						var fname = entry.entryName.substring("library/".length);
+						if (fname) {
+							if (comDlls.indexOf(fname) !== -1) { extractedCount++; return; }
+							var outPath = safeZipExtractPath(libDestDir, fname);
+							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+							var parentDir = path.dirname(outPath);
+							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+							fs.writeFileSync(outPath, entry.getData());
+							extractedCount++;
+						}
+					} else if (entry.entryName.indexOf("demo_methods/") === 0) {
+						var fname = entry.entryName.substring("demo_methods/".length);
+						if (fname) {
+							var outPath = safeZipExtractPath(demoDestDir, fname);
+							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+							var parentDir = path.dirname(outPath);
+							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+							fs.writeFileSync(outPath, entry.getData());
+							extractedCount++;
+						}
+					} else if (entry.entryName.indexOf("labware/") === 0) {
+						var fname = entry.entryName.substring("labware/".length);
+						if (fname) {
+							var outPath = safeZipExtractPath(labwareBasePathImp, fname);
+							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+							var parentDir = path.dirname(outPath);
+							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+							fs.writeFileSync(outPath, entry.getData());
+							extractedCount++;
+						}
+					} else if (entry.entryName.indexOf("bin/") === 0) {
+						var fname = entry.entryName.substring("bin/".length);
+						if (fname) {
+							var outPath = safeZipExtractPath(binBasePathImp, fname);
+							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
+							var parentDir = path.dirname(outPath);
+							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+							fs.writeFileSync(outPath, entry.getData());
+							extractedCount++;
+						}
+					}
+				});
+
+				// Extract installer executable if present
+				var impInstallerPath = null;
+				var impInstallerOriginalName = null;
+				var impInstallerSize = 0;
+				if (manifest.installer_executable) {
+					var installerLibDir = path.join(INSTALLER_STORE_DIR, (libName || 'Unknown').replace(/[<>:"\/\\|?*]/g, '_'));
+					zipEntries.forEach(function(entry) {
+						if (entry.isDirectory) return;
+						if (entry.entryName.indexOf("installer/") === 0) {
+							var fname = entry.entryName.substring("installer/".length);
+							if (fname) {
+								var safePath = safeZipExtractPath(installerLibDir, fname);
+								if (!safePath) { console.warn('Skipping unsafe installer ZIP entry: ' + entry.entryName); return; }
+								if (!fs.existsSync(installerLibDir)) fs.mkdirSync(installerLibDir, { recursive: true });
+								var data = entry.getData();
+								fs.writeFileSync(safePath, data);
+								impInstallerPath = safePath;
+								impInstallerOriginalName = fname;
+								impInstallerSize = data.length;
+								extractedCount++;
+							}
+						}
+					});
+				}
+
+				// ---- Bin COM DLL registration ----
+				var binComDlls = manifest.bin_com_register_dlls || [];
+				var binComWarning = false;
+				if (binComDlls.length > 0) {
+					$m.find(".store-detail-progress-status").text("Registering Bin COM DLLs\u2026");
+					var binComDllPaths = binComDlls
+						.map(function(d) { return path.join(binBasePathImp, d); })
+						.filter(function(p) { return fs.existsSync(p); });
+					if (binComDllPaths.length > 0) {
+						var _binOemVerified = isVerifiedOemPackage(manifest, sigResult);
+						var binRegResult = _binOemVerified
+							? await comRegisterMultipleDllsNoUac(binComDllPaths, true)
+							: await comRegisterMultipleDlls(binComDllPaths, true);
+						if (!binRegResult.allSuccess) {
+							binComWarning = true;
+							console.warn('[store-install] Bin COM registration: some DLLs failed');
+						}
+					}
+				}
+
+				// ---- Save to DB ----
+				$m.find(".store-detail-progress-status").text("Saving to database\u2026");
+				var existing = db_installed_libs.installed_libs.findOne({"library_name": libName});
+				if (existing) {
+					db_installed_libs.installed_libs.remove({"_id": existing._id});
+				}
+
+				var fileHashes = {};
+				try { fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls); } catch(e) { console.warn('Could not compute integrity hashes: ' + e.message); }
+
+				var dbRecord = {
+					library_name: manifest.library_name || "",
+					author: manifest.author || "",
+					organization: manifest.organization || "",
+					installed_by: getWindowsUsername(),
+					version: manifest.version || "",
+					venus_compatibility: manifest.venus_compatibility || "",
+					description: manifest.description || "",
+					github_url: manifest.github_url || "",
+					tags: shared.sanitizeTags(manifest.tags || []),
+					created_date: manifest.created_date || "",
+					app_version: manifest.app_version || "",
+					format_version: manifest.format_version || "1.0",
+					windows_version: manifest.windows_version || "",
+					venus_version: manifest.venus_version || "",
+					package_lineage: manifest.package_lineage || [],
+					library_image: manifest.library_image || null,
+					library_image_base64: manifest.library_image_base64 || null,
+					library_image_mime: manifest.library_image_mime || null,
+					library_files: libFiles,
+					demo_method_files: demoFiles,
+					help_files: helpFiles,
+					com_register_dlls: comDlls,
+					bin_com_register_dlls: binComDlls,
+					com_warning: comWarning || binComWarning,
+					com_registered: (comDlls.length > 0 || binComDlls.length > 0) && !comWarning && !binComWarning,
+					lib_install_path: libDestDir,
+					demo_install_path: demoDestDir,
+					install_to_library_root: !!manifest.install_to_library_root,
+					custom_install_subdir: manifest.custom_install_subdir || '',
+					installed_date: new Date().toISOString(),
+					source_package: path.basename(filePath),
+					file_hashes: fileHashes,
+					public_functions: extractPublicFunctions(libFiles, libDestDir),
+					required_dependencies: extractRequiredDependencies(libFiles, libDestDir),
+					publisher_cert: (sigResult && sigResult.code_signed && sigResult.valid && sigResult.publisher_cert) ? sigResult.publisher_cert : null,
+					converted_from_executable: !!(sigResult && sigResult.converted),
+					source_certificate: (sigResult && sigResult.converted && sigResult.source_certificate) ? sigResult.source_certificate : null,
+					conversion_source: (sigResult && sigResult.converted && sigResult.conversion_source) ? sigResult.conversion_source : null,
+					installer_executable: manifest.installer_executable || null,
+					installer_info: manifest.installer_info || null,
+					installer_path: impInstallerPath || null,
+					installer_original_name: impInstallerOriginalName || null,
+					installer_size: impInstallerSize || 0,
+					labware_files: labwareFiles,
+					labware_install_path: labwareFiles.length > 0 ? labwareBasePathImp : null,
+					bin_files: binFiles,
+					bin_install_path: binFiles.length > 0 ? binBasePathImp : null
+				};
+				Object.keys(manifest).forEach(function(mk) { if (shared.KNOWN_MANIFEST_KEYS.indexOf(mk) === -1 && !(mk in dbRecord)) dbRecord[mk] = manifest[mk]; });
+				var saved = db_installed_libs.installed_libs.save(dbRecord);
+
+				try { shared.updateMarkerForLibrary(dbRecord); } catch(_) { /* non-critical */ }
+
+				registerPublisher(manifest.author || '');
+				registerPublisher(manifest.organization || '');
+				registerTags(manifest.tags || []);
+
+				// Add to tree group
+				var navtree = db_tree.tree.find();
+				var targetGroupId = null;
+				var savedAuthor = (manifest.author || '').trim();
+				var savedOrg = (manifest.organization || '').trim();
+				if (isRestrictedAuthor(savedAuthor) || isRestrictedAuthor(savedOrg)) {
+					targetGroupId = addToOemTreeGroup(saved._id);
+				} else {
+					for (var ti = 0; ti < navtree.length; ti++) {
+						var gEntry = getGroupById(navtree[ti]["group-id"]);
+						if (gEntry && !gEntry["default"]) {
+							targetGroupId = navtree[ti]["group-id"];
+							var existingIds = (navtree[ti]["method-ids"] || []).slice();
+							existingIds.push(saved._id);
+							db_tree.tree.update({"group-id": targetGroupId}, {"method-ids": existingIds}, {multi: false, upsert: false});
+							break;
+						}
+					}
+				}
+				if (!targetGroupId) {
+					var newGroup = db_groups.groups.save({
+						"name": "Libraries",
+						"icon-class": "fa-book",
+						"default": false,
+						"navbar": "left",
+						"favorite": true
+					});
+					db_tree.tree.save({
+						"group-id": newGroup._id,
+						"method-ids": [saved._id],
+						"locked": false
+					});
+				}
+
+				clearStoreUpdateIgnored(libName);
+
+				// Cache the package
+				var cachedPath = '';
+				try {
+					var pkgBuffer = fs.readFileSync(filePath);
+					cachedPath = cachePackageToStore(pkgBuffer, libName, manifest.version);
+				} catch(cacheErr) { console.warn('Could not cache package: ' + cacheErr.message); }
+
+				// ---- Done — hide progress, show success ----
+				var isSilent = opts && opts.silent;
+				if (!isSilent) {
+					$m.modal("hide");
+					restoreModal();
+				}
+				impBuildLibraryCards();
+				storeRenderGrid();
+
+				if (!isSilent) {
+					var $sm = $("#importSuccessModal");
+					$sm.find(".import-success-libname").text(libName);
+					$sm.find(".import-success-filecount").text(extractedCount + " file" + (extractedCount !== 1 ? "s" : "") + " installed");
+
+					var pathsHtml = "";
+					if (libFiles.length > 0) {
+						pathsHtml += '<div class="path-label">Library Files</div>';
+						pathsHtml += '<div class="path-value">' + libDestDir.replace(/</g, '&lt;') + '</div>';
+					}
+					if (demoFiles.length > 0) {
+						pathsHtml += '<div class="path-label">Demo Methods</div>';
+						pathsHtml += '<div class="path-value">' + demoDestDir.replace(/</g, '&lt;') + '</div>';
+					}
+					if (cachedPath) {
+						pathsHtml += '<div class="path-label">Package Cached</div>';
+						pathsHtml += '<div class="path-value">' + cachedPath.replace(/</g, '&lt;') + '</div>';
+					}
+					if (impInstallerPath) {
+						pathsHtml += '<div class="path-label">Installer</div>';
+						pathsHtml += '<div class="path-value">' + impInstallerPath.replace(/</g, '&lt;') + '</div>';
+					}
+					$sm.find(".import-success-paths").html(pathsHtml);
+					if (!pathsHtml) $sm.find(".import-success-paths").addClass("d-none"); else $sm.find(".import-success-paths").removeClass("d-none");
+
+					var $comStatus = $sm.find(".import-success-com-status");
+					$comStatus.removeClass("com-warning com-ok").addClass("d-none");
+					if (comWarning) {
+						$comStatus.removeClass("d-none").addClass("com-warning")
+							.html('<i class="fas fa-exclamation-triangle mr-1"></i>COM registration failed. The library card has been marked with a warning.');
+					} else if (comDlls.length > 0) {
+						$comStatus.removeClass("d-none").addClass("com-ok")
+							.html('<i class="fas fa-check mr-1"></i>COM DLLs registered: ' + escapeHtml(comDlls.join(", ")));
+					}
+
+					$sm.modal("show");
+				}
+
+				// Audit trail
+				try {
+					var sigStatus = 'unsigned';
+					if (sigResult && sigResult.signed) sigStatus = sigResult.valid ? 'valid' : 'failed';
+					if (sigResult && sigResult.code_signed) sigStatus = 'code_signed_' + sigStatus;
+					var auditEntry = {
+						library_name:     libName,
+						version:          manifest.version || '',
+						author:           manifest.author || '',
+						organization:     manifest.organization || '',
+						source_file:      filePath,
+						lib_install_path: libDestDir,
+						demo_install_path: demoDestDir,
+						files_extracted:  extractedCount,
+						signature_status: sigStatus,
+						com_warning:      comWarning
+					};
+					if (sigResult && sigResult.code_signed && sigResult.publisher_cert) {
+						auditEntry.code_signing_publisher = sigResult.publisher_cert.publisher;
+						auditEntry.code_signing_key_id = sigResult.publisher_cert.key_id;
+						auditEntry.code_signing_oem = sigResult.oem_verified;
+					}
+					appendAuditTrailEntry(buildAuditTrailEntry('library_imported', auditEntry));
+				} catch(_) { /* non-critical */ }
+
+			} catch(e) {
+				restoreModal();
+				storeShowErrorModal("Install failed", "Error installing package:\n" + e.message);
+			} finally {
+				_isImporting = false;
+				if (onComplete) onComplete();
+			}
 		}
 
 		function storeDownloadFile(https, url, destPath, callback) {
