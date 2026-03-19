@@ -8377,7 +8377,7 @@
 							'<input type="radio" name="pkg-default-help" class="pkg-default-help-radio" data-chm="' + baseName.replace(/"/g, '&quot;') + '"' + (isDefaultHelp ? ' checked' : '') + '>' +
 							'<span>Default</span></label>';
 					}
-					var icon = isDll ? 'fa-cog' : (isChm ? 'fa-question-circle' : (ext === '.hsl' || ext === '.hs_' || ext === '.hsi' ? 'fa-code' : (ext === '.smt' ? 'fa-microchip' : 'fa-file')));
+					var icon = isDll ? 'fa-cog' : (isChm ? 'fa-question-circle' : (ext === '.hsl' || ext === '.hs_' || ext === '.hsi' || ext === '.sub' ? 'fa-code' : (ext === '.smt' ? 'fa-microchip' : 'fa-file')));
 					var label = ext ? ext.replace('.', '').toUpperCase() : 'FILE';
 					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '" draggable="true">' +
 						'<i class="fas ' + icon + ' ft-icon-file"></i>' +
@@ -8450,7 +8450,7 @@
 				if (!pkg_demoLibNameFolderDeleted) $list.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
 			} else {
 				var extIcons = {
-					'.hsl': 'fa-code', '.hs_': 'fa-code', '.hsi': 'fa-code',
+					'.hsl': 'fa-code', '.hs_': 'fa-code', '.hsi': 'fa-code', '.sub': 'fa-code',
 					'.stp': 'fa-play', '.med': 'fa-play', '.wfl': 'fa-project-diagram',
 					'.csv': 'fa-table', '.txt': 'fa-file-alt'
 				};
@@ -10587,7 +10587,7 @@
 			var allIncludes = [];
 			(libFiles || []).forEach(function(fname) {
 				var ext = path.extname(fname).toLowerCase();
-				if (ext !== '.hsl' && ext !== '.hs_' && ext !== '.hsi') return;
+				if (ext !== '.hsl' && ext !== '.hs_' && ext !== '.hsi' && ext !== '.sub') return;
 				var fullPath = path.join(libBasePath, fname);
 				try {
 					var text = fs.readFileSync(fullPath, 'utf8');
@@ -10800,7 +10800,7 @@
 			var allIncludes = [];
 			(libFiles || []).forEach(function(fname) {
 				var ext = path.extname(fname).toLowerCase();
-				if (ext !== '.hsl' && ext !== '.hs_' && ext !== '.hsi') return;
+				if (ext !== '.hsl' && ext !== '.hs_' && ext !== '.hsi' && ext !== '.sub') return;
 				var entry = zipObj.getEntry('lib/' + fname);
 				if (!entry) return;
 				try {
@@ -12818,7 +12818,7 @@
 			var sysDiscFiles = sLib.discovered_files || [];
 			var sysHslFiles = sysDiscFiles.filter(function(f) {
 				var ext = path.extname(f).toLowerCase();
-				return ext === '.hsl' || ext === '.hs_';
+				return ext === '.hsl' || ext === '.hs_' || ext === '.sub';
 			}).map(function(f) { return f.replace(/^Library[\\\/]/i, ''); });
 			var sysDeps = extractRequiredDependencies(sysHslFiles, sysLibDir);
 			var sysDepStatus = checkDependencyStatus(sysDeps);
@@ -17794,7 +17794,7 @@
 							'<input type="checkbox" class="pkg-com-checkbox" data-dll="' + baseName.replace(/"/g, '&quot;') + '"' + (isChecked ? ' checked' : '') + '>' +
 							'<span>COM</span></label>';
 					}
-					var icon = isDll ? 'fa-cog' : (ext === '.chm' ? 'fa-question-circle' : (ext === '.hsl' || ext === '.hs_' || ext === '.hsi' ? 'fa-code' : (ext === '.smt' ? 'fa-microchip' : 'fa-file')));
+					var icon = isDll ? 'fa-cog' : (ext === '.chm' ? 'fa-question-circle' : (ext === '.hsl' || ext === '.hs_' || ext === '.hsi' || ext === '.sub' ? 'fa-code' : (ext === '.smt' ? 'fa-microchip' : 'fa-file')));
 					var label = ext ? ext.replace('.', '').toUpperCase() : 'FILE';
 					return '<div class="ft-row ft-file-row" data-path="' + escapedPath + '" draggable="true">' +
 						'<i class="fas ' + icon + ' ft-icon-file"></i>' +
@@ -17824,7 +17824,7 @@
 				if (!ulib_demoLibNameFolderDeleted) $list.find('.ft-root-folder > .ft-branch > .ft-node > .ft-folder-row').addClass('ft-libname-node');
 			} else {
 				var extIcons = {
-					'.hsl': 'fa-code', '.hs_': 'fa-code', '.hsi': 'fa-code',
+					'.hsl': 'fa-code', '.hs_': 'fa-code', '.hsi': 'fa-code', '.sub': 'fa-code',
 					'.stp': 'fa-play', '.med': 'fa-play', '.wfl': 'fa-project-diagram',
 					'.csv': 'fa-table', '.txt': 'fa-file-alt'
 				};
