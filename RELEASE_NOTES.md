@@ -1,13 +1,12 @@
-# Changelog
+Critical: missing libName variable
 
-<!--
-  Edit this file with the release notes for the next version BEFORE
-  triggering the "Build and Release" workflow.
+The var libName = $("#pkg-library-name").val().trim() || "Unknown" declaration in pkgCreatePackageFile was accidentally deleted when the deviceCompat block was inserted, replacing it instead of being added alongside it. Every package created via GUI would have undefined as its library name.
 
-  Use standard Markdown: headings, bullet lists, code fences, etc.
-  Everything between the "Changelog" heading and the end of the file
-  will appear as the GitHub Release body.
+Incomplete: device_compatibility feature
 
-  After a successful release, this file is automatically reset to this
-  template so it is ready for the next release cycle.
--->
+The feature was half-wired — UI checkboxes and HTML placeholder sections existed, but:
+
+deviceCompat was computed but never added to the manifest object
+No code to load checkboxes when editing/re-packing a package (3 load paths)
+No code to reset checkboxes on form reset
+No JS to populate the display sections in lib-detail, import-preview, or store-detail views
