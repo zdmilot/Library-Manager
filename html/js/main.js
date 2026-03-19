@@ -6909,6 +6909,8 @@
 				pkg_comRegisterDlls.push(newDlls[0]);
 			}
 			pkgUpdateLibFileList();
+			pkg_iconDismissedAuto = false;
+			pkgAutoDetectBmpImage();
 			$(this).val('');
 
 			// Warn if .med (method) files were added to the Library Files section
@@ -6984,6 +6986,8 @@
 						pkg_comRegisterDlls.push(newDlls[0]);
 					}
 					pkgUpdateLibFileList();
+					pkg_iconDismissedAuto = false;
+					pkgAutoDetectBmpImage();
 
 					// Warn if .med (method) files were found in the folder
 					if (medFiles.length > 0) {
@@ -8391,8 +8395,6 @@
 			}
 			$("#pkg-lib-count").text(pkg_libraryFiles.length + " file" + (pkg_libraryFiles.length !== 1 ? "s" : ""));
 			pkgDetectLibraryName();
-			pkg_iconDismissedAuto = false;
-			pkgAutoDetectBmpImage();
 		}
 
 		// ---- COM register checkbox handler ----
