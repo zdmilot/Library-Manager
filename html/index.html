@@ -26,12 +26,12 @@
 	     the splash animation so style recalc doesn't block the main thread) -->
 	<link rel="preload" href="css/bootstrap.min.css" as="style" integrity="sha384-iyVHgWdgbOYA1Qxlw7jRhcp52l0uPEs4zrd0MRrcr1fDCFRPyz0k1VrxB1urC55B" crossorigin="anonymous">
 	<link rel="preload" href="css/all.min.css" as="style" integrity="sha384-MB1nN9Z2v7uIJTIcZDzf6U4b1w42+akUMIAwqL0ZfLFN4s2ZMzashYVGnB3WVYnV" crossorigin="anonymous">
-	<link rel="preload" href="css/main.css" as="style" integrity="sha384-25nFptV72vOB6+074VTfozOOOmlkfslV5/S16hT8Klm17jHGifF31UzSeAc/+l2A" crossorigin="anonymous">
+	<link rel="preload" href="css/main.css" as="style" integrity="sha384-MhElFklJK3cVj9NWE2sFdw6diPXArwDVM8jhDmwoZ0aTqZRv6Lf/3/0QfR02exmv" crossorigin="anonymous">
 	<link rel="preload" href="css/bs4-compat.css" as="style" integrity="sha384-SZO6T7DFdtw5uEvdTdii83QfW3QeuCQv/f9qWdzJz1PKvudJU2wdJJtdmUb57z/o" crossorigin="anonymous">
 	<noscript>
 		<link href="css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iyVHgWdgbOYA1Qxlw7jRhcp52l0uPEs4zrd0MRrcr1fDCFRPyz0k1VrxB1urC55B" crossorigin="anonymous">
 		<link href="css/all.min.css" rel="stylesheet" integrity="sha384-MB1nN9Z2v7uIJTIcZDzf6U4b1w42+akUMIAwqL0ZfLFN4s2ZMzashYVGnB3WVYnV" crossorigin="anonymous">
-		<link href="css/main.css" rel="stylesheet" integrity="sha384-25nFptV72vOB6+074VTfozOOOmlkfslV5/S16hT8Klm17jHGifF31UzSeAc/+l2A" crossorigin="anonymous">
+		<link href="css/main.css" rel="stylesheet" integrity="sha384-MhElFklJK3cVj9NWE2sFdw6diPXArwDVM8jhDmwoZ0aTqZRv6Lf/3/0QfR02exmv" crossorigin="anonymous">
 		<link href="css/bs4-compat.css" rel="stylesheet" integrity="sha384-SZO6T7DFdtw5uEvdTdii83QfW3QeuCQv/f9qWdzJz1PKvudJU2wdJJtdmUb57z/o" crossorigin="anonymous">
 	</noscript>
 
@@ -198,6 +198,16 @@
 	</div>
 
 	<div class="container-fluid p-0">
+		<!-- Full-window drag-drop overlay -->
+		<div id="drag-drop-overlay" class="drag-drop-overlay d-none">
+			<div class="drag-drop-overlay-inner">
+				<div class="drag-drop-overlay-content">
+					<i class="fas fa-file-import fa-4x drag-drop-overlay-icon"></i>
+					<h4 class="drag-drop-overlay-title mt-3">Drop to Import</h4>
+					<p class="drag-drop-overlay-subtitle">Release to import library packages, archives, or VENUS packages</p>
+				</div>
+			</div>
+		</div>
 		<div class="methods-page no-gutters">
 			<div class="row header2 no-gutters">
 				<div class="col-md-12">
@@ -3873,14 +3883,14 @@
 		var cssFiles = [
 			{ href: 'css/bootstrap.min.css', integrity: 'sha384-iyVHgWdgbOYA1Qxlw7jRhcp52l0uPEs4zrd0MRrcr1fDCFRPyz0k1VrxB1urC55B' },
 			{ href: 'css/all.min.css',       integrity: 'sha384-MB1nN9Z2v7uIJTIcZDzf6U4b1w42+akUMIAwqL0ZfLFN4s2ZMzashYVGnB3WVYnV' },
-			{ href: 'css/main.css',          integrity: 'sha384-25nFptV72vOB6+074VTfozOOOmlkfslV5/S16hT8Klm17jHGifF31UzSeAc/+l2A' },
+			{ href: 'css/main.css',          integrity: 'sha384-MhElFklJK3cVj9NWE2sFdw6diPXArwDVM8jhDmwoZ0aTqZRv6Lf/3/0QfR02exmv' },
 			{ href: 'css/bs4-compat.css',    integrity: 'sha384-SZO6T7DFdtw5uEvdTdii83QfW3QeuCQv/f9qWdzJz1PKvudJU2wdJJtdmUb57z/o' }
 		];
 		var scripts = [
 			{ src: 'js/jquery-2.1.3.min.js',       integrity: 'sha384-dcRjNfDZXzv8C2sE54SSQl7ad+14QPo0iqeye7mv29YaHQN978BwuDyaPD4/Lwbo' },
 			{ src: 'js/jquery-ui.min.js',           integrity: 'sha384-cMbOs3LjRI/EFjDex0/JyNtNLhWZyKEKb959iX7VMKqs4yyM++OHEUbgzenzhyZ7' },
 			{ src: 'js/bootstrap.bundle.min.js',    integrity: 'sha384-HZYy7/e2t5ulY6HtYcKY7AWRuIBuyk3YMY+jfKGECq5pbYjpOnD+SSNz14RIH6F7' },
-			{ src: 'js/main.js',                    integrity: 'sha384-bsCQL1RjtxmeEcMoxFKnukyE01QBxz6lUXhfdR8ta2xkm8Alw+LK3gJWv7ml2yGF' }
+			{ src: 'js/main.js',                    integrity: 'sha384-fdnncS2qPjWtvIMzcxcE2bOgTy2YgMAsurHdJB7AGTuN4FaDAk6gu5UtaJ4DesPD' }
 		];
 
 		function activateCSS() {

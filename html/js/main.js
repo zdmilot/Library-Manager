@@ -9206,9 +9206,48 @@
 			state.update();
 		}
 
-		// Prevent default browser file drop behavior on the whole document
+		// ---- Full-window drag-drop overlay for importing packages ----
+		var _dragDropCounter = 0;
+		$(document).on("dragenter", function(e) {
+			e.preventDefault();
+			// Only show overlay if files are being dragged (not text/elements)
+			var dt = e.originalEvent.dataTransfer;
+			if (!dt || !dt.types || (dt.types.indexOf ? dt.types.indexOf('Files') === -1 : !dt.types.contains('Files'))) return;
+			_dragDropCounter++;
+			if (_dragDropCounter === 1) {
+				$("#drag-drop-overlay").removeClass("d-none");
+			}
+		});
+		$(document).on("dragleave", function(e) {
+			e.preventDefault();
+			_dragDropCounter--;
+			if (_dragDropCounter <= 0) {
+				_dragDropCounter = 0;
+				$("#drag-drop-overlay").addClass("d-none");
+			}
+		});
 		$(document).on("dragover", function(e) { e.preventDefault(); });
-		$(document).on("drop", function(e) { e.preventDefault(); });
+		$(document).on("drop", function(e) {
+			e.preventDefault();
+			_dragDropCounter = 0;
+			$("#drag-drop-overlay").addClass("d-none");
+			var files = e.originalEvent.dataTransfer ? e.originalEvent.dataTransfer.files : null;
+			if (!files || files.length === 0) return;
+			// Collect file paths and filter to supported extensions
+			var filePaths = [];
+			var supportedExts = ['.hxlibpkg', '.hxlibarch', '.pkg', '.hampackage'];
+			for (var i = 0; i < files.length; i++) {
+				var ext = path.extname(files[i].path).toLowerCase();
+				if (supportedExts.indexOf(ext) !== -1) {
+					filePaths.push(files[i].path);
+				}
+			}
+			if (filePaths.length === 0) {
+				showAppAlert('Unsupported File Type', 'Only library packages (.hxlibpkg), archives (.hxlibarch), and Hamilton VENUS packages (.pkg, .hamPackage) can be imported.', { iconClass: 'fa-exclamation-triangle', iconStyle: 'app-alert-icon-warning' });
+				return;
+			}
+			_unifiedImportRoute(filePaths);
+		});
 
 		// ---- Reset form ----
 		// Track whether restricted OEM author was already authorized for this session

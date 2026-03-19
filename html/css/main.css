@@ -5807,6 +5807,55 @@ body.dark-mode .update-download-progress {
 	font-size: 0.8rem;
 }
 
+/* Full-window drag-drop overlay */
+.drag-drop-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	z-index: 10000;
+	background: rgba(0, 46, 72, 0.85);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: all;
+	transition: opacity 0.2s ease;
+	opacity: 1;
+}
+.drag-drop-overlay.d-none {
+	opacity: 0;
+	pointer-events: none;
+}
+.drag-drop-overlay-inner {
+	border: 3px dashed rgba(255, 255, 255, 0.5);
+	border-radius: 24px;
+	padding: 64px 80px;
+	text-align: center;
+	pointer-events: none;
+	animation: dragDropPulse 1.5s ease-in-out infinite;
+}
+.drag-drop-overlay-icon {
+	color: rgba(255, 255, 255, 0.8);
+}
+.drag-drop-overlay-title {
+	color: #fff;
+	font-weight: 600;
+	letter-spacing: 0.5px;
+}
+.drag-drop-overlay-subtitle {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 0.9rem;
+	margin-bottom: 0;
+}
+@keyframes dragDropPulse {
+	0%, 100% { border-color: rgba(255, 255, 255, 0.3); }
+	50% { border-color: rgba(255, 255, 255, 0.7); }
+}
+body.dark-mode .drag-drop-overlay {
+	background: rgba(0, 0, 0, 0.85);
+}
+
 /* Drop zone */
 .hampkg-drop-zone,
 .unified-import-drop-zone {
