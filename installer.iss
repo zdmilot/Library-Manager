@@ -1,10 +1,10 @@
 ; ============================================================================
 ; Inno Setup Script for Library Manager
-; Version: 3.1.15
+; Version: 3.1.16
 ; ============================================================================
 
 #define MyAppName "Library Manager"
-#define MyAppVersion "3.1.15"
+#define MyAppVersion "3.1.16"
 #define MyAppPublisher "Zachary Milot"
 #define MyAppURL "https://github.com/zdmilot/Library-Manager"
 #define MyAppExeName "Library Manager.exe"
