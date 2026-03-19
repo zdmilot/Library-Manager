@@ -7662,6 +7662,11 @@
 				if (latest.github_url) $("#pkg-github-url").val(latest.github_url);
 				if (latest.tags && latest.tags.length > 0) $("#pkg-tags").val(latest.tags.join(", "));
 				if (latest.category) $("#pkg-category").val(latest.category);
+				if (latest.device_compatibility) {
+					$("#pkg-compat-nimbus").prop("checked", latest.device_compatibility.indexOf("Nimbus") !== -1);
+					$("#pkg-compat-star").prop("checked", latest.device_compatibility.indexOf("STAR Line") !== -1);
+					$("#pkg-compat-vantage").prop("checked", latest.device_compatibility.indexOf("Vantage") !== -1);
+				}
 				// Always default to Library root; any custom subdirectory will appear
 				// as a folder in the file tree so the user can keep or remove it.
 				pkg_installSubdir = '';
@@ -7782,6 +7787,11 @@
 			if (lib.github_url) $("#pkg-github-url").val(lib.github_url);
 			if (lib.tags && lib.tags.length > 0) $("#pkg-tags").val(lib.tags.join(", "));
 			if (lib.category) $("#pkg-category").val(lib.category);
+			if (lib.device_compatibility) {
+				$("#pkg-compat-nimbus").prop("checked", lib.device_compatibility.indexOf("Nimbus") !== -1);
+				$("#pkg-compat-star").prop("checked", lib.device_compatibility.indexOf("STAR Line") !== -1);
+				$("#pkg-compat-vantage").prop("checked", lib.device_compatibility.indexOf("Vantage") !== -1);
+			}
 			if (lib.release_notes) $("#pkg-release-notes").val(lib.release_notes);
 			// Always default to Library root; any custom subdirectory will appear
 			// as a folder in the file tree so the user can keep or remove it.
@@ -7995,6 +8005,11 @@
 			if (manifest.github_url) $("#pkg-github-url").val(manifest.github_url);
 			if (manifest.tags && manifest.tags.length > 0) $("#pkg-tags").val(manifest.tags.join(", "));
 			if (manifest.category) $("#pkg-category").val(manifest.category);
+			if (manifest.device_compatibility) {
+				$("#pkg-compat-nimbus").prop("checked", manifest.device_compatibility.indexOf("Nimbus") !== -1);
+				$("#pkg-compat-star").prop("checked", manifest.device_compatibility.indexOf("STAR Line") !== -1);
+				$("#pkg-compat-vantage").prop("checked", manifest.device_compatibility.indexOf("Vantage") !== -1);
+			}
 			if (manifest.release_notes) $("#pkg-release-notes").val(manifest.release_notes);
 			// Always default to Library root; any custom subdirectory will appear
 			// as a folder in the file tree so the user can keep or remove it.
@@ -9304,6 +9319,9 @@
 			$("#pkg-release-notes").val('');
 			$("#pkg-tags").val('');
 			$("#pkg-category").val('General Utility');
+			$("#pkg-compat-nimbus").prop("checked", false);
+			$("#pkg-compat-star").prop("checked", false);
+			$("#pkg-compat-vantage").prop("checked", false);
 			$("#pkg-library-name").val('').prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
 			$("#pkg-toggle-name-edit").html('<i class="fas fa-pencil-alt"></i>').attr("title", "Override auto-detected name");
 			$("#pkg-name-warning").addClass("d-none");
@@ -9831,12 +9849,14 @@
 				}
 				$("#pkg-tags").val(tags.join(", "));
 
-					// Device compatibility
-					var deviceCompat = [];
-					if ($("#pkg-compat-nimbus").is(":checked")) deviceCompat.push("Nimbus");
-					if ($("#pkg-compat-star").is(":checked")) deviceCompat.push("STAR Line");
-					if ($("#pkg-compat-vantage").is(":checked")) deviceCompat.push("Vantage");
+				// Device compatibility
+				var deviceCompat = [];
+				if ($("#pkg-compat-nimbus").is(":checked")) deviceCompat.push("Nimbus");
+				if ($("#pkg-compat-star").is(":checked")) deviceCompat.push("STAR Line");
+				if ($("#pkg-compat-vantage").is(":checked")) deviceCompat.push("Vantage");
 
+				// Use library name from the detected field
+				var libName = $("#pkg-library-name").val().trim() || "Unknown";
 
 				pkgProgressUpdate(10, 'Detecting icon\u2026');
 				await new Promise(function(r) { setTimeout(r, 60); });
@@ -9951,6 +9971,7 @@
 					description: description,
 					tags: tags,
 					category: $("#pkg-category").val() || 'General Utility',
+					device_compatibility: deviceCompat,
 					created_date: new Date().toISOString(),
 					library_image: libImageFilename,
 					library_image_base64: libImageBase64,
@@ -12175,6 +12196,19 @@
 				$("#libDetailModal .lib-detail-tags-section").removeClass("d-none");
 			} else {
 				$("#libDetailModal .lib-detail-tags-section").addClass("d-none");
+			}
+
+			// Device Compatibility
+			var devCompat = lib.device_compatibility || [];
+			if (devCompat.length > 0) {
+				var dcHtml = '';
+				for (var dci = 0; dci < devCompat.length; dci++) {
+					dcHtml += '<span class="badge badge-light mr-1 mb-1" style="font-size:0.8rem;">' + escapeHtml(devCompat[dci]) + '</span>';
+				}
+				$("#libDetailModal .lib-detail-device-compat").html(dcHtml);
+				$("#libDetailModal .lib-detail-device-compat-section").removeClass("d-none");
+			} else {
+				$("#libDetailModal .lib-detail-device-compat-section").addClass("d-none");
 			}
 
 			// Package info (app_version, format_version, windows_version, venus_version)
@@ -16269,6 +16303,19 @@
 					$modal.find(".imp-preview-tags-section").removeClass("d-none");
 				} else {
 					$modal.find(".imp-preview-tags-section").addClass("d-none");
+				}
+
+				// Device Compatibility
+				var impDevCompat = manifest.device_compatibility || [];
+				var $dcContainer = $modal.find(".imp-preview-device-compat");
+				$dcContainer.empty();
+				if (impDevCompat.length > 0) {
+					impDevCompat.forEach(function(d) {
+						$dcContainer.append('<span class="badge badge-light mr-1" style="font-size:0.8rem;">' + escapeHtml(d) + '</span>');
+					});
+					$modal.find(".imp-preview-device-compat-section").removeClass("d-none");
+				} else {
+					$modal.find(".imp-preview-device-compat-section").addClass("d-none");
 				}
 
 
@@ -21036,6 +21083,19 @@
 				$m.find(".store-detail-tags-section").removeClass("d-none");
 			} else {
 				$m.find(".store-detail-tags-section").addClass("d-none");
+			}
+
+			// Device Compatibility
+			var storeDevCompat = ver.device_compatibility || [];
+			var $storeDcContainer = $m.find(".store-detail-device-compat");
+			$storeDcContainer.empty();
+			if (storeDevCompat.length > 0) {
+				for (var dci = 0; dci < storeDevCompat.length; dci++) {
+					$storeDcContainer.append('<span class="badge badge-light mr-1 mb-1" style="font-size:0.8rem;">' + escapeHtml(storeDevCompat[dci]) + '</span>');
+				}
+				$m.find(".store-detail-device-compat-section").removeClass("d-none");
+			} else {
+				$m.find(".store-detail-device-compat-section").addClass("d-none");
 			}
 
 			// Determine install paths
