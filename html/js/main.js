@@ -6909,8 +6909,6 @@
 				pkg_comRegisterDlls.push(newDlls[0]);
 			}
 			pkgUpdateLibFileList();
-			pkg_iconDismissedAuto = false;
-			pkgAutoDetectBmpImage();
 			$(this).val('');
 
 			// Warn if .med (method) files were added to the Library Files section
@@ -6986,8 +6984,6 @@
 						pkg_comRegisterDlls.push(newDlls[0]);
 					}
 					pkgUpdateLibFileList();
-					pkg_iconDismissedAuto = false;
-					pkgAutoDetectBmpImage();
 
 					// Warn if .med (method) files were found in the folder
 					if (medFiles.length > 0) {

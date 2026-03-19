@@ -488,6 +488,14 @@ begin
       '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
       Log('Warning: icacls.exe failed to set permissions on local directory (exit code ' + IntToStr(ResultCode) + ')');
 
+    // Grant the Users group Modify permissions on the COM directory.
+    // The COM DLL can be overwritten by the in-app delta updater without
+    // re-registration (same path, same GUIDs), so users need write access.
+    if not Exec('icacls.exe',
+      '"' + ExpandConstant('{app}\com') + '" /grant *S-1-5-32-545:(OI)(CI)M /T /Q',
+      '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      Log('Warning: icacls.exe failed to set permissions on com directory (exit code ' + IntToStr(ResultCode) + ')');
+
     // Grant the Users group Modify permissions on the Hamilton\Bin directory.
     // OEM packages may install bin_files here, and non-admin users need write access.
     // This is best-effort — the folder may not exist on machines without VENUS installed.
@@ -893,6 +901,7 @@ Name: "{app}\icons"; Permissions: users-modify
 Name: "{app}\tools"; Permissions: users-modify
 Name: "{app}\tools\hxlibpkg-extract"; Permissions: users-modify
 Name: "{app}\tools\innounp"; Permissions: users-modify
+Name: "{app}\com"; Permissions: users-modify
 
 [Registry]
 ; --------------------------------------------------------------------------
