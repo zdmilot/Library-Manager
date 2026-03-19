@@ -10177,6 +10177,48 @@
 		//**************************************************************************************
 
 		/**
+		 * Resolves a bin_com_register_dlls filename to its actual path on disk.
+		 * bin_com_register_dlls entries are bare filenames (e.g. "HamiltonVantageCAPCOM.dll")
+		 * but bin_files entries include subfolder paths (e.g. "Hamilton Vantage CAP/HamiltonVantageCAPCOM.dll").
+		 * This function searches the bin_files list for a matching entry and returns the
+		 * full filesystem path, falling back to a recursive directory search.
+		 */
+		function resolveBinComDllPath(dllName, binBasePath, binFiles) {
+			if (!dllName || !binBasePath) return null;
+			// 1. Try direct join (no subfolder)
+			var direct = path.join(binBasePath, dllName);
+			if (fs.existsSync(direct)) return direct;
+			// 2. Search bin_files for an entry ending with the DLL name
+			if (binFiles && binFiles.length > 0) {
+				var dllNameLower = dllName.toLowerCase();
+				for (var i = 0; i < binFiles.length; i++) {
+					var bf = binFiles[i].replace(/\//g, path.sep);
+					if (bf.toLowerCase() === dllNameLower || bf.toLowerCase().endsWith(path.sep + dllNameLower)) {
+						var candidate = path.join(binBasePath, bf);
+						if (fs.existsSync(candidate)) return candidate;
+					}
+				}
+			}
+			// 3. Recursive search in binBasePath (limited depth)
+			try {
+				var found = null;
+				var searchDir = function(dir, depth) {
+					if (depth > 3 || found) return;
+					var entries = fs.readdirSync(dir);
+					for (var j = 0; j < entries.length; j++) {
+						if (found) return;
+						var full = path.join(dir, entries[j]);
+						if (entries[j].toLowerCase() === dllName.toLowerCase()) { found = full; return; }
+						try { if (fs.statSync(full).isDirectory()) searchDir(full, depth + 1); } catch(_) {}
+					}
+				};
+				searchDir(binBasePath, 0);
+				if (found) return found;
+			} catch(_) {}
+			return null;
+		}
+
+		/**
 		 * Finds RegAsm.exe from the .NET Framework directory.
 		 * Returns the full path to RegAsm.exe or null if not found.
 		 */
@@ -10497,9 +10539,16 @@
 
 					// Step 2: Read and rewrite the .reg file for per-user (HKCU) registration
 					var regContent = '';
-					try { regContent = fs.readFileSync(tmpReg, 'utf16le'); } catch(_) {
-						regContent = fs.readFileSync(tmpReg, 'utf8');
+					// RegAsm on older .NET may produce REGEDIT4 (ASCII) format; try UTF-16 LE first
+					var regFileBytes = fs.readFileSync(tmpReg);
+					var isUtf16 = (regFileBytes[0] === 0xFF && regFileBytes[1] === 0xFE);
+					if (isUtf16) {
+						regContent = regFileBytes.slice(2).toString('utf16le');
+					} else {
+						regContent = regFileBytes.toString('utf8');
 					}
+					// Normalize REGEDIT4 header to the modern format (required for UTF-16 LE import)
+					regContent = regContent.replace(/^REGEDIT4\s*/i, 'Windows Registry Editor Version 5.00\r\n\r\n');
 
 					if (register) {
 						// Rewrite HKEY_CLASSES_ROOT → HKEY_CURRENT_USER\SOFTWARE\Classes
@@ -10594,8 +10643,11 @@
 
 			// Parse the .reg file for CLSID entries
 			var regContent = '';
-			try { regContent = fs.readFileSync(tmpReg, 'utf16le'); } catch(_) {
-				try { regContent = fs.readFileSync(tmpReg, 'utf8'); } catch(_2) { console.warn(_2); }
+			var regFileBytes = null;
+			try { regFileBytes = fs.readFileSync(tmpReg); } catch(_) { console.warn(_); }
+			if (regFileBytes) {
+				var regIsUtf16 = (regFileBytes[0] === 0xFF && regFileBytes[1] === 0xFE);
+				regContent = regIsUtf16 ? regFileBytes.slice(2).toString('utf16le') : regFileBytes.toString('utf8');
 			}
 			try { fs.unlinkSync(tmpReg); } catch(_) { console.warn(_); }
 
@@ -14430,10 +14482,12 @@
 						// Collect bin COM DLL paths for batch registration
 						var archBinComDlls = manifest.bin_com_register_dlls || [];
 						if (archBinComDlls.length > 0) {
-							var binDllPaths = archBinComDlls.map(function(d) { return path.join(binBasePathArch, d); })
-								.filter(function(p) { return fs.existsSync(p); });
-							for (var bcdi = 0; bcdi < binDllPaths.length; bcdi++) {
-								allComDllPaths.push({dllPath: binDllPaths[bcdi], libName: libName, savedId: saved._id});
+							var archBinFiles = manifest.bin_files || [];
+							for (var bcdi = 0; bcdi < archBinComDlls.length; bcdi++) {
+								var resolvedArchBinDll = resolveBinComDllPath(archBinComDlls[bcdi], binBasePathArch, archBinFiles);
+								if (resolvedArchBinDll) {
+									allComDllPaths.push({dllPath: resolvedArchBinDll, libName: libName, savedId: saved._id});
+								}
 							}
 						}
 
@@ -14977,33 +15031,27 @@
 						}
 					}
 					for (var bci = 0; bci < binComDlls.length; bci++) {
-						var binDllFullPath = path.join(binPath, binComDlls[bci]);
-						if (fs.existsSync(binDllFullPath)) {
-							comDllPaths.push(binDllFullPath);
+						var resolvedBinDll = resolveBinComDllPath(binComDlls[bci], binPath, lib.bin_files || []);
+						if (resolvedBinDll) {
+							comDllPaths.push(resolvedBinDll);
 						}
 					}
 
 					if (comDllPaths.length > 0) {
 						var deregResult = await comRegisterMultipleDllsNoUac(comDllPaths, false);
 						if (!deregResult.allSuccess) {
-							var failedDlls = [];
 							var errDetails = "";
 							for (var ri = 0; ri < deregResult.results.length; ri++) {
 								if (!deregResult.results[ri].success) {
-									failedDlls.push(path.basename(deregResult.results[ri].dll));
-									errDetails += "\n- " + path.basename(deregResult.results[ri].dll) + ": " + deregResult.results[ri].error;
+									errDetails += "\n\u2022 " + path.basename(deregResult.results[ri].dll) + ": " + deregResult.results[ri].error;
 								}
 							}
-
-							var continueMsg = "COM deregistration failed for:" + errDetails + "\n\n" +
-								"Do you still want to proceed with deleting the library?\n" +
-								"(The COM objects may remain registered on the system)";
-
-							if (!(await showAppConfirm('Continue Deletion?', continueMsg, {
-								iconClass: 'fa-exclamation-triangle',
-								confirmLabel: 'Delete Anyway',
-								confirmIcon: 'fa-trash-alt'
-							}))) return;
+							await showAppAlert('COM Deregistration Failed',
+								"The COM DLL(s) could not be unregistered. The library has not been deleted.\n\n" +
+								"Failed:" + errDetails + "\n\n" +
+								"Resolve the error above and try again, or contact your administrator.",
+								{ iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
+							return;
 						}
 					}
 				}
@@ -15335,7 +15383,13 @@
 		function _batchShowComModal(dllCount, pkgNames) {
 			return new Promise(function(resolve) {
 				var $m = $("#batchComModal");
-				$m.find(".batch-com-message").text("This batch contains " + dllCount + " COM DLL" + (dllCount !== 1 ? "s" : "") + " across " + pkgNames.length + " package" + (pkgNames.length !== 1 ? "s" : "") + " that require registration:");
+				$m.find(".batch-com-message").html(
+					'<strong style="color:#e67e22;"><i class="fas fa-exclamation-triangle mr-1"></i>Important:</strong> ' +
+					(dllCount === 1 ? 'This package contains a' : 'These packages contain ' + dllCount) +
+					' COM component' + (dllCount !== 1 ? 's' : '') +
+					' that must be registered on your system for the librar' +
+					(pkgNames.length !== 1 ? 'ies' : 'y') + ' to function correctly.'
+				);
 				var listHtml = '';
 				pkgNames.forEach(function(n) { listHtml += '<div class="batch-com-item"><i class="fas fa-cube"></i>' + escapeHtml(n) + '</div>'; });
 				$m.find(".batch-com-list").html(listHtml);
@@ -15567,9 +15621,12 @@
 				var batchComPkgNames = [];
 				for (var ci = 0; ci < pkgInfos.length; ci++) {
 					if (batchSkipIndices[ci]) continue;
-					if (pkgInfos[ci].comDlls.length > 0) {
-						batchComDllCount += pkgInfos[ci].comDlls.length;
-						batchComPkgNames.push(pkgInfos[ci].libName);
+					var ciComCount = pkgInfos[ci].comDlls.length + (pkgInfos[ci].manifest.bin_com_register_dlls || []).length;
+					if (ciComCount > 0) {
+						batchComDllCount += ciComCount;
+						if (batchComPkgNames.indexOf(pkgInfos[ci].libName) === -1) {
+							batchComPkgNames.push(pkgInfos[ci].libName);
+						}
 					}
 				}
 
@@ -15749,7 +15806,8 @@
 							demo_method_files: demoFiles,
 							help_files: helpFiles,
 							com_register_dlls: comDlls,
-							com_warning: comDlls.length > 0,
+							bin_com_register_dlls: manifest.bin_com_register_dlls || [],
+							com_warning: (comDlls.length > 0 || (manifest.bin_com_register_dlls || []).length > 0),
 							com_registered: false,
 							lib_install_path: libDestDir,
 							demo_install_path: demoDestDir,
@@ -15784,6 +15842,16 @@
 								.filter(function(p) { return fs.existsSync(p); });
 							for (var cdi = 0; cdi < dllPaths.length; cdi++) {
 								allComDllPaths.push({dllPath: dllPaths[cdi], libName: libName, savedId: saved._id});
+							}
+						}
+						// Collect bin COM DLL paths for batch registration
+						var batchBinComDlls = manifest.bin_com_register_dlls || [];
+						if (batchBinComDlls.length > 0) {
+							for (var bcdi = 0; bcdi < batchBinComDlls.length; bcdi++) {
+								var resolvedBinDll = resolveBinComDllPath(batchBinComDlls[bcdi], binBasePathBatch, binFiles);
+								if (resolvedBinDll) {
+									allComDllPaths.push({dllPath: resolvedBinDll, libName: libName, savedId: saved._id});
+								}
 							}
 						}
 
@@ -17637,8 +17705,11 @@
 			}
 			var libPath = lib.lib_install_path || "";
 			var binPath = lib.bin_install_path || "";
-			var dllPaths = comDlls.map(function(dll) { return path.join(libPath, dll); })
-				.concat(binComDlls.map(function(dll) { return path.join(binPath, dll); }));
+			var dllPaths = comDlls.map(function(dll) { return path.join(libPath, dll); });
+			for (var bri = 0; bri < binComDlls.length; bri++) {
+				var resolvedRepairDll = resolveBinComDllPath(binComDlls[bri], binPath, lib.bin_files || []);
+				dllPaths.push(resolvedRepairDll || path.join(binPath, binComDlls[bri]));
+			}
 			// Verify the DLL files exist before attempting registration
 			var missing = dllPaths.filter(function(p) { return !fs.existsSync(p); });
 			if (missing.length > 0) {
