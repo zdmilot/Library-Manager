@@ -2017,6 +2017,8 @@ body.dark-mode .batch-dup-header {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	flex: 1;
+	min-width: 0;
 }
 .ft-row.ft-file-row.selected {
 	background: rgba(var(--medium-rgb), 0.16);
@@ -2030,7 +2032,7 @@ body.dark-mode .batch-dup-header {
 	flex-shrink: 0;
 }
 .ft-badge {
-	margin-left: auto;
+	margin-left: 8px;
 	padding: 0 6px;
 	font-size: 0.67rem;
 	border-radius: 3px;
@@ -2096,7 +2098,7 @@ li.ft-node.ft-dragging-folder {
 
 /* COM checkbox inline in file row */
 .ft-com-label {
-	margin-left: auto;
+	margin-left: 8px;
 	font-size: 0.72rem;
 	color: #999;
 	cursor: pointer;
@@ -2105,6 +2107,7 @@ li.ft-node.ft-dragging-folder {
 	gap: 3px;
 	flex-shrink: 0;
 	padding: 0 2px;
+	min-width: 46px;
 }
 .ft-com-label input[type="checkbox"] {
 	margin: 0;
@@ -2113,7 +2116,7 @@ li.ft-node.ft-dragging-folder {
 
 /* Default Help radio inline in file row */
 .ft-default-help-label {
-	margin-left: auto;
+	margin-left: 8px;
 	font-size: 0.72rem;
 	color: #999;
 	cursor: pointer;
@@ -2122,6 +2125,7 @@ li.ft-node.ft-dragging-folder {
 	gap: 3px;
 	flex-shrink: 0;
 	padding: 0 2px;
+	min-width: 58px;
 }
 .ft-default-help-label input[type="radio"] {
 	margin: 0;
