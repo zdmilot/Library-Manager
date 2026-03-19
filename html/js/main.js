@@ -2493,14 +2493,14 @@
 								updater.restartApp(win);
 							}, 1000);
 						} else {
-							// Lightweight patch failed - fall back to full installer
-							console.warn('Lightweight patch failed: ' + result.error + '. Falling back to full installer.');
-							_applyFullInstallerUpdate(releaseInfo, downloadDir);
+							// Lightweight patch failed - fall back to delta update (no UAC)
+							console.warn('Lightweight patch failed: ' + result.error + '. Falling back to delta update.');
+							_applyDeltaInstallerUpdate(releaseInfo, downloadDir);
 						}
 					});
 				} else {
-					// ---- Full installer update path (UAC required) ----
-					return _applyFullInstallerUpdate(releaseInfo, downloadDir);
+					// ---- Delta update path (no UAC, no installer) ----
+					return _applyDeltaInstallerUpdate(releaseInfo, downloadDir);
 				}
 			}).catch(function (err) {
 				console.error('Update failed:', err);
@@ -2524,8 +2524,12 @@
 			$('#update-splash').addClass('d-none');
 		});
 
-		/** Full installer update path - downloads .exe and applies delta in-app (no UAC) */
-		function _applyFullInstallerUpdate(releaseInfo, downloadDir) {
+		/**
+		 * Delta update path - downloads .exe installer, unpacks it with innounp,
+		 * computes file deltas, and applies only changed files.
+		 * No UAC, no Inno Setup UI, no installer execution.
+		 */
+		function _applyDeltaInstallerUpdate(releaseInfo, downloadDir) {
 			if (!releaseInfo.installerAsset) {
 				$('#update-splash').addClass('d-none');
 				_updateInProgress = false;
@@ -2538,112 +2542,71 @@
 			var asset = releaseInfo.installerAsset;
 			var installPath = _isInstalledApp.installPath || path.dirname(process.execPath);
 
-			// Attempt in-app delta update (no UAC, no Inno Setup UI)
-			if (updater.resolveInnounpPath(installPath)) {
-				$('#update-splash-status').text('Downloading update...');
-				$('#update-splash-bar').css('width', '0%');
-				$('#update-splash-pct').text('0%');
-
-				_updateAbortHandle = {};
-				return updater.applyDeltaUpdate({
-					downloadUrl: asset.downloadUrl,
-					assetName: asset.name,
-					installPath: installPath,
-					abortHandle: _updateAbortHandle,
-					downloadProgressCb: function (downloaded, total) {
-						var pct = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : 0;
-						$('#update-splash-bar').css('width', pct + '%');
-						$('#update-splash-pct').text(pct + '%');
-					},
-					statusCb: function (message) {
-						$('#update-splash-status').text(message);
-					},
-					deltaProgressCb: function (copied, total, filename) {
-						$('#update-splash-cancel').prop('disabled', true);
-						var pct = Math.min(100, Math.round((copied / total) * 100));
-						$('#update-splash-bar').css('width', pct + '%');
-						// Show the file being copied (just the last path segment)
-						var shortName = filename.split('/').pop();
-						$('#update-splash-pct').text(copied + ' / ' + total + ' files  \u2014  ' + shortName);
-					}
-				}).then(function (result) {
-					if (result.filesCopied === 0) {
-						$('#update-splash-status').text('Already up to date!');
-						$('#update-splash-pct').text('No files needed updating.');
-						setTimeout(function () {
-							$('#update-splash').addClass('d-none');
-							_updateInProgress = false;
-						}, 2000);
-						return;
-					}
-
-					var summary = result.filesCopied + ' file' + (result.filesCopied === 1 ? '' : 's') + ' updated.';
-					if (result.errors.length > 0) {
-						summary += ' (' + result.errors.length + ' error' + (result.errors.length === 1 ? '' : 's') + ')';
-						console.warn('Delta update errors:', result.errors);
-					}
-
-					$('#update-splash-status').text('Update complete! Restarting...');
-					$('#update-splash-bar').css('width', '100%');
-					$('#update-splash-pct').text(summary);
-
-					// Ensure restart happens
-					setTimeout(function () {
-						updater.restartApp(win);
-					}, 1500);
-				}).catch(function (err) {
-					console.warn('Delta update failed, falling back to full installer:', err.message);
-					// Fall back to traditional Inno Setup launch
-					_applyFullInstallerFallback(releaseInfo, downloadDir);
-				});
+			if (!updater.resolveInnounpPath(installPath)) {
+				$('#update-splash').addClass('d-none');
+				_updateInProgress = false;
+				$('.update-error-msg').text('Update tools (innounp.exe) not found. Please reinstall the application to restore update capability.');
+				_showUpdateState('error');
+				$('#updateModal').modal('show');
+				return Promise.resolve();
 			}
 
-			// No innounp available — fall back to traditional Inno Setup launch
-			return _applyFullInstallerFallback(releaseInfo, downloadDir);
-		}
-
-		/** Fallback: launch the Inno Setup .exe with /SILENT (requires UAC) */
-		function _applyFullInstallerFallback(releaseInfo, downloadDir) {
-			var asset = releaseInfo.installerAsset;
-			var destPath = path.join(downloadDir, asset.name);
-
-			$('#update-splash-status').text('Downloading update...');
+			$('#update-splash-status').text('Downloading update (no admin required)...');
 			$('#update-splash-bar').css('width', '0%');
 			$('#update-splash-pct').text('0%');
 
-			// Download the installer with real progress
 			_updateAbortHandle = {};
-			return updater.downloadUpdate(asset.downloadUrl, destPath, function (downloaded, total) {
-				var pct = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : 0;
-				$('#update-splash-bar').css('width', pct + '%');
-				$('#update-splash-pct').text(pct + '%');
-			}).then(function (installerPath) {
-				$('#update-splash-cancel').prop('disabled', true);
-				// Download complete - launch installer
-				$('#update-splash-status').text('Launching installer...');
-				$('#update-splash-bar').css('width', '100%');
-				$('#update-splash-pct').text('The application will close and restart automatically.');
-
-				// Brief delay to show the status message, then launch
-				setTimeout(function () {
-					try {
-						updater.launchInstaller(installerPath, win);
-					} catch (err) {
-						console.error('Failed to launch installer:', err);
+			return updater.applyDeltaUpdate({
+				downloadUrl: asset.downloadUrl,
+				assetName: asset.name,
+				installPath: installPath,
+				abortHandle: _updateAbortHandle,
+				downloadProgressCb: function (downloaded, total) {
+					var pct = total > 0 ? Math.min(100, Math.round((downloaded / total) * 100)) : 0;
+					$('#update-splash-bar').css('width', pct + '%');
+					$('#update-splash-pct').text(pct + '%');
+				},
+				statusCb: function (message) {
+					$('#update-splash-status').text(message);
+				},
+				deltaProgressCb: function (copied, total, filename) {
+					$('#update-splash-cancel').prop('disabled', true);
+					var pct = Math.min(100, Math.round((copied / total) * 100));
+					$('#update-splash-bar').css('width', pct + '%');
+					var shortName = filename.split('/').pop();
+					$('#update-splash-pct').text(copied + ' / ' + total + ' files  \u2014  ' + shortName);
+				}
+			}).then(function (result) {
+				if (result.filesCopied === 0) {
+					$('#update-splash-status').text('Already up to date!');
+					$('#update-splash-pct').text('No files needed updating.');
+					setTimeout(function () {
 						$('#update-splash').addClass('d-none');
 						_updateInProgress = false;
-						$('.update-error-msg').text('Failed to launch the installer: ' + err.message);
-						_showUpdateState('error');
-						$('#updateModal').modal('show');
-					}
-				}, 1000);
+					}, 2000);
+					return;
+				}
+
+				var summary = result.filesCopied + ' file' + (result.filesCopied === 1 ? '' : 's') + ' updated.';
+				if (result.errors.length > 0) {
+					summary += ' (' + result.errors.length + ' error' + (result.errors.length === 1 ? '' : 's') + ')';
+					console.warn('Delta update errors:', result.errors);
+				}
+
+				$('#update-splash-status').text('Update complete! Restarting...');
+				$('#update-splash-bar').css('width', '100%');
+				$('#update-splash-pct').text(summary);
+
+				setTimeout(function () {
+					updater.restartApp(win);
+				}, 1500);
 			}).catch(function (err) {
-				console.error('Update download failed:', err);
+				console.error('Delta update failed:', err.message);
 				$('#update-splash').addClass('d-none');
 				_updateInProgress = false;
 				_updateAbortHandle = null;
 				if (err.message === 'Download cancelled by user') return;
-				$('.update-error-msg').text('Download failed: ' + err.message + '. Please check your internet connection and try again.');
+				$('.update-error-msg').text('Update failed: ' + err.message + '. Please check your internet connection and try again.');
 				_showUpdateState('error');
 				$('#updateModal').modal('show');
 			});
@@ -7644,8 +7607,9 @@
 				if (latest.description) $("#pkg-description").val(latest.description);
 				if (latest.github_url) $("#pkg-github-url").val(latest.github_url);
 				if (latest.tags && latest.tags.length > 0) $("#pkg-tags").val(latest.tags.join(", "));
-				if (latest.custom_install_subdir) pkg_installSubdir = latest.custom_install_subdir;
-				else pkg_installSubdir = '';
+				// Always default to Library root; any custom subdirectory will appear
+				// as a folder in the file tree so the user can keep or remove it.
+				pkg_installSubdir = '';
 
 				// Populate version with current version (user should change it)
 				if (latest.version) {
@@ -7655,6 +7619,7 @@
 				// Load library files from install path
 				var libBasePath = latest.lib_install_path || "";
 				var libFiles = latest.library_files || [];
+				var repackSubdir = ((latest.custom_install_subdir || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, ''));
 				if (libBasePath && libFiles.length > 0) {
 					pkg_libraryFiles = [];
 					pkg_fileRelPaths = {};
@@ -7663,7 +7628,9 @@
 						var fullPath = path.join(libBasePath, libFiles[i]);
 						if (fs.existsSync(fullPath)) {
 							pkg_libraryFiles.push(fullPath);
-							pkg_fileRelPaths[fullPath] = libFiles[i];
+							pkg_fileRelPaths[fullPath] = repackSubdir
+								? repackSubdir + '/' + libFiles[i].replace(/\\/g, '/')
+								: libFiles[i];
 						}
 					}
 					// Restore COM DLL selections
@@ -7760,9 +7727,9 @@
 			if (lib.github_url) $("#pkg-github-url").val(lib.github_url);
 			if (lib.tags && lib.tags.length > 0) $("#pkg-tags").val(lib.tags.join(", "));
 			if (lib.release_notes) $("#pkg-release-notes").val(lib.release_notes);
-			if (lib.custom_install_subdir) pkg_installSubdir = lib.custom_install_subdir;
-			else if (lib.install_to_library_root) pkg_installSubdir = '';
-			else pkg_installSubdir = '';
+			// Always default to Library root; any custom subdirectory will appear
+			// as a folder in the file tree so the user can keep or remove it.
+			pkg_installSubdir = '';
 
 			// If library has a restricted author, mark OEM authorized so warnings are bypassed
 			if (isRestrictedAuthor(lib.author) || isRestrictedAuthor(lib.organization)) {
@@ -7772,6 +7739,7 @@
 			// ---- Library files ----
 			var libBasePath = lib.lib_install_path || "";
 			var libFiles = lib.library_files || [];
+			var repackSubdir = ((lib.custom_install_subdir || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, ''));
 			if (libBasePath && libFiles.length > 0) {
 				pkg_libraryFiles = [];
 				pkg_fileRelPaths = {};
@@ -7780,7 +7748,9 @@
 					var fullPath = path.join(libBasePath, libFiles[i]);
 					if (fs.existsSync(fullPath)) {
 						pkg_libraryFiles.push(fullPath);
-						pkg_fileRelPaths[fullPath] = libFiles[i];
+						pkg_fileRelPaths[fullPath] = repackSubdir
+							? repackSubdir + '/' + libFiles[i].replace(/\\/g, '/')
+							: libFiles[i];
 					}
 				}
 				// Restore COM DLL selections
@@ -7969,9 +7939,9 @@
 			if (manifest.github_url) $("#pkg-github-url").val(manifest.github_url);
 			if (manifest.tags && manifest.tags.length > 0) $("#pkg-tags").val(manifest.tags.join(", "));
 			if (manifest.release_notes) $("#pkg-release-notes").val(manifest.release_notes);
-			if (manifest.custom_install_subdir) pkg_installSubdir = manifest.custom_install_subdir;
-			else if (manifest.install_to_library_root) pkg_installSubdir = '';
-			else pkg_installSubdir = '';
+			// Always default to Library root; any custom subdirectory will appear
+			// as a folder in the file tree so the user can keep or remove it.
+			pkg_installSubdir = '';
 
 			// If package has a restricted author, mark OEM authorized so warnings are bypassed
 			if (isRestrictedAuthor(manifest.author) || isRestrictedAuthor(manifest.organization)) {
@@ -7980,6 +7950,7 @@
 
 			// ---- Library files ----
 			var libFiles = manifest.library_files || [];
+			var repackSubdir = ((manifest.custom_install_subdir || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, ''));
 			if (libFiles.length > 0) {
 				pkg_libraryFiles = [];
 				pkg_fileRelPaths = {};
@@ -7988,7 +7959,9 @@
 					var fullPath = path.join(tmpLibDir, libFiles[i]);
 					if (fs.existsSync(fullPath)) {
 						pkg_libraryFiles.push(fullPath);
-						pkg_fileRelPaths[fullPath] = libFiles[i];
+						pkg_fileRelPaths[fullPath] = repackSubdir
+							? repackSubdir + '/' + libFiles[i].replace(/\\/g, '/')
+							: libFiles[i];
 					}
 				}
 				pkg_comRegisterDlls = (manifest.com_register_dlls || []).slice();
@@ -10340,8 +10313,11 @@
 		 * for COM registration. A package qualifies when:
 		 *  1. The author or organization is a restricted (known) OEM, AND
 		 *  2. The package is code-signed with a valid Ed25519 publisher certificate
-		 *     whose holder matches the OEM identity, AND
-		 *  3. OEM developer mode is active (isOemKeywordsEnabled()).
+		 *     whose holder matches the OEM identity.
+		 *
+		 * NOTE: OEM developer mode (isOemKeywordsEnabled) is NOT required for COM
+		 * registration bypass. Verified OEM packages always register COM objects
+		 * without UAC using per-user HKCU registration.
 		 *
 		 * @param {Object} manifest - Package manifest
 		 * @param {Object|null} sigResult - Signature verification result
@@ -10358,16 +10334,24 @@
 			// Certificate must match the OEM identity
 			var certMatch = shared.validateOemCertificateMatch(author, org, sigResult.publisher_cert);
 			if (!certMatch.valid) return false;
-			// OEM developer mode must be active
-			if (!isOemKeywordsEnabled()) return false;
 			return true;
 		}
 
 		/**
-		 * Registers or unregisters multiple DLLs WITHOUT UAC elevation.
-		 * Runs RegAsm directly in the current process context. This is safe
-		 * when the user is operating in verified OEM mode with developer tools
-		 * enabled and the package has been certificate-validated.
+		 * Registers or unregisters multiple DLLs WITHOUT UAC elevation using
+		 * per-user COM registration (HKCU\SOFTWARE\Classes).
+		 *
+		 * Strategy:
+		 *  1. Use RegAsm /regfile to generate a .reg file with the CLSIDs
+		 *  2. Rewrite HKEY_CLASSES_ROOT → HKEY_CURRENT_USER\SOFTWARE\Classes
+		 *     so entries land in the per-user registry hive (no admin needed)
+		 *  3. Import via `reg.exe import` (user-level, no elevation)
+		 *
+		 * For unregistration, the generated .reg entries are converted to
+		 * deletion commands (prefixed with [-]).
+		 *
+		 * 32-bit VENUS resolves HKCR by merging HKLM + HKCU, so per-user
+		 * registrations are visible to COM clients exactly like machine-wide ones.
 		 *
 		 * @param {Array<string>} dllPaths - Full paths to DLL files
 		 * @param {boolean} register - true to register, false to unregister
@@ -10401,23 +10385,69 @@
 
 			for (var di = 0; di < dllPaths.length; di++) {
 				var dllPath = dllPaths[di];
-				var regasmArgs = register
-					? '"' + dllPath + '" /codebase'
-					: '/u "' + dllPath + '" /codebase';
+				var stamp = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+				var tmpReg = path.join(os.tmpdir(), 'lm_regasm_hkcu_' + stamp + '.reg');
+				var tmpRegImport = path.join(os.tmpdir(), 'lm_regasm_hkcu_import_' + stamp + '.reg');
 
 				try {
-					var output = execSync('"' + regasm + '" ' + regasmArgs, {
+					// Step 1: Generate .reg file using RegAsm /regfile (no actual registration)
+					execSync('"' + regasm + '" "' + dllPath + '" /codebase /regfile:"' + tmpReg + '"', {
 						timeout: 30000,
 						windowsHide: true,
-						stdio: ['pipe', 'pipe', 'pipe']
+						stdio: 'pipe'
 					});
+
+					// Step 2: Read and rewrite the .reg file for per-user (HKCU) registration
+					var regContent = '';
+					try { regContent = fs.readFileSync(tmpReg, 'utf16le'); } catch(_) {
+						regContent = fs.readFileSync(tmpReg, 'utf8');
+					}
+
+					if (register) {
+						// Rewrite HKEY_CLASSES_ROOT → HKEY_CURRENT_USER\SOFTWARE\Classes
+						var hkcuContent = regContent.replace(/HKEY_CLASSES_ROOT/g, 'HKEY_CURRENT_USER\\SOFTWARE\\Classes');
+						// Write as UTF-16 LE with BOM for reg.exe compatibility
+						var bom = Buffer.from([0xFF, 0xFE]);
+						var body = Buffer.from(hkcuContent, 'utf16le');
+						fs.writeFileSync(tmpRegImport, Buffer.concat([bom, body]));
+					} else {
+						// For unregistration: convert [HKEY_...] entries to deletion [-HKEY_...]
+						// and remove all value lines — only keep key deletion markers
+						var lines = regContent.split(/\r?\n/);
+						var deleteLines = ['Windows Registry Editor Version 5.00', ''];
+						for (var li = 0; li < lines.length; li++) {
+							var line = lines[li].trim();
+							// Match registry key headers like [HKEY_CLASSES_ROOT\CLSID\{...}]
+							var keyMatch = line.match(/^\[HKEY_CLASSES_ROOT\\(.+)\]$/);
+							if (keyMatch) {
+								deleteLines.push('[-HKEY_CURRENT_USER\\SOFTWARE\\Classes\\' + keyMatch[1] + ']');
+							}
+						}
+						var delContent = deleteLines.join('\r\n') + '\r\n';
+						var bom = Buffer.from([0xFF, 0xFE]);
+						var body = Buffer.from(delContent, 'utf16le');
+						fs.writeFileSync(tmpRegImport, Buffer.concat([bom, body]));
+					}
+
+					// Step 3: Import the rewritten .reg file (no elevation needed for HKCU)
+					execSync('reg.exe import "' + tmpRegImport + '"', {
+						timeout: 15000,
+						windowsHide: true,
+						stdio: 'pipe'
+					});
+
 					results.push({dll: dllPath, success: true, error: null});
 				} catch(e) {
 					var errDetail = "COM " + (register ? "registration" : "deregistration") + " failed for " + path.basename(dllPath) + ".";
 					if (e.stderr) errDetail += "\n" + e.stderr.toString().trim();
 					else if (e.stdout) errDetail += "\n" + e.stdout.toString().trim();
+					else if (e.message) errDetail += "\n" + e.message;
 					results.push({dll: dllPath, success: false, error: errDetail});
 					allSuccess = false;
+				} finally {
+					// Clean up temp files
+					try { fs.unlinkSync(tmpReg); } catch(_) {}
+					try { fs.unlinkSync(tmpRegImport); } catch(_) {}
 				}
 			}
 
@@ -10426,12 +10456,12 @@
 
 		/**
 		 * Check whether a single .NET assembly DLL is registered as a COM object
-		 * in the 32-bit (WOW6432Node) registry hive.
+		 * in the 32-bit registry hive. Checks both machine-wide (HKLM via HKCR)
+		 * and per-user (HKCU\SOFTWARE\Classes) registrations.
 		 *
 		 * Strategy: run the 32-bit RegAsm.exe /regfile:<temp> <dll> to generate a
 		 * .reg file listing the CLSIDs the DLL *would* register, then check whether
-		 * those CLSIDs already exist under HKCR\WOW6432Node\CLSID (or the 32-bit
-		 * view).  Falls back to a simpler heuristic if RegAsm /regfile fails.
+		 * those CLSIDs already exist in any of the supported registry locations.
 		 *
 		 * @param {string} dllPath - Full path to the .NET DLL
 		 * @returns {{ registered: boolean, details: string }}
@@ -10482,32 +10512,36 @@
 				return { registered: false, details: 'No COM CLSIDs found in DLL' };
 			}
 
-			// Check each CLSID in the 32-bit registry hive
+			// Check each CLSID in multiple registry locations:
+			// 1. HKCR\WOW6432Node\CLSID (machine-wide, 32-bit view on 64-bit Windows)
+			// 2. HKCR\CLSID (machine-wide, 32-bit OS or SysWOW64 redirect)
+			// 3. HKCU\SOFTWARE\Classes\CLSID (per-user registration)
+			// 4. HKCU\SOFTWARE\Classes\WOW6432Node\CLSID (per-user 32-bit on 64-bit)
 			var registeredCount = 0;
 			var missingClsids = [];
 			for (var i = 0; i < clsids.length; i++) {
-				// Check WOW6432Node (32-bit view on 64-bit Windows)
-				var regKey = 'HKCR\\WOW6432Node\\CLSID\\' + clsids[i];
-				try {
-					execSync('reg query "' + regKey + '" /ve', {
-						timeout: 5000,
-						windowsHide: true,
-						stdio: 'pipe'
-					});
-					registeredCount++;
-				} catch (_) {
-					// Also try direct HKCR\CLSID (32-bit OS or SysWOW64 redirect)
-					var regKey2 = 'HKCR\\CLSID\\' + clsids[i];
+				var found = false;
+				var keysToCheck = [
+					'HKCR\\WOW6432Node\\CLSID\\' + clsids[i],
+					'HKCR\\CLSID\\' + clsids[i],
+					'HKCU\\SOFTWARE\\Classes\\CLSID\\' + clsids[i],
+					'HKCU\\SOFTWARE\\Classes\\WOW6432Node\\CLSID\\' + clsids[i]
+				];
+				for (var ki = 0; ki < keysToCheck.length; ki++) {
 					try {
-						execSync('reg query "' + regKey2 + '" /ve', {
+						execSync('reg query "' + keysToCheck[ki] + '" /ve', {
 							timeout: 5000,
 							windowsHide: true,
 							stdio: 'pipe'
 						});
-						registeredCount++;
-					} catch (_2) {
-						missingClsids.push(clsids[i]);
-					}
+						found = true;
+						break;
+					} catch (_) { /* not found in this location, try next */ }
+				}
+				if (found) {
+					registeredCount++;
+				} else {
+					missingClsids.push(clsids[i]);
 				}
 			}
 
