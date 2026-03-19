@@ -770,7 +770,8 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         installer_original_name: installerOriginalName     || null,
         installer_size:      installerSize                 || 0,
         install_to_library_root: !!manifest.install_to_library_root,
-        custom_install_subdir: manifest.custom_install_subdir || ''
+        custom_install_subdir: manifest.custom_install_subdir || '',
+        device_compatibility: manifest.device_compatibility || []
     };
 
     // Preserve any unknown manifest fields for forward compatibility
@@ -1381,6 +1382,7 @@ function cmdExportLib(args) {
         com_register_dlls:   (lib.com_register_dlls   || []).slice(),
         labware_files:       labwareFiles.slice(),
         bin_files:           binFiles.slice(),
+        device_compatibility: (lib.device_compatibility || []).slice(),
         app_version:         shared.getAppVersion(),
         windows_version:     lib.windows_version      || shared.getWindowsVersion(),
         venus_version:       lib.venus_version         || getVENUSVersion() || '',
@@ -1569,6 +1571,7 @@ function cmdExportArchive(args) {
                 com_register_dlls:   comDlls.slice(),
                 labware_files:       labwareFiles.slice(),
                 bin_files:           binFiles.slice(),
+                device_compatibility: (lib.device_compatibility || []).slice(),
                 app_version:         shared.getAppVersion(),
                 windows_version:     lib.windows_version      || shared.getWindowsVersion(),
                 venus_version:       lib.venus_version         || getVENUSVersion() || '',
@@ -2078,6 +2081,7 @@ function cmdCreatePackage(args) {
         description:         spec.description          || '',
         github_url:          spec.github_url           || '',
         tags:                spec.tags                 || [],
+        device_compatibility: spec.device_compatibility || [],
         created_date:        new Date().toISOString(),
         library_image:       libraryImageFilename,
         library_image_base64:libraryImageBase64,
@@ -2128,7 +2132,8 @@ function cmdCreatePackage(args) {
 
     // Preserve any extra user-supplied spec fields for forward compatibility
     const knownSpecKeys = ['library_name','author','organization','version','venus_compatibility',
-        'description','release_notes','release_notes_pdf','github_url','tags','library_image','library_files','demo_method_files',
+        'description','release_notes','release_notes_pdf','github_url','tags','category','device_compatibility',
+        'library_image','library_files','demo_method_files',
         'help_files','default_help_file','com_register_dlls','install_to_library_root','custom_install_subdir',
         'labware_files','bin_files','installer_executable','installer_info',
         '$schema','_comment_paths','_comment','_comment_installer'];

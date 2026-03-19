@@ -11685,6 +11685,18 @@
 				applySystemLibrarySort(visibleSysLibs, _currentSortOrder);
 			}
 
+			// For the OEM group, re-sort by subcategory (stable: preserves within-category sort)
+			var _oemSubcatMode = (groupId === 'gOEM');
+			var _oemCategoryOrder = ['Device Driver', 'General Utility'];
+			if (_oemSubcatMode && libs && libs.length > 1) {
+				var _oemCatIdx = function(lib) {
+					var idx = _oemCategoryOrder.indexOf(lib.category || 'General Utility');
+					return idx === -1 ? _oemCategoryOrder.length : idx;
+				};
+				libs.sort(function(a, b) { return _oemCatIdx(a) - _oemCatIdx(b); });
+			}
+			var _lastRenderedOemCategory = null;
+
 			if ((!libs || libs.length === 0) && !hasSystemCards) {
 				var emptyMsg;
 				if (recentMode) {
@@ -11706,6 +11718,22 @@
 			}
 
 			libs.forEach(function(lib) {
+				// OEM subcategory header
+				if (_oemSubcatMode) {
+					var _libCat = lib.category || 'General Utility';
+					if (_libCat !== _lastRenderedOemCategory) {
+						var _catIcon = _libCat === 'Device Driver' ? 'fa-microchip' : 'fa-toolbox';
+						if (_lastRenderedOemCategory !== null) {
+							$container.append('<div class="col-md-12 mt-3 mb-1"><hr style="border-color:#dee2e6;"></div>');
+						}
+						$container.append(
+							'<div class="col-md-12 mb-2">'+
+								'<span class="text-muted text-sm"><i class="fas ' + _catIcon + ' mr-1"></i>' + escapeHtml(_libCat) + '</span>'+
+							'</div>'
+						);
+						_lastRenderedOemCategory = _libCat;
+					}
+				}
 				var libName = escapeHtml(lib.library_name || "Unknown");
 				var version = escapeHtml(lib.version || "");
 				var author = escapeHtml(lib.author || "");

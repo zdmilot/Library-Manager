@@ -90,6 +90,21 @@
       "examples": ["General Utility", "Device Driver"]
     },
 
+    "device_compatibility": {
+      "type": "array",
+      "description": "List of Hamilton instruments this library is compatible with. Optional. Valid values: 'Nimbus', 'STAR Line', 'Vantage'.",
+      "items": {
+        "type": "string",
+        "enum": ["Nimbus", "STAR Line", "Vantage"]
+      },
+      "uniqueItems": true,
+      "examples": [
+        ["Nimbus"],
+        ["STAR Line", "Vantage"],
+        ["Nimbus", "STAR Line", "Vantage"]
+      ]
+    },
+
     "library_image": {
       "type": "string",
       "description": "Path to an image file used as the library icon (.png, .jpg, .bmp, .svg, .gif, .ico). Resolved relative to the spec file directory. If omitted, the packager looks for a .bmp whose basename matches library_name among library_files.",
