@@ -10441,9 +10441,16 @@
 
 					// Step 2: Read and rewrite the .reg file for per-user (HKCU) registration
 					var regContent = '';
-					try { regContent = fs.readFileSync(tmpReg, 'utf16le'); } catch(_) {
-						regContent = fs.readFileSync(tmpReg, 'utf8');
+					// RegAsm on older .NET may produce REGEDIT4 (ASCII) format; try UTF-16 LE first
+					var regFileBytes = fs.readFileSync(tmpReg);
+					var isUtf16 = (regFileBytes[0] === 0xFF && regFileBytes[1] === 0xFE);
+					if (isUtf16) {
+						regContent = regFileBytes.slice(2).toString('utf16le');
+					} else {
+						regContent = regFileBytes.toString('utf8');
 					}
+					// Normalize REGEDIT4 header to the modern format (required for UTF-16 LE import)
+					regContent = regContent.replace(/^REGEDIT4\s*/i, 'Windows Registry Editor Version 5.00\r\n\r\n');
 
 					if (register) {
 						// Rewrite HKEY_CLASSES_ROOT → HKEY_CURRENT_USER\SOFTWARE\Classes
@@ -10538,8 +10545,11 @@
 
 			// Parse the .reg file for CLSID entries
 			var regContent = '';
-			try { regContent = fs.readFileSync(tmpReg, 'utf16le'); } catch(_) {
-				try { regContent = fs.readFileSync(tmpReg, 'utf8'); } catch(_2) { console.warn(_2); }
+			var regFileBytes = null;
+			try { regFileBytes = fs.readFileSync(tmpReg); } catch(_) { console.warn(_); }
+			if (regFileBytes) {
+				var regIsUtf16 = (regFileBytes[0] === 0xFF && regFileBytes[1] === 0xFE);
+				regContent = regIsUtf16 ? regFileBytes.slice(2).toString('utf16le') : regFileBytes.toString('utf8');
 			}
 			try { fs.unlinkSync(tmpReg); } catch(_) { console.warn(_); }
 
