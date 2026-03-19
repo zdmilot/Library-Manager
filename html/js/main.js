@@ -15253,7 +15253,13 @@
 		function _batchShowComModal(dllCount, pkgNames) {
 			return new Promise(function(resolve) {
 				var $m = $("#batchComModal");
-				$m.find(".batch-com-message").text("This batch contains " + dllCount + " COM DLL" + (dllCount !== 1 ? "s" : "") + " across " + pkgNames.length + " package" + (pkgNames.length !== 1 ? "s" : "") + " that require registration:");
+				$m.find(".batch-com-message").html(
+					'<strong style="color:#e67e22;"><i class="fas fa-exclamation-triangle mr-1"></i>Important:</strong> ' +
+					(dllCount === 1 ? 'This package contains a' : 'These packages contain ' + dllCount) +
+					' COM component' + (dllCount !== 1 ? 's' : '') +
+					' that must be registered on your system for the librar' +
+					(pkgNames.length !== 1 ? 'ies' : 'y') + ' to function correctly.'
+				);
 				var listHtml = '';
 				pkgNames.forEach(function(n) { listHtml += '<div class="batch-com-item"><i class="fas fa-cube"></i>' + escapeHtml(n) + '</div>'; });
 				$m.find(".batch-com-list").html(listHtml);
