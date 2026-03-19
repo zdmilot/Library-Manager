@@ -6329,6 +6329,36 @@ body.dark-mode .store-card.store-card-has-update {
 }
 
 /* ── Detail overlay ──────────────────────────────────────────────── */
+
+/* ── Category group headers in store grid ────────────────────────── */
+.store-category-header {
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #6c757d;
+	padding: 6px 12px 4px 12px;
+	letter-spacing: 0.3px;
+	text-transform: uppercase;
+}
+body.dark-mode .store-category-header {
+	color: #8a9ca6;
+}
+.store-category-count {
+	font-size: 0.7rem;
+	font-weight: 400;
+	color: #adb5bd;
+	margin-left: 6px;
+}
+body.dark-mode .store-category-count {
+	color: #6c757d;
+}
+.store-category-divider {
+	border-color: #dee2e6;
+	margin: 0;
+}
+body.dark-mode .store-category-divider {
+	border-color: #2a3a4a;
+}
+
 .store-detail-icon {
 	border-radius: 6px;
 	background: rgba(var(--medium-rgb), 0.06);

@@ -7661,6 +7661,7 @@
 				if (latest.description) $("#pkg-description").val(latest.description);
 				if (latest.github_url) $("#pkg-github-url").val(latest.github_url);
 				if (latest.tags && latest.tags.length > 0) $("#pkg-tags").val(latest.tags.join(", "));
+				if (latest.category) $("#pkg-category").val(latest.category);
 				// Always default to Library root; any custom subdirectory will appear
 				// as a folder in the file tree so the user can keep or remove it.
 				pkg_installSubdir = '';
@@ -7780,6 +7781,7 @@
 			if (lib.description) $("#pkg-description").val(lib.description);
 			if (lib.github_url) $("#pkg-github-url").val(lib.github_url);
 			if (lib.tags && lib.tags.length > 0) $("#pkg-tags").val(lib.tags.join(", "));
+			if (lib.category) $("#pkg-category").val(lib.category);
 			if (lib.release_notes) $("#pkg-release-notes").val(lib.release_notes);
 			// Always default to Library root; any custom subdirectory will appear
 			// as a folder in the file tree so the user can keep or remove it.
@@ -7992,6 +7994,7 @@
 			if (manifest.description) $("#pkg-description").val(manifest.description);
 			if (manifest.github_url) $("#pkg-github-url").val(manifest.github_url);
 			if (manifest.tags && manifest.tags.length > 0) $("#pkg-tags").val(manifest.tags.join(", "));
+			if (manifest.category) $("#pkg-category").val(manifest.category);
 			if (manifest.release_notes) $("#pkg-release-notes").val(manifest.release_notes);
 			// Always default to Library root; any custom subdirectory will appear
 			// as a folder in the file tree so the user can keep or remove it.
@@ -9300,6 +9303,7 @@
 			$("#pkg-github-url").val('');
 			$("#pkg-release-notes").val('');
 			$("#pkg-tags").val('');
+			$("#pkg-category").val('General Utility');
 			$("#pkg-library-name").val('').prop("readonly", true).css({"background-color": "#e9ecef", "cursor": "default"});
 			$("#pkg-toggle-name-edit").html('<i class="fas fa-pencil-alt"></i>').attr("title", "Override auto-detected name");
 			$("#pkg-name-warning").addClass("d-none");
@@ -9942,6 +9946,7 @@
 					venus_compatibility: venusCompat,
 					description: description,
 					tags: tags,
+					category: $("#pkg-category").val() || 'General Utility',
 					created_date: new Date().toISOString(),
 					library_image: libImageFilename,
 					library_image_base64: libImageBase64,
@@ -20434,7 +20439,7 @@
 			if (_storeSearchTerm) {
 				items = items.filter(function (p) {
 					var haystack = (p.library_name + ' ' + p.author + ' ' + p.organization + ' ' +
-						p.description + ' ' + (p.tags || []).join(' ')).toLowerCase();
+						p.description + ' ' + (p.category || '') + ' ' + (p.tags || []).join(' ')).toLowerCase();
 					return haystack.indexOf(_storeSearchTerm) !== -1;
 				});
 			}
@@ -20458,10 +20463,57 @@
 				$(".store-empty").addClass("d-none");
 			}
 
-			
-
+			// Group items by category (order: Device Driver first, then General Utility, then uncategorized)
+			var categoryOrder = ['Device Driver', 'General Utility'];
+			var grouped = {};
 			for (var i = 0; i < items.length; i++) {
-				$grid.append(storeBuildCard(items[i]));
+				var cat = items[i].category || 'General Utility';
+				if (!grouped[cat]) grouped[cat] = [];
+				grouped[cat].push(items[i]);
+			}
+
+			// Build ordered list of categories that have items
+			var orderedCats = [];
+			for (var ci = 0; ci < categoryOrder.length; ci++) {
+				if (grouped[categoryOrder[ci]] && grouped[categoryOrder[ci]].length > 0) {
+					orderedCats.push(categoryOrder[ci]);
+				}
+			}
+			// Add any remaining categories not in the predefined order
+			for (var cat in grouped) {
+				if (grouped.hasOwnProperty(cat) && orderedCats.indexOf(cat) === -1) {
+					orderedCats.push(cat);
+				}
+			}
+
+			var categoryIcons = {
+				'Device Driver': 'fas fa-microchip',
+				'General Utility': 'fas fa-toolbox'
+			};
+
+			// Render grouped cards with category headers
+			for (var gi = 0; gi < orderedCats.length; gi++) {
+				var catName = orderedCats[gi];
+				var catItems = grouped[catName];
+				var icon = categoryIcons[catName] || 'fas fa-folder';
+
+				// Only show category headers when there are multiple categories
+				if (orderedCats.length > 1) {
+					if (gi > 0) {
+						$grid.append('<div class="col-md-12 mt-3"><hr class="store-category-divider"></div>');
+					}
+					$grid.append(
+						'<div class="col-md-12 store-category-header">' +
+							'<i class="' + icon + ' mr-1 me-1"></i>' +
+							escapeHtml(catName) +
+							'<span class="store-category-count">' + catItems.length + '</span>' +
+						'</div>'
+					);
+				}
+
+				for (var j = 0; j < catItems.length; j++) {
+					$grid.append(storeBuildCard(catItems[j]));
+				}
 			}
 
 			// Fetch and display star ratings on cards
@@ -20807,6 +20859,7 @@
 			$m.find(".store-detail-author").text(ver.author || "\u2014");
 			$m.find(".store-detail-org").text(ver.organization || "\u2014");
 			$m.find(".store-detail-venus").text(ver.venus_compatibility || "\u2014");
+			$m.find(".store-detail-category").text(ver.category || "General Utility");
 
 			var dateStr = '';
 			if (ver.created_date) {

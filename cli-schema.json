@@ -82,6 +82,14 @@
       ]
     },
 
+    "category": {
+      "type": "string",
+      "enum": ["General Utility", "Device Driver"],
+      "default": "General Utility",
+      "description": "Category for marketplace grouping. Used by the Library Store to group packages. Defaults to 'General Utility' if omitted.",
+      "examples": ["General Utility", "Device Driver"]
+    },
+
     "library_image": {
       "type": "string",
       "description": "Path to an image file used as the library icon (.png, .jpg, .bmp, .svg, .gif, .ico). Resolved relative to the spec file directory. If omitted, the packager looks for a .bmp whose basename matches library_name among library_files.",
