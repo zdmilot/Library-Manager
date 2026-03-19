@@ -1996,7 +1996,61 @@
 							console.log('Auto-update check error: ' + e);
 						}
 					}, 2000);
+
+					// Handle file-open from command line (file association double-click)
+					setTimeout(function () {
+						try {
+							if (typeof nw !== 'undefined' && nw.App && nw.App.argv && nw.App.argv.length > 0) {
+								var openFiles = nw.App.argv.filter(function(arg) {
+									if (!arg || arg.charAt(0) === '-') return false;
+									var ext = path.extname(arg).toLowerCase();
+									return ext === '.hxlibpkg' || ext === '.hxlibarch' || ext === '.hampackage' || ext === '.pkg';
+								});
+								if (openFiles.length > 0) {
+									_unifiedImportRoute(openFiles);
+								}
+							}
+						} catch (e) {
+							console.warn('File-open arg handling error: ' + e);
+						}
+					}, 500);
 				}, 150);
+			}
+
+			// Handle file-open while app is already running (second double-click)
+			try {
+				if (typeof nw !== 'undefined' && nw.App) {
+					nw.App.on('open', function(cmdLine) {
+						try {
+							// NW.js passes the full command line as a single string;
+							// extract quoted or unquoted path arguments
+							var args = [];
+							var re = /"([^"]+)"|(\S+)/g;
+							var m;
+							while ((m = re.exec(cmdLine)) !== null) {
+								args.push(m[1] || m[2]);
+							}
+							var openFiles = args.filter(function(arg) {
+								if (!arg || arg.charAt(0) === '-') return false;
+								var ext = path.extname(arg).toLowerCase();
+								return ext === '.hxlibpkg' || ext === '.hxlibarch' || ext === '.hampackage' || ext === '.pkg';
+							});
+							if (openFiles.length > 0) {
+								// Bring window to front
+								var w = nw.Window.get();
+								if (w) {
+									w.restore();
+									w.focus();
+								}
+								_unifiedImportRoute(openFiles);
+							}
+						} catch (e) {
+							console.warn('File-open event handling error: ' + e);
+						}
+					});
+				}
+			} catch (e) {
+				console.warn('Could not register open event: ' + e);
 			}
 
 			// If load already fired, run immediately; otherwise wait for it
