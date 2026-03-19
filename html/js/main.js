@@ -14914,24 +14914,18 @@
 					if (comDllPaths.length > 0) {
 						var deregResult = await comRegisterMultipleDllsNoUac(comDllPaths, false);
 						if (!deregResult.allSuccess) {
-							var failedDlls = [];
 							var errDetails = "";
 							for (var ri = 0; ri < deregResult.results.length; ri++) {
 								if (!deregResult.results[ri].success) {
-									failedDlls.push(path.basename(deregResult.results[ri].dll));
-									errDetails += "\n- " + path.basename(deregResult.results[ri].dll) + ": " + deregResult.results[ri].error;
+									errDetails += "\n\u2022 " + path.basename(deregResult.results[ri].dll) + ": " + deregResult.results[ri].error;
 								}
 							}
-
-							var continueMsg = "COM deregistration failed for:" + errDetails + "\n\n" +
-								"Do you still want to proceed with deleting the library?\n" +
-								"(The COM objects may remain registered on the system)";
-
-							if (!(await showAppConfirm('Continue Deletion?', continueMsg, {
-								iconClass: 'fa-exclamation-triangle',
-								confirmLabel: 'Delete Anyway',
-								confirmIcon: 'fa-trash-alt'
-							}))) return;
+							await showAppAlert('COM Deregistration Failed',
+								"The COM DLL(s) could not be unregistered. The library has not been deleted.\n\n" +
+								"Failed:" + errDetails + "\n\n" +
+								"Resolve the error above and try again, or contact your administrator.",
+								{ iconClass: 'fa-exclamation-circle', iconStyle: 'app-alert-icon-error' });
+							return;
 						}
 					}
 				}
