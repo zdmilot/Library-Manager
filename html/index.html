@@ -385,6 +385,26 @@
 											<small class="form-text text-muted">Used for grouping in the Library Store marketplace</small>
 										</div>
 									</div>
+									<div class="form-group row mb-0 mt-2">
+										<label class="col-sm-4 col-form-label col-form-label-sm">Device Compatibility</label>
+										<div class="col-sm-8">
+											<div class="d-flex flex-wrap" style="gap:12px; padding-top:4px;">
+												<div class="custom-control custom-checkbox">
+													<input type="checkbox" class="custom-control-input" id="pkg-compat-nimbus">
+													<label class="custom-control-label" for="pkg-compat-nimbus">Nimbus</label>
+												</div>
+												<div class="custom-control custom-checkbox">
+													<input type="checkbox" class="custom-control-input" id="pkg-compat-star">
+													<label class="custom-control-label" for="pkg-compat-star">STAR Line</label>
+												</div>
+												<div class="custom-control custom-checkbox">
+													<input type="checkbox" class="custom-control-input" id="pkg-compat-vantage">
+													<label class="custom-control-label" for="pkg-compat-vantage">Vantage</label>
+												</div>
+											</div>
+											<small class="form-text text-muted">Select Hamilton instruments this library supports (optional)</small>
+										</div>
+									</div>
 								</div>
 							</div>
 
@@ -1219,6 +1239,11 @@
 								<p class="lib-detail-installed-date text-muted"></p>
 							</div>
 						</div>
+					</div>
+					<!-- Device Compatibility -->
+					<div class="detail-section lib-detail-device-compat-section d-none">
+						<h6 class="detail-section-label">Device Compatibility</h6>
+						<div class="lib-detail-device-compat"></div>
 					</div>
 					<div class="row mb-2">
 						<div class="col-md-6">
@@ -2224,7 +2249,11 @@
 							</div>
 						</div>
 					</div>
-					<!-- Tags -->
+								<!-- Device Compatibility -->
+								<div class="detail-section imp-preview-device-compat-section d-none">
+									<h6 class="detail-section-label">Device Compatibility</h6>
+									<div class="imp-preview-device-compat"></div>
+								</div>
 					<div class="detail-section imp-preview-tags-section">
 						<h6 class="detail-section-label">Tags</h6>
 						<div class="imp-preview-tags"></div>
@@ -2897,6 +2926,11 @@
 								<p class="store-detail-date text-muted"></p>
 							</div>
 						</div>
+					</div>
+					<!-- Device Compatibility -->
+					<div class="detail-section store-detail-device-compat-section d-none">
+						<h6 class="detail-section-label">Device Compatibility</h6>
+						<div class="store-detail-device-compat"></div>
 					</div>
 					<!-- Tags -->
 					<div class="detail-section store-detail-tags-section">

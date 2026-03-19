@@ -9831,8 +9831,12 @@
 				}
 				$("#pkg-tags").val(tags.join(", "));
 
-				// Use library name from the detected field
-				var libName = $("#pkg-library-name").val().trim() || "Unknown";
+					// Device compatibility
+					var deviceCompat = [];
+					if ($("#pkg-compat-nimbus").is(":checked")) deviceCompat.push("Nimbus");
+					if ($("#pkg-compat-star").is(":checked")) deviceCompat.push("STAR Line");
+					if ($("#pkg-compat-vantage").is(":checked")) deviceCompat.push("Vantage");
+
 
 				pkgProgressUpdate(10, 'Detecting icon\u2026');
 				await new Promise(function(r) { setTimeout(r, 60); });
