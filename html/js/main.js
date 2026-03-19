@@ -12473,7 +12473,7 @@
 					}
 					if (existingComPaths.length > 0) {
 						try {
-							await comRegisterMultipleDlls(existingComPaths, false);
+							await comRegisterMultipleDllsNoUac(existingComPaths, false);
 						} catch(comErr) {
 							console.warn('COM deregistration during rollback failed (continuing): ' + comErr.message);
 						}
@@ -12576,7 +12576,7 @@
 						.filter(function(p) { return fs.existsSync(p); });
 					if (newComPaths.length > 0) {
 						try {
-							var regResult = await comRegisterMultipleDlls(newComPaths, true);
+							var regResult = await comRegisterMultipleDllsNoUac(newComPaths, true);
 							if (!regResult.allSuccess) {
 								comWarning = true;
 								console.warn('COM registration after rollback incomplete for ' + rLibName);
@@ -14036,11 +14036,9 @@
 
 				// ---- COM DLL pre-scan: detect all COM registrations needed upfront ----
 				// Scan every package in the archive for com_register_dlls and
-				// bin_com_register_dlls so we can prompt the user for admin rights
-				// ONCE and register ALL DLLs in a single elevated session.
+				// bin_com_register_dlls so we can inform the user about COM registration.
 				var archiveComDllCount = 0;
 				var archiveComPkgNames = [];
-				var archiveAllOemVerified = true; // assume all OEM until we find a non-OEM
 				for (var comScanIdx = 0; comScanIdx < pkgEntries.length; comScanIdx++) {
 					if (archSkipIndices[comScanIdx]) continue; // skip libraries the user chose not to replace
 					try {
@@ -14054,36 +14052,24 @@
 							if (comScanDlls.length > 0) {
 								archiveComDllCount += comScanDlls.length;
 								archiveComPkgNames.push(comScanM.library_name || pkgEntries[comScanIdx].entryName);
-								// Check OEM verification status for this package
-								var comScanSig = comScanZip.getEntry("signature.json");
-								var comScanSigResult = comScanSig ? verifyPackageSignature(comScanZip) : null;
-								if (!isVerifiedOemPackage(comScanM, comScanSigResult)) {
-									archiveAllOemVerified = false;
-								}
 							}
 						}
-					} catch (_) { /* scan failure is non-fatal */ archiveAllOemVerified = false; }
+					} catch (_) { /* scan failure is non-fatal */ }
 				}
 
-				if (archiveComDllCount > 0 && !archiveAllOemVerified) {
+				if (archiveComDllCount > 0) {
 					var comPromptMsg = "This archive contains " + archiveComDllCount + " COM DLL" + (archiveComDllCount !== 1 ? "s" : "") +
 						" across " + archiveComPkgNames.length + " package" + (archiveComPkgNames.length !== 1 ? "s" : "") +
-						" that require administrator rights to register:\n\n";
+						" that will be registered automatically:\n\n";
 					archiveComPkgNames.forEach(function(n) { comPromptMsg += "  \u2022 " + n + "\n"; });
-					comPromptMsg += "\nYou will be prompted for administrator rights once to register all COM objects.\n\nDo you want to continue?";
-					if (!(await showAppConfirm('COM Registration Required', comPromptMsg, {
-						iconClass: 'fa-shield-alt',
+					comPromptMsg += "\nDo you want to continue?";
+					if (!(await showAppConfirm('COM Registration', comPromptMsg, {
+						iconClass: 'fa-cog',
 						confirmLabel: 'Continue',
 						confirmIcon: 'fa-arrow-right'
 					}))) {
 						return;
 					}
-				} else if (archiveComDllCount > 0 && archiveAllOemVerified) {
-					// Verified OEM packages - inform user that COM registration will proceed without UAC
-					var comOemMsg = "This archive contains " + archiveComDllCount + " COM DLL" + (archiveComDllCount !== 1 ? "s" : "") +
-						" across " + archiveComPkgNames.length + " verified OEM package" + (archiveComPkgNames.length !== 1 ? "s" : "") +
-						" that will be registered automatically (no administrator prompt required).";
-					await showAppInfo('COM Registration', comOemMsg, 'fa-check-circle');
 				}
 
 				var results = { success: [], failed: [] };
@@ -14381,9 +14367,7 @@
 				if (allComDllPaths.length > 0) {
 					var allDllPathsFlat = allComDllPaths.map(function(c) { return c.dllPath; });
 					try {
-						var batchComResult = archiveAllOemVerified
-							? await comRegisterMultipleDllsNoUac(allDllPathsFlat, true)
-							: await comRegisterMultipleDlls(allDllPathsFlat, true);
+						var batchComResult = await comRegisterMultipleDllsNoUac(allDllPathsFlat, true);
 
 						// Build a lookup: dllPath -> success
 						var comResultMap = {};
@@ -14407,11 +14391,26 @@
 						Object.keys(processedLibs).forEach(function(pLibName) {
 							var pInfo = processedLibs[pLibName];
 							if (pInfo.allOk) {
-								db_installed_libs.installed_libs.update(
-									{"_id": pInfo.savedId},
-									{"com_warning": false, "com_registered": true},
-									{multi: false, upsert: false}
-								);
+								// Verify each DLL is actually registered
+								var libDlls = allComDllPaths.filter(function(c) { return c.libName === pLibName; });
+								var allVerified = true;
+								for (var avk = 0; avk < libDlls.length; avk++) {
+									var avStatus = checkCOMRegistrationStatus(libDlls[avk].dllPath);
+									if (!avStatus.registered) {
+										allVerified = false;
+										console.warn('[archive-import] COM verification failed for ' + path.basename(libDlls[avk].dllPath) + ': ' + avStatus.details);
+									}
+								}
+								if (allVerified) {
+									db_installed_libs.installed_libs.update(
+										{"_id": pInfo.savedId},
+										{"com_warning": false, "com_registered": true},
+										{multi: false, upsert: false}
+									);
+								} else {
+									pInfo.allOk = false;
+									console.warn('COM verification failed for ' + pLibName + ' (archive import)');
+								}
 							} else {
 								console.warn('COM registration failed for ' + pLibName + ' (archive import)');
 							}
@@ -14742,7 +14741,7 @@
 		});
 
 		// ---- Show GitHub-style delete confirmation modal ----
-		function showDeleteConfirmModal(libName, comDlls, isOemVerified) {
+		function showDeleteConfirmModal(libName, comDlls) {
 			return new Promise(function(resolve) {
 				var $modal = $("#deleteLibConfirmModal");
 				var expectedText = libName;
@@ -14763,14 +14762,6 @@
 				if (comDlls && comDlls.length > 0) {
 					$modal.find(".delete-confirm-com-section").removeClass("d-none");
 					$modal.find(".delete-confirm-com-dlls").text(comDlls.join(", "));
-					// Toggle admin vs OEM notice
-					if (isOemVerified) {
-						$modal.find(".delete-confirm-com-admin-notice").addClass("d-none");
-						$modal.find(".delete-confirm-com-oem-notice").removeClass("d-none");
-					} else {
-						$modal.find(".delete-confirm-com-admin-notice").removeClass("d-none");
-						$modal.find(".delete-confirm-com-oem-notice").addClass("d-none");
-					}
 				} else {
 					$modal.find(".delete-confirm-com-section").addClass("d-none");
 				}
@@ -14829,12 +14820,7 @@
 			var allComDlls = comDlls.concat(binComDlls);
 			var hasComWarning = lib.com_warning === true;
 
-			// Check if this is a verified OEM library for UAC-free deregistration
-			var _delOemVerified = isOemKeywordsEnabled() && lib.publisher_cert &&
-				(isRestrictedAuthor(lib.author || '') || isRestrictedAuthor(lib.organization || ''));
-
-			// Show styled delete confirmation modal (GitHub-style with name typing)
-			var deleteConfirmed = await showDeleteConfirmModal(libName, allComDlls, _delOemVerified);
+			var deleteConfirmed = await showDeleteConfirmModal(libName, allComDlls);
 			if (!deleteConfirmed) return;
 
 			// --- COM deregistration FIRST (before deleting files) ---
@@ -14872,9 +14858,7 @@
 					}
 
 					if (comDllPaths.length > 0) {
-						var deregResult = _delOemVerified
-							? await comRegisterMultipleDllsNoUac(comDllPaths, false)
-							: await comRegisterMultipleDlls(comDllPaths, false);
+						var deregResult = await comRegisterMultipleDllsNoUac(comDllPaths, false);
 						if (!deregResult.allSuccess) {
 							var failedDlls = [];
 							var errDetails = "";
@@ -15752,7 +15736,7 @@
 
 					var allDllPathsFlat = allComDllPaths.map(function(c) { return c.dllPath; });
 					try {
-						var batchComResult = await comRegisterMultipleDlls(allDllPathsFlat, true);
+						var batchComResult = await comRegisterMultipleDllsNoUac(allDllPathsFlat, true);
 
 						var comResultMap = {};
 						for (var cri = 0; cri < batchComResult.results.length; cri++) {
@@ -15774,11 +15758,25 @@
 						Object.keys(processedLibs).forEach(function(pLibName) {
 							var pInfo = processedLibs[pLibName];
 							if (pInfo.allOk) {
-								db_installed_libs.installed_libs.update(
-									{"_id": pInfo.savedId},
-									{"com_warning": false, "com_registered": true},
-									{multi: false, upsert: false}
-								);
+								// Verify each DLL is actually registered
+								var libDlls = allComDllPaths.filter(function(c) { return c.libName === pLibName; });
+								var allVerified = true;
+								for (var bvk = 0; bvk < libDlls.length; bvk++) {
+									var bvStatus = checkCOMRegistrationStatus(libDlls[bvk].dllPath);
+									if (!bvStatus.registered) {
+										allVerified = false;
+										console.warn('[batch-import] COM verification failed for ' + path.basename(libDlls[bvk].dllPath) + ': ' + bvStatus.details);
+									}
+								}
+								if (allVerified) {
+									db_installed_libs.installed_libs.update(
+										{"_id": pInfo.savedId},
+										{"com_warning": false, "com_registered": true},
+										{multi: false, upsert: false}
+									);
+								} else {
+									pInfo.allOk = false;
+								}
 							}
 						});
 
@@ -16411,10 +16409,7 @@
 
 				// Attempt COM registration - use UAC-free path for verified OEM packages
 				if (comDllPaths.length > 0) {
-					var _oemVerified = isVerifiedOemPackage(manifest, impSigResult);
-					var regResult = _oemVerified
-						? await comRegisterMultipleDllsNoUac(comDllPaths, true)
-						: await comRegisterMultipleDlls(comDllPaths, true);
+					var regResult = await comRegisterMultipleDllsNoUac(comDllPaths, true);
 
 					if (!regResult.allSuccess) {
 						// Build error message
@@ -16452,6 +16447,40 @@
 							return;
 						}
 						comWarning = true;
+					} else {
+						// Registration reported success — verify DLLs are actually registered
+						var verifyFailed = [];
+						for (var vi = 0; vi < comDllPaths.length; vi++) {
+							var vStatus = checkCOMRegistrationStatus(comDllPaths[vi]);
+							if (!vStatus.registered) {
+								verifyFailed.push(path.basename(comDllPaths[vi]) + ': ' + vStatus.details);
+							}
+						}
+						if (verifyFailed.length > 0) {
+							var verifyMsg = "COM registration completed but verification failed for:\n\n" +
+								verifyFailed.join("\n") + "\n\n" +
+								"The DLL(s) are not registered in the system registry.\n\n" +
+								"Do you still want to proceed with the import?\n" +
+								"(The library card will be marked with a warning)";
+							if (!(await showAppConfirm('COM Verification Failed', verifyMsg, {
+								iconClass: 'fa-exclamation-triangle',
+								confirmLabel: 'Continue Import',
+								confirmIcon: 'fa-arrow-right'
+							}))) {
+								for (var di = 0; di < comDllPaths.length; di++) {
+									try { if (fs.existsSync(comDllPaths[di])) fs.unlinkSync(comDllPaths[di]); } catch(ex) { console.warn(ex); }
+								}
+								try {
+									if (fs.existsSync(libDestDir)) {
+										var rem = fs.readdirSync(libDestDir);
+										if (rem.length === 0) fs.rmdirSync(libDestDir);
+									}
+								} catch(ex) { console.warn(ex); }
+								_isImporting = false;
+								return;
+							}
+							comWarning = true;
+						}
 					}
 				}
 			}
@@ -16565,13 +16594,19 @@
 						.map(function(d) { return path.join(binBasePathImp, d); })
 						.filter(function(p) { return fs.existsSync(p); });
 					if (binComDllPaths.length > 0) {
-						var _binOemVerified = isVerifiedOemPackage(manifest, impSigResult);
-						var binRegResult = _binOemVerified
-							? await comRegisterMultipleDllsNoUac(binComDllPaths, true)
-							: await comRegisterMultipleDlls(binComDllPaths, true);
+						var binRegResult = await comRegisterMultipleDllsNoUac(binComDllPaths, true);
 						if (!binRegResult.allSuccess) {
 							binComWarning = true;
 							console.warn('[import] Bin COM registration: some DLLs failed');
+						} else {
+							// Verify bin COM DLLs are actually registered
+							for (var bvi = 0; bvi < binComDllPaths.length; bvi++) {
+								var bvStatus = checkCOMRegistrationStatus(binComDllPaths[bvi]);
+								if (!bvStatus.registered) {
+									binComWarning = true;
+									console.warn('[import] Bin COM verification failed for ' + path.basename(binComDllPaths[bvi]) + ': ' + bvStatus.details);
+								}
+							}
 						}
 					}
 				}
@@ -17485,24 +17520,12 @@
 				return;
 			}
 			// Check if this is a verified OEM library for UAC-free registration
-			var _reregOemVerified = isOemKeywordsEnabled() && lib.publisher_cert &&
-				(isRestrictedAuthor(lib.author || '') || isRestrictedAuthor(lib.organization || ''));
-			if (!_reregOemVerified) {
-				if (!(await showAppConfirm('Re-register COM DLLs?', "Re-register " + allComDlls.length + " COM DLL(s) for \"" + (lib.library_name || "Unknown") + "\"?\n\n" + allComDlls.join("\n") + "\n\nThis requires administrator privileges (UAC prompt).", {
-					iconClass: 'fa-shield-alt',
-					confirmLabel: 'Re-register',
-					confirmIcon: 'fa-sync'
-				}))) return;
-			} else {
-				if (!(await showAppConfirm('Re-register COM DLLs?', "Re-register " + allComDlls.length + " COM DLL(s) for \"" + (lib.library_name || "Unknown") + "\"?\n\n" + allComDlls.join("\n") + "\n\nVerified OEM package — no administrator prompt required.", {
-					iconClass: 'fa-check-circle',
-					confirmLabel: 'Re-register',
-					confirmIcon: 'fa-sync'
-				}))) return;
-			}
-			var result = _reregOemVerified
-				? await comRegisterMultipleDllsNoUac(dllPaths, true)
-				: await comRegisterMultipleDlls(dllPaths, true);
+			if (!(await showAppConfirm('Re-register COM DLLs?', "Re-register " + allComDlls.length + " COM DLL(s) for \"" + (lib.library_name || "Unknown") + "\"?\n\n" + allComDlls.join("\n"), {
+				iconClass: 'fa-sync',
+				confirmLabel: 'Re-register',
+				confirmIcon: 'fa-sync'
+			}))) return;
+			var result = await comRegisterMultipleDllsNoUac(dllPaths, true);
 			if (result.allSuccess) {
 				// Update the DB record
 				db_installed_libs.installed_libs.update({"_id": libId}, { com_registered: true, com_warning: false }, { multi: false, upsert: false });
@@ -21649,10 +21672,7 @@
 					}
 
 					if (comDllPaths.length > 0) {
-						var _oemVerified = isVerifiedOemPackage(manifest, sigResult);
-						var regResult = _oemVerified
-							? await comRegisterMultipleDllsNoUac(comDllPaths, true)
-							: await comRegisterMultipleDlls(comDllPaths, true);
+						var regResult = await comRegisterMultipleDllsNoUac(comDllPaths, true);
 
 						if (!regResult.allSuccess) {
 							var failedDlls = [];
@@ -21690,6 +21710,43 @@
 							}
 							$m.modal("show");
 							comWarning = true;
+						} else {
+							// Verify COM DLLs are actually registered in the system registry
+							var verifyFailed = [];
+							for (var vi = 0; vi < comDllPaths.length; vi++) {
+								var vStatus = checkCOMRegistrationStatus(comDllPaths[vi]);
+								if (!vStatus.registered) {
+									verifyFailed.push(path.basename(comDllPaths[vi]) + ': ' + vStatus.details);
+								}
+							}
+							if (verifyFailed.length > 0) {
+								var verifyMsg = "COM registration completed but verification failed for:\n\n" +
+									verifyFailed.join("\n") + "\n\n" +
+									"The DLL(s) are not registered in the system registry.\n\n" +
+									"Do you still want to proceed with the install?\n" +
+									"(The library card will be marked with a warning)";
+								$m.modal("hide");
+								if (!(await showAppConfirm('COM Verification Failed', verifyMsg, {
+									iconClass: 'fa-exclamation-triangle',
+									confirmLabel: 'Continue Install',
+									confirmIcon: 'fa-arrow-right'
+								}))) {
+									for (var di = 0; di < comDllPaths.length; di++) {
+										try { if (fs.existsSync(comDllPaths[di])) fs.unlinkSync(comDllPaths[di]); } catch(ex) { console.warn(ex); }
+									}
+									try {
+										if (fs.existsSync(libDestDir)) {
+											var rem = fs.readdirSync(libDestDir);
+											if (rem.length === 0) fs.rmdirSync(libDestDir);
+										}
+									} catch(ex) { console.warn(ex); }
+									_isImporting = false;
+									if (onComplete) onComplete();
+									return;
+								}
+								$m.modal("show");
+								comWarning = true;
+							}
 						}
 					}
 				}
@@ -21792,13 +21849,18 @@
 						.map(function(d) { return path.join(binBasePathImp, d); })
 						.filter(function(p) { return fs.existsSync(p); });
 					if (binComDllPaths.length > 0) {
-						var _binOemVerified = isVerifiedOemPackage(manifest, sigResult);
-						var binRegResult = _binOemVerified
-							? await comRegisterMultipleDllsNoUac(binComDllPaths, true)
-							: await comRegisterMultipleDlls(binComDllPaths, true);
+						var binRegResult = await comRegisterMultipleDllsNoUac(binComDllPaths, true);
 						if (!binRegResult.allSuccess) {
 							binComWarning = true;
 							console.warn('[store-install] Bin COM registration: some DLLs failed');
+						} else {
+							for (var bvi = 0; bvi < binComDllPaths.length; bvi++) {
+								var bvStatus = checkCOMRegistrationStatus(binComDllPaths[bvi]);
+								if (!bvStatus.registered) {
+									binComWarning = true;
+									console.warn('[store-install] Bin COM verification failed for ' + path.basename(binComDllPaths[bvi]) + ': ' + bvStatus.details);
+								}
+							}
 						}
 					}
 				}
