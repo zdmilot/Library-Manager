@@ -10637,8 +10637,10 @@
 						fs.writeFileSync(tmpRegImport, Buffer.concat([bom, body]));
 					}
 
-					// Step 3: Import the rewritten .reg file (no elevation needed for HKCU)
-					execSync('reg.exe import "' + tmpRegImport + '"', {
+					// Step 3: Import the rewritten .reg file (no elevation needed for HKCU).
+					// Use SysWOW64\reg.exe explicitly so that WOW64 filesystem and registry
+					// redirection targets the 32-bit registry view — required for VENUS (x86).
+					execSync('C:\\Windows\\SysWOW64\\reg.exe import "' + tmpRegImport + '"', {
 						timeout: 15000,
 						windowsHide: true,
 						stdio: 'pipe'
@@ -10740,7 +10742,8 @@
 				];
 				for (var ki = 0; ki < keysToCheck.length; ki++) {
 					try {
-						execSync('reg query "' + keysToCheck[ki] + '" /ve', {
+						// Use SysWOW64\reg.exe explicitly to query the 32-bit registry view.
+						execSync('C:\\Windows\\SysWOW64\\reg.exe query "' + keysToCheck[ki] + '" /ve', {
 							timeout: 5000,
 							windowsHide: true,
 							stdio: 'pipe'
