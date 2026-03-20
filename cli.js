@@ -27,6 +27,10 @@
  *   list-publishers        List registered publisher certificates
  *   verify-markers         Verify .libmgr marker integrity for installed libraries
  *   scan-markers           Scan directories for .libmgr markers and report status
+ *   marketplace-search     Search/browse the marketplace catalog
+ *   marketplace-install    Download and install a library from the marketplace
+ *   show-lib               Show detailed information about an installed library
+ *   search-libs            Search installed libraries by keyword, tag, or author
  *
  * Run `node cli.js help` for full usage.
  */
@@ -2706,6 +2710,10 @@ COMMANDS
   list-publishers    List registered publisher certificates
   verify-markers     Verify .libmgr marker integrity for installed libraries
   scan-markers       Scan directories for .libmgr markers and report status
+  marketplace-search   Search/browse the online marketplace catalog
+  marketplace-install  Download and install a library from the marketplace
+  show-lib           Show detailed information about an installed library
+  search-libs        Search installed libraries by keyword, tag, or author
   help               Show this help text
 
 GLOBAL OPTIONS
@@ -3394,6 +3402,692 @@ function cmdListPublishers(args) {
     });
 }
 
+// ===========================================================================
+// Marketplace constants
+// ===========================================================================
+const STORE_CATALOG_URL = 'https://raw.githubusercontent.com/zdmilot/Library-Manager-Packages/main/catalog.json';
+const STORE_PKG_BASE    = 'https://raw.githubusercontent.com/zdmilot/Library-Manager-Packages/main/Packages/';
+
+// ===========================================================================
+// Marketplace helpers
+// ===========================================================================
+
+/**
+ * Fetch JSON from an HTTPS URL. Follows up to 5 redirects.
+ * @param {string} url - URL to fetch
+ * @param {function} callback - callback(err, parsedJSON)
+ */
+function httpsFetchJson(url, callback, _redirectCount) {
+    if ((_redirectCount || 0) > 5) return callback(new Error('Too many redirects'));
+    var https = require('https');
+    var parsedUrl;
+    try { parsedUrl = new URL(url); } catch (_) { return callback(new Error('Invalid URL')); }
+
+    var opts = {
+        hostname: parsedUrl.hostname,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: 'GET',
+        headers: { 'User-Agent': 'Library-Manager-CLI', 'Accept': 'application/json' },
+        timeout: 30000
+    };
+
+    var req = https.request(opts, function (res) {
+        if (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 307) {
+            var location = res.headers.location;
+            if (!location) return callback(new Error('Redirect without location'));
+            return httpsFetchJson(location, callback, (_redirectCount || 0) + 1);
+        }
+        if (res.statusCode !== 200) return callback(new Error('HTTP ' + res.statusCode));
+        var data = '';
+        res.on('data', function (chunk) { data += chunk; });
+        res.on('end', function () {
+            try { callback(null, JSON.parse(data)); }
+            catch (e) { callback(new Error('Invalid JSON: ' + e.message)); }
+        });
+    });
+    req.on('error', function (err) { callback(err); });
+    req.on('timeout', function () { req.destroy(); callback(new Error('Request timed out')); });
+    req.end();
+}
+
+/**
+ * Download a file from an HTTPS URL to disk. Follows up to 5 redirects.
+ * @param {string} url - URL to download
+ * @param {string} destPath - Local file path to write
+ * @param {function} callback - callback(err)
+ */
+function httpsDownloadFile(url, destPath, callback, _redirectCount) {
+    if ((_redirectCount || 0) > 5) return callback(new Error('Too many redirects'));
+    var https = require('https');
+    var parsedUrl;
+    try { parsedUrl = new URL(url); } catch (_) { return callback(new Error('Invalid URL')); }
+
+    var opts = {
+        hostname: parsedUrl.hostname,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: 'GET',
+        headers: { 'User-Agent': 'Library-Manager-CLI' },
+        timeout: 120000
+    };
+
+    var req = https.request(opts, function (res) {
+        if (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 307) {
+            var location = res.headers.location;
+            if (!location) return callback(new Error('Redirect without location'));
+            return httpsDownloadFile(location, destPath, callback, (_redirectCount || 0) + 1);
+        }
+        if (res.statusCode !== 200) return callback(new Error('HTTP ' + res.statusCode));
+
+        var fileStream = fs.createWriteStream(destPath);
+        res.pipe(fileStream);
+        fileStream.on('finish', function () {
+            fileStream.close(function () { callback(null); });
+        });
+        fileStream.on('error', function (err) {
+            try { fs.unlinkSync(destPath); } catch(_) {}
+            callback(err);
+        });
+    });
+    req.on('error', function (err) {
+        try { fs.unlinkSync(destPath); } catch(_) {}
+        callback(err);
+    });
+    req.on('timeout', function () {
+        req.destroy();
+        try { fs.unlinkSync(destPath); } catch(_) {}
+        callback(new Error('Download timed out'));
+    });
+    req.end();
+}
+
+/**
+ * Build the download URL for a store package.
+ * @param {Array} catalog - The full catalog array
+ * @param {string} pkgFile - The package_file value from the catalog entry
+ * @returns {string} Full download URL
+ */
+function storePackageUrl(catalog, pkgFile) {
+    var libName = '';
+    if (catalog) {
+        for (var i = 0; i < catalog.length; i++) {
+            var cat = catalog[i];
+            if (cat.package_file === pkgFile) { libName = cat.library_name; break; }
+            var vers = cat.versions || [];
+            for (var v = 0; v < vers.length; v++) {
+                if (vers[v].package_file === pkgFile) { libName = cat.library_name; break; }
+            }
+            if (libName) break;
+        }
+    }
+    if (libName) return STORE_PKG_BASE + encodeURIComponent(libName) + '/' + encodeURIComponent(pkgFile);
+    return STORE_PKG_BASE + encodeURIComponent(pkgFile);
+}
+
+/**
+ * Find a catalog entry matching a library name (case-insensitive).
+ * @param {Array} catalog - The full catalog array
+ * @param {string} name - Library name to search for
+ * @returns {Object|null} Matching catalog entry or null
+ */
+function findCatalogEntry(catalog, name) {
+    if (!catalog || !name) return null;
+    var lower = name.toLowerCase();
+    for (var i = 0; i < catalog.length; i++) {
+        if (catalog[i].library_name && catalog[i].library_name.toLowerCase() === lower) {
+            return catalog[i];
+        }
+    }
+    return null;
+}
+
+/**
+ * Resolve dependencies recursively from the catalog.
+ * Returns an array of catalog entries that are needed but not installed.
+ * @param {Array} catalog - The full catalog array
+ * @param {string} libraryName - The library to resolve dependencies for
+ * @param {Object} db - Database connection
+ * @returns {Array} Array of catalog entries for uninstalled dependencies
+ */
+function resolveStoreDependencies(catalog, libraryName, db) {
+    var needed = [];
+    var visited = {};
+    _collectDeps(catalog, libraryName, visited, needed, db);
+    return needed;
+}
+
+function _collectDeps(catalog, libraryName, visited, needed, db) {
+    if (visited[libraryName.toLowerCase()]) return;
+    visited[libraryName.toLowerCase()] = true;
+
+    var pkg = findCatalogEntry(catalog, libraryName);
+    if (!pkg) return;
+
+    var deps = pkg.dependencies || [];
+    for (var d = 0; d < deps.length; d++) {
+        var depName = deps[d];
+        if (visited[depName.toLowerCase()]) continue;
+
+        _collectDeps(catalog, depName, visited, needed, db);
+
+        var installed = null;
+        try { installed = db.installed_libs.findOne({ library_name: depName }); } catch(_) {}
+
+        var depPkg = findCatalogEntry(catalog, depName);
+        if (depPkg && (!installed || installed.deleted)) {
+            needed.push(depPkg);
+        }
+    }
+}
+
+// ===========================================================================
+// COMMAND: marketplace-search
+// ===========================================================================
+/** Handler for the `marketplace-search` CLI command. */
+function cmdMarketplaceSearch(args) {
+    var asJson = !!(args['json'] || args['j']);
+    var searchTerm = (args['query'] || args['q'] || '').toLowerCase();
+    var category = (args['category'] || '').toLowerCase();
+    var author = (args['author'] || '').toLowerCase();
+    var tag = (args['tag'] || '').toLowerCase();
+
+    console.log('Fetching marketplace catalog...');
+
+    httpsFetchJson(STORE_CATALOG_URL, function (err, data) {
+        if (err) die('Failed to fetch catalog: ' + err.message);
+
+        var catalog = Array.isArray(data) ? data : (data && data.packages ? data.packages : []);
+        if (catalog.length === 0) {
+            console.log('The marketplace catalog is empty.');
+            return;
+        }
+
+        var items = catalog.slice();
+
+        // Apply filters
+        if (searchTerm) {
+            items = items.filter(function (p) {
+                var haystack = ((p.library_name || '') + ' ' + (p.author || '') + ' ' +
+                    (p.organization || '') + ' ' + (p.description || '') + ' ' +
+                    (p.category || '') + ' ' + (p.tags || []).join(' ')).toLowerCase();
+                return haystack.indexOf(searchTerm) !== -1;
+            });
+        }
+        if (category) {
+            items = items.filter(function (p) {
+                return (p.category || '').toLowerCase().indexOf(category) !== -1;
+            });
+        }
+        if (author) {
+            items = items.filter(function (p) {
+                return ((p.author || '') + ' ' + (p.organization || '')).toLowerCase().indexOf(author) !== -1;
+            });
+        }
+        if (tag) {
+            items = items.filter(function (p) {
+                return (p.tags || []).some(function(t) { return t.toLowerCase() === tag; });
+            });
+        }
+
+        // Sort by name
+        items.sort(function (a, b) { return (a.library_name || '').localeCompare(b.library_name || ''); });
+
+        if (asJson) {
+            console.log(JSON.stringify(items.map(function (p) {
+                return {
+                    library_name: p.library_name,
+                    version: p.version,
+                    author: p.author,
+                    organization: p.organization || '',
+                    description: p.description,
+                    category: p.category || '',
+                    tags: p.tags || [],
+                    venus_compatibility: p.venus_compatibility || '',
+                    signed: !!p.signed,
+                    code_signed: !!p.code_signed,
+                    publisher: p.publisher || '',
+                    package_file: p.package_file,
+                    package_size: p.package_size || 0,
+                    dependencies: p.dependencies || []
+                };
+            }), null, 2));
+            return;
+        }
+
+        if (items.length === 0) {
+            console.log('No packages found matching the search criteria.');
+            return;
+        }
+
+        var line = '-'.repeat(72);
+        console.log('\nMarketplace Packages (' + items.length + ' found)');
+        console.log('='.repeat(72));
+
+        items.forEach(function (p) {
+            var signed = p.code_signed ? ' [Signed]' : (p.signed ? ' [Signed]' : '');
+            console.log('  Name:         ' + (p.library_name || '?') + signed);
+            console.log('  Version:      ' + (p.version || '?'));
+            console.log('  Author:       ' + (p.author || '?') + (p.organization ? ' (' + p.organization + ')' : ''));
+            console.log('  Description:  ' + (p.description || '-'));
+            console.log('  Category:     ' + (p.category || '-'));
+            console.log('  Tags:         ' + ((p.tags || []).join(', ') || '-'));
+            console.log('  VENUS:        ' + (p.venus_compatibility || '-'));
+            if ((p.dependencies || []).length > 0) {
+                console.log('  Dependencies: ' + p.dependencies.join(', '));
+            }
+            console.log(line);
+        });
+    });
+}
+
+// ===========================================================================
+// COMMAND: marketplace-install
+// ===========================================================================
+/** Handler for the `marketplace-install` CLI command. */
+function cmdMarketplaceInstall(args) {
+    var libName = args['name'];
+    if (!libName) die('--name is required. Specify the library name to install from the marketplace.');
+
+    var requestedVersion = args['version'] || '';
+    var asJson = !!(args['json'] || args['j']);
+    var skipDeps = !!(args['no-deps']);
+    var force = !!(args['force']);
+
+    var dbPath = resolveDBPath(args);
+    var db = connectDB(dbPath);
+    var installPaths = getInstallPaths(db, args['lib-dir'], args['met-dir']);
+
+    console.log('Fetching marketplace catalog...');
+
+    httpsFetchJson(STORE_CATALOG_URL, function (err, data) {
+        if (err) die('Failed to fetch catalog: ' + err.message);
+
+        var catalog = Array.isArray(data) ? data : (data && data.packages ? data.packages : []);
+        var entry = findCatalogEntry(catalog, libName);
+        if (!entry) die('Library "' + libName + '" not found in the marketplace catalog.');
+
+        // If a specific version was requested, find it in the versions array
+        var pkgFile = entry.package_file;
+        var targetVersion = entry.version;
+        if (requestedVersion && entry.versions && entry.versions.length > 0) {
+            var found = false;
+            for (var v = 0; v < entry.versions.length; v++) {
+                if (entry.versions[v].version === requestedVersion) {
+                    pkgFile = entry.versions[v].package_file || pkgFile;
+                    targetVersion = entry.versions[v].version;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found && entry.version !== requestedVersion) {
+                die('Version "' + requestedVersion + '" not found for "' + libName + '". Available: ' +
+                    [entry.version].concat((entry.versions || []).map(function(v) { return v.version; })).join(', '));
+            }
+        }
+
+        // Check if already installed
+        var existing = db.installed_libs.findOne({ library_name: entry.library_name });
+        if (existing && !existing.deleted && !force) {
+            var existingVer = existing.version || '?';
+            if (existingVer === targetVersion) {
+                die('"' + entry.library_name + '" v' + existingVer + ' is already installed (same version). Use --force to reinstall.');
+            } else {
+                console.log('  Currently installed: v' + existingVer + ', marketplace: v' + targetVersion);
+            }
+        }
+
+        // Resolve dependencies
+        var depsToInstall = [];
+        if (!skipDeps) {
+            depsToInstall = resolveStoreDependencies(catalog, entry.library_name, db);
+            if (depsToInstall.length > 0) {
+                console.log('\nDependencies to install:');
+                depsToInstall.forEach(function (dep) {
+                    console.log('  - ' + dep.library_name + ' v' + (dep.version || '?'));
+                });
+                console.log('');
+            }
+        }
+
+        // Build install queue: dependencies first, then the main package
+        var queue = depsToInstall.map(function(dep) {
+            return { entry: dep, pkgFile: dep.package_file };
+        });
+        queue.push({ entry: entry, pkgFile: pkgFile });
+
+        var results = { success: [], failed: [] };
+        var queueIdx = 0;
+
+        function processNext() {
+            if (queueIdx >= queue.length) {
+                // All done
+                if (asJson) {
+                    console.log(JSON.stringify(results, null, 2));
+                } else {
+                    console.log('\nInstall complete.');
+                    if (results.success.length > 0) {
+                        console.log('  Installed: ' + results.success.join(', '));
+                    }
+                    if (results.failed.length > 0) {
+                        console.log('  Failed: ' + results.failed.join(', '));
+                        process.exit(1);
+                    }
+                }
+                return;
+            }
+
+            var item = queue[queueIdx];
+            var downloadUrl = storePackageUrl(catalog, item.pkgFile);
+            var tmpDir = path.join(os.tmpdir(), 'LibMgr-CLI-Store');
+            try { fs.mkdirSync(tmpDir, { recursive: true }); } catch(_) {}
+            var tmpPath = path.join(tmpDir, item.pkgFile);
+
+            console.log('Downloading: ' + item.entry.library_name + ' v' + (item.entry.version || '?') + '...');
+
+            httpsDownloadFile(downloadUrl, tmpPath, function (dlErr) {
+                if (dlErr) {
+                    process.stderr.write('Error downloading "' + item.entry.library_name + '": ' + dlErr.message + '\n');
+                    results.failed.push(item.entry.library_name);
+                    queueIdx++;
+                    processNext();
+                    return;
+                }
+
+                // Verify SHA-256 hash if available
+                if (item.entry.package_sha256) {
+                    var crypto = require('crypto');
+                    var dlBuf = fs.readFileSync(tmpPath);
+                    var dlHash = crypto.createHash('sha256').update(dlBuf).digest('hex');
+                    if (dlHash !== item.entry.package_sha256) {
+                        process.stderr.write('Error: SHA-256 hash mismatch for "' + item.entry.library_name + '"\n');
+                        process.stderr.write('  Expected: ' + item.entry.package_sha256 + '\n');
+                        process.stderr.write('  Got:      ' + dlHash + '\n');
+                        try { fs.unlinkSync(tmpPath); } catch(_) {}
+                        results.failed.push(item.entry.library_name);
+                        queueIdx++;
+                        processNext();
+                        return;
+                    }
+                    console.log('  Hash verified: OK');
+                }
+
+                // Import the package using the existing import logic
+                try {
+                    var rawPkgBuf = fs.readFileSync(tmpPath);
+                    var zipBuf = unpackContainer(rawPkgBuf, CONTAINER_MAGIC_PKG);
+                    var zip = new AdmZip(zipBuf);
+                    var me = zip.getEntry('manifest.json');
+                    if (!me) throw new Error('Invalid package: manifest.json not found');
+                    var manifest = JSON.parse(zip.readAsText(me));
+                    validateManifestSchema(manifest);
+
+                    var importLibName = manifest.library_name || 'Unknown';
+
+                    // Verify signature
+                    var sigResult = verifyPackageSignature(zip);
+                    if (sigResult.signed) {
+                        if (sigResult.valid) {
+                            console.log('  Signature: VALID');
+                            if (sigResult.code_signed && sigResult.publisher_cert) {
+                                console.log('  Code signed by: ' + sigResult.publisher_cert.publisher +
+                                    (sigResult.publisher_cert.organization ? ' (' + sigResult.publisher_cert.organization + ')' : ''));
+                            }
+                        } else {
+                            console.log('  Signature: FAILED');
+                            if (!force) {
+                                throw new Error('Package signature verification failed. Use --force to install anyway.');
+                            }
+                            console.log('  WARNING: Installing despite failed signature (--force)');
+                        }
+                    } else {
+                        console.log('  Signature: unsigned');
+                    }
+
+                    var cliCustomSubdir = validateCustomSubdir(manifest.custom_install_subdir || '');
+                    var libDestDir = cliCustomSubdir
+                        ? path.join(installPaths.libBasePath, cliCustomSubdir)
+                        : installPaths.libBasePath;
+                    var demoDestDir = path.join(installPaths.metBasePath, 'Library Demo Methods', importLibName);
+
+                    advisoryLock.withLock(dbPath, 'db-write', function() {
+                        var existingInner = db.installed_libs.findOne({ library_name: importLibName });
+                        if (existingInner && !existingInner.deleted && !force) {
+                            throw new Error('"' + importLibName + '" is already installed. Use --force to overwrite.');
+                        }
+
+                        var result = installPackage(
+                            manifest, zip, libDestDir, demoDestDir,
+                            item.pkgFile, db, false, installPaths.labwareBasePath, installPaths.binBasePath
+                        );
+
+                        console.log('  Installed: "' + importLibName + '" (' + result.extractedCount + ' files)');
+                        results.success.push(importLibName);
+                    });
+
+                    // Audit trail
+                    try {
+                        appendAuditTrailEntry(dbPath, buildAuditTrailEntry('library_imported', {
+                            library_name: importLibName,
+                            version: manifest.version || '',
+                            author: manifest.author || '',
+                            source: 'marketplace',
+                            package_file: item.pkgFile,
+                            signature_status: sigResult.signed ? (sigResult.valid ? 'valid' : 'failed') : 'unsigned'
+                        }));
+                    } catch (_) {}
+
+                    // Cache the package
+                    try {
+                        cachePackage(rawPkgBuf, importLibName, manifest.version, args);
+                    } catch (_) {}
+                } catch (e) {
+                    process.stderr.write('Error installing "' + item.entry.library_name + '": ' + e.message + '\n');
+                    results.failed.push(item.entry.library_name);
+                } finally {
+                    // Clean up temp file
+                    try { fs.unlinkSync(tmpPath); } catch(_) {}
+                }
+
+                queueIdx++;
+                processNext();
+            });
+        }
+
+        processNext();
+    });
+}
+
+// ===========================================================================
+// COMMAND: show-lib
+// ===========================================================================
+/** Handler for the `show-lib` CLI command. */
+function cmdShowLib(args) {
+    var db = connectDB(resolveDBPath(args));
+    var asJson = !!(args['json'] || args['j']);
+
+    var lib = findLibrary(db, args);
+    if (!lib) die('Library not found. Use --name <name> or --id <id>.');
+
+    if (asJson) {
+        console.log(JSON.stringify(lib, null, 2));
+        return;
+    }
+
+    var line = '-'.repeat(64);
+    console.log('\nLibrary Details');
+    console.log('='.repeat(64));
+    console.log('  Name:             ' + (lib.library_name || '(unknown)'));
+    console.log('  ID:               ' + (lib._id || '-'));
+    console.log('  Version:          ' + (lib.version || '-'));
+    console.log('  Author:           ' + (lib.author || '-'));
+    if (lib.organization) console.log('  Organization:     ' + lib.organization);
+    console.log('  Description:      ' + (lib.description || '-'));
+    console.log('  Tags:             ' + ((lib.tags || []).join(', ') || '-'));
+    console.log('  Category:         ' + (lib.category || '-'));
+    console.log('  VENUS Compat:     ' + (lib.venus_compatibility || '-'));
+    if (lib.github_url) console.log('  GitHub URL:       ' + lib.github_url);
+    console.log('  Created:          ' + (lib.created_date || '-'));
+    console.log('  Installed:        ' + (lib.installed_date || '-'));
+    console.log('  Installed By:     ' + (lib.installed_by || '-'));
+    console.log('  Source Package:   ' + (lib.source_package || '-'));
+    console.log('  Format Version:   ' + (lib.format_version || '-'));
+    if (lib.deleted) {
+        console.log('  Status:           DELETED' + (lib.deleted_date ? ' (' + lib.deleted_date + ')' : ''));
+    }
+    console.log(line);
+
+    // Paths
+    console.log('  Library Path:     ' + (lib.lib_install_path || '-'));
+    console.log('  Demo Path:        ' + (lib.demo_install_path || '-'));
+    if (lib.labware_install_path) console.log('  Labware Path:     ' + lib.labware_install_path);
+    if (lib.bin_install_path) console.log('  Bin Path:         ' + lib.bin_install_path);
+    console.log(line);
+
+    // Files
+    var libFiles = lib.library_files || [];
+    if (libFiles.length > 0) {
+        console.log('  Library Files (' + libFiles.length + '):');
+        libFiles.forEach(function(f) { console.log('    ' + f); });
+    }
+    var demoFiles = lib.demo_method_files || [];
+    if (demoFiles.length > 0) {
+        console.log('  Demo Method Files (' + demoFiles.length + '):');
+        demoFiles.forEach(function(f) { console.log('    ' + f); });
+    }
+    var helpFiles = lib.help_files || [];
+    if (helpFiles.length > 0) {
+        console.log('  Help Files (' + helpFiles.length + '):');
+        helpFiles.forEach(function(f) { console.log('    ' + f); });
+    }
+    var labwareFiles = lib.labware_files || [];
+    if (labwareFiles.length > 0) {
+        console.log('  Labware Files (' + labwareFiles.length + '):');
+        labwareFiles.forEach(function(f) { console.log('    ' + f); });
+    }
+    var binFiles = lib.bin_files || [];
+    if (binFiles.length > 0) {
+        console.log('  Bin Files (' + binFiles.length + '):');
+        binFiles.forEach(function(f) { console.log('    ' + f); });
+    }
+    var comDlls = lib.com_register_dlls || [];
+    if (comDlls.length > 0) {
+        console.log('  COM DLLs: ' + comDlls.join(', '));
+    }
+    console.log(line);
+
+    // Dependencies
+    var deps = lib.required_dependencies || [];
+    if (deps.length > 0) {
+        console.log('  Dependencies (' + deps.length + '):');
+        deps.forEach(function(dep) {
+            console.log('    ' + (dep.include || dep.libraryName || dep));
+        });
+        console.log(line);
+    }
+
+    // Device compatibility
+    var devices = lib.device_compatibility || [];
+    if (devices.length > 0) {
+        console.log('  Device Compatibility: ' + devices.join(', '));
+        console.log(line);
+    }
+
+    // Public functions
+    var pubFns = lib.public_functions || [];
+    if (pubFns.length > 0) {
+        console.log('  Public Functions (' + pubFns.length + '):');
+        pubFns.forEach(function(fn) {
+            var paramStr = (fn.params || []).map(function(p) {
+                return (p.type || 'variable') + (p.byRef ? '& ' : ' ') + p.name + (p.array ? '[]' : '');
+            }).join(', ');
+            console.log('    ' + fn.qualifiedName + '(' + paramStr + ') ' + (fn.returnType || 'void'));
+        });
+        console.log(line);
+    }
+
+    // Integrity hashes
+    var hashes = lib.file_hashes || {};
+    var hashKeys = Object.keys(hashes);
+    if (hashKeys.length > 0) {
+        console.log('  File Hashes (' + hashKeys.length + '):');
+        hashKeys.forEach(function(k) { console.log('    ' + k + ': ' + hashes[k]); });
+    }
+}
+
+// ===========================================================================
+// COMMAND: search-libs
+// ===========================================================================
+/** Handler for the `search-libs` CLI command. */
+function cmdSearchLibs(args) {
+    var db = connectDB(resolveDBPath(args));
+    var asJson = !!(args['json'] || args['j']);
+    var searchTerm = (args['query'] || args['q'] || args._[1] || '').toLowerCase();
+    var tagFilter = (args['tag'] || '').toLowerCase();
+    var authorFilter = (args['author'] || '').toLowerCase();
+
+    if (!searchTerm && !tagFilter && !authorFilter) {
+        die('Provide a search term with --query <term>, --tag <tag>, or --author <author>.');
+    }
+
+    var libs = db.installed_libs.find() || [];
+    libs = libs.filter(function(l) { return !l.deleted; });
+
+    var results = libs.filter(function (lib) {
+        var match = true;
+
+        if (searchTerm) {
+            var haystack = ((lib.library_name || '') + ' ' + (lib.author || '') + ' ' +
+                (lib.organization || '') + ' ' + (lib.description || '') + ' ' +
+                (lib.category || '') + ' ' + (lib.tags || []).join(' ') + ' ' +
+                (lib.venus_compatibility || '')).toLowerCase();
+            match = match && haystack.indexOf(searchTerm) !== -1;
+        }
+
+        if (tagFilter) {
+            match = match && (lib.tags || []).some(function(t) { return t.toLowerCase() === tagFilter; });
+        }
+
+        if (authorFilter) {
+            match = match && ((lib.author || '') + ' ' + (lib.organization || '')).toLowerCase().indexOf(authorFilter) !== -1;
+        }
+
+        return match;
+    });
+
+    if (asJson) {
+        console.log(JSON.stringify(results.map(function(lib) {
+            return {
+                _id: lib._id,
+                library_name: lib.library_name,
+                version: lib.version || '',
+                author: lib.author || '',
+                organization: lib.organization || '',
+                description: lib.description || '',
+                tags: lib.tags || [],
+                installed_date: lib.installed_date || ''
+            };
+        }), null, 2));
+        return;
+    }
+
+    if (results.length === 0) {
+        console.log('No installed libraries match the search criteria.');
+        return;
+    }
+
+    var line = '-'.repeat(64);
+    console.log('\nSearch Results (' + results.length + ' match' + (results.length === 1 ? '' : 'es') + ')');
+    console.log('='.repeat(64));
+
+    results.forEach(function (lib) {
+        console.log('  Name:        ' + (lib.library_name || '(unknown)'));
+        console.log('  Version:     ' + (lib.version || '-'));
+        console.log('  Author:      ' + (lib.author || '-'));
+        console.log('  Tags:        ' + ((lib.tags || []).join(', ') || '-'));
+        console.log('  Description: ' + (lib.description || '-'));
+        console.log(line);
+    });
+}
+
 /**
  * Print an error message to stderr and terminate the process with exit code 1.
  *
@@ -3448,6 +4142,10 @@ switch (command) {
     case 'list-publishers':         cmdListPublishers(args);         break;
     case 'verify-markers':          cmdVerifyMarkers(args);          break;
     case 'scan-markers':            cmdScanMarkers(args);            break;
+    case 'marketplace-search':      cmdMarketplaceSearch(args);      break;
+    case 'marketplace-install':     cmdMarketplaceInstall(args);     break;
+    case 'show-lib':                cmdShowLib(args);                break;
+    case 'search-libs':             cmdSearchLibs(args);             break;
     case 'help':
     case '--help':
     case '-h':
