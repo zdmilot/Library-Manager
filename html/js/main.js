@@ -7926,6 +7926,25 @@
 
 			// ---- Icon ----
 			if (lib.library_image_base64 && lib.library_image_mime) {
+				// Write the image to a temp file so the export picks it up
+				try {
+					var tmpDir = path.join(os.tmpdir(), 'libmgr_repack');
+					if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+					var imgExt = '.png';
+					var mimeEntries = Object.keys(IMAGE_MIME_MAP);
+					for (var me = 0; me < mimeEntries.length; me++) {
+						if (IMAGE_MIME_MAP[mimeEntries[me]] === lib.library_image_mime && mimeEntries[me].charAt(0) === '.') {
+							imgExt = mimeEntries[me];
+							break;
+						}
+					}
+					var imgName = lib.library_image || ((lib.library_name || 'icon') + imgExt);
+					var tmpImgPath = path.join(tmpDir, imgName);
+					fs.writeFileSync(tmpImgPath, Buffer.from(lib.library_image_base64, 'base64'));
+					pkg_iconFilePath = tmpImgPath;
+				} catch(imgErr) {
+					console.warn('Could not write icon to temp for repack: ' + imgErr.message);
+				}
 				$("#pkg-icon-preview").html('<img src="data:' + lib.library_image_mime + ';base64,' + lib.library_image_base64 + '">').addClass('has-image');
 				$("#pkg-icon-name").text((lib.library_image || "library icon") + " (from installed library)");
 				$("#pkg-removeIcon").show();
@@ -8135,6 +8154,23 @@
 
 			// ---- Icon ----
 			if (manifest.library_image_base64 && manifest.library_image_mime) {
+				// Write the image to a temp file so the export picks it up
+				try {
+					var imgExt = '.png';
+					var mimeEntries = Object.keys(IMAGE_MIME_MAP);
+					for (var me = 0; me < mimeEntries.length; me++) {
+						if (IMAGE_MIME_MAP[mimeEntries[me]] === manifest.library_image_mime && mimeEntries[me].charAt(0) === '.') {
+							imgExt = mimeEntries[me];
+							break;
+						}
+					}
+					var imgName = manifest.library_image || ((manifest.library_name || 'icon') + imgExt);
+					var tmpImgPath = path.join(tmpBase, imgName);
+					fs.writeFileSync(tmpImgPath, Buffer.from(manifest.library_image_base64, 'base64'));
+					pkg_iconFilePath = tmpImgPath;
+				} catch(imgErr) {
+					console.warn('Could not write icon to temp for repack: ' + imgErr.message);
+				}
 				$("#pkg-icon-preview").html('<img src="data:' + manifest.library_image_mime + ';base64,' + manifest.library_image_base64 + '">').addClass('has-image');
 				$("#pkg-icon-name").text((manifest.library_image || "library icon") + " (from package file)");
 				$("#pkg-removeIcon").show();
@@ -12730,6 +12766,11 @@
 					} else if (entry.entryName.indexOf("demo_methods/") === 0) {
 						var fname = entry.entryName.substring("demo_methods/".length);
 						if (fname) {
+							// Strip leading library name folder to prevent double nesting
+							var demoFirstSeg = fname.split('/')[0];
+							if (demoFirstSeg === rLibName && fname.length > rLibName.length + 1) {
+								fname = fname.substring(rLibName.length + 1);
+							}
 							var safePath = safeZipExtractPath(demoDestDir, fname);
 							if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 							var parentDir = path.dirname(safePath);
@@ -12817,6 +12858,13 @@
 				var rollbackSig = null;
 				try { rollbackSig = verifyPackageSignature(zip); } catch(e) { console.warn('Could not verify rollback package signature: ' + e.message); }
 
+				// Strip leading library name prefix from demo file paths
+				var cleanDemoFiles = demoFiles.map(function(f) {
+					var norm = f.replace(/\\/g, '/');
+					var prefix = rLibName + '/';
+					return norm.indexOf(prefix) === 0 ? norm.substring(prefix.length) : f;
+				});
+
 				var dbRecord = {
 					library_name: manifest.library_name || "",
 					author: manifest.author || "",
@@ -12837,7 +12885,7 @@
 					library_image_base64: manifest.library_image_base64 || null,
 					library_image_mime: manifest.library_image_mime || null,
 					library_files: libFiles,
-					demo_method_files: demoFiles,
+					demo_method_files: cleanDemoFiles,
 					help_files: helpFiles,
 					com_register_dlls: comDlls,
 					com_warning: comWarning,
@@ -14415,6 +14463,11 @@
 							} else if (entry.entryName.indexOf("demo_methods/") === 0) {
 								var fname = entry.entryName.substring("demo_methods/".length);
 								if (fname) {
+									// Strip leading library name folder to prevent double nesting
+									var demoFirstSeg = fname.split('/')[0];
+									if (demoFirstSeg === libName && fname.length > libName.length + 1) {
+										fname = fname.substring(libName.length + 1);
+									}
 									var outPath = safeZipExtractPath(demoDestDir, fname);
 									if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 									var parentDir = path.dirname(outPath);
@@ -14455,6 +14508,13 @@
 						var fileHashes = {};
 						try { fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls); } catch(e) { console.warn('Could not compute integrity hashes: ' + e.message); }
 
+						// Strip leading library name prefix from demo file paths
+						var cleanDemoFiles = demoFiles.map(function(f) {
+							var norm = f.replace(/\\/g, '/');
+							var prefix = libName + '/';
+							return norm.indexOf(prefix) === 0 ? norm.substring(prefix.length) : f;
+						});
+
 						var dbRecord = {
 							library_name: manifest.library_name || "",
 							author: manifest.author || "",
@@ -14475,7 +14535,7 @@
 							library_image_base64: manifest.library_image_base64 || null,
 							library_image_mime: manifest.library_image_mime || null,
 							library_files: libFiles,
-							demo_method_files: demoFiles,
+							demo_method_files: cleanDemoFiles,
 							help_files: helpFiles,
 							com_register_dlls: comDlls,
 							bin_com_register_dlls: manifest.bin_com_register_dlls || [],
@@ -15782,6 +15842,11 @@
 							} else if (entry.entryName.indexOf("demo_methods/") === 0) {
 								var fname = entry.entryName.substring("demo_methods/".length);
 								if (fname) {
+									// Strip leading library name folder to prevent double nesting
+									var demoFirstSeg = fname.split('/')[0];
+									if (demoFirstSeg === libName && fname.length > libName.length + 1) {
+										fname = fname.substring(libName.length + 1);
+									}
 									var outPath = safeZipExtractPath(demoDestDir, fname);
 									if (!outPath) return;
 									var parentDir = path.dirname(outPath);
@@ -15821,6 +15886,13 @@
 						var fileHashes = {};
 						try { fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls); } catch(e) { console.warn(e); }
 
+						// Strip leading library name prefix from demo file paths
+						var cleanDemoFiles = demoFiles.map(function(f) {
+							var norm = f.replace(/\\/g, '/');
+							var prefix = libName + '/';
+							return norm.indexOf(prefix) === 0 ? norm.substring(prefix.length) : f;
+						});
+
 						var dbRecord = {
 							library_name: manifest.library_name || "",
 							author: manifest.author || "",
@@ -15841,7 +15913,7 @@
 							library_image_base64: manifest.library_image_base64 || null,
 							library_image_mime: manifest.library_image_mime || null,
 							library_files: libFiles,
-							demo_method_files: demoFiles,
+							demo_method_files: cleanDemoFiles,
 							help_files: helpFiles,
 							com_register_dlls: comDlls,
 							bin_com_register_dlls: manifest.bin_com_register_dlls || [],
@@ -16877,6 +16949,13 @@
 					comDlls
 				); } catch(e) { console.warn('Could not compute integrity hashes: ' + e.message); }
 
+				// Strip leading library name prefix from demo file paths to match extracted locations
+				var cleanDemoFiles = demoFiles.map(function(f) {
+					var norm = f.replace(/\\/g, '/');
+					var prefix = libName + '/';
+					return norm.indexOf(prefix) === 0 ? norm.substring(prefix.length) : f;
+				});
+
 				var dbRecord = {
 					library_name: manifest.library_name || "",
 					author: manifest.author || "",
@@ -16897,7 +16976,7 @@
 					library_image_base64: manifest.library_image_base64 || null,
 					library_image_mime: manifest.library_image_mime || null,
 					library_files: libFiles,
-					demo_method_files: demoFiles,
+					demo_method_files: cleanDemoFiles,
 					help_files: helpFiles,
 					com_register_dlls: comDlls,
 					bin_com_register_dlls: binComDlls,
@@ -21974,7 +22053,7 @@
 						var comDllName = comDlls[ci];
 						for (var ei = 0; ei < zipEntries.length; ei++) {
 							var entry = zipEntries[ei];
-							if (entry.entryName === "library/" + comDllName) {
+							if (entry.entryName.indexOf("library/") === 0 && path.basename(entry.entryName) === comDllName) {
 								var outPath = path.join(libDestDir, comDllName);
 								fs.writeFileSync(outPath, entry.getData());
 								comDllPaths.push(outPath);
@@ -22086,7 +22165,7 @@
 					if (entry.entryName.indexOf("library/") === 0) {
 						var fname = entry.entryName.substring("library/".length);
 						if (fname) {
-							if (comDlls.indexOf(fname) !== -1) { extractedCount++; return; }
+							if (comDlls.indexOf(fname) !== -1 || comDlls.indexOf(path.basename(fname)) !== -1) { extractedCount++; return; }
 							var outPath = safeZipExtractPath(libDestDir, fname);
 							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 							var parentDir = path.dirname(outPath);
@@ -22097,6 +22176,11 @@
 					} else if (entry.entryName.indexOf("demo_methods/") === 0) {
 						var fname = entry.entryName.substring("demo_methods/".length);
 						if (fname) {
+							// Strip leading library name folder to prevent double nesting
+							var demoFirstSeg = fname.split('/')[0];
+							if (demoFirstSeg === libName && fname.length > libName.length + 1) {
+								fname = fname.substring(libName.length + 1);
+							}
 							var outPath = safeZipExtractPath(demoDestDir, fname);
 							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 							var parentDir = path.dirname(outPath);
@@ -22187,6 +22271,13 @@
 				var fileHashes = {};
 				try { fileHashes = computeLibraryHashes(libFiles, libDestDir, comDlls); } catch(e) { console.warn('Could not compute integrity hashes: ' + e.message); }
 
+				// Strip leading library name prefix from demo file paths
+				var cleanDemoFiles = demoFiles.map(function(f) {
+					var norm = f.replace(/\\/g, '/');
+					var prefix = libName + '/';
+					return norm.indexOf(prefix) === 0 ? norm.substring(prefix.length) : f;
+				});
+
 				var dbRecord = {
 					library_name: manifest.library_name || "",
 					author: manifest.author || "",
@@ -22207,7 +22298,7 @@
 					library_image_base64: manifest.library_image_base64 || null,
 					library_image_mime: manifest.library_image_mime || null,
 					library_files: libFiles,
-					demo_method_files: demoFiles,
+					demo_method_files: cleanDemoFiles,
 					help_files: helpFiles,
 					com_register_dlls: comDlls,
 					bin_com_register_dlls: binComDlls,

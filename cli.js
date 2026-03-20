@@ -657,8 +657,15 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
                 extractedCount++;
             }
         } else if (entry.entryName.startsWith('demo_methods/')) {
-            const fname = entry.entryName.substring('demo_methods/'.length);
+            let fname = entry.entryName.substring('demo_methods/'.length);
             if (fname) {
+                // Strip leading library name folder to prevent double nesting
+                // (demoDestDir already includes the library name)
+                const libName = manifest.library_name || '';
+                const demoFirstSeg = fname.split('/')[0];
+                if (libName && demoFirstSeg === libName && fname.length > libName.length + 1) {
+                    fname = fname.substring(libName.length + 1);
+                }
                 const safePath = safeZipExtractPath(demoDestDir, fname);
                 if (!safePath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName.replace(/[\x00-\x1f\x7f]/g, '?')); return; }
                 const parentDir = path.dirname(safePath);
@@ -743,7 +750,11 @@ function installPackage(manifest, zip, libDestDir, demoDestDir, sourceName, db, 
         library_image_base64:manifest.library_image_base64 || null,
         library_image_mime:  manifest.library_image_mime   || null,
         library_files:       filteredLibFiles,
-        demo_method_files:   demoFiles,
+        demo_method_files:   demoFiles.map(function(f) {
+            var norm = f.replace(/\\/g, '/');
+            var prefix = (manifest.library_name || '') + '/';
+            return prefix.length > 1 && norm.indexOf(prefix) === 0 ? norm.substring(prefix.length) : f;
+        }),
         help_files:          helpFiles,
         com_register_dlls:   comDlls,
         labware_files:       labwareFiles,
