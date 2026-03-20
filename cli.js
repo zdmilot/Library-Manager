@@ -2970,6 +2970,75 @@ scan-markers
     node cli.js scan-markers --json
 
 ──────────────────────────────────────────────────────────────────────────────
+marketplace-search
+  Search or browse the online marketplace catalog.
+  Fetches the latest catalog from the Library-Manager-Packages repository
+  and displays available packages with optional filtering.
+
+  --query <term>      Search by keyword (name, author, description, tags)
+  --category <cat>    Filter by category (e.g. "General Utility")
+  --author <name>     Filter by author or organization name
+  --tag <tag>         Filter by exact tag
+  --json              Output raw JSON (useful for scripting)
+
+  Examples:
+    node cli.js marketplace-search
+    node cli.js marketplace-search --query "pipetting"
+    node cli.js marketplace-search --tag "liquid-handling" --json
+    node cli.js marketplace-search --author "Hamilton"
+
+──────────────────────────────────────────────────────────────────────────────
+marketplace-install
+  Download and install a library from the online marketplace.
+  Automatically resolves and installs dependencies in the correct order.
+  Downloads are SHA-256 verified against the catalog hash before install.
+
+  --name <name>       [required]  Library name (as shown in marketplace)
+  --version <ver>                 Specific version (default: latest)
+  --force                         Overwrite if already installed
+  --no-deps                       Skip automatic dependency installation
+  --lib-dir <path>                Override library install root
+  --met-dir <path>                Override methods (demo) install root
+  --json                          Output results as JSON
+
+  Examples:
+    node cli.js marketplace-install --name "MyLibrary"
+    node cli.js marketplace-install --name "MyLibrary" --version "2.0.0"
+    node cli.js marketplace-install --name "MyLibrary" --force
+    node cli.js marketplace-install --name "MyLibrary" --no-deps
+
+──────────────────────────────────────────────────────────────────────────────
+show-lib
+  Show detailed information about a specific installed library.
+  Displays all metadata, files, functions, dependencies, and integrity
+  hashes for the requested library.
+
+  --name <name>       [required*] Library name  (* or use --id)
+  --id <id>           [required*] Library DB ID (* or use --name)
+  --json                          Output raw JSON record
+
+  Examples:
+    node cli.js show-lib --name "MyLibrary"
+    node cli.js show-lib --id abc123 --json
+
+──────────────────────────────────────────────────────────────────────────────
+search-libs
+  Search installed libraries by keyword, tag, or author.
+  Searches across library name, author, organization, description, tags,
+  and VENUS compatibility fields.
+
+  --query <term>      Search keyword (name, description, tags, etc.)
+  --tag <tag>         Filter by exact tag
+  --author <name>     Filter by author or organization name
+  --json              Output raw JSON
+
+  Examples:
+    node cli.js search-libs --query "pipette"
+    node cli.js search-libs --tag "device-driver"
+    node cli.js search-libs --author "Hamilton" --json
+    node cli.js search-libs --query "transport" --tag "automation"
+
+──────────────────────────────────────────────────────────────────────────────
 `);
 }
 
