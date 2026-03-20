@@ -2660,7 +2660,10 @@
 				_updateInProgress = false;
 				_updateAbortHandle = null;
 				if (err.message === 'Download cancelled by user') return;
-				$('.update-error-msg').text('Update failed: ' + err.message + '. Please check your internet connection and try again.');
+				var hint = /unpack|innounp|extract/i.test(err.message)
+					? 'The update file could not be unpacked. Please try downloading the installer manually from the Releases page.'
+					: 'Please check your internet connection and try again.';
+				$('.update-error-msg').text('Update failed: ' + err.message + '. ' + hint);
 				_showUpdateState('error');
 				$('#updateModal').modal('show');
 			});
@@ -21701,6 +21704,7 @@
 
 			$m.modal("hide");
 			$("#storeDetailModal").modal("hide");
+			$("#storeModal").modal("hide");
 
 			// Show progress in standalone progress modal
 			var $progressModal = $("#storeInstallProgressModal");
@@ -21842,9 +21846,10 @@
 
 			_isImporting = true;
 
-			// Close the marketplace detail modal and show standalone progress modal
+			// Close the marketplace modals and show standalone progress modal
 			var origBtnHtml = $("#storeDetailModal .store-detail-install-btn").html();
 			$("#storeDetailModal").modal("hide");
+			$("#storeModal").modal("hide");
 
 			var $m = $("#storeInstallProgressModal");
 			$m.find(".store-detail-progress").removeClass("d-none");
