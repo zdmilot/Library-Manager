@@ -16643,7 +16643,7 @@
 					var comDllName = comDlls[ci];
 					for (var ei = 0; ei < zipEntries.length; ei++) {
 						var entry = zipEntries[ei];
-						if (entry.entryName === "library/" + comDllName) {
+						if (entry.entryName.indexOf("library/") === 0 && path.basename(entry.entryName) === comDllName) {
 							var outPath = path.join(libDestDir, comDllName);
 							fs.writeFileSync(outPath, entry.getData());
 							comDllPaths.push(outPath);
@@ -16762,7 +16762,7 @@
 						var fname = entry.entryName.substring("library/".length);
 						if (fname) {
 							// Skip COM DLLs already extracted
-							if (comDlls.indexOf(fname) !== -1) {
+							if (comDlls.indexOf(fname) !== -1 || comDlls.indexOf(path.basename(fname)) !== -1) {
 								extractedCount++;
 								return;
 							}
@@ -16776,6 +16776,12 @@
 					} else if (entry.entryName.indexOf("demo_methods/") === 0) {
 						var fname = entry.entryName.substring("demo_methods/".length);
 						if (fname) {
+							// Strip leading library name folder to prevent double nesting
+							// (demoDestDir already includes the library name)
+							var demoFirstSeg = fname.split('/')[0];
+							if (demoFirstSeg === libName && fname.length > libName.length + 1) {
+								fname = fname.substring(libName.length + 1);
+							}
 							var outPath = safeZipExtractPath(demoDestDir, fname);
 							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 							var parentDir = path.dirname(outPath);
@@ -21615,19 +21621,20 @@
 			if (!queue || queue.length === 0) return;
 
 			$m.modal("hide");
+			$("#storeDetailModal").modal("hide");
 
-			// Show progress in the store detail modal
-			var $storeModal = $("#storeDetailModal");
-			$storeModal.find(".detail-modal-body").addClass("d-none");
-			$storeModal.find(".store-detail-progress").removeClass("d-none");
-			$storeModal.find(".store-detail-progress-label").text("Installing dependencies\u2026");
-			$storeModal.find(".store-detail-progress-icon").attr("class", "fas fa-cloud-download-alt fa-2x store-detail-progress-icon").css("color", "var(--medium)");
-			$storeModal.find(".store-detail-progress-status").text("Downloading package 1 of " + queue.length + "\u2026");
-			$storeModal.find(".store-detail-progress-bar").css("width", "100%");
-			$storeModal.find(".store-detail-install-btn").html('<i class="fas fa-spinner fa-spin mr-1"></i>Installing\u2026').prop("disabled", true);
+			// Show progress in standalone progress modal
+			var $progressModal = $("#storeInstallProgressModal");
+			$progressModal.find(".store-detail-progress").removeClass("d-none");
+			$progressModal.find(".detail-modal-body").addClass("d-none");
+			$progressModal.find(".store-detail-progress-label").text("Installing dependencies\u2026");
+			$progressModal.find(".store-detail-progress-icon").attr("class", "fas fa-cloud-download-alt fa-2x store-detail-progress-icon").css("color", "var(--medium)");
+			$progressModal.find(".store-detail-progress-status").text("Downloading package 1 of " + queue.length + "\u2026");
+			$progressModal.find(".store-detail-progress-bar").css("width", "100%");
+			$progressModal.modal("show");
 
 			// Download and install each package in order (deps first, main last)
-			storeInstallQueue(queue.slice(), 0, $storeModal);
+			storeInstallQueue(queue.slice(), 0, $progressModal);
 		});
 
 		/**
@@ -21756,17 +21763,18 @@
 
 			_isImporting = true;
 
-			// Show download progress bar in the detail modal
-			var $m = $("#storeDetailModal");
-			var $detailBtn = $m.find(".store-detail-install-btn");
-			var origBtnHtml = $detailBtn.html();
-			$detailBtn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Downloading\u2026').prop("disabled", true);
-			$m.find(".detail-modal-body").addClass("d-none");
+			// Close the marketplace detail modal and show standalone progress modal
+			var origBtnHtml = $("#storeDetailModal .store-detail-install-btn").html();
+			$("#storeDetailModal").modal("hide");
+
+			var $m = $("#storeInstallProgressModal");
 			$m.find(".store-detail-progress").removeClass("d-none");
+			$m.find(".detail-modal-body").addClass("d-none");
 			$m.find(".store-detail-progress-label").text("Downloading package\u2026");
 			$m.find(".store-detail-progress-icon").attr("class", "fas fa-cloud-download-alt fa-2x store-detail-progress-icon").css("color", "var(--medium)");
 			$m.find(".store-detail-progress-status").text("Please wait\u2026");
 			$m.find(".store-detail-progress-bar").css("width", "100%");
+			$m.modal("show");
 
 			var downloadUrl = storePackageDownloadUrl(pkgFile);
 			var tmpDir = path.join(os.tmpdir(), 'LibMgr-Store');
@@ -21776,10 +21784,7 @@
 			var https = require('https');
 			storeDownloadFile(https, downloadUrl, tmpPath, function (err) {
 				if (err) {
-					// Restore the detail modal to its normal state
-					$m.find(".store-detail-progress").addClass("d-none");
-					$m.find(".detail-modal-body").removeClass("d-none");
-					$detailBtn.html(origBtnHtml).prop("disabled", false);
+					$m.modal("hide");
 					_isImporting = false;
 					storeShowErrorModal("Download failed", err.message);
 					return;
@@ -21808,22 +21813,17 @@
 				};
 
 				if (breakingChanges.length > 0) {
-					// Hide progress, show breaking changes modal — wait for user acceptance
-					$m.find(".store-detail-progress").addClass("d-none");
-					$m.find(".detail-modal-body").removeClass("d-none");
-					$detailBtn.html(origBtnHtml).prop("disabled", false);
+					// Hide progress modal, show breaking changes modal — wait for user acceptance
 					$m.modal("hide");
 					_isImporting = false;
 					storeShowBreakingChangesModal(breakingChanges, function () {
 						_isImporting = true;
-						// Re-show progress in modal
-						$m.modal("show");
-						$m.find(".detail-modal-body").addClass("d-none");
 						$m.find(".store-detail-progress").removeClass("d-none");
+						$m.find(".detail-modal-body").addClass("d-none");
 						$m.find(".store-detail-progress-label").text("Installing\u2026");
 						$m.find(".store-detail-progress-icon").attr("class", "fas fa-cog fa-spin fa-2x store-detail-progress-icon").css("color", "var(--medium)");
 						$m.find(".store-detail-progress-status").text("Setting up the library\u2026");
-						$detailBtn.html('<i class="fas fa-spinner fa-spin mr-1"></i>Installing\u2026').prop("disabled", true);
+						$m.modal("show");
 						storeDirectInstall(tmpPath, $m, origBtnHtml);
 					});
 				} else {
@@ -21848,6 +21848,9 @@
 				$m.find(".store-detail-progress").addClass("d-none");
 				$m.find(".detail-modal-body").removeClass("d-none");
 				$detailBtn.html(origBtnHtml).prop("disabled", false);
+				if ($m.attr("id") === "storeInstallProgressModal") {
+					$m.modal("hide");
+				}
 			}
 
 			try {
