@@ -89,6 +89,26 @@
 			}
 		}
 
+		/**
+		 * Copy contents of srcDir into destDir using an elevated (UAC) process.
+		 * Triggers a Windows UAC prompt via PowerShell Start-Process -Verb RunAs.
+		 * @param {string} srcDir - Source directory (temp extraction location)
+		 * @param {string} destDir - Destination directory (e.g. Hamilton\Bin)
+		 */
+		function elevatedCopyBinFiles(srcDir, destDir) {
+			var execFileSync = require('child_process').execFileSync;
+			// Use robocopy via PowerShell with UAC elevation.
+			// robocopy /E = copy subdirs including empty, /R:0 /W:0 = no retries.
+			// robocopy exit codes 0-7 are success; Start-Process -Wait blocks until done.
+			var psCmd = "Start-Process -FilePath 'robocopy.exe' -ArgumentList " +
+				"'" + srcDir.replace(/'/g, "''") + "','" + destDir.replace(/'/g, "''") + "','/E','/R:0','/W:0'" +
+				" -Verb RunAs -Wait";
+			execFileSync('powershell.exe', ['-NoProfile', '-Command', psCmd], {
+				stdio: 'pipe',
+				timeout: 120000
+			});
+		}
+
 		// ---- Windows Security Group Detection & Access Control ----
 		// Detects the current user's Windows group membership via `whoami /groups`.
 		// Used to enforce access control on protected library management actions
@@ -16823,8 +16843,13 @@
 					}
 				}
 
-				// Ensure the Users group has write access to the bin directory (best-effort)
+				// Set up temp directory for bin files (copied to final location after extraction)
+				var binTempDir = null;
+				var binExtractedFiles = [];
 				if (binFiles.length > 0 && binBasePathImp) {
+					binTempDir = path.join(os.tmpdir(), 'lm-bin-' + Date.now());
+					fs.mkdirSync(binTempDir, { recursive: true });
+					// Best-effort: try to grant bin directory write access for non-elevated copy
 					ensureBinFolderPermissions(binBasePathImp);
 				}
 
@@ -16879,16 +16904,67 @@
 						}
 					} else if (entry.entryName.indexOf("bin/") === 0) {
 						var fname = entry.entryName.substring("bin/".length);
-						if (fname) {
-							var outPath = safeZipExtractPath(binBasePathImp, fname);
+						if (fname && binTempDir) {
+							var outPath = safeZipExtractPath(binTempDir, fname);
 							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 							var parentDir = path.dirname(outPath);
 							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
 							fs.writeFileSync(outPath, entry.getData());
+							binExtractedFiles.push(fname);
 							extractedCount++;
 						}
 					}
 				});
+
+				// ---- Copy bin files from temp to final destination ----
+				if (binTempDir && binExtractedFiles.length > 0) {
+					try {
+						// Try normal (non-elevated) copy first
+						if (!fs.existsSync(binBasePathImp)) fs.mkdirSync(binBasePathImp, { recursive: true });
+						for (var bi = 0; bi < binExtractedFiles.length; bi++) {
+							var srcBin = path.join(binTempDir, binExtractedFiles[bi]);
+							var destBin = path.join(binBasePathImp, binExtractedFiles[bi]);
+							var destBinDir = path.dirname(destBin);
+							if (!fs.existsSync(destBinDir)) fs.mkdirSync(destBinDir, { recursive: true });
+							fs.copyFileSync(srcBin, destBin);
+						}
+					} catch (binCopyErr) {
+						if (binCopyErr.code === 'EPERM' || binCopyErr.code === 'EACCES') {
+							// Prompt user for UAC elevation
+							if (!(await showAppConfirm('Administrator Access Required',
+								'Installing bin files to:\n' + binBasePathImp +
+								'\n\nrequires administrator privileges.\nWindows will prompt you for permission.', {
+									iconClass: 'fa-shield-alt',
+									confirmLabel: 'Grant Access',
+									confirmIcon: 'fa-shield-alt'
+								}))) {
+								throw new Error('Bin file installation was cancelled. The package requires files in: ' + binBasePathImp);
+							}
+							try {
+								elevatedCopyBinFiles(binTempDir, binBasePathImp);
+							} catch (elevErr) {
+								throw new Error('Elevated bin file installation failed. Ensure you have administrator access and try again.');
+							}
+							// Verify files were copied successfully
+							var missingBin = [];
+							for (var mb = 0; mb < binExtractedFiles.length; mb++) {
+								if (!fs.existsSync(path.join(binBasePathImp, binExtractedFiles[mb]))) {
+									missingBin.push(binExtractedFiles[mb]);
+								}
+							}
+							if (missingBin.length > 0) {
+								throw new Error('Some bin files could not be installed to ' + binBasePathImp + ':\n' + missingBin.join('\n'));
+							}
+						} else {
+							throw binCopyErr;
+						}
+					} finally {
+						// Clean up temp directory
+						try {
+							require('child_process').execFileSync('cmd.exe', ['/c', 'rd', '/s', '/q', binTempDir], { stdio: 'pipe', timeout: 10000 });
+						} catch(_) {}
+					}
+				}
 
 				// Extract installer executable to centralized store if present and setting enabled
 				var impInstallerPath = null;
