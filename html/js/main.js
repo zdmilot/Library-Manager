@@ -97,16 +97,25 @@
 		 */
 		function elevatedCopyBinFiles(srcDir, destDir) {
 			var execFileSync = require('child_process').execFileSync;
-			// Use robocopy via PowerShell with UAC elevation.
-			// robocopy /E = copy subdirs including empty, /R:0 /W:0 = no retries.
-			// robocopy exit codes 0-7 are success; Start-Process -Wait blocks until done.
-			var psCmd = "Start-Process -FilePath 'robocopy.exe' -ArgumentList " +
-				"'" + srcDir.replace(/'/g, "''") + "','" + destDir.replace(/'/g, "''") + "','/E','/R:0','/W:0'" +
-				" -Verb RunAs -Wait";
-			execFileSync('powershell.exe', ['-NoProfile', '-Command', psCmd], {
-				stdio: 'pipe',
-				timeout: 120000
-			});
+			// Write a small batch script that runs robocopy, then execute it elevated.
+			// This avoids Start-Process -ArgumentList quoting issues with paths
+			// containing spaces/parens (e.g. "Program Files (x86)").
+			var cmdPath = path.join(os.tmpdir(), 'lm_elev_' + Date.now() + '.cmd');
+			fs.writeFileSync(cmdPath,
+				'@echo off\r\n' +
+				'robocopy "' + srcDir + '" "' + destDir + '" /E /R:0 /W:0\r\n' +
+				'if %errorlevel% LEQ 7 exit /b 0\r\n' +
+				'exit /b 1\r\n');
+			try {
+				// Start-Process -Verb RunAs triggers the Windows UAC prompt;
+				// -Wait blocks until the elevated process finishes.
+				execFileSync('powershell.exe', [
+					'-NoProfile', '-Command',
+					"Start-Process -FilePath '" + cmdPath + "' -Verb RunAs -Wait"
+				], { stdio: 'pipe', timeout: 120000 });
+			} finally {
+				try { fs.unlinkSync(cmdPath); } catch(_) {}
+			}
 		}
 
 		// ---- Windows Security Group Detection & Access Control ----
@@ -22237,7 +22246,12 @@
 					if (!fs.existsSync(demoDestDir)) fs.mkdirSync(demoDestDir, { recursive: true });
 				}
 
+				// Set up temp directory for bin files (copied to final location after extraction)
+				var binTempDir = null;
+				var binExtractedFiles = [];
 				if (binFiles.length > 0 && binBasePathImp) {
+					binTempDir = path.join(os.tmpdir(), 'lm-bin-' + Date.now());
+					fs.mkdirSync(binTempDir, { recursive: true });
 					ensureBinFolderPermissions(binBasePathImp);
 				}
 
@@ -22284,16 +22298,64 @@
 						}
 					} else if (entry.entryName.indexOf("bin/") === 0) {
 						var fname = entry.entryName.substring("bin/".length);
-						if (fname) {
-							var outPath = safeZipExtractPath(binBasePathImp, fname);
+						if (fname && binTempDir) {
+							var outPath = safeZipExtractPath(binTempDir, fname);
 							if (!outPath) { console.warn('Skipping unsafe ZIP entry: ' + entry.entryName); return; }
 							var parentDir = path.dirname(outPath);
 							if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
 							fs.writeFileSync(outPath, entry.getData());
+							binExtractedFiles.push(fname);
 							extractedCount++;
 						}
 					}
 				});
+
+				// ---- Copy bin files from temp to final destination ----
+				if (binTempDir && binExtractedFiles.length > 0) {
+					$m.find(".store-detail-progress-status").text("Installing bin files\u2026");
+					try {
+						if (!fs.existsSync(binBasePathImp)) fs.mkdirSync(binBasePathImp, { recursive: true });
+						for (var bi = 0; bi < binExtractedFiles.length; bi++) {
+							var srcBin = path.join(binTempDir, binExtractedFiles[bi]);
+							var destBin = path.join(binBasePathImp, binExtractedFiles[bi]);
+							var destBinDir = path.dirname(destBin);
+							if (!fs.existsSync(destBinDir)) fs.mkdirSync(destBinDir, { recursive: true });
+							fs.copyFileSync(srcBin, destBin);
+						}
+					} catch (binCopyErr) {
+						if (binCopyErr.code === 'EPERM' || binCopyErr.code === 'EACCES') {
+							if (!(await showAppConfirm('Administrator Access Required',
+								'Installing bin files to:\n' + binBasePathImp +
+								'\n\nrequires administrator privileges.\nWindows will prompt you for permission.', {
+									iconClass: 'fa-shield-alt',
+									confirmLabel: 'Grant Access',
+									confirmIcon: 'fa-shield-alt'
+								}))) {
+								throw new Error('Bin file installation was cancelled. The package requires files in: ' + binBasePathImp);
+							}
+							try {
+								elevatedCopyBinFiles(binTempDir, binBasePathImp);
+							} catch (elevErr) {
+								throw new Error('Elevated bin file installation failed. Ensure you have administrator access and try again.');
+							}
+							var missingBin = [];
+							for (var mb = 0; mb < binExtractedFiles.length; mb++) {
+								if (!fs.existsSync(path.join(binBasePathImp, binExtractedFiles[mb]))) {
+									missingBin.push(binExtractedFiles[mb]);
+								}
+							}
+							if (missingBin.length > 0) {
+								throw new Error('Some bin files could not be installed to ' + binBasePathImp + ':\n' + missingBin.join('\n'));
+							}
+						} else {
+							throw binCopyErr;
+						}
+					} finally {
+						try {
+							require('child_process').execFileSync('cmd.exe', ['/c', 'rd', '/s', '/q', binTempDir], { stdio: 'pipe', timeout: 10000 });
+						} catch(_) {}
+					}
+				}
 
 				// Extract installer executable if present
 				var impInstallerPath = null;
